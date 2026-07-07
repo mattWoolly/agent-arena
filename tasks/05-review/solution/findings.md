@@ -1,0 +1,6 @@
+- src/sync.py:14 Pagination uses floor division, so a final partial page of users is silently never fetched (off-by-one).
+- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so later syncs silently skip users seen in earlier calls.
+- src/sync.py:35 The UPDATE statement is built with an f-string instead of bound parameters, allowing SQL injection via the email value.
+- src/sync.py:38 The `except Exception: pass` swallows every per-user failure with no logging — a regression from the logged version.
+- src/report.py:5 The file is opened without a context manager and the handle leaks on the early empty-users return (and on any exception).
+- src/report.py:11 `user["email"]` can be None per the db schema notes, so `.lower()` raises AttributeError; emails without "@" also crash on `[1]`.

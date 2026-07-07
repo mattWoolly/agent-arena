@@ -1,0 +1,25 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 71.1,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 3,
+    "Skill": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.5868095,
+  "num_turns": 7,
+  "duration_ms": 69061,
+  "duration_api_ms": 70096,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 4369,
+  "output_tokens": 3809,
+  "cache_read_tokens": 142555,
+  "final_message": "Both files are done and every constraint checks out mechanically.\n\n**summary.json** \u2014 computed directly from the 30 rows of `data/sales.csv`:\n- total_revenue: 7154.44, orders: 30, median_order_value: 204.94\n- top_product_by_revenue: Gadget ($2,392.00, despite only 16 units sold)\n- revenue_by_region: North 2176.35, East 1830.79, South 1732.48, West 1414.82\n- Exactly the five required keys, no extras.\n\n**REPORT.md** \u2014 verified with a script:\n- Exactly the four required H2 headings, spelled and ordered as specified, no other headings.\n- 177 words total (limit 250).\n- Overview states `$7,154.44` in the exact required format plus the 30-order count.\n- Recommendations has exactly three `- ` bullets at 22, 17, and 14 words (limit 25), each tied to a specific number from the data: Gadget's revenue-per-unit lead, Sprocket's high-volume/low-revenue profile, and West trailing North by 35%.\n- Zero hits on the banned words (case-insensitive).\n\nThe one data point worth flagging: Sprocket moved 238 of the 377 total units but earned the least revenue ($1,130.50), while Gadget earned the most on just 16 units \u2014 pricing, not volume, is driving this dataset.",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

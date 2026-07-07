@@ -1,0 +1,5 @@
+{
+  "source": "s3://ingest/raw",
+  "destination": "s3://ingest/clean",
+  "batch_size": 500,
+}

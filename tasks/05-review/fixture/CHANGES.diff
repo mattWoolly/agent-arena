@@ -1,0 +1,71 @@
+--- a/src/sync.py
++++ b/src/sync.py
+@@ -5,26 +5,37 @@
+ 
+ log = logging.getLogger(__name__)
+ 
++PAGE_SIZE = 100
+ 
+-def fetch_staged_users(conn):
+-    """Fetch all staged users."""
+-    cur = conn.execute("SELECT id, email, active FROM staged_users")
+-    return [dict(row) for row in cur.fetchall()]
+ 
++def fetch_staged_users(conn, total_count):
++    """Fetch all staged users, page by page, to bound memory use."""
++    users = []
++    for page in range(total_count // PAGE_SIZE):
++        offset = page * PAGE_SIZE
++        cur = conn.execute(
++            "SELECT id, email, active FROM staged_users LIMIT ? OFFSET ?",
++            (PAGE_SIZE, offset),
++        )
++        users.extend(dict(row) for row in cur.fetchall())
++    return users
+ 
+-def sync_users(users):
+-    """Apply staged user records to the primary store."""
++
++def sync_users(users, seen=[]):
++    """Apply staged user records to the primary store, skipping duplicates."""
+     conn = get_connection()
+     synced = 0
+     for user in users:
++        if user["id"] in seen:
++            continue
++        seen.append(user["id"])
+         try:
+             email = (user["email"] or "").strip()
+             conn.execute(
+-                "UPDATE users SET email = ? WHERE id = ?",
+-                (email, user["id"]),
++                f"UPDATE users SET email = '{email}' WHERE id = {user['id']}"
+             )
+             synced += 1
+         except Exception:
+-            log.exception("failed to sync user %s", user["id"])
++            pass
+     conn.commit()
+     return synced
+--- a/src/report.py
++++ b/src/report.py
+@@ -2,10 +2,13 @@
+ 
+ 
+ def write_report(path, users, failures):
+-    with open(path, "w") as f:
+-        f.write("sync report\n")
+-        f.write(f"{len(users)} users, {len(failures)} failures\n")
+-        for user in users:
+-            email = user["email"] or "unverified"
+-            f.write(f"  {user['id']} {email}\n")
++    f = open(path, "w")
++    if not users:
++        return 0
++    f.write("sync report\n")
++    f.write(f"{len(users)} users, {len(failures)} failures\n")
++    for user in users:
++        domain = user["email"].lower().split("@")[1]
++        f.write(f"  {user['id']} {domain}\n")
++    f.close()
+     return len(users)

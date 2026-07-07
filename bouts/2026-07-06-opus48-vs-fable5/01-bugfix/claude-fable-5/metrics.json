@@ -1,0 +1,26 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 45.3,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 1,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "total_cost_usd": 0.394562,
+  "num_turns": 7,
+  "duration_ms": 43298,
+  "duration_api_ms": 45295,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 4369,
+  "output_tokens": 1491,
+  "cache_read_tokens": 134370,
+  "final_message": "All 6 tests pass. There were two bugs in `lrucache/cache.py`:\n\n1. **`get` didn't refresh recency** \u2014 a hit returned the value but never moved the entry to the end of the `OrderedDict`, so recently-read keys could still be evicted as least-recently-used. Fixed by adding `self._data.move_to_end(key)` on a non-expired hit.\n2. **`put` evicted on in-place updates** \u2014 the eviction check ran even when the key already existed, so overwriting a key in a full cache wrongly dropped another entry. Fixed by only evicting when the key is new.\n\nBoth fixes are in `lrucache/cache.py:30-34`, and the explanation is written up in `SOLUTION.md`.",
+  "diffstat": "6 files changed, 16 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

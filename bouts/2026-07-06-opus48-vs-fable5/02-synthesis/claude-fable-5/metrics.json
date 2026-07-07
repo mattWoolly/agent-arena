@@ -1,0 +1,25 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 87.0,
+  "agent_exit": 0,
+  "assistant_messages": 18,
+  "tool_calls": {
+    "Read": 1,
+    "Edit": 7,
+    "Bash": 1
+  },
+  "tool_calls_total": 9,
+  "total_cost_usd": 0.6637065,
+  "num_turns": 10,
+  "duration_ms": 84974,
+  "duration_api_ms": 85016,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 4498,
+  "output_tokens": 5679,
+  "cache_read_tokens": 139961,
+  "final_message": "All five functions are implemented in `problems.py` and every check I wrote passes, including a brute-force cross-check and a 1M-element timing run for `rolling_max` (0.40s, confirming O(n)).\n\nHow each is implemented:\n\n- **`parse_duration`** \u2014 a single `re.fullmatch` of `(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?` with `re.ASCII`, requiring at least one group. The regex structure enforces ordering, no duplicates, no whitespace, no signs, and no trailing garbage; non-strings and Unicode digits raise `ValueError` too.\n- **`luhn_valid`** \u2014 strips spaces/hyphens, then requires a non-empty all-ASCII-digit string (returning `False` otherwise, including for non-string input, so it never raises), then the standard double-every-second-digit-from-the-right checksum.\n- **`flatten`** \u2014 recursive walk building a fresh output dict, joining key paths with `sep`; nested dicts recurse (so empty ones contribute nothing) and the input is never mutated.\n- **`top_k_frequent`** \u2014 `Counter` plus one sort keyed on `(-count, word)`, sliced to `k`; returns `[]` for `k <= 0` and all distinct words when `k` is large.\n- **`rolling_max`** \u2014 monotonic deque of indices (classic sliding-window maximum), one pass, O(n); raises `ValueError` for `window <= 0` and returns `[]` when the window exceeds the list length.\n\nFunction names, signatures, and docstrings are untouched, only the standard library (`re`, `collections`) is used, and no commits were made.",
+  "diffstat": "2 files changed, 56 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

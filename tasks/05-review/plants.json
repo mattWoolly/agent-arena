@@ -1,0 +1,38 @@
+[
+  {
+    "id": "pagination-off-by-one",
+    "file": "src/sync.py",
+    "lines": [11, 17],
+    "patterns": ["off.by.one", "partial page", "last page", "final page", "floor", "//", "ceil", "remainder", "fewer than PAGE_SIZE", "drops? (the )?(last|remaining)", "miss(es|ing)? (the )?(last|final|remaining)"]
+  },
+  {
+    "id": "mutable-default-seen",
+    "file": "src/sync.py",
+    "lines": [24, 25],
+    "patterns": ["mutable default", "default argument", "seen=\\[\\]", "shared (list|state) (across|between) calls", "persists? (across|between) calls"]
+  },
+  {
+    "id": "sql-injection",
+    "file": "src/sync.py",
+    "lines": [33, 36],
+    "patterns": ["sql injection", "injection", "f-string.*(query|sql)", "string (interpolation|format).*(query|sql)", "parameteri[sz]ed"]
+  },
+  {
+    "id": "swallowed-exception",
+    "file": "src/sync.py",
+    "lines": [38, 39],
+    "patterns": ["swallow", "silently", "except.*pass", "bare except", "suppress(es|ed)? (all )?(errors|exceptions)", "no longer logs", "logging removed", "hides (errors|failures)"]
+  },
+  {
+    "id": "file-handle-leak",
+    "file": "src/report.py",
+    "lines": [5, 7],
+    "patterns": ["leak", "not closed", "never closed", "without closing", "close\\(\\) (is )?(skipped|missed|not)", "context manager", "with open", "early return.*(open|close|file)"]
+  },
+  {
+    "id": "none-email-crash",
+    "file": "src/report.py",
+    "lines": [11, 11],
+    "patterns": ["none", "null", "attributeerror", "nullable", "no email", "missing email", "indexerror", "no @", "without an? @"]
+  }
+]

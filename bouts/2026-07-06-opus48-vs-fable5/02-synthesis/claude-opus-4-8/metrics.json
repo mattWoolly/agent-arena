@@ -1,0 +1,25 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 66.7,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Read": 2,
+    "Edit": 6,
+    "Bash": 1
+  },
+  "tool_calls_total": 9,
+  "total_cost_usd": 0.3470082499999999,
+  "num_turns": 10,
+  "duration_ms": 64662,
+  "duration_api_ms": 65175,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 4506,
+  "output_tokens": 4690,
+  "cache_read_tokens": 239878,
+  "final_message": "All five functions pass my checks, including a large-input correctness test for `rolling_max`. Here's a summary of what I implemented in `problems.py`:\n\n- **`parse_duration`** \u2014 `re.fullmatch` on `(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?` enforces ordering, uniqueness, and no garbage. Rejects non-strings, empty input, out-of-order/duplicate/numberless units, negatives, and whitespace with `ValueError`.\n- **`luhn_valid`** \u2014 strips spaces/hyphens, returns `False` (never raises) on empty or non-digit content, then applies the standard doubling checksum. Uses a strict `\"0123456789\"` membership test so unicode \"digits\" like `\u00b2` don't slip through and crash `int()`.\n- **`flatten`** \u2014 recursive, builds a fresh dict (no mutation), skips empty nested dicts naturally, keeps non-dict values (including lists) as-is.\n- **`top_k_frequent`** \u2014 `Counter` + sort by `(-count, word)` for the alphabetical tie-break; returns `[]` for `k <= 0` and caps at the number of distinct words.\n- **`rolling_max`** \u2014 O(n) monotonic-deque of indices; raises `ValueError` for `window <= 0` and returns `[]` when `window > len(nums)`.\n\nImports are kept local to each function to avoid touching anything outside the stubs.",
+  "diffstat": "2 files changed, 65 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}
