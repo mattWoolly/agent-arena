@@ -20,13 +20,15 @@ tasks/
   05-review/         # code-review style: find planted defects in a diff
   06-instructions/   # IFEval style: report generation under hard constraints
 bouts/
-  <date>-<name>/     # results: per task, per model: workspace/, transcript.jsonl,
-                     # result.json, workspace.diff, grade.txt, metrics.json
+  <date>-<name>/     # results: per task, per model (per run-K/ with repeats):
+                     # transcript.jsonl, result.json, workspace.diff, grade.txt,
+                     # metrics.json, run_env.json, peek_check, workspace/
+                     # (workspace/ is local-only and untracked, except findings.md)
 ```
 
 Each task directory contains:
 
-- `PROMPT.md` — the exact prompt sent to the agent (byte-identical for both models)
+- `PROMPT.md` — the exact prompt sent to the agent (byte-identical for every model)
 - `fixture/` — files seeded into the agent's workspace
 - `setup.sh` — optional post-copy mutation (e.g. planting CRLF line endings)
 - `grade.sh` — hidden grader; the agent never sees it. Exit 0 = pass. Emits `SCORE: n/m`.
@@ -80,3 +82,10 @@ workspaces are fresh git repos so every change is diffable and attributable.
 Single runs are anecdotes, not benchmarks. Report Ns, publish raw numbers,
 never extrapolate a task win into a general claim. If the harness author is one
 of the models under test, disclose it.
+
+## Contributing
+
+Any change to `bin/` or `tasks/` must update this README in the same commit if
+it adds, removes, or changes a flag, environment variable, artifact, or
+behavior a user of the harness would rely on. The README is the harness's
+contract; code and contract move together.
