@@ -1,1 +1,5 @@
 bouts/*/*/*/workspace/
+bouts/*/*/*/run-*/workspace/
+__pycache__/
+*.pyc
+.pytest_cache/

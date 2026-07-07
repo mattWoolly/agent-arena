@@ -1,17 +1,17 @@
 # Agent Arena
 
 Head-to-head harness for comparing agentic coding models running under Claude Code.
-Give two model IDs the same graded tasks in isolated workspaces, capture everything,
-and let the graders (not vibes) decide.
+Give one or more model IDs the same graded tasks in isolated workspaces, capture
+everything, and let the graders (not vibes) decide.
 
 ## Layout
 
 ```
 bin/
-  run-bout.sh    # run all (or selected) tasks for two models, pairwise-parallel
+  run-bout.sh    # run all (or selected) tasks for N models, with repeats and serial mode
   run-task.sh    # run ONE model on ONE task: seed workspace, run claude -p, grade
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
-  summarize.py   # aggregate a bout directory into results.md + results.json
+  summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
 tasks/
   01-bugfix/         # SWE-bench style: fix library code until tests pass
   02-synthesis/      # HumanEval/MBPP style: implement 5 specified functions
@@ -38,15 +38,34 @@ Each task directory contains:
 
 ```
 bin/run-bout.sh 2026-07-06-opus48-vs-fable5 claude-opus-4-8 claude-fable-5
-# or a subset:
+# a subset of tasks:
 bin/run-bout.sh smoke claude-opus-4-8 claude-fable-5 02-synthesis
+# more than two models (a ladder):
+bin/run-bout.sh ladder claude-haiku-4-5 claude-sonnet-5 claude-opus-4-8 claude-fable-5
+# repeated runs for variance, executed serially with rotating model order:
+bin/run-bout.sh -r 5 -s noise-floor claude-opus-4-8
 ```
+
+Flags: `-r N` repeats each (task, model) cell N times (runs land in `run-K/`
+subdirs; `results.md` reports pass k/N and mean ±sd). `-s` runs cells one at a
+time so concurrent runs never share rate-limit headroom — use it whenever
+wall-clock is a claim you intend to publish. Any argument that names a
+directory under `tasks/` selects that task; everything else is a model ID.
+
+Run configuration is pinned and recorded per run (`run_env.json`, merged into
+`metrics.json`): CLI version, `--effort` (default `xhigh`, override with
+`ARENA_EFFORT`), and `--setting-sources` (default `project`, override with
+`ARENA_SETTING_SOURCES`) — so runs never silently inherit the host machine's
+user-level Claude configuration.
 
 Requirements: `claude` CLI on PATH (authed), `python3`, `pytest`, `jq`, `make`, `git`.
 
-Agents run with `--dangerously-skip-permissions` confined to throwaway workspaces
-under `bouts/`. Prompts instruct them to stay in the working directory; workspaces
-are fresh git repos so every change is diffable and attributable.
+Agents run with `--dangerously-skip-permissions` in throwaway workspaces created
+with `mktemp` **outside this repository**, so graders, hidden tests, and reference
+solutions are unreachable by construction. The finished workspace is copied back
+into `bouts/` for publication. After every run a peek check greps the transcript
+for references to the arena tree or grader assets and flags the run if any appear;
+workspaces are fresh git repos so every change is diffable and attributable.
 
 ## What gets measured
 
