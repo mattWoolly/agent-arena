@@ -69,6 +69,26 @@ into `bouts/` for publication. After every run a peek check greps the transcript
 for references to the arena tree or grader assets and flags the run if any appear;
 workspaces are fresh git repos so every change is diffable and attributable.
 
+## Rubric judging (depth qualities)
+
+Deterministic graders decide pass/fail; some qualities they can't price
+(finding-synthesis, quantification, citation precision) can be scored
+separately with an LLM judge:
+
+```
+bin/judge-run.sh <task-dir> <run-out-dir> [judge-model] [n-samples]
+```
+
+The task's `rubric.md` starts with `FILES: <deliverable> ...` followed by 0–2
+scored dimensions. The judge (default `claude-opus-4-8`, always disclosed)
+sees only rubric + deliverable content — never model names or paths — and is
+sampled N times (default 3); `judge.json` in the run dir records every sample
+plus the per-dimension median. Judge scores never gate a run's pass/fail.
+
+Tasks may have prompt variants (e.g. `05-review-transplant/`): same fixture
+and grader as the parent task via symlink/wrapper, different `PROMPT.md`, for
+prompting experiments where the intervention is the variable under test.
+
 ## What gets measured
 
 - **Correctness** — each task's `grade.sh`, run against hidden tests/checkers
