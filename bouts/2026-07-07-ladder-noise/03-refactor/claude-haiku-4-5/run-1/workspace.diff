@@ -1,0 +1,104 @@
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..1b5bf99
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/reportgen/__pycache__/__init__.cpython-312.pyc b/reportgen/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..67793c4
+Binary files /dev/null and b/reportgen/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/reportgen/__pycache__/config.cpython-312.pyc b/reportgen/__pycache__/config.cpython-312.pyc
+new file mode 100644
+index 0000000..a4a8441
+Binary files /dev/null and b/reportgen/__pycache__/config.cpython-312.pyc differ
+diff --git a/reportgen/__pycache__/formatter.cpython-312.pyc b/reportgen/__pycache__/formatter.cpython-312.pyc
+new file mode 100644
+index 0000000..96b09f1
+Binary files /dev/null and b/reportgen/__pycache__/formatter.cpython-312.pyc differ
+diff --git a/reportgen/__pycache__/loader.cpython-312.pyc b/reportgen/__pycache__/loader.cpython-312.pyc
+new file mode 100644
+index 0000000..76a558c
+Binary files /dev/null and b/reportgen/__pycache__/loader.cpython-312.pyc differ
+diff --git a/reportgen/__pycache__/main.cpython-312.pyc b/reportgen/__pycache__/main.cpython-312.pyc
+new file mode 100644
+index 0000000..2d224be
+Binary files /dev/null and b/reportgen/__pycache__/main.cpython-312.pyc differ
+diff --git a/reportgen/config.py b/reportgen/config.py
+index 0e22455..fd03f9c 100644
+--- a/reportgen/config.py
++++ b/reportgen/config.py
+@@ -1,17 +1,23 @@
+ import json
++from dataclasses import dataclass
+ 
+-DEFAULTS = {
+-    "title": "Report",
+-    "output_format": "text",  # "text" or "markdown"
+-    "max_rows": 10,
+-    "include_summary": True,
+-}
++
++@dataclass(frozen=True)
++class Config:
++    title: str = "Report"
++    output_format: str = "text"
++    max_rows: int = 10
++    include_summary: bool = True
+ 
+ 
+ def load_config(path):
+     """Load config from a JSON file, filling in defaults for missing keys."""
+     with open(path) as f:
+         raw = json.load(f)
+-    cfg = dict(DEFAULTS)
+-    cfg.update(raw)
+-    return cfg
++
++    known_fields = {"title", "output_format", "max_rows", "include_summary"}
++    unknown = set(raw.keys()) - known_fields
++    if unknown:
++        raise ValueError(f"Unknown config key: {unknown.pop()}")
++
++    return Config(**{k: v for k, v in raw.items() if k in known_fields})
+diff --git a/reportgen/formatter.py b/reportgen/formatter.py
+index 8a9cb98..0efb81c 100644
+--- a/reportgen/formatter.py
++++ b/reportgen/formatter.py
+@@ -1,8 +1,8 @@
+ def format_report(config, rows):
+     """Render rows as text or markdown, per the config."""
+     lines = []
+-    if config["output_format"] == "markdown":
+-        lines.append(f"# {config['title']}")
++    if config.output_format == "markdown":
++        lines.append(f"# {config.title}")
+         if rows:
+             headers = list(rows[0].keys())
+             lines.append("| " + " | ".join(headers) + " |")
+@@ -10,10 +10,10 @@ def format_report(config, rows):
+             for row in rows:
+                 lines.append("| " + " | ".join(str(row[h]) for h in headers) + " |")
+     else:
+-        lines.append(config["title"])
+-        lines.append("=" * len(config["title"]))
++        lines.append(config.title)
++        lines.append("=" * len(config.title))
+         for row in rows:
+             lines.append(", ".join(f"{k}={v}" for k, v in row.items()))
+-    if config["include_summary"]:
++    if config.include_summary:
+         lines.append(f"({len(rows)} rows)")
+     return "\n".join(lines) + "\n"
+diff --git a/reportgen/loader.py b/reportgen/loader.py
+index 9ee51cb..ef86a80 100644
+--- a/reportgen/loader.py
++++ b/reportgen/loader.py
+@@ -6,4 +6,4 @@ def load_rows(config, path):
+     with open(path, newline="") as f:
+         reader = csv.DictReader(f)
+         rows = list(reader)
+-    return rows[: config["max_rows"]]
++    return rows[: config.max_rows]
+diff --git a/tests/__pycache__/test_reportgen.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_reportgen.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..7c8cc7e
+Binary files /dev/null and b/tests/__pycache__/test_reportgen.cpython-312-pytest-9.0.3.pyc differ

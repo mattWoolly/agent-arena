@@ -1,0 +1,96 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..23f81cc
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,51 @@
++# SOLUTION
++
++`make test` was failing due to three environment/config problems introduced by a
++botched merge. No Python source logic needed to change.
++
++## 1. `Makefile`: recipe used spaces instead of a tab
++
++The recipe line under the `test:` target was indented with 4 spaces instead of a
++tab, which `make` requires for recipe lines. This caused:
++
++```
++Makefile:4: *** missing separator.  Stop.
++```
++
++**Fix:** replaced the leading spaces with a tab character on that line.
++
++## 2. `data/config.json`: invalid JSON (trailing comma)
++
++The config had a trailing comma after `"batch_size": 500`, which is not valid
++JSON. `tools/validate_config.py` (run by `scripts/run_checks.sh`) failed with:
++
++```
++json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 5 column 1
++```
++
++**Fix:** removed the trailing comma.
++
++## 3. `scripts/run_checks.sh`: CRLF line endings and missing execute bit
++
++The script had been saved with Windows-style CRLF line endings (breaking the
++`#!/bin/bash` shebang, since the interpreter path becomes `/bin/bash\r`) and had
++lost its executable permission bit, both typical artifacts of a cross-machine
++merge/checkout.
++
++**Fix:** converted line endings to LF (`sed -i 's/\r$//'`) and restored the
++executable bit (`chmod +x scripts/run_checks.sh`).
++
++## Result
++
++```
++$ make test
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++...                                                                      [100%]
++3 passed in 0.01s
++```
++
++`make test` now exits 0, running the same `check` target (config validation)
++followed by the same `pytest` suite — no checks were removed or bypassed.
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"

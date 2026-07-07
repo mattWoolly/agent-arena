@@ -1,0 +1,34 @@
+{
+  "model": "claude-haiku-4-5",
+  "wall_seconds": 19.2,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Read": 5,
+    "Bash": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.04075825,
+  "num_turns": 9,
+  "duration_ms": 18209,
+  "duration_api_ms": 18983,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 48,
+  "output_tokens": 1415,
+  "cache_read_tokens": 165355,
+  "final_message": "Done. I've identified 6 real defects introduced by this diff:\n\n1. **Pagination bug** (sync.py:14) \u2014 incomplete final page skipped when records don't divide evenly\n2. **Mutable default argument** (sync.py:24) \u2014 `seen=[]` persists across calls, breaking dedup semantics\n3. **SQL injection** (sync.py:35) \u2014 f-string interpolation directly in query instead of parameterized values\n4. **Silent error suppression** (sync.py:39) \u2014 bare `pass` hides all exceptions, removing observability\n5. **File leak on early return** (report.py:5) \u2014 file opened but not closed when `not users` returns early\n6. **IndexError on missing email format** (report.py:11) \u2014 assumes \"@\" in email but schema allows null/invalid emails",
+  "run_env": {
+    "cli_version": "2.1.202 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T20:54:48Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 6 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

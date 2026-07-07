@@ -1,0 +1,33 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 48.6,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "total_cost_usd": 0.36702049999999997,
+  "num_turns": 5,
+  "duration_ms": 47653,
+  "duration_api_ms": 48081,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2820,
+  "output_tokens": 2421,
+  "cache_read_tokens": 102501,
+  "final_message": "Both files are done and verified against every constraint.\n\n**summary.json** \u2014 computed directly from the 30 rows in `data/sales.csv`:\n- total_revenue: 7154.44\n- orders: 30\n- median_order_value: 204.94 (mean of the two middle values, even count)\n- top_product_by_revenue: \"Gadget\" ($2,392.00 vs Widget's $2,118.94)\n- revenue_by_region: North 2176.35, East 1830.79, South 1732.48, West 1414.82\n\n**REPORT.md** \u2014 213 words with exactly the four required H2 headings in order and no others. The Overview states total revenue as `$7,154.44` and 30 orders; Recommendations has exactly three bullets (20, 18, and 20 words), each grounded in computed figures (West's revenue gap, East's revenue-per-unit, Sprocket's volume-vs-revenue mismatch). A verification script confirmed the heading list, word count, bullet counts, the absence of all five banned words (case-insensitive), and that summary.json has exactly the five required keys. No git commits were made.",
+  "run_env": {
+    "cli_version": "2.1.203 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T21:12:04Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

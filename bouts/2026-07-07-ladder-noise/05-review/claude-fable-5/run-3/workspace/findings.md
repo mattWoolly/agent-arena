@@ -1,0 +1,7 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides, so the final partial page is never fetched — 250 staged rows yields only 200, and any total under 100 returns no rows at all.
+- src/sync.py:17 Paging with LIMIT/OFFSET but no ORDER BY relies on unspecified row order, so consecutive pages can overlap or skip rows.
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across calls, so a user synced in one `sync_users` call is silently skipped in every later call and their update is dropped.
+- src/sync.py:35 The email and id are interpolated into the UPDATE via f-string instead of bound parameters, creating a SQL injection vulnerability and breaking on any email containing a single quote.
+- src/sync.py:38 Per-user sync failures are now swallowed by `except Exception: pass` (previously `log.exception`), so errors — including the quote-in-email breakage above — go completely unreported.
+- src/report.py:5 The report file is opened without a context manager and is never closed on the empty-`users` early return or when a write raises, leaking the handle (and the early return still truncates the existing report to an empty file).
+- src/report.py:11 `user["email"].lower()` raises AttributeError for NULL emails, which db.py documents as a valid state the old code handled with `or "unverified"` (and `split("@")[1]` raises IndexError if the email lacks an "@").

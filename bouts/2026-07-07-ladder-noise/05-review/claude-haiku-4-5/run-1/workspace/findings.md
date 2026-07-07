@@ -1,0 +1,5 @@
+- src/sync.py:14 Loop does not include the last page if total_count is not divisible by PAGE_SIZE, skipping remaining users
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across all function calls, causing duplicate detection to persist across invocations
+- src/sync.py:35 SQL injection vulnerability: email and id are interpolated directly into query string instead of using parameterized query
+- src/report.py:5 Resource leak: file opened without context manager and not closed if early return occurs on line 7
+- src/report.py:11 Potential IndexError: user["email"] can be None per db.py schema, causing .split("@")[1] to fail

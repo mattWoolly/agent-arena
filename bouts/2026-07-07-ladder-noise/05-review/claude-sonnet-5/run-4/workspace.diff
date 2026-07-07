@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..ee43815
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` uses floor division, so the final partial page is never fetched (and if `total_count < PAGE_SIZE` no rows are fetched at all), silently dropping staged users.
++- src/sync.py:24 `sync_users(users, seen=[])` uses a mutable default argument, so `seen` persists across calls and permanently skips re-syncing any user id ever seen in a prior invocation, not just within the current batch.
++- src/sync.py:35 the UPDATE statement is built with an f-string interpolating the unescaped `email` value directly into SQL, introducing a SQL injection vulnerability (previously parameterized).
++- src/sync.py:38 `except Exception: pass` silently swallows sync failures with no logging, losing all visibility into failed syncs (previously logged via `log.exception`).
++- src/report.py:5 the file handle from `open(path, "w")` is never closed when `users` is empty (the early `return 0` skips `f.close()`), leaking the file descriptor.
++- src/report.py:11 `user["email"].lower()` is called without a None check, but db.py documents `email` as nullable for phone-invited unverified users, so this raises an AttributeError/crashes the report for such users (previously handled via `user["email"] or "unverified"`).

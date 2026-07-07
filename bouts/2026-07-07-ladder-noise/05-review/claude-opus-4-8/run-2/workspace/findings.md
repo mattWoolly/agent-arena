@@ -1,0 +1,6 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` uses integer division so the final partial page is never fetched, and when total_count < PAGE_SIZE no page is fetched at all, silently dropping staged users.
+- src/sync.py:24 mutable default argument `seen=[]` is shared across all calls, so IDs synced in one invocation persist and are wrongly skipped in later invocations.
+- src/sync.py:35 replacing the parameterized UPDATE with an f-string introduces SQL injection and breaks on emails containing a single quote.
+- src/sync.py:38 `except Exception: pass` silently swallows sync failures that were previously logged via `log.exception`, hiding errors.
+- src/report.py:5 file is opened without a `with`/try-finally, so the early `return 0` when users is empty (and any exception in the loop) leaks the open file handle.
+- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is None (email is nullable per db.py) and IndexError for emails lacking an "@".

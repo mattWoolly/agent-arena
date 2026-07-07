@@ -1,0 +1,5 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` uses floor division, so any trailing partial page is never fetched, and if `total_count < PAGE_SIZE` the loop runs zero times and no staged users are fetched at all.
+- src/sync.py:24 `seen=[]` is a mutable default argument, so the dedupe list persists across separate calls to `sync_users`, permanently skipping any user id synced in a prior call instead of only deduping within the current batch.
+- src/sync.py:35 the UPDATE statement is built with an f-string instead of parameterized query, introducing a SQL injection vulnerability via `email` (and breaking on any legitimate email containing a single quote).
+- src/report.py:7 when `users` is empty the function returns before calling `f.close()`, leaking the file handle opened on line 5.
+- src/report.py:11 `user["email"].lower()` is called without a null check even though db.py documents that `email` can be NULL for phone-invited users, so report generation crashes with AttributeError on any such user.

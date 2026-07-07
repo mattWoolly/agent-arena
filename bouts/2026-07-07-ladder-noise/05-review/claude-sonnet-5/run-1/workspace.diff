@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..744261a
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:35 SQL injection: email and id are interpolated directly into the UPDATE string via f-string instead of using bound parameters (the previous parameterized query was removed), so an email containing a quote (or crafted input) can alter the executed SQL.
++- src/sync.py:24 `seen=[]` is a mutable default argument that is created once and persists across all future calls to `sync_users`, so ids synced in one run are permanently remembered and silently skipped in every later run/process lifetime, meaning legitimate re-syncs (e.g. updated emails) of previously-seen users never happen again.
++- src/sync.py:14 Pagination uses `range(total_count // PAGE_SIZE)`, which truncates: any partial final page is never fetched (e.g. total_count=150 only fetches the first 100 rows), and if total_count < PAGE_SIZE the loop body never executes at all, silently dropping all staged users.
++- src/sync.py:38 The bare `except Exception: pass` discards errors that were previously logged via `log.exception`, so failed updates (e.g. rows that fail due to the injected/malformed SQL above) now fail completely silently with no diagnostic trail.
++- src/report.py:5 The file opened at `path` is never closed when `users` is empty (line 6-7 returns before `f.close()`), leaking a file descriptor on every call with an empty user list.
++- src/report.py:11 `user["email"].lower()` assumes email is always a string, but db.py documents `users.email` as nullable ("users invited by phone have no email address until they verify one"); a None email raises AttributeError and crashes report generation (this also skips the `f.close()` on line 13, leaking the file handle on that path too).

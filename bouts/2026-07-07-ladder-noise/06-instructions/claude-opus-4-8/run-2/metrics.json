@@ -1,0 +1,34 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 48.9,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Read": 1,
+    "Bash": 2,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.219816,
+  "num_turns": 6,
+  "duration_ms": 47887,
+  "duration_api_ms": 49151,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2820,
+  "output_tokens": 3663,
+  "cache_read_tokens": 100468,
+  "final_message": "Both files are done and every constraint verifies mechanically.\n\n**`REPORT.md`**\n- Exactly four H2 headings in the required order, no other headings \u2014 \u2713\n- 154 words (\u2264 250) \u2014 \u2713\n- Overview states total revenue as `$7,154.44` and 30 orders \u2014 \u2713\n- Recommendations has exactly 3 bullets (17/15/13 words, each \u2264 25), grounded in the data \u2014 \u2713\n- None of the banned words present \u2014 \u2713\n\n**`summary.json`** \u2014 exactly the five required keys:\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94 (even count \u2192 mean of the two middle orders, 190.00 and 219.89)\n- `top_product_by_revenue`: \"Gadget\" ($2,392.00, the highest)\n- `revenue_by_region`: all four regions \u2014 North 2176.35, South 1732.48, East 1830.79, West 1414.82\n\nAll numbers were computed directly from `data/sales.csv` (30 orders), no commits made, work confined to the current directory.",
+  "run_env": {
+    "cli_version": "2.1.203 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T21:08:37Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

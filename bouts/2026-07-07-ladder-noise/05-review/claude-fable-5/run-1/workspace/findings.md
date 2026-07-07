@@ -1,0 +1,7 @@
+- src/sync.py:14 Floor division `total_count // PAGE_SIZE` skips the final partial page, so up to 99 trailing users are silently dropped (and if total_count < 100, nothing is fetched at all); it needs ceiling division or loop-until-empty.
+- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so any user id synced in a previous `sync_users()` invocation is silently skipped forever in later invocations even when their staged data changed.
+- src/sync.py:35 The UPDATE was changed from bound parameters to an f-string, introducing SQL injection via the email value (and breaking the statement for any email containing a single quote).
+- src/sync.py:39 The `except` block was changed from `log.exception(...)` to `pass`, so per-user sync failures are now silently swallowed with no log or error signal.
+- src/report.py:5 The `with open(...)` context manager was replaced with a bare `open()` and no try/finally, leaking the file handle (and unflushed buffered output) on the early return and whenever the loop raises.
+- src/report.py:7 The early `return 0` runs after the file is opened in "w" mode, so an empty users list truncates the report to an empty file and failures are never reported (the old code always wrote the header including the failure count).
+- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError when email is None (nullable per db.py schema notes; old code used `or "unverified"`) and with IndexError for emails lacking "@", such as the empty strings sync_users writes.

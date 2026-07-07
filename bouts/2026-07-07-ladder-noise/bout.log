@@ -1,0 +1,308 @@
+bout=2026-07-07-ladder-noise models=claude-haiku-4-5 claude-sonnet-5 claude-opus-4-8 claude-fable-5 tasks=01-bugfix 02-synthesis 03-refactor 04-terminal 05-review 06-instructions repeats=5 serial=1
+=== 01-bugfix (run 1/5) ===
+[01-bugfix/claude-haiku-4-5 run-1] starting
+[01-bugfix/claude-haiku-4-5 run-1] done: agent_exit=0 grade_exit=0 wall=21.2s
+[01-bugfix/claude-sonnet-5 run-1] starting
+[01-bugfix/claude-sonnet-5 run-1] done: agent_exit=0 grade_exit=0 wall=33.8s
+[01-bugfix/claude-opus-4-8 run-1] starting
+[01-bugfix/claude-opus-4-8 run-1] done: agent_exit=0 grade_exit=0 wall=39.0s
+[01-bugfix/claude-fable-5 run-1] starting
+[01-bugfix/claude-fable-5 run-1] done: agent_exit=0 grade_exit=0 wall=44.7s
+=== 01-bugfix (run 2/5) ===
+[01-bugfix/claude-sonnet-5 run-2] starting
+[01-bugfix/claude-sonnet-5 run-2] done: agent_exit=0 grade_exit=0 wall=34.6s
+[01-bugfix/claude-opus-4-8 run-2] starting
+[01-bugfix/claude-opus-4-8 run-2] done: agent_exit=0 grade_exit=0 wall=37.6s
+[01-bugfix/claude-fable-5 run-2] starting
+[01-bugfix/claude-fable-5 run-2] done: agent_exit=0 grade_exit=0 wall=47.8s
+[01-bugfix/claude-haiku-4-5 run-2] starting
+[01-bugfix/claude-haiku-4-5 run-2] done: agent_exit=0 grade_exit=0 wall=22.9s
+=== 01-bugfix (run 3/5) ===
+[01-bugfix/claude-opus-4-8 run-3] starting
+[01-bugfix/claude-opus-4-8 run-3] done: agent_exit=0 grade_exit=0 wall=44.0s
+[01-bugfix/claude-fable-5 run-3] starting
+[01-bugfix/claude-fable-5 run-3] done: agent_exit=0 grade_exit=0 wall=49.1s
+[01-bugfix/claude-haiku-4-5 run-3] starting
+[01-bugfix/claude-haiku-4-5 run-3] done: agent_exit=0 grade_exit=0 wall=20.9s
+[01-bugfix/claude-sonnet-5 run-3] starting
+[01-bugfix/claude-sonnet-5 run-3] done: agent_exit=0 grade_exit=0 wall=39.6s
+=== 01-bugfix (run 4/5) ===
+[01-bugfix/claude-fable-5 run-4] starting
+[01-bugfix/claude-fable-5 run-4] done: agent_exit=0 grade_exit=0 wall=51.2s
+[01-bugfix/claude-haiku-4-5 run-4] starting
+[01-bugfix/claude-haiku-4-5 run-4] done: agent_exit=0 grade_exit=0 wall=20.6s
+[01-bugfix/claude-sonnet-5 run-4] starting
+[01-bugfix/claude-sonnet-5 run-4] done: agent_exit=0 grade_exit=0 wall=32.9s
+[01-bugfix/claude-opus-4-8 run-4] starting
+[01-bugfix/claude-opus-4-8 run-4] done: agent_exit=0 grade_exit=0 wall=35.0s
+=== 01-bugfix (run 5/5) ===
+[01-bugfix/claude-haiku-4-5 run-5] starting
+[01-bugfix/claude-haiku-4-5 run-5] done: agent_exit=0 grade_exit=0 wall=23.0s
+[01-bugfix/claude-sonnet-5 run-5] starting
+[01-bugfix/claude-sonnet-5 run-5] done: agent_exit=0 grade_exit=0 wall=31.4s
+[01-bugfix/claude-opus-4-8 run-5] starting
+[01-bugfix/claude-opus-4-8 run-5] done: agent_exit=0 grade_exit=0 wall=37.5s
+[01-bugfix/claude-fable-5 run-5] starting
+[01-bugfix/claude-fable-5 run-5] done: agent_exit=0 grade_exit=0 wall=44.4s
+=== 02-synthesis (run 1/5) ===
+[02-synthesis/claude-haiku-4-5 run-1] starting
+[02-synthesis/claude-haiku-4-5 run-1] done: agent_exit=0 grade_exit=0 wall=44.5s
+[02-synthesis/claude-sonnet-5 run-1] starting
+[02-synthesis/claude-sonnet-5 run-1] done: agent_exit=0 grade_exit=0 wall=68.2s
+[02-synthesis/claude-opus-4-8 run-1] starting
+[02-synthesis/claude-opus-4-8 run-1] done: agent_exit=0 grade_exit=0 wall=111.8s
+[02-synthesis/claude-fable-5 run-1] starting
+[02-synthesis/claude-fable-5 run-1] done: agent_exit=0 grade_exit=0 wall=64.3s
+=== 02-synthesis (run 2/5) ===
+[02-synthesis/claude-sonnet-5 run-2] starting
+[02-synthesis/claude-sonnet-5 run-2] done: agent_exit=0 grade_exit=0 wall=74.2s
+[02-synthesis/claude-opus-4-8 run-2] starting
+[02-synthesis/claude-opus-4-8 run-2] done: agent_exit=0 grade_exit=0 wall=75.2s
+[02-synthesis/claude-fable-5 run-2] starting
+[02-synthesis/claude-fable-5 run-2] done: agent_exit=0 grade_exit=0 wall=102.3s
+[02-synthesis/claude-haiku-4-5 run-2] starting
+[02-synthesis/claude-haiku-4-5 run-2] done: agent_exit=0 grade_exit=0 wall=76.6s
+=== 02-synthesis (run 3/5) ===
+[02-synthesis/claude-opus-4-8 run-3] starting
+[02-synthesis/claude-opus-4-8 run-3] done: agent_exit=0 grade_exit=0 wall=87.5s
+[02-synthesis/claude-fable-5 run-3] starting
+[02-synthesis/claude-fable-5 run-3] done: agent_exit=0 grade_exit=0 wall=90.6s
+[02-synthesis/claude-haiku-4-5 run-3] starting
+[02-synthesis/claude-haiku-4-5 run-3] done: agent_exit=0 grade_exit=0 wall=66.9s
+[02-synthesis/claude-sonnet-5 run-3] starting
+[02-synthesis/claude-sonnet-5 run-3] done: agent_exit=0 grade_exit=0 wall=71.4s
+=== 02-synthesis (run 4/5) ===
+[02-synthesis/claude-fable-5 run-4] starting
+[02-synthesis/claude-fable-5 run-4] done: agent_exit=0 grade_exit=0 wall=88.3s
+[02-synthesis/claude-haiku-4-5 run-4] starting
+[02-synthesis/claude-haiku-4-5 run-4] done: agent_exit=0 grade_exit=0 wall=76.6s
+[02-synthesis/claude-sonnet-5 run-4] starting
+[02-synthesis/claude-sonnet-5 run-4] done: agent_exit=0 grade_exit=0 wall=75.6s
+[02-synthesis/claude-opus-4-8 run-4] starting
+[02-synthesis/claude-opus-4-8 run-4] done: agent_exit=0 grade_exit=0 wall=130.5s
+=== 02-synthesis (run 5/5) ===
+[02-synthesis/claude-haiku-4-5 run-5] starting
+[02-synthesis/claude-haiku-4-5 run-5] done: agent_exit=0 grade_exit=0 wall=50.9s
+[02-synthesis/claude-sonnet-5 run-5] starting
+[02-synthesis/claude-sonnet-5 run-5] done: agent_exit=0 grade_exit=0 wall=59.8s
+[02-synthesis/claude-opus-4-8 run-5] starting
+[02-synthesis/claude-opus-4-8 run-5] done: agent_exit=0 grade_exit=0 wall=182.9s
+[02-synthesis/claude-fable-5 run-5] starting
+[02-synthesis/claude-fable-5 run-5] done: agent_exit=0 grade_exit=0 wall=91.8s
+=== 03-refactor (run 1/5) ===
+[03-refactor/claude-haiku-4-5 run-1] starting
+[03-refactor/claude-haiku-4-5 run-1] done: agent_exit=0 grade_exit=0 wall=28.8s
+[03-refactor/claude-sonnet-5 run-1] starting
+[03-refactor/claude-sonnet-5 run-1] done: agent_exit=0 grade_exit=0 wall=28.9s
+[03-refactor/claude-opus-4-8 run-1] starting
+[03-refactor/claude-opus-4-8 run-1] done: agent_exit=0 grade_exit=0 wall=52.4s
+[03-refactor/claude-fable-5 run-1] starting
+[03-refactor/claude-fable-5 run-1] done: agent_exit=0 grade_exit=0 wall=48.4s
+=== 03-refactor (run 2/5) ===
+[03-refactor/claude-sonnet-5 run-2] starting
+[03-refactor/claude-sonnet-5 run-2] done: agent_exit=0 grade_exit=0 wall=32.7s
+[03-refactor/claude-opus-4-8 run-2] starting
+[03-refactor/claude-opus-4-8 run-2] done: agent_exit=0 grade_exit=0 wall=37.7s
+[03-refactor/claude-fable-5 run-2] starting
+[03-refactor/claude-fable-5 run-2] done: agent_exit=0 grade_exit=0 wall=55.1s
+[03-refactor/claude-haiku-4-5 run-2] starting
+[03-refactor/claude-haiku-4-5 run-2] done: agent_exit=0 grade_exit=0 wall=42.4s
+=== 03-refactor (run 3/5) ===
+[03-refactor/claude-opus-4-8 run-3] starting
+[03-refactor/claude-opus-4-8 run-3] done: agent_exit=0 grade_exit=0 wall=40.7s
+[03-refactor/claude-fable-5 run-3] starting
+[03-refactor/claude-fable-5 run-3] done: agent_exit=0 grade_exit=0 wall=56.3s
+[03-refactor/claude-haiku-4-5 run-3] starting
+[03-refactor/claude-haiku-4-5 run-3] done: agent_exit=0 grade_exit=0 wall=34.1s
+[03-refactor/claude-sonnet-5 run-3] starting
+[03-refactor/claude-sonnet-5 run-3] done: agent_exit=0 grade_exit=0 wall=28.3s
+=== 03-refactor (run 4/5) ===
+[03-refactor/claude-fable-5 run-4] starting
+[03-refactor/claude-fable-5 run-4] done: agent_exit=0 grade_exit=0 wall=56.0s
+[03-refactor/claude-haiku-4-5 run-4] starting
+[03-refactor/claude-haiku-4-5 run-4] done: agent_exit=0 grade_exit=0 wall=36.8s
+[03-refactor/claude-sonnet-5 run-4] starting
+[03-refactor/claude-sonnet-5 run-4] done: agent_exit=0 grade_exit=0 wall=32.8s
+[03-refactor/claude-opus-4-8 run-4] starting
+[03-refactor/claude-opus-4-8 run-4] done: agent_exit=0 grade_exit=0 wall=44.2s
+=== 03-refactor (run 5/5) ===
+[03-refactor/claude-haiku-4-5 run-5] starting
+[03-refactor/claude-haiku-4-5 run-5] done: agent_exit=0 grade_exit=0 wall=36.2s
+[03-refactor/claude-sonnet-5 run-5] starting
+[03-refactor/claude-sonnet-5 run-5] done: agent_exit=0 grade_exit=0 wall=38.3s
+[03-refactor/claude-opus-4-8 run-5] starting
+[03-refactor/claude-opus-4-8 run-5] done: agent_exit=0 grade_exit=0 wall=45.9s
+[03-refactor/claude-fable-5 run-5] starting
+[03-refactor/claude-fable-5 run-5] done: agent_exit=0 grade_exit=0 wall=55.7s
+=== 04-terminal (run 1/5) ===
+[04-terminal/claude-haiku-4-5 run-1] starting
+[04-terminal/claude-haiku-4-5 run-1] done: agent_exit=0 grade_exit=0 wall=37.7s
+[04-terminal/claude-sonnet-5 run-1] starting
+[04-terminal/claude-sonnet-5 run-1] done: agent_exit=0 grade_exit=0 wall=61.2s
+[04-terminal/claude-opus-4-8 run-1] starting
+[04-terminal/claude-opus-4-8 run-1] done: agent_exit=0 grade_exit=0 wall=97.1s
+[04-terminal/claude-fable-5 run-1] starting
+[04-terminal/claude-fable-5 run-1] done: agent_exit=0 grade_exit=0 wall=91.9s
+=== 04-terminal (run 2/5) ===
+[04-terminal/claude-sonnet-5 run-2] starting
+[04-terminal/claude-sonnet-5 run-2] done: agent_exit=0 grade_exit=0 wall=59.3s
+[04-terminal/claude-opus-4-8 run-2] starting
+[04-terminal/claude-opus-4-8 run-2] done: agent_exit=0 grade_exit=0 wall=93.9s
+[04-terminal/claude-fable-5 run-2] starting
+[04-terminal/claude-fable-5 run-2] done: agent_exit=0 grade_exit=0 wall=92.3s
+[04-terminal/claude-haiku-4-5 run-2] starting
+[04-terminal/claude-haiku-4-5 run-2] done: agent_exit=0 grade_exit=0 wall=39.2s
+=== 04-terminal (run 3/5) ===
+[04-terminal/claude-opus-4-8 run-3] starting
+[04-terminal/claude-opus-4-8 run-3] done: agent_exit=0 grade_exit=0 wall=78.3s
+[04-terminal/claude-fable-5 run-3] starting
+[04-terminal/claude-fable-5 run-3] done: agent_exit=0 grade_exit=0 wall=89.1s
+[04-terminal/claude-haiku-4-5 run-3] starting
+[04-terminal/claude-haiku-4-5 run-3] done: agent_exit=0 grade_exit=0 wall=46.0s
+[04-terminal/claude-sonnet-5 run-3] starting
+[04-terminal/claude-sonnet-5 run-3] done: agent_exit=0 grade_exit=0 wall=57.1s
+=== 04-terminal (run 4/5) ===
+[04-terminal/claude-fable-5 run-4] starting
+[04-terminal/claude-fable-5 run-4] done: agent_exit=0 grade_exit=0 wall=80.3s
+[04-terminal/claude-haiku-4-5 run-4] starting
+[04-terminal/claude-haiku-4-5 run-4] done: agent_exit=0 grade_exit=0 wall=44.3s
+[04-terminal/claude-sonnet-5 run-4] starting
+[04-terminal/claude-sonnet-5 run-4] done: agent_exit=0 grade_exit=0 wall=76.6s
+[04-terminal/claude-opus-4-8 run-4] starting
+[04-terminal/claude-opus-4-8 run-4] done: agent_exit=0 grade_exit=0 wall=84.6s
+=== 04-terminal (run 5/5) ===
+[04-terminal/claude-haiku-4-5 run-5] starting
+[04-terminal/claude-haiku-4-5 run-5] done: agent_exit=0 grade_exit=0 wall=40.8s
+[04-terminal/claude-sonnet-5 run-5] starting
+[04-terminal/claude-sonnet-5 run-5] done: agent_exit=0 grade_exit=0 wall=54.0s
+[04-terminal/claude-opus-4-8 run-5] starting
+[04-terminal/claude-opus-4-8 run-5] done: agent_exit=0 grade_exit=0 wall=108.5s
+[04-terminal/claude-fable-5 run-5] starting
+[04-terminal/claude-fable-5 run-5] done: agent_exit=0 grade_exit=0 wall=110.9s
+=== 05-review (run 1/5) ===
+[05-review/claude-haiku-4-5 run-1] starting
+[05-review/claude-haiku-4-5 run-1] done: agent_exit=0 grade_exit=0 wall=13.6s
+[05-review/claude-sonnet-5 run-1] starting
+[05-review/claude-sonnet-5 run-1] done: agent_exit=0 grade_exit=0 wall=85.5s
+[05-review/claude-opus-4-8 run-1] starting
+[05-review/claude-opus-4-8 run-1] done: agent_exit=0 grade_exit=0 wall=73.1s
+[05-review/claude-fable-5 run-1] starting
+[05-review/claude-fable-5 run-1] done: agent_exit=0 grade_exit=0 wall=111.4s
+=== 05-review (run 2/5) ===
+[05-review/claude-sonnet-5 run-2] starting
+[05-review/claude-sonnet-5 run-2] done: agent_exit=0 grade_exit=0 wall=95.9s
+[05-review/claude-opus-4-8 run-2] starting
+[05-review/claude-opus-4-8 run-2] done: agent_exit=0 grade_exit=0 wall=75.0s
+[05-review/claude-fable-5 run-2] starting
+[05-review/claude-fable-5 run-2] done: agent_exit=0 grade_exit=0 wall=90.0s
+[05-review/claude-haiku-4-5 run-2] starting
+[05-review/claude-haiku-4-5 run-2] done: agent_exit=0 grade_exit=0 wall=17.1s
+=== 05-review (run 3/5) ===
+[05-review/claude-opus-4-8 run-3] starting
+[05-review/claude-opus-4-8 run-3] done: agent_exit=0 grade_exit=0 wall=78.4s
+[05-review/claude-fable-5 run-3] starting
+[05-review/claude-fable-5 run-3] done: agent_exit=0 grade_exit=0 wall=105.5s
+[05-review/claude-haiku-4-5 run-3] starting
+[05-review/claude-haiku-4-5 run-3] done: agent_exit=0 grade_exit=0 wall=14.9s
+[05-review/claude-sonnet-5 run-3] starting
+[05-review/claude-sonnet-5 run-3] done: agent_exit=0 grade_exit=0 wall=64.2s
+=== 05-review (run 4/5) ===
+[05-review/claude-fable-5 run-4] starting
+[05-review/claude-fable-5 run-4] done: agent_exit=0 grade_exit=0 wall=69.1s
+[05-review/claude-haiku-4-5 run-4] starting
+[05-review/claude-haiku-4-5 run-4] done: agent_exit=0 grade_exit=0 wall=19.2s
+[05-review/claude-sonnet-5 run-4] starting
+[05-review/claude-sonnet-5 run-4] done: agent_exit=0 grade_exit=0 wall=71.1s
+[05-review/claude-opus-4-8 run-4] starting
+[05-review/claude-opus-4-8 run-4] done: agent_exit=0 grade_exit=0 wall=176.6s
+=== 05-review (run 5/5) ===
+[05-review/claude-haiku-4-5 run-5] starting
+[05-review/claude-haiku-4-5 run-5] done: agent_exit=0 grade_exit=0 wall=19.2s
+[05-review/claude-sonnet-5 run-5] starting
+[05-review/claude-sonnet-5 run-5] done: agent_exit=0 grade_exit=0 wall=96.2s
+[05-review/claude-opus-4-8 run-5] starting
+[05-review/claude-opus-4-8 run-5] done: agent_exit=0 grade_exit=0 wall=84.3s
+[05-review/claude-fable-5 run-5] starting
+[05-review/claude-fable-5 run-5] done: agent_exit=0 grade_exit=0 wall=95.3s
+=== 06-instructions (run 1/5) ===
+[06-instructions/claude-haiku-4-5 run-1] starting
+[06-instructions/claude-haiku-4-5 run-1] done: agent_exit=0 grade_exit=1 wall=14.6s
+[06-instructions/claude-sonnet-5 run-1] starting
+[06-instructions/claude-sonnet-5 run-1] done: agent_exit=0 grade_exit=0 wall=39.5s
+[06-instructions/claude-opus-4-8 run-1] starting
+[06-instructions/claude-opus-4-8 run-1] done: agent_exit=0 grade_exit=0 wall=105.6s
+[06-instructions/claude-fable-5 run-1] starting
+[06-instructions/claude-fable-5 run-1] done: agent_exit=0 grade_exit=0 wall=56.8s
+=== 06-instructions (run 2/5) ===
+[06-instructions/claude-sonnet-5 run-2] starting
+[06-instructions/claude-sonnet-5 run-2] done: agent_exit=0 grade_exit=0 wall=46.9s
+[06-instructions/claude-opus-4-8 run-2] starting
+[06-instructions/claude-opus-4-8 run-2] done: agent_exit=0 grade_exit=0 wall=48.9s
+[06-instructions/claude-fable-5 run-2] starting
+[06-instructions/claude-fable-5 run-2] done: agent_exit=0 grade_exit=0 wall=54.8s
+[06-instructions/claude-haiku-4-5 run-2] starting
+[06-instructions/claude-haiku-4-5 run-2] done: agent_exit=0 grade_exit=1 wall=13.4s
+=== 06-instructions (run 3/5) ===
+[06-instructions/claude-opus-4-8 run-3] starting
+[06-instructions/claude-opus-4-8 run-3] done: agent_exit=0 grade_exit=0 wall=88.5s
+[06-instructions/claude-fable-5 run-3] starting
+[06-instructions/claude-fable-5 run-3] done: agent_exit=0 grade_exit=0 wall=48.6s
+[06-instructions/claude-haiku-4-5 run-3] starting
+[06-instructions/claude-haiku-4-5 run-3] done: agent_exit=0 grade_exit=0 wall=18.2s
+[06-instructions/claude-sonnet-5 run-3] starting
+[06-instructions/claude-sonnet-5 run-3] done: agent_exit=0 grade_exit=0 wall=41.5s
+=== 06-instructions (run 4/5) ===
+[06-instructions/claude-fable-5 run-4] starting
+[06-instructions/claude-fable-5 run-4] done: agent_exit=0 grade_exit=0 wall=56.7s
+[06-instructions/claude-haiku-4-5 run-4] starting
+[06-instructions/claude-haiku-4-5 run-4] done: agent_exit=0 grade_exit=0 wall=18.1s
+[06-instructions/claude-sonnet-5 run-4] starting
+[06-instructions/claude-sonnet-5 run-4] done: agent_exit=0 grade_exit=0 wall=40.8s
+[06-instructions/claude-opus-4-8 run-4] starting
+[06-instructions/claude-opus-4-8 run-4] done: agent_exit=0 grade_exit=0 wall=101.2s
+=== 06-instructions (run 5/5) ===
+[06-instructions/claude-haiku-4-5 run-5] starting
+[06-instructions/claude-haiku-4-5 run-5] done: agent_exit=0 grade_exit=0 wall=23.4s
+[06-instructions/claude-sonnet-5 run-5] starting
+[06-instructions/claude-sonnet-5 run-5] done: agent_exit=0 grade_exit=0 wall=68.1s
+[06-instructions/claude-opus-4-8 run-5] starting
+[06-instructions/claude-opus-4-8 run-5] done: agent_exit=0 grade_exit=0 wall=112.6s
+[06-instructions/claude-fable-5 run-5] starting
+[06-instructions/claude-fable-5 run-5] done: agent_exit=0 grade_exit=0 wall=50.9s
+# Bout results: 2026-07-07-ladder-noise
+
+| task | model | pass | score | wall(s) | cost($) | turns | out-tok | cache-read-tok |
+|---|---|---|---|---|---|---|---|---|
+| 01-bugfix | claude-fable-5 | 5/5 | 3/3 | 47 ±3 | 0.35 ±0.00 | 7.2 ±0.4 | 1555 ±48 | 127923 ±422 |
+| 01-bugfix | claude-haiku-4-5 | 5/5 | 3/3 | 22 ±1 | 0.04 ±0.00 | 10.6 ±1.1 | 1858 ±142 | 175352 ±22663 |
+| 01-bugfix | claude-opus-4-8 | 5/5 | 3/3 | 39 ±3 | 0.20 ±0.01 | 7.8 ±0.8 | 2587 ±310 | 123344 ±650 |
+| 01-bugfix | claude-sonnet-5 | 5/5 | 3/3 | 34 ±3 | 0.15 ±0.00 | 10.4 ±0.5 | 2349 ±195 | 228123 ±484 |
+| 02-synthesis | claude-fable-5 | 5/5 | 6/6 | 87 ±14 | 0.61 ±0.07 | 8.0 ±2.2 | 5037 ±387 | 179860 ±55072 |
+| 02-synthesis | claude-haiku-4-5 | 5/5 | 6/6 | 63 ±15 | 0.10 ±0.02 | 13.8 ±3.0 | 7241 ±2132 | 380939 ±99575 |
+| 02-synthesis | claude-opus-4-8 | 5/5 | 6/6 | 118 ±42 | 0.33 ±0.03 | 4.2 ±0.4 | 7712 ±865 | 86333 ±12797 |
+| 02-synthesis | claude-sonnet-5 | 5/5 | 6/6 | 70 ±6 | 0.25 ±0.02 | 6.6 ±0.9 | 7171 ±847 | 231489 ±36057 |
+| 03-refactor | claude-fable-5 | 5/5 | 4/4 | 54 ±3 | 0.44 ±0.03 | 13.2 ±1.1 | 2544 ±213 | 149387 ±11433 |
+| 03-refactor | claude-haiku-4-5 | 5/5 | 4/4 | 36 ±5 | 0.06 ±0.00 | 14.0 ±1.0 | 2899 ±150 | 252623 ±19221 |
+| 03-refactor | claude-opus-4-8 | 5/5 | 4/4 | 44 ±6 | 0.22 ±0.02 | 13.4 ±0.5 | 2542 ±253 | 156219 ±13520 |
+| 03-refactor | claude-sonnet-5 | 5/5 | 4/4 | 32 ±4 | 0.16 ±0.01 | 13.6 ±0.5 | 2254 ±257 | 250104 ±19816 |
+| 04-terminal | claude-fable-5 | 5/5 | 4/4 | 93 ±11 | 0.72 ±0.07 | 17.4 ±0.5 | 4046 ±404 | 331606 ±48353 |
+| 04-terminal | claude-haiku-4-5 | 5/5 | 4/4 | 42 ±3 | 0.08 ±0.01 | 20.6 ±1.8 | 2739 ±157 | 476025 ±67844 |
+| 04-terminal | claude-opus-4-8 | 5/5 | 4/4 | 92 ±12 | 0.40 ±0.05 | 16.4 ±4.3 | 5334 ±409 | 332374 ±79537 |
+| 04-terminal | claude-sonnet-5 | 5/5 | 4/4 | 62 ±9 | 0.31 ±0.04 | 22.0 ±1.9 | 3875 ±220 | 629062 ±98096 |
+| 05-review | claude-fable-5 | 5/5 | 6/6 | 94 ±16 | 0.59 ±0.08 | 7.6 ±0.5 | 5804 ±1227 | 98605 ±15962 |
+| 05-review | claude-haiku-4-5 | 5/5 | 6/6 | 17 ±3 | 0.03 ±0.00 | 7.6 ±0.9 | 1340 ±199 | 114625 ±35365 |
+| 05-review | claude-opus-4-8 | 5/5 | 6/6 | 97 ±44 | 0.29 ±0.02 | 7.6 ±0.5 | 5670 ±363 | 99067 ±22425 |
+| 05-review | claude-sonnet-5 | 5/5 | 6/6 | 83 ±15 | 0.23 ±0.02 | 8.6 ±0.5 | 7021 ±1202 | 173507 ±19507 |
+| 06-instructions | claude-fable-5 | 5/5 | 6/6 | 54 ±4 | 0.40 ±0.04 | 5.4 ±0.5 | 2842 ±496 | 112328 ±12981 |
+| 06-instructions | claude-haiku-4-5 | 3/5 | 4/6, 6/6 | 18 ±4 | 0.03 ±0.01 | 4.6 ±0.5 | 1582 ±671 | 99539 ±14534 |
+| 06-instructions | claude-opus-4-8 | 5/5 | 6/6 | 91 ±25 | 0.29 ±0.10 | 7.2 ±2.4 | 5120 ±2002 | 151600 ±68212 |
+| 06-instructions | claude-sonnet-5 | 5/5 | 6/6 | 47 ±12 | 0.20 ±0.03 | 8.2 ±1.3 | 3931 ±929 | 272682 ±50008 |
+
+- **claude-fable-5**: 30/30 runs passed; per pass-through of all tasks: ~$3.13, ~430s wall
+- **claude-haiku-4-5**: 28/30 runs passed; per pass-through of all tasks: ~$0.35, ~196s wall
+- **claude-opus-4-8**: 30/30 runs passed; per pass-through of all tasks: ~$1.72, ~482s wall
+- **claude-sonnet-5**: 30/30 runs passed; per pass-through of all tasks: ~$1.30, ~328s wall
+
+- env: `2.1.202 (Claude Code)`, effort=`xhigh`, setting-sources=`project`
+- env: `2.1.203 (Claude Code)`, effort=`xhigh`, setting-sources=`project`
+BOUT COMPLETE: /home/mwoolly/projects/agent-arena/bouts/2026-07-07-ladder-noise

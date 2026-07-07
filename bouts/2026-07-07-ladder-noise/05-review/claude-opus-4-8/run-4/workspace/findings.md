@@ -1,0 +1,6 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` uses floor division, so the final partial page is never fetched and any total_count below PAGE_SIZE (e.g. 50) fetches zero users.
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across calls, so IDs synced in one call are silently skipped on all later calls that omit `seen`.
+- src/sync.py:35 Email and id are interpolated straight into the SQL via f-string, creating a SQL-injection hole and breaking on any email containing a quote (e.g. o'brien@example.com).
+- src/sync.py:39 `except Exception: pass` silently swallows sync failures that were previously logged via `log.exception`, hiding errors and data loss.
+- src/report.py:7 The early `return 0` on empty users returns after `open(path, "w")` without closing the handle (no `with`), leaking the file object and truncating the file.
+- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is None (email is NULLABLE per db.py) and IndexError on any email lacking an '@'.

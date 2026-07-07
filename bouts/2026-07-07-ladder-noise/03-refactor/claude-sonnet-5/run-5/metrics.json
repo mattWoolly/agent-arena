@@ -1,0 +1,35 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 38.3,
+  "agent_exit": 0,
+  "assistant_messages": 19,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 2
+  },
+  "tool_calls_total": 13,
+  "total_cost_usd": 0.17026610000000003,
+  "num_turns": 14,
+  "duration_ms": 37274,
+  "duration_api_ms": 38343,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 16,
+  "output_tokens": 2642,
+  "cache_read_tokens": 264787,
+  "final_message": "Everything works: unknown keys raise `ValueError`, `Config` is frozen, and defaults/overrides behave as before.\n\nSummary of changes:\n- `reportgen/config.py`: replaced the `DEFAULTS` dict with a frozen `Config` dataclass (same fields/defaults); `load_config` now validates JSON keys against `Config` fields and raises `ValueError` for unknown ones, returning a `Config` instance.\n- `reportgen/formatter.py` and `reportgen/loader.py`: switched from `config[...]` subscripting to `config.attr` access.\n- `reportgen/main.py`: unchanged (already just passed `config` through).\n- `tests/` untouched; all 4 tests pass.",
+  "run_env": {
+    "cli_version": "2.1.202 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T20:13:13Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

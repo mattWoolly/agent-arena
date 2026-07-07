@@ -1,0 +1,33 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 50.9,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "total_cost_usd": 0.368664,
+  "num_turns": 5,
+  "duration_ms": 49957,
+  "duration_api_ms": 50777,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2820,
+  "output_tokens": 2461,
+  "cache_read_tokens": 102657,
+  "final_message": "Both files are done and verified against every constraint.\n\n**`summary.json`** \u2014 computed directly from the 30 rows in `data/sales.csv`:\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94 (mean of the two middle values, since the count is even)\n- `top_product_by_revenue`: \"Gadget\" ($2,392.00, edging out Widget's $2,118.94)\n- `revenue_by_region`: North 2176.35, South 1732.48, East 1830.79, West 1414.82\n\n**`REPORT.md`** \u2014 mechanical checks pass:\n- Exactly the four required H2 headings, in order, and no other headings anywhere\n- 188 words total (under the 250 limit)\n- Overview states `$7,154.44` in the exact required format plus the 30-order count\n- Recommendations has exactly three `- ` bullets at 18, 14, and 18 words, each tied to specific figures from the data\n- Zero matches for the banned words (checked case-insensitively, including as substrings)\n\nNo commits were made and all work stayed in the current directory.",
+  "run_env": {
+    "cli_version": "2.1.203 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T21:20:56Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}
