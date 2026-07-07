@@ -3,7 +3,9 @@
 - **README moves with the code.** Any change to `bin/` or `tasks/` that adds,
   removes, or alters a flag, env var, artifact, or user-visible behavior must
   update README.md in the same commit. Before committing, diff your staged
-  changes against what README.md documents.
+  changes against what README.md documents. A pre-commit hook enforces this
+  (enable per clone: `git config core.hooksPath .githooks`); escape hatch for
+  changes with no user-facing surface: `SKIP_README=1 git commit ...`.
 - Published bouts under `bouts/` are the immutable record backing live
   articles — never rewrite their artifacts; new runs go in new bout dirs.
 - After changing anything in `bin/`, run `bin/check-graders.sh` (must stay

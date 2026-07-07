@@ -89,3 +89,11 @@ Any change to `bin/` or `tasks/` must update this README in the same commit if
 it adds, removes, or changes a flag, environment variable, artifact, or
 behavior a user of the harness would rely on. The README is the harness's
 contract; code and contract move together.
+
+A pre-commit hook enforces this. Enable it once per clone:
+
+```
+git config core.hooksPath .githooks
+```
+
+For a change with genuinely no user-facing surface: `SKIP_README=1 git commit ...`

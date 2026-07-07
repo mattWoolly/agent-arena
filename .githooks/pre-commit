@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Enforce the README-moves-with-code rule: a commit that changes bin/ or
+# tasks/ must also update README.md (or CLAUDE.md). Escape hatch for changes
+# with no user-facing surface: SKIP_README=1 git commit ...
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+set -u
+
+[[ "${SKIP_README:-0}" == "1" ]] && exit 0
+
+STAGED=$(git diff --cached --name-only)
+echo "$STAGED" | grep -qE '^(bin|tasks)/' || exit 0
+echo "$STAGED" | grep -qE '^(README\.md|CLAUDE\.md)$' && exit 0
+
+cat >&2 <<'MSG'
+COMMIT BLOCKED: changes under bin/ or tasks/ without a README.md update.
+The README is the harness's contract — document new/changed flags, env vars,
+artifacts, or behavior in the same commit:
+
+    git add README.md
+
+If this change truly has no user-facing surface:
+
+    SKIP_README=1 git commit ...
+MSG
+exit 1
