@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., regions cited as '$2,176.35 on 142 units' vs '$1,414.82 on just 55 units', and the recommendation quantifies a computed '$761.53 revenue gap with North'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures (e.g., 'Grow Gadget sales in West... close its $761.53 revenue gap with North' and 'bundling it [Sprocket] with Widget')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations, such as East 'reaching second place on only 72 units' (a per-unit outlier) and Sprocket ranking 'last in revenue despite high unit volume.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure\u2014e.g., Gadget's '$2,392.00... unit price of $149.50', regional revenues with unit counts, and the recommendation's '$761.53 revenue gap with North' (2176.35\u22121414.82)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures\u2014'Grow Gadget sales in West... close its $761.53 revenue gap with North' and 'bundling [Sprocket] with Widget.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations: East 'reaching second place on only 72 units,' Sprocket ranking 'last in revenue despite high unit volume,' and Gadget's high-price/low-volume dynamic."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure\u2014product revenues ($2,392.00, $2,118.94), unit prices ($149.50, $19.99, $4.75), regional revenue/units ($2,176.35 on 142 units), and the derived $761.53 North-West gap."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products and regions with figures\u2014\"Grow Gadget sales in West... could close its $761.53 revenue gap with North\" and \"bundling [Sprocket] with Widget\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations, e.g. East \"reaching second place on only 72 units\" (high revenue-per-unit) and Sprocket ranking \"last in revenue despite high unit volume,\" rather than merely restating totals."
+      }
+    }
+  ]
+}

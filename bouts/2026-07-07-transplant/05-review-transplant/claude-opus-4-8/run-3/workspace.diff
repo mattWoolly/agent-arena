@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..fd79284
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides, so any non-multiple of PAGE_SIZE drops the trailing `total_count % 100` rows (total_count=150 fetches 100/150 = 33% lost) and total_count<100 returns zero rows (total_count=99 loses 100%); needs ceiling division.
++- src/sync.py:24 Mutable default `seen=[]` is shared across every call, so IDs appended in one `sync_users` run persist into later runs and cause those users to be silently skipped as "duplicates" on subsequent syncs.
++- src/sync.py:35 Parameterized UPDATE was replaced with f-string interpolation, introducing SQL injection and breaking any email containing an apostrophe (e.g. `o'brien@x.com` produces malformed SQL).
++- src/sync.py:38 `except Exception: pass` replaces the previous `log.exception`, silently swallowing sync failures; compounded with line 31 appending to `seen` before the try, a user whose UPDATE raises (line 35) is marked seen, its error hidden, and — via the shared default at line 24 — is skipped forever on all later calls.
++- src/report.py:5 `open(path, "w")` without a context manager leaks the file handle on the early `return 0` (line 7) and on any exception raised in the loop, since `f.close()` at line 13 is only reached on the success path.
++- src/report.py:11 `user["email"].lower()` raises AttributeError when email is None, contradicting db.py:4-5 which documents email as NULLABLE for phone-invited users (the removed `user["email"] or "unverified"` had handled this).
++- src/report.py:11 `.split("@")[1]` raises IndexError for any address lacking an `@` (e.g. a malformed or empty email), aborting the whole report mid-write.

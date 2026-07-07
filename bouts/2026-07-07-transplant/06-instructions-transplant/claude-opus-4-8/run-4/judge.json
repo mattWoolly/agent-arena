@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. \"Gadget out-earns Sprocket by 2.12x\", \"West trails North by 35.0%\", and \"a 1.54x gap\" of \"$761.53\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data \u2014 e.g. \"Prioritize Gadget stock... at 33.4% of revenue\" and \"Investigate West, which trails North by 35.0%... close the $761.53 regional revenue gap.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations such as the \"right-skewed spread\" from median below mean and that Gadget \"leads... despite low unit counts, driven by its $149.50 price\" versus Widget scaling with volume."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. \"Gadget out-earns Sprocket by 2.12x\", \"35.0% behind North\", \"differ by $761.53, a 1.54x gap\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures, e.g. \"Investigate West, which trails North by 35.0%; targeted campaigns could close the $761.53 regional revenue gap.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations beyond totals, e.g. the right-skew (\"median...below the mean...a few high-priced Gadget orders pull the average upward\") and Gadget's revenue concentration \"despite low unit counts.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget out-earns Sprocket by 2.12x', 'West trails... by 35.0%', and 'a 1.54x gap' of $761.53."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions with figures, e.g. 'Prioritize Gadget stock... at 33.4% of revenue' and 'Investigate West, which trails North by 35.0%... close the $761.53 regional revenue gap.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like the 'right-skewed spread' from high-priced Gadgets and 'Gadget out-earns Sprocket by 2.12x even though Sprocket sells far more units.'"
+      }
+    }
+  ]
+}

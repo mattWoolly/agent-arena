@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:11 finding mechanistically ties two components together \u2014 'IndexError for emails lacking \"@\", such as the empty strings sync_users writes' \u2014 showing sync's bad output crashing the report parser."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. floor division 'skips the final partial page, so up to 99 trailing users are silently dropped' and mutable default 'persists across calls, so any user id... is silently skipped forever.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line reference (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:11 finding mechanistically links two defects across files\u2014\"IndexError for emails lacking '@', such as the empty strings sync_users writes\"\u2014explaining how sync's bad output produces the report crash."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"Floor division ... skips the final partial page, so up to 99 trailing users are silently dropped\" and \"Mutable default argument `seen=[]` persists across calls.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:11 finding mechanistically links two components\u2014\"IndexError for emails lacking '@', such as the empty strings sync_users writes\"\u2014showing sync's bad output triggering report's crash."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"Floor division ... skips the final partial page, so up to 99 trailing users are silently dropped\" and the mutable default \"persists across calls, so any user id ... is silently skipped forever.\""
+      }
+    }
+  ]
+}

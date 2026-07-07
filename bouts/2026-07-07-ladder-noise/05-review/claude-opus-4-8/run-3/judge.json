@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically links two defects\u2014the bare `pass` 'silently swallows all sync failures, hiding the errors now made more likely by the f-string query' at line 35."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. the mutable default 'seen=[]' is 'shared across all calls, so IDs synced in one call are wrongly skipped as \"duplicates\" on every subsequent call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically links two defects: the bare `pass` 'silently swallows all sync failures, hiding the errors now made more likely by the f-string query' at :35."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. floor division 'drops the final partial page and fetches zero rows whenever total_count < PAGE_SIZE' and the mutable default 'is shared across all calls, so IDs...are wrongly skipped.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :39 finding mechanistically links two defects: the bare `pass` 'silently swallows all sync failures, hiding the errors now made more likely by the f-string query' at :35."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a mechanism, e.g. the mutable default `seen=[]` is 'shared across all calls, so IDs synced in one call are wrongly skipped as \"duplicates\" on every subsequent call.'"
+      }
+    }
+  ]
+}

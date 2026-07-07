@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, including a derived gap ('West trailed with $1,414.82, roughly 35% below North') alongside per-product revenue and unit counts."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures, e.g. 'Review Sprocket pricing or bundling; 238 units sold yielded only $1,130.50, the weakest revenue of any product.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations such as Gadget's revenue concentration from only 16 units and Sprocket's volume/revenue inversion ('sold the most units (238) but earned the least revenue')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a figure, including a computed gap ('West trailed with $1,414.82, roughly 35% below North') and unit-vs-revenue contrasts like 'Gadget led with $2,392.00 in revenue from only 16 units'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data, e.g. 'Review Sprocket pricing or bundling; 238 units sold yielded only $1,130.50' and 'Investigate West's underperformance ($1,414.82...) and replicate North's approach ($2,176.35)'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations\u2014Gadget's revenue-per-unit concentration, Sprocket's high-volume/low-revenue outlier ('238 units sold yielded only $1,130.50'), and the 35% North-West gap."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons pair items with absolute figures pulled from the data but only one is a computed comparison ('West trailed... roughly 35% below North'), while the rest are bare rankings ('led', 'followed', 'trailed')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figures, e.g. 'Investigate West's underperformance ($1,414.82, lowest region) and replicate North's approach, which produced $2,176.35.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Several actionable, non-obvious observations appear, such as Gadget earning top revenue 'from only 16 units, reflecting its high unit price' and Sprocket selling 238 units yet 'earned the least revenue... because of its low price point.'"
+      }
+    }
+  ]
+}
