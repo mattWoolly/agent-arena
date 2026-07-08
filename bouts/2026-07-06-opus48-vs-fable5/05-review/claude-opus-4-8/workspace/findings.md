@@ -1,0 +1,6 @@
+- src/sync.py:14 Pagination uses `range(total_count // PAGE_SIZE)`, which drops the final partial page (e.g. 150 users fetches only 100) and fetches nothing when total_count < PAGE_SIZE.
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across calls, so users synced in one call are wrongly skipped on every subsequent call.
+- src/sync.py:35 Building the UPDATE via f-string interpolation is a SQL injection vulnerability and breaks on emails containing a single quote (regressed from parameterized query).
+- src/sync.py:38 `except Exception: pass` silently swallows sync failures, losing the previous `log.exception` diagnostics.
+- src/report.py:5 File handle from `open(path, "w")` is leaked on the early `return 0` when `users` is empty (and on any write exception, since close is not in a finally/with).
+- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError when email is None (email is NULLABLE per db schema) and IndexError when the email has no "@".

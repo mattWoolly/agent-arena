@@ -52,6 +52,17 @@ def main(out_dir: str, model: str) -> None:
         metrics["cache_read_tokens"] = mu.get("cacheReadInputTokens")
         metrics["final_message"] = (r.get("result") or "")[:4000]
 
+    epath = out / "run_env.json"
+    if epath.exists():
+        try:
+            metrics["run_env"] = json.loads(epath.read_text())
+        except json.JSONDecodeError:
+            pass
+
+    pk = out / "peek_check"
+    if pk.exists():
+        metrics["peek_check"] = pk.read_text().strip()
+
     ds = out / "workspace.diffstat"
     if ds.exists():
         lines = ds.read_text().strip().splitlines()
