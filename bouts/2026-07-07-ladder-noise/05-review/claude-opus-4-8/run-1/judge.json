@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is described in isolation with no compound failure mode connecting two of them mechanistically (e.g. the bare 'pass' at line 39 is never linked to another defect's persisting bad state)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, such as 'mutable default argument seen=[] is shared across calls, so IDs accumulate and users synced in a later call are wrongly skipped as duplicates.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is stated in isolation; no compound failure mode combining two defects' mechanisms is described, even though the swallowed-exception (line 39) and other defects could interact."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"mutable default argument seen=[] is shared across calls, so IDs accumulate and users synced in a later call are wrongly skipped as duplicates.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding stands alone; no compound failure mode combining two defects (e.g. the bare-pass swallowing the SQL/email exception) is described mechanistically."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'mutable default argument seen=[] is shared across calls, so IDs accumulate and users synced in a later call are wrongly skipped as duplicates.'"
+      }
+    }
+  ]
+}

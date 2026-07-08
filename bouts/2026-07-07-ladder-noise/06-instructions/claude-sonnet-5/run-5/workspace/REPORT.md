@@ -1,0 +1,17 @@
+## Overview
+
+Total revenue across all orders was $7,154.44 from 30 orders, averaging about $238 per order. Sales span four regions and four products over the period covered by the data.
+
+## Top Products
+
+Gadget led all products with $2,392.00 in revenue from just 16 units, reflecting its high unit price of $149.50. Widget followed at $2,118.94 from 106 units, the highest volume of any product. Doohickey brought in $1,513.00 and Sprocket $1,130.50, the lowest of the four despite selling 238 units.
+
+## Regional Performance
+
+North generated the most revenue at $2,176.35 across 8 orders, followed by East at $1,830.79 from 7 orders. South brought in $1,732.48 from 8 orders, while West trailed at $1,414.82 from 7 orders, the smallest regional total.
+
+## Recommendations
+
+- Prioritize Gadget stock and promotion, since it earns the most revenue despite low unit volume.
+- Investigate why West lags other regions and pilot a promotion there to close the gap.
+- Pair low-margin Sprocket orders with Gadget or Widget to raise average order value per sale.

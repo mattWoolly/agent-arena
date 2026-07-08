@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The report.py:5 finding gestures that the handle leaks \"on any exception raised in the loop\" \u2014 which the :11 finding supplies (AttributeError/IndexError) \u2014 but never states this combination as a compound failure mode with its mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a failure mechanism (e.g. floor division \"drops the final partial page,\" mutable default \"persists across calls,\" f-string \"enabling SQL injection\"), not just a label."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode explained \u2014 e.g. the swallowed exception at :39 is never connected mechanistically to the persistent `seen` state at :24 or any other defect."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism and triggering conditions, e.g. mutable default `seen=[]` 'persists across calls, so users synced in one invocation are silently skipped in every later invocation.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Findings are listed independently with no compound failure mode explained \u2014 e.g. it never connects the report.py:11 AttributeError to the report.py:5 'exception raised in the loop' truncation/leak as a combined mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a concrete failure mechanism, e.g. 'Floor division ... drops the final partial page, so up to 99 trailing rows are never fetched' and 'raises AttributeError when email is None ... and .split(\"@\")[1] raises IndexError for emails without \"@\"'."
+      }
+    }
+  ]
+}

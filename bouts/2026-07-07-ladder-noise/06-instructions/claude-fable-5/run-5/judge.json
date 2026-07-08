@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. West 'trails at $1,414.82, roughly 65% of North's total' and 'no single region contributing more than about 30% of the total.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures \u2014 'Investigate West's underperformance ($1,414.82, the lowest region) to close its gap with North ($2,176.35)' and 'Bundle low-priced Sprockets with Widgets... despite the highest unit volume (238 units).'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's revenue efficiency ('$2,392.00 in revenue from only 16 units'), Sprocket's volume/revenue mismatch, and regional balance ('no single region contributing more than about 30%')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. West 'trails at $1,414.82, roughly 65% of North's total' and 'no single region contributing more than about 30% of the total.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures \u2014 e.g. 'Investigate West's underperformance ($1,414.82, the lowest region) to close its gap with North ($2,176.35)' and 'Bundle low-priced Sprockets with Widgets.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like Gadget's high revenue-per-unit ('$2,392.00 from only 16 units') and Sprocket's volume/revenue mismatch ('238 units, generated just $1,130.50 due to its low price point')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure\u2014revenue and unit counts per product, plus ratios like West being 'roughly 65% of North's total' and 'no single region contributing more than about 30% of the total.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures and is actionable as written, e.g. 'Investigate West's underperformance ($1,414.82, the lowest region) to close its gap with North ($2,176.35).'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations\u2014Gadget's high revenue-per-unit from 'only 16 units,' Sprocket's 238 units yielding 'just $1,130.50,' and regional balance where 'no single region [contributes] more than about 30%.'"
+      }
+    }
+  ]
+}

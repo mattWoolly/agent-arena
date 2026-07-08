@@ -1,0 +1,35 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 32.8,
+  "agent_exit": 0,
+  "assistant_messages": 19,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 2
+  },
+  "tool_calls_total": 13,
+  "total_cost_usd": 0.16251935,
+  "num_turns": 14,
+  "duration_ms": 31484,
+  "duration_api_ms": 31479,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 16,
+  "output_tokens": 2224,
+  "cache_read_tokens": 264502,
+  "final_message": "Refactor complete: `Config` is now a frozen dataclass with typed fields and the same defaults, `load_config` raises `ValueError` on unknown JSON keys, and `formatter.py`/`loader.py` use attribute access instead of subscripting. All existing tests pass unmodified.",
+  "run_env": {
+    "cli_version": "2.1.202 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T20:11:17Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

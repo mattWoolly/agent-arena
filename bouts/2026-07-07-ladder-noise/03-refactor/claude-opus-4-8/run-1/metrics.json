@@ -1,0 +1,35 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 52.4,
+  "agent_exit": 0,
+  "assistant_messages": 21,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 2
+  },
+  "tool_calls_total": 12,
+  "total_cost_usd": 0.20924075,
+  "num_turns": 13,
+  "duration_ms": 51436,
+  "duration_api_ms": 51531,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2953,
+  "output_tokens": 2514,
+  "cache_read_tokens": 146830,
+  "final_message": "The refactor is complete and verified. All 4 tests pass unmodified, and no subscript access to the config remains anywhere in `reportgen/`.\n\nSummary of changes:\n\n**`reportgen/config.py`** \u2014 Replaced the `DEFAULTS` dict with a frozen dataclass:\n- `Config` is `@dataclass(frozen=True)` with typed fields `title: str`, `output_format: str`, `max_rows: int`, `include_summary: bool`, carrying the same defaults as before.\n- `load_config(path)` now validates against the known field names (via `fields(Config)`), raising `ValueError` naming any unknown key, then constructs `Config(**raw)` so JSON values override defaults just as before.\n\n**`reportgen/formatter.py`** \u2014 Switched `config[\"...\"]` to attribute access (`config.output_format`, `config.title`, `config.include_summary`).\n\n**`reportgen/loader.py`** \u2014 Switched `config[\"max_rows\"]` to `config.max_rows`.\n\n`main.py` needed no changes \u2014 it just threads the config object through. Validation happens naturally because unknown keys now go through `Config(**raw)` only after the explicit check, and `frozen=True` makes the config immutable as required.",
+  "run_env": {
+    "cli_version": "2.1.202 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T20:02:25Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

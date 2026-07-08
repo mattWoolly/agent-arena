@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., 'North outsold West by $761.53 \u2014 a 54% gap' and per-product revenue dollars rather than bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data \u2014 e.g., 'Reprice or grow Sprocket volume; at $4.75 per unit it trails every other product' and 'Investigate West's shortfall ($1,414.82)... mirror North's product mix.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like 'Gadget's high unit price drives its top rank despite modest units sold' and the 54% best-to-weakest regional gap rather than restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., \"North outsold West by $761.53 \u2014 a 54% gap\" and all product/region revenues are given in dollars."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data, e.g. \"Reprice or grow Sprocket volume; at $4.75 per unit it trails every other product\" and \"mirror North's product mix to narrow the 54% regional revenue gap.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, such as \"Gadget's high unit price drives its top rank despite modest units sold\" and Sprocket's low $4.75 unit price explaining its revenue lag."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. 'North outsold West by $761.53 \u2014 a 54% gap' and per-product revenue totals plus a $204.94 median."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products/regions and figures, e.g. 'Reprice or grow Sprocket volume; at $4.75 per unit it trails every other product.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like Gadget's 'high unit price drives its top rank despite modest units sold' and the 54% best-vs-weakest regional gap rather than just restating totals."
+      }
+    }
+  ]
+}

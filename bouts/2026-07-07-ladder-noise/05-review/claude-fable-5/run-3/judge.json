@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically links two defects: `except Exception: pass` swallows errors 'including the quote-in-email breakage above' at line 35, so that failure persists silently and unreported."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a mechanism, e.g. floor division means '250 staged rows yields only 200' and the mutable default `seen=[]` is 'shared across calls, so a user synced in one call is silently skipped in every later call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically ties the swallowed `except Exception: pass` to the quote-in-email breakage above, explaining that errors 'including the quote-in-email breakage above \u2014 go completely unreported.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` 'floor-divides, so the final partial page is never fetched' and mutable default `seen=[]` 'is shared across calls.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :38 finding mechanistically links two defects \u2014 the bare 'except Exception: pass' swallows errors 'including the quote-in-email breakage above' from :35, so the SQL/quote failure goes completely unreported."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. 'floor-divides, so the final partial page is never fetched' and 'Mutable default argument seen=[] is shared across calls, so a user...is silently skipped.'"
+      }
+    }
+  ]
+}

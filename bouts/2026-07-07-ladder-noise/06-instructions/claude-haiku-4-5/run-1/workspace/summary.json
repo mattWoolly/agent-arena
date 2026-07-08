@@ -1,0 +1,12 @@
+{
+  "total_revenue": 6618.09,
+  "orders": 30,
+  "median_order_value": 205.53,
+  "top_product_by_revenue": "Widget",
+  "revenue_by_region": {
+    "North": 1532.33,
+    "South": 1579.25,
+    "East": 1189.84,
+    "West": 1316.67
+  }
+}

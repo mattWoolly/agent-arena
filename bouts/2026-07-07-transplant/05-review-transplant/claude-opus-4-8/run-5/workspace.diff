@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..5de80a0
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` truncates the final partial page, silently dropping `total_count % PAGE_SIZE` staged users (e.g. 50 of 250 = 20%, 50 of 150 = 33%) and dropping 100% whenever `total_count < 100` because `50 // 100 == 0` skips the loop entirely — a regression from the old unbounded query that fetched every row.
++- src/sync.py:24 The mutable default argument `seen=[]` is created once and shared across every call, so after the first call records N ids the same list persists into the next call and skips all previously-seen ids (100/100 synced on call 1, 0/100 on an identical call 2), permanently blocking re-syncs of users whose staged email later changes.
++- src/sync.py:35 Interpolating the UPDATE with an f-string instead of bound parameters is a SQL-injection vector and also breaks on any legitimate email containing an apostrophe (e.g. `o'brien@x.com` produces malformed SQL / OperationalError), a regression from the previously parameterized query.
++- src/sync.py:38 Replacing `log.exception` with a bare `pass` silently swallows every failure with zero output, which compounds with the line 35 SQL bug: a user whose email breaks the query is neither synced nor logged nor traceable, so failures become invisible.
++- src/report.py:5 `open(path, "w")` is no longer used as a context manager, so the early `return 0` at line 7 and any exception raised at line 11 both skip the `f.close()` at line 13, leaking the file descriptor on 100% of empty-users calls and on every call that hits a None/`@`-less email.
++- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError on the NULLABLE email documented in db.py:4-5 (phone-invited users have `email=None`) and IndexError on any email lacking `@`, crashing the report mid-loop and triggering the line 5 file-handle leak — a regression from the old `user["email"] or "unverified"` that handled None.

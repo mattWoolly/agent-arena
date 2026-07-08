@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding explains a real compound failure: 'except Exception: pass ... silently swallowing every per-user sync failure so injection/quote errors from line 35 vanish with no log record.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. integer division 'silently dropping every user past the last whole page' and mutable default 'shared across every call' causing later users to be skipped as duplicates."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically explains a compound failure: `except Exception: pass` 'silently swallowing every per-user sync failure so injection/quote errors from line 35 vanish with no log record.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. line 24's mutable default '`seen=[]` is shared across every call, so IDs recorded in one sync run cause matching users to be skipped as \"duplicates\" on all later runs.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically explains a compound failure: `except Exception: pass` swallows the 'injection/quote errors from line 35' so they 'vanish with no log record.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a mechanism, e.g. mutable default `seen=[]` is 'shared across every call, so IDs recorded in one sync run cause matching users to be skipped' in later runs."
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..8d6ffaa
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:35 SQL injection vulnerability: email and id are interpolated directly into SQL string using f-string instead of parameterized query
++- src/sync.py:24 Mutable default argument: seen=[] persists state across function calls, breaking per-call deduplication
++- src/sync.py:14 Off-by-one pagination bug: range(total_count // PAGE_SIZE) skips final partial page; should be range((total_count + PAGE_SIZE - 1) // PAGE_SIZE)
++- src/sync.py:38 Silent exception suppression: bare pass statement hides all errors; should at least log them like original code
++- src/report.py:5 Resource leak: file opened but not closed if early return at line 7 when users is empty
++- src/report.py:11 Null pointer exception: email field is nullable per schema but code calls .split() without null check

@@ -1,0 +1,6 @@
+- src/sync.py:14 Pagination incomplete: off-by-one error misses the last page when total_count is not divisible by PAGE_SIZE
+- src/sync.py:24 Mutable default argument seen=[] persists across function calls, breaking deduplication on second and later calls
+- src/sync.py:35 SQL injection vulnerability: query uses f-string interpolation instead of parameterized queries
+- src/sync.py:38 Silent exception handling swallows errors without logging, hiding sync failures
+- src/report.py:5 Resource leak: file opened but not closed on early return when users is empty
+- src/report.py:11 Unchecked attribute access: user["email"] can be None per schema, causing AttributeError on .lower()

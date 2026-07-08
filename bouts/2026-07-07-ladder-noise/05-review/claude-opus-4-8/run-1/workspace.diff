@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..60e4219
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 range(total_count // PAGE_SIZE) drops the final partial page and fetches zero users whenever total_count < PAGE_SIZE, silently losing rows.
++- src/sync.py:24 mutable default argument seen=[] is shared across calls, so IDs accumulate and users synced in a later call are wrongly skipped as duplicates.
++- src/sync.py:35 f-string interpolation into the UPDATE reintroduces SQL injection and breaks on valid emails containing a single quote.
++- src/sync.py:39 replacing log.exception with bare pass silently swallows sync failures, destroying all error visibility.
++- src/report.py:5 open() without a context manager leaks the file handle on the "if not users: return 0" early return (and on any later write exception).
++- src/report.py:11 user["email"].lower().split("@")[1] raises AttributeError on NULL emails (schema documents email as nullable) and IndexError when the email has no "@".

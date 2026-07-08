@@ -1,0 +1,33 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 56.7,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.39968200000000004,
+  "num_turns": 6,
+  "duration_ms": 55744,
+  "duration_api_ms": 59809,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2822,
+  "output_tokens": 2572,
+  "cache_read_tokens": 125610,
+  "final_message": "Both files are written and verified against every constraint.\n\n**The numbers** (computed directly from the 30-row CSV, covering 2026-05-02 to 2026-05-21):\n- Total revenue: **$7,154.44** across **30 orders**, median order value **$204.94**\n- Top product by revenue: **Gadget** ($2,392.00 from just 16 units); Sprocket sold the most units (238) but earned the least ($1,130.50)\n- Revenue by region: North $2,176.35, East $1,830.79, South $1,732.48, West $1,414.82\n\n**REPORT.md** has exactly the four required H2 headings in order (and no other headings), 157 words total, the exact `$7,154.44` figure and order count in Overview, and exactly three bullets in Recommendations at 19, 13, and 17 words each. None of the banned words appear.\n\n**summary.json** contains exactly the five required keys with the values above, all rounded to 2 decimals.\n\nI ran a validation script that mechanically checked each constraint \u2014 heading list, word count, banned-word regex, bullet count and per-bullet word limits, and the JSON key set \u2014 and everything passed. No git commits were made and all work stayed in the current directory.",
+  "run_env": {
+    "cli_version": "2.1.203 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T21:13:53Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

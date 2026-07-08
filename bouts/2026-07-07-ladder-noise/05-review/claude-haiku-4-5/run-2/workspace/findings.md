@@ -1,0 +1,5 @@
+- src/sync.py:35 SQL injection vulnerability: user email and id are interpolated directly into SQL string instead of using parameterized query
+- src/sync.py:14 pagination logic incomplete: uses `range(total_count // PAGE_SIZE)` which omits the final partial page of records
+- src/sync.py:24 mutable default argument: `seen=[]` persists across function calls, causing unintended deduplication across multiple invocations
+- src/report.py:5 resource leak: file handle not closed if early return occurs at line 7
+- src/report.py:11 AttributeError/IndexError: assumes user["email"] is not None and contains "@", but schema allows NULL emails and format is unvalidated

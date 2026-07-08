@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. the regional gap is quantified as 'roughly $761, about a third of North's total' and products cite revenue, unit price ($149.50 vs $4.75), rather than bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with data \u2014 'Prioritize Gadget stock,' 'Investigate West's underperformance, which lags North by roughly $761,' and 'Reconsider Sprocket pricing... its high unit sales still yield the lowest revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations \u2014 revenue concentration ('A few high-priced items drive most revenue despite lower unit volumes') and the Sprocket price/volume outlier ('moves large quantities at $4.75 yet earns the least')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 product revenues with unit prices ($149.50 vs $4.75), the ~$761 regional gap framed as 'about a third of North's total', and median $204.94 vs mean ~$238."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region and figure \u2014 'Prioritize Gadget stock', 'Investigate West's underperformance, which lags North by roughly $761', and 'Reconsider Sprocket pricing or bundling'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations: revenue concentration in 'a few high-priced items', the price-vs-volume contrast between Gadget and Sprocket, and the top-to-bottom regional gap sized against North's total."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure\u2014product revenues ($2,392.00 vs $1,130.50), unit prices ($149.50 vs $4.75), and the regional gap of 'roughly $761, about a third of North's total.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name specific products/regions with figures\u2014'Prioritize Gadget stock,' 'Investigate West's underperformance, which lags North by roughly $761,' and 'Reconsider Sprocket pricing.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious observations: 'A few high-priced items drive most revenue despite lower unit volumes,' Gadget winning on price with few units, and Sprocket moving 'large quantities at $4.75 yet earns the least.'"
+      }
+    }
+  ]
+}

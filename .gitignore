@@ -1,7 +1,11 @@
 bouts/*/*/*/workspace/*
 !bouts/*/*/*/workspace/findings.md
+!bouts/*/*/*/workspace/REPORT.md
+!bouts/*/*/*/workspace/summary.json
 bouts/*/*/*/run-*/workspace/*
 !bouts/*/*/*/run-*/workspace/findings.md
+!bouts/*/*/*/run-*/workspace/REPORT.md
+!bouts/*/*/*/run-*/workspace/summary.json
 __pycache__/
 *.pyc
 .pytest_cache/

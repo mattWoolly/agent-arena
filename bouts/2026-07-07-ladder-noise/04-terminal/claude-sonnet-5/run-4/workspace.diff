@@ -1,0 +1,96 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..0347cc5
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,35 @@
++# SOLUTION
++
++`make test` was failing due to four environment/config problems introduced by the
++botched merge. No Python source logic was changed.
++
++1. **`Makefile`: recipe line used spaces instead of a tab.**
++   The `test:` target's recipe line (`python3 -m pytest -q tests/`) was indented
++   with spaces, but Make requires recipe lines to start with a literal tab
++   character. This caused `make test` to fail immediately with
++   `Makefile:4: *** missing separator. Stop.` before any check or test could run.
++   Fix: re-wrote the recipe line with a leading tab.
++
++2. **`scripts/run_checks.sh` was not executable.**
++   The file had mode `-rw-rw-r--` (no execute bit), but the `check:` target
++   invokes it directly as `./scripts/run_checks.sh`. Fix: `chmod +x scripts/run_checks.sh`.
++
++3. **`scripts/run_checks.sh` had CRLF (Windows) line endings.**
++   This corrupted the script in two ways: `set -e` was parsed with a trailing
++   `\r`, causing bash to error out on that line (`set: -: invalid option`)
++   instead of enabling exit-on-error; and the config path argument became
++   `data/config.json\r`, which doesn't exist. Because `set -e` was broken by
++   the CRLF corruption, the script did NOT actually stop on the resulting
++   Python `FileNotFoundError` traceback — it fell through to
++   `echo "all checks passed"` and exited 0, silently masking a real failure.
++   Fix: converted the file to LF line endings (`sed -i 's/\r$//'`).
++
++4. **`data/config.json` had a trailing comma after `"batch_size": 500,`.**
++   This is invalid JSON (Python's `json` module rejects trailing commas), so
++   `tools/validate_config.py` failed with a `json.decoder.JSONDecodeError`
++   once the CRLF issue was fixed and `set -e` could work correctly. Fix:
++   removed the trailing comma.
++
++After all four fixes, `make test` runs `./scripts/run_checks.sh` (which validates
++`data/config.json` and prints `all checks passed`) followed by
++`python3 -m pytest -q tests/` (3 passed), and exits 0.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..1edcc9f
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"
+diff --git a/src/pipeline/__pycache__/__init__.cpython-312.pyc b/src/pipeline/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..704e22b
+Binary files /dev/null and b/src/pipeline/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/pipeline/__pycache__/transform.cpython-312.pyc b/src/pipeline/__pycache__/transform.cpython-312.pyc
+new file mode 100644
+index 0000000..b907087
+Binary files /dev/null and b/src/pipeline/__pycache__/transform.cpython-312.pyc differ
+diff --git a/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..72818ee
+Binary files /dev/null and b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc differ

@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..1bec375
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 Floor division `range(total_count // PAGE_SIZE)` drops the trailing partial page, silently losing `total_count % 100` users (100% when total_count < 100, e.g. 50/250 = 20%).
++- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so on any repeated sync run every id recorded in a prior call is skipped and re-syncs apply 0 updates.
++- src/sync.py:35 f-string interpolation of `email`/`id` into the UPDATE replaces the parameterized query, enabling SQL injection and breaking on any email containing a quote (e.g. o'brien@example.com).
++- src/sync.py:39 `except Exception: pass` removes the prior `log.exception` call, silently swallowing every failure and leaving `synced` undercounted with no diagnostic trace.
++- src/report.py:5 File opened without a context manager, so the early `return 0` on empty users (and any exception before line 13) leaks the handle and leaves a truncated file, never reaching `f.close()`.
++- src/report.py:11 `user["email"].lower()` raises AttributeError on NULL emails, which db.py explicitly documents as valid (phone-invited users) and the old `email or "unverified"` guard handled.
++- src/report.py:11 `.split("@")[1]` raises IndexError for any email lacking "@" (including the empty string), crashing the report on malformed staging data.

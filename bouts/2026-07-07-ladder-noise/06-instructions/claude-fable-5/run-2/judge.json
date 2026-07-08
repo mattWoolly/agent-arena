@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 revenue and unit counts per product plus the derived gap 'West trailed at $1,414.82, roughly 35% below North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with figures, e.g. 'Review Sprocket pricing; 238 units sold produced only $1,130.50, the lowest product revenue despite the highest volume.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations: Gadget's revenue-per-unit ('the most revenue from the fewest units'), Sprocket's volume-vs-revenue outlier, and West's 35% gap to North."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries computed figures \u2014 revenue/units per product plus the explicit gap 'West trailed at $1,414.82, roughly 35% below North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures, e.g. 'Review Sprocket pricing; 238 units sold produced only $1,130.50.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations, such as Gadget earning most revenue 'from only 16 units' while Sprocket sold 'the highest volume' yet 'earned the least.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries figures \u2014 revenue and unit counts per product plus an explicit computed gap ('West trailed at $1,414.82, roughly 35% below North')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with data ('Review Sprocket pricing; 238 units sold produced only $1,130.50' and 'Investigate West's underperformance ($1,414.82)')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable, non-obvious observations like Gadget's revenue-from-fewest-units concentration and Sprocket's high-volume/low-revenue pricing mismatch ('238 units sold produced only $1,130.50')."
+      }
+    }
+  ]
+}
