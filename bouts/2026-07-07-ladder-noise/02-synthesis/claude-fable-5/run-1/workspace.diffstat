@@ -1,0 +1,3 @@
+ __pycache__/problems.cpython-312.pyc | Bin 0 -> 5841 bytes
+ problems.py                          |  63 ++++++++++++++++++++++++++++++++---
+ 2 files changed, 58 insertions(+), 5 deletions(-)

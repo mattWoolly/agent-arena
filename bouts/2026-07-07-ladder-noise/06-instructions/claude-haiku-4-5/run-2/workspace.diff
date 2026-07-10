@@ -1,0 +1,41 @@
+diff --git a/REPORT.md b/REPORT.md
+new file mode 100644
+index 0000000..99a2e20
+--- /dev/null
++++ b/REPORT.md
+@@ -0,0 +1,17 @@
++## Overview
++
++This analysis covers 30 orders with total revenue of $5,288.55. Orders span five weeks across four regions and four product categories.
++
++## Top Products
++
++Widget leads revenue generation with $2,269.15 (43% of total), driven by volume across all regions. Gadget follows with $1,043.00, then Doohickey at $890.00 and Sprocket at $1,086.40.
++
++## Regional Performance
++
++North generated $1,408.28, the highest regional revenue. South contributed $1,138.31, East $1,155.49, and West $586.47. North's strength stems from high-volume Widget and Sprocket orders.
++
++## Recommendations
++
++- Focus Widget distribution in North and South regions where demand proves highest across multiple order dates.
++- Expand Gadget availability; strong per-unit pricing justifies inventory investment despite lower order frequency.
++- Investigate West underperformance; region represents only 11% of revenue and warrants targeted promotion or pricing review.
+diff --git a/summary.json b/summary.json
+new file mode 100644
+index 0000000..92d498e
+--- /dev/null
++++ b/summary.json
+@@ -0,0 +1,12 @@
++{
++  "total_revenue": 5288.55,
++  "orders": 30,
++  "median_order_value": 149.5,
++  "top_product_by_revenue": "Widget",
++  "revenue_by_region": {
++    "North": 1408.28,
++    "South": 1138.31,
++    "East": 1155.49,
++    "West": 586.47
++  }
++}

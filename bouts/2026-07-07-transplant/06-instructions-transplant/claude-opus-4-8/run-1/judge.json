@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget led with $2,392.00 (33.4% of revenue) on just 16 units\" and \"North's total is 53.8% higher than West's.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. \"Reprice Sprocket, which moves the most units yet earns just 15.8% of revenue at $4.75 each.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like Gadget leading revenue \"despite selling the most units\" being Sprocket's problem and the inverse price/volume tension across products and regions."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget led with $2,392.00 (33.4% of revenue)\" and \"North's total is 53.8% higher than West's.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures, e.g. \"Reprice Sprocket, which moves the most units yet earns just 15.8% of revenue at $4.75 each.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget leading on only 16 units due to its $149.50 price and Sprocket selling the most units yet earning the least revenue."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"North's total is 53.8% higher than West's\" and \"Gadget led with $2,392.00 (33.4% of revenue) on just 16 units\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. \"Reprice Sprocket, which moves the most units yet earns just 15.8% of revenue at $4.75 each.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations\u2014price-driven concentration (\"Gadget...at 33.4% of revenue...despite moving only 16 units\") and the units-vs-revenue mismatch for Sprocket."
+      }
+    }
+  ]
+}

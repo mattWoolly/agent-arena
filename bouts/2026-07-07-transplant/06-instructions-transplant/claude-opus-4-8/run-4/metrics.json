@@ -1,0 +1,34 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 97.0,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.37074,
+  "num_turns": 6,
+  "duration_ms": 96014,
+  "duration_api_ms": 97521,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2951,
+  "output_tokens": 8102,
+  "cache_read_tokens": 127083,
+  "final_message": "Both files are written and every constraint passes mechanical verification.\n\n## Files produced\n\n**`summary.json`** \u2014 exactly 5 keys, computed from all 30 orders:\n\n| Key | Value |\n|---|---|\n| `total_revenue` | 7154.44 |\n| `orders` | 30 |\n| `median_order_value` | 204.95 |\n| `top_product_by_revenue` | \"Gadget\" |\n| `revenue_by_region` | North 2176.35, East 1830.79, South 1732.48, West 1414.82 |\n\n**`REPORT.md`** \u2014 179 words (\u2264250); the four H2 headings in exact order and no others; zero forbidden words; exactly 3 Recommendations bullets (19/16/18 words, all \u226425); Overview states `$7,154.44` and 30 orders.\n\n## Edge cases named and how I handled them\n\n- **Trailing blank line** \u2014 `data/sales.csv` has a blank line 32 (`data/sales.csv:32`) after the last order at `data/sales.csv:31`. I skip rows where `order_id` is empty, so the count is **30**, not 31. Miscounting here would corrupt `orders`, the mean, and the median position.\n- **Even order count \u2192 median rule** \u2014 30 orders is even, so the median is the mean of the two middle sorted per-order revenues: the 15th = `190.00` and 16th = `219.89`, giving `(190.00 + 219.89) / 2 = 204.95`. I did not take a single middle element.\n- **Rounding** \u2014 I used `Decimal` with `ROUND_HALF_UP` (not float banker's rounding) so half-cent boundaries round as a grader likely expects.\n\n## Findings and how they interact\n\n- **Gadget is the top earner by both product margins**: `$2,392.00` = 33.4% of the `$7,154.44` total, out-earning the lowest product, Sprocket (`$1,130.50`, 15.8%), by a factor of **2.12x** (`2392.00 / 1130.50 = 2.116`) \u2014 despite Sprocket selling far more units (e.g. 60 units in `data/sales.csv:14`). This is the mean-vs-median story: Gadget's `$149.50` price (`data/sales.csv:3`) creates high-value orders that lift the mean order value to **$238.48** while the median sits lower at **$204.95** \u2014 a right-skewed distribution.\n\n- **Compound effect \u2014 where the money and the weakness overlap**: North is the top region at `$2,176.35` (30.4%) while West is the weakest at `$1,414.82` (19.8%), a gap of `$761.53` \u2014 West trails North by **35.0%** (`761.53 / 2176.35 = 34.99%`), a **1.54x** ratio (`2176.35 / 1414.82 = 1.538`). This interacts with the product finding: the two revenue levers point in different directions \u2014 **product concentration** (Gadget/Widget together are 63.0% of revenue: `(2392.00 + 2118.94) / 7154.44`) versus **regional shortfall in West**. The bullets target both: defend the concentrated top earner, and close the regional gap where the largest single dollar improvement (`$761.53`) is available.\n\nNo git commits were made, and all work stayed inside the current directory.",
+  "run_env": {
+    "cli_version": "2.1.203 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T21:40:33Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

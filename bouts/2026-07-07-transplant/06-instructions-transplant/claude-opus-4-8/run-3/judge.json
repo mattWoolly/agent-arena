@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 percentages ($2,392.00, 33.4%), ratios ('outsells Sprocket by 2.1x'), and gaps ('earning 35% less than North')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products/regions and figures, e.g. 'Investigate West, the weakest region at $1,414.82, and close its 35% gap versus North' and 'Reprice or bundle Sprocket... only 15.8% of revenue at $4.75 per unit.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations \u2014 the median/mean skew ('median... well below the mean'), the price-vs-volume inversions for Gadget and Sprocket, and revenue concentration/regional gaps \u2014 rather than restating table totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. Gadget's '$2,392.00 (33.4% of revenue)', 'outsells Sprocket by 2.1x', and West 'earning 35% less than North'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. 'Reprice or bundle Sprocket; high volume yields only 15.8% of revenue at $4.75 per unit.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious observations surface, including the median being 'well below the mean' from high-priced orders, Sprocket's high-volume/low-revenue mix, and West's '35% gap versus North.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. Gadget at '$2,392.00 (33.4% of revenue)', 'outsells Sprocket by 2.1x', and West 'earning 35% less than North'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data \u2014 'Prioritize Gadget stock; at 33.4%...', 'Investigate West, the weakest region at $1,414.82', and 'Reprice or bundle Sprocket...at $4.75 per unit'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations, including the median-below-mean skew ('a few high-priced orders pull the average upward') and the volume/revenue mismatch that Sprocket 'sells the most units but only at $4.75 each.'"
+      }
+    }
+  ]
+}

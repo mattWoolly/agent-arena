@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically explains a compound failure: a user is appended to `seen` before the try, its UPDATE error is swallowed by `except Exception: pass`, and via the shared mutable default at line 24 it is 'skipped forever on all later calls.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. floor division 'drops the trailing `total_count % 100` rows' and `.split(\"@\")[1]` 'raises IndexError for any address lacking an `@`.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically ties three defects together: the swallowed exception hides a failed UPDATE while `seen` is appended before the try and the shared mutable default at line 24 causes the user to be 'skipped forever on all later calls.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division 'drops the trailing `total_count % 100` rows' and `.split(\"@\")[1]` 'raises IndexError for any address lacking an `@`.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (sync.py:14, :24, :35, :38; report.py:5, :11, :11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically explains a compound failure: 'appending to seen before the try, a user whose UPDATE raises (line 35) is marked seen, its error hidden, and \u2014 via the shared default at line 24 \u2014 is skipped forever on all later calls.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. 'floor-divides, so any non-multiple of PAGE_SIZE drops the trailing rows' and '.split(\"@\")[1] raises IndexError for any address lacking an @'."
+      }
+    }
+  ]
+}

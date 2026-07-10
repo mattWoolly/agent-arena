@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:5 finding mechanistically links the missing `with`/try-finally to the loop exceptions (per report.py:11) \u2014 'any exception in the loop leaks the open file handle' \u2014 explaining a compound resource-leak failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the mechanism or breaking condition, e.g. 'integer division so the final partial page is never fetched' and 'raises AttributeError when email is None ... and IndexError for emails lacking an \"@\"'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The report.py:5 finding gestures at an interaction ('any exception in the loop ... leaks the open file handle') but never links it mechanistically to the separately-named exception-throwing defect at report.py:11."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. ':24 mutable default argument seen=[] is shared across all calls, so IDs synced in one invocation persist and are wrongly skipped in later invocations.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is treated in isolation; no compound failure mode combining two separate defects is described mechanistically."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'integer division so the final partial page is never fetched' and 'mutable default argument seen=[] is shared across all calls, so IDs...are wrongly skipped in later invocations.'"
+      }
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+bout=2026-07-07-transplant models=claude-opus-4-8 tasks=05-review-transplant 06-instructions-transplant repeats=5 serial=1
+=== 05-review-transplant (run 1/5) ===
+[05-review-transplant/claude-opus-4-8 run-1] starting
+[05-review-transplant/claude-opus-4-8 run-1] done: agent_exit=0 grade_exit=0 wall=128.9s
+=== 05-review-transplant (run 2/5) ===
+[05-review-transplant/claude-opus-4-8 run-2] starting
+[05-review-transplant/claude-opus-4-8 run-2] done: agent_exit=0 grade_exit=0 wall=97.7s
+=== 05-review-transplant (run 3/5) ===
+[05-review-transplant/claude-opus-4-8 run-3] starting
+[05-review-transplant/claude-opus-4-8 run-3] done: agent_exit=0 grade_exit=0 wall=98.5s
+=== 05-review-transplant (run 4/5) ===
+[05-review-transplant/claude-opus-4-8 run-4] starting
+[05-review-transplant/claude-opus-4-8 run-4] done: agent_exit=0 grade_exit=0 wall=118.9s
+=== 05-review-transplant (run 5/5) ===
+[05-review-transplant/claude-opus-4-8 run-5] starting
+[05-review-transplant/claude-opus-4-8 run-5] done: agent_exit=0 grade_exit=0 wall=141.5s
+=== 06-instructions-transplant (run 1/5) ===
+[06-instructions-transplant/claude-opus-4-8 run-1] starting
+[06-instructions-transplant/claude-opus-4-8 run-1] done: agent_exit=0 grade_exit=0 wall=130.4s
+=== 06-instructions-transplant (run 2/5) ===
+[06-instructions-transplant/claude-opus-4-8 run-2] starting
+[06-instructions-transplant/claude-opus-4-8 run-2] done: agent_exit=0 grade_exit=0 wall=90.3s
+=== 06-instructions-transplant (run 3/5) ===
+[06-instructions-transplant/claude-opus-4-8 run-3] starting
+[06-instructions-transplant/claude-opus-4-8 run-3] done: agent_exit=0 grade_exit=0 wall=103.6s
+=== 06-instructions-transplant (run 4/5) ===
+[06-instructions-transplant/claude-opus-4-8 run-4] starting
+[06-instructions-transplant/claude-opus-4-8 run-4] done: agent_exit=0 grade_exit=0 wall=97.0s
+=== 06-instructions-transplant (run 5/5) ===
+[06-instructions-transplant/claude-opus-4-8 run-5] starting
+[06-instructions-transplant/claude-opus-4-8 run-5] done: agent_exit=0 grade_exit=0 wall=90.7s
+# Bout results: 2026-07-07-transplant
+
+| task | model | pass | score | wall(s) | cost($) | turns | out-tok | cache-read-tok |
+|---|---|---|---|---|---|---|---|---|
+| 05-review-transplant | claude-opus-4-8 | 5/5 | 6/6 | 117 ±19 | 0.36 ±0.03 | 7.6 ±0.5 | 8010 ±986 | 95662 ±16179 |
+| 06-instructions-transplant | claude-opus-4-8 | 5/5 | 6/6 | 102 ±17 | 0.38 ±0.06 | 7.6 ±1.5 | 7755 ±1278 | 172296 ±46301 |
+
+- **claude-opus-4-8**: 10/10 runs passed; per pass-through of all tasks: ~$0.74, ~220s wall
+
+- env: `2.1.203 (Claude Code)`, effort=`xhigh`, setting-sources=`project`
+BOUT COMPLETE: /home/mwoolly/projects/agent-arena/bouts/2026-07-07-transplant

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is treated in isolation; no compound failure mode combining two separate defects is explained mechanistically."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor division, so the final partial page is never fetched' and 'raises AttributeError when email is None ... and IndexError on any email lacking an @'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is treated in isolation; no compound failure mode combining two defects is described mechanistically."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor division, so the final partial page is never fetched' and 'raises AttributeError when email is None ... and IndexError on any email lacking an @'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is listed in isolation and no finding explains a compound failure mode arising from two defects combining\u2014e.g. the swallowed exception at sync.py:39 is noted but not linked to any second defect's persisting bad state."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, such as 'floor division, so the final partial page is never fetched' and 'raises AttributeError when email is None ... and IndexError on any email lacking an @'."
+      }
+    }
+  ]
+}

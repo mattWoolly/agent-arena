@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (src/sync.py:14, :24, :35, :38; src/report.py:5, :11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically explains the compound mode: the bare `pass` swallows the line 35 SQL failure so 'a user whose email breaks the query is neither synced nor logged nor traceable, so failures become invisible.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `seen=[]` 'is created once and shared across every call, so after the first call records N ids the same list persists into the next call and skips all previously-seen ids.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (sync.py:14/24/35/38, report.py:5/11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains the compound failure: the bare `pass` swallows the line-35 SQL error so a user with a breaking email 'is neither synced nor logged nor traceable, so failures become invisible.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism (e.g. `range(total_count // PAGE_SIZE)` 'truncates the final partial page' and mutable default `seen=[]` 'is created once and shared across every call')."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically explains the compound failure: the bare `pass` swallows the line 35 SQL error so a user with a breaking email is \"neither synced nor logged nor traceable, so failures become invisible.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `seen=[]` \"is created once and shared across every call\" so subsequent calls \"skip all previously-seen ids.\""
+      }
+    }
+  ]
+}

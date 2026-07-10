@@ -1,0 +1,35 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 55.1,
+  "agent_exit": 0,
+  "assistant_messages": 19,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 6,
+    "Write": 2,
+    "Edit": 1
+  },
+  "tool_calls_total": 12,
+  "total_cost_usd": 0.452263,
+  "num_turns": 13,
+  "duration_ms": 53970,
+  "duration_api_ms": 53923,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2953,
+  "output_tokens": 2664,
+  "cache_read_tokens": 154361,
+  "final_message": "Done. All 4 tests pass unmodified, and the refactor meets every requirement:\n\n- **`reportgen/config.py`** \u2014 `Config` is now a `@dataclass(frozen=True)` with the same four settings and defaults (`title=\"Report\"`, `output_format=\"text\"`, `max_rows=10`, `include_summary=True`). `load_config(path)` validates the JSON keys against the dataclass fields and raises `ValueError: Unknown config key: 'titel'`-style errors naming the offending key, then constructs `Config(**raw)` so file values override defaults.\n- **`reportgen/formatter.py`** and **`reportgen/loader.py`** \u2014 switched to attribute access (`config.output_format`, `config.title`, `config.include_summary`, `config.max_rows`). `main.py` and `__init__.py` never subscripted the config, so they're unchanged.\n- A grep confirms no `cfg[...]`/`config[...]` subscripting remains anywhere in `reportgen/`, and I sanity-checked that the returned `Config` is genuinely frozen (mutation raises `FrozenInstanceError`) and that overrides merge with defaults as before. No commits were made; `tests/` is untouched.",
+  "run_env": {
+    "cli_version": "2.1.202 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T20:05:20Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

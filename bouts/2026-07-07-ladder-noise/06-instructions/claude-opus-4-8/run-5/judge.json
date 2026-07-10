@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., the ~$761 gap between top and bottom regions, per-order figures, and price points like $149.50 vs $4.75 explaining the Gadget/Sprocket contrast."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure, e.g. 'Support the West region, lowest at $1,414.82' and 'Reassess Sprocket pricing or bundling; high volume yields only $1,130.50'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations \u2014 Gadget's revenue 'driven by price rather than volume,' Sprocket's high volume yielding the weakest return, and the 'balanced but uneven' ~$761 regional gap."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 product revenues ($2,392.00 vs $2,118.94...), unit prices ($149.50, $4.75), region totals, and a derived '$761' top-to-bottom gap plus median/average order values."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region and its figure and is actionable as written, e.g. 'Support the West region, lowest at $1,414.82, with targeted campaigns' and 'Reassess Sprocket pricing or bundling; high volume yields only $1,130.50.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, decision-relevant points \u2014 Gadget's revenue is 'driven by price rather than volume', Sprocket 'trails... despite large unit quantities, reflecting its low $4.75 price point', and the ~$761 regional gap shows 'balanced but uneven coverage.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 median $204.94 vs average $238.48, product revenues ($2,392.00, $2,118.94, etc.), price points ($149.50, $4.75), and the ~$761 top-to-bottom regional gap."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures \u2014 'Prioritize Gadget stock,' 'Support the West region, lowest at $1,414.82,' and 'Reassess Sprocket pricing... yields only $1,130.50.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious observations surface, e.g. Gadget 'driven by price rather than volume' and Sprocket's 'high volume yields only $1,130.50, the weakest product return,' beyond restating totals."
+      }
+    }
+  ]
+}

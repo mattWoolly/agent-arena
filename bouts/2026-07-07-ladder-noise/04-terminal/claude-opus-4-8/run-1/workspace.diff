@@ -1,0 +1,123 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..c74c29e
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,62 @@
++# SOLUTION
++
++`make test` was failing after a botched merge. Three environment/config
++problems were found and fixed. No Python source logic and nothing under
++`tests/` was changed; `make test` still runs the same `check` target and the
++same pytest suite.
++
++## Problem 1 — `Makefile`: recipe indented with spaces instead of a tab
++
++The `test` target's recipe line (`python3 -m pytest -q tests/`) was indented
++with 4 spaces. Make requires recipe lines to begin with a TAB, so it aborted
++immediately:
++
++```
++Makefile:4: *** missing separator.  Stop.
++```
++
++**Fix:** replaced the leading 4 spaces on line 4 with a tab character (matching
++the `check` target, which was already correct).
++
++## Problem 2 — `scripts/run_checks.sh`: CRLF line endings + missing executable bit
++
++The check script had two merge-induced issues:
++
++- **Windows CRLF (`\r\n`) line endings.** The `\r` after the shebang makes the
++  kernel look for the interpreter `/bin/bash\r` ("bad interpreter"), and the
++  trailing `\r` on the command line would pass `data/config.json\r` as the
++  argument, which fails to open.
++- **Missing executable permission** (`-rw-rw-r--`). The Makefile invokes it as
++  `./scripts/run_checks.sh`, which needs the `x` bit or fails with
++  "Permission denied".
++
++**Fix:** converted line endings to LF (`sed -i 's/\r$//'`) and restored the
++executable bit (`chmod +x`). Script contents/checks are unchanged.
++
++## Problem 3 — `data/config.json`: invalid trailing comma
++
++```json
++"batch_size": 500,
++}
++```
++
++The trailing comma after `500` is not valid JSON, so
++`tools/validate_config.py` (run by the check step) raised a
++`json.JSONDecodeError`.
++
++**Fix:** removed the trailing comma so the file is valid JSON. The config's
++values are unchanged and still pass all validation checks.
++
++## Result
++
++```
++$ make test
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++...                                                                      [100%]
++3 passed in 0.01s
++```
++
++`make test` exits 0.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..6f305ec
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"
+diff --git a/src/pipeline/__pycache__/__init__.cpython-312.pyc b/src/pipeline/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..d35cacf
+Binary files /dev/null and b/src/pipeline/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/pipeline/__pycache__/transform.cpython-312.pyc b/src/pipeline/__pycache__/transform.cpython-312.pyc
+new file mode 100644
+index 0000000..21e5b5d
+Binary files /dev/null and b/src/pipeline/__pycache__/transform.cpython-312.pyc differ
+diff --git a/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..3aef80d
+Binary files /dev/null and b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc differ

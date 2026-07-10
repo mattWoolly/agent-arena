@@ -1,0 +1,34 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 64.3,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Read": 1,
+    "Write": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 3,
+  "total_cost_usd": 0.482684,
+  "num_turns": 4,
+  "duration_ms": 62930,
+  "duration_api_ms": 63186,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2818,
+  "output_tokens": 4598,
+  "cache_read_tokens": 81346,
+  "final_message": "All five functions are implemented in `problems.py` and every check passes, including the docstring examples, the listed edge cases, and a brute-force cross-check of `rolling_max` on random inputs.\n\n- **`parse_duration`** \u2014 anchored regex `(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?` via `fullmatch`, which enforces ordering, no duplicates, no whitespace, and no trailing garbage in one shot; it raises `ValueError` when the input isn't a string or when no component matched (covers `\"\"`, `\"h\"`, bare `\"1\"`).\n- **`luhn_valid`** \u2014 strips spaces/hyphens, returns `False` for non-strings, empty results, or any non-digit (never raises), then runs the standard right-to-left double-every-second-digit checksum, so `\"0\"` is valid and other single digits aren't.\n- **`flatten`** \u2014 recursive walk building joined string keys with `sep`; empty nested dicts add nothing, non-dict values (lists included) pass through untouched, and the input is never mutated.\n- **`top_k_frequent`** \u2014 `Counter` plus a sort on `(-count, word)` for the descending-frequency, alphabetical-tie-break order; returns `[]` for `k <= 0` and truncates safely when `k` exceeds the distinct count.\n- **`rolling_max`** \u2014 monotonic-deque sliding window in O(n): 1M elements with a 10k window ran in 0.37s. Raises `ValueError` for `window <= 0` and returns `[]` when the window exceeds the input length.\n\nNo names, signatures, or docstrings were changed, only the stdlib (`re`, `collections`) is used, and no commits were made.",
+  "run_env": {
+    "cli_version": "2.1.202 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T19:36:48Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 58 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

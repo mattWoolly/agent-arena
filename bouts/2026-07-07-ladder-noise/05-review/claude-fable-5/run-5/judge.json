@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically explains that the `pass` swallows the SQL quote-breakage introduced on line 35, so \"errors ... disappear without a trace while `sync_users` returns a lower count with no diagnostics.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division means \"the final partial page is never fetched\" and the mutable default \"persists across calls, so a later `sync_users` invocation ... silently skips every user id.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically explains a compound failure \u2014 the bare `pass` swallows errors \"including the quote-breakage introduced on line 35\" so both defects combine to hide corruption while returning a lower count with no diagnostics."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division means \"the final partial page is never fetched\" and `email.lower()` \"raises AttributeError when email is None.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically links two defects: the swallowed exceptions 'including the quote-breakage introduced on line 35' disappear without a trace while sync_users returns a lower count with no diagnostics."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor-divides, so the final partial page is never fetched' and 'Mutable default argument seen=[] persists across calls, so a later sync_users invocation ... silently skips every user id.'"
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The src/sync.py:39 finding mechanistically links two defects: 'except Exception: pass silently swallows every sync failure, hiding the errors the new f-string SQL now raises.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially all findings state the failure mechanism, e.g. integer division means 'the final partial page is never fetched' and None email 'raises AttributeError when email is None.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a precise file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The `src/sync.py:39` finding mechanistically links two defects: the `except Exception: pass` silently swallows failures, 'hiding the errors the new f-string SQL now raises' at line 35."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a mechanism, e.g. integer division means 'the final partial page is never fetched' and the mutable default `seen=[]` 'persist[s]...on subsequent calls.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically ties the swallowed exceptions to the line 35 defect: `except Exception: pass` \"silently swallows every sync failure, hiding the errors the new f-string SQL now raises.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` \"uses integer division, so the final partial page is never fetched\" and `.split(\"@\")[1]` \"raises IndexError on any email lacking '@'.\""
+      }
+    }
+  ]
+}

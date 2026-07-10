@@ -1,0 +1,8 @@
+{
+  "cli_version": "2.1.203 (Claude Code)",
+  "effort": "xhigh",
+  "setting_sources": "project",
+  "max_turns": 60,
+  "timeout_s": 1500,
+  "started_at": "2026-07-07T21:09:26Z"
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 unit prices ($149.50, $4.75), the $761.53 top-to-bottom regional spread, and North's ~30% share of total revenue."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures and an action (\"bundle it with Widgets or reassess its $4.75 price\"; \"target promotions [in West] to close the gap with North ($2,176.35)\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations \u2014 Gadget's high revenue from just 16 units, Sprocket's 238 units yielding only $1,130.50, and North's ~30% revenue concentration with a $761.53 spread \u2014 rather than restating table totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure\u2014unit prices ($149.50, $4.75), the regional spread ($761.53), and North's ~30% revenue share are all derived rather than bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region and its figures with an actionable move, e.g., 'Sprocket sold 238 units but earned just $1,130.50; bundle it with Widgets or reassess its $4.75 price.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's high revenue from 'just 16 units' via price and Sprocket's high-volume/low-revenue mismatch (238 units, $1,130.50), beyond restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 unit prices ($149.50, $4.75), the regional gap ('spread between the top and bottom regions is $761.53'), and North's share ('about 30% of total revenue')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with its figure and a concrete action, e.g. 'Sprocket sold 238 units but earned just $1,130.50; bundle it with Widgets or reassess its $4.75 price.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several non-obvious, actionable observations \u2014 revenue concentration ('North generating about 30%'), the price/volume mismatch of Sprocket (238 units, $1,130.50), and Gadget's high-value/low-unit profile ($2,392 from 16 units)."
+      }
+    }
+  ]
+}

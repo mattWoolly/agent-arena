@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 percentages (33.4%, 30.4%), ratios (1.129x, 1.538x, 14.9x), and gaps ($761.53) rather than bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures, e.g. 'Reprice or bundle Sprocket: 238 units sold return only $1,130.50' and 'Investigate West, which trails North by 35% ($761.53 gap)'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like Gadget's concentration ('33.4% of revenue from only 7 orders') and Sprocket's volume/revenue outlier ('238 units...ranks last on revenue because its unit price is $4.75')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. Gadget at '33.4% of revenue,' 'trailing Gadget by a factor of 1.129,' Sprocket '238 units (14.9x Gadget's volume),' and North '1.538x West's $1,414.82.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products/regions with data \u2014 'Prioritize Gadget stock... $341.71 per order,' 'Investigate West, which trails North by 35% ($761.53 gap),' and 'Reprice or bundle Sprocket: 238 units... only $1,130.50.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several actionable non-obvious observations, notably Sprocket's volume-vs-revenue outlier ('238 units... yet ranks last on revenue because its unit price is $4.75') and Gadget's revenue concentration 'from only 7 orders,' plus the uneven North-West regional gap."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 percentages (33.4%, 30.4%), ratios (1.129x, 1.538x, 14.9x), per-order values ($341.71), and gaps ($761.53)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with data \u2014 'Prioritize Gadget stock...33.4% from just 7 orders', 'Investigate West, which trails North by 35% ($761.53 gap)', and 'Reprice or bundle Sprocket: 238 units...only $1,130.50'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's revenue concentration despite low order count, Sprocket's volume-vs-revenue outlier ('238 units...ranks last...because its unit price is $4.75'), and the uneven North-West regional gap."
+      }
+    }
+  ]
+}

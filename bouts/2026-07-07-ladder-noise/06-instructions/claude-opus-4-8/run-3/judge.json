@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. \"The gap between North and West is roughly $761\" and \"its high $149.50 unit price despite modest volumes.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures, e.g. \"Reprice or bundle Sprocket; it sells the most units yet contributes the least revenue at $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations, e.g. \"Sprocket moves the most units, but its low $4.75 price caps its revenue\" and the North\u2013West gap \"pointing to uneven regional reach rather than product mix, since every region carries the full catalog.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. revenue values per product ($2,392.00, $2,118.94) and the explicit 'gap between North and West is roughly $761'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region and figure, e.g. 'Reprice or bundle Sprocket; it sells the most units yet contributes the least revenue at $1,130.50.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations, including the high-price/low-volume Gadget dynamic, the Sprocket volume-vs-revenue mismatch, and inferring 'uneven regional reach rather than product mix, since every region carries the full catalog.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'The gap between North and West is roughly $761' and 'its high $149.50 unit price despite modest volumes'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region and figure, e.g. 'Investigate West, the weakest region at $1,414.82, to close its roughly $761 gap behind North.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, such as Sprocket selling 'the most units yet contributes the least revenue' and the North\u2013West gap 'pointing to uneven regional reach rather than product mix, since every region carries the full catalog.'"
+      }
+    }
+  ]
+}

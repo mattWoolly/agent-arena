@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..dda40d0
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:35 The UPDATE statement is built with an f-string instead of bound parameters, allowing SQL injection via a malicious email value and breaking on emails containing a single quote.
++- src/report.py:11 `user["email"].lower()` is called unconditionally, but db.py documents that `users.email` is nullable, so any user without a verified email crashes the report with AttributeError (previously handled via `user["email"] or "unverified"`).
++- src/sync.py:14 Pagination uses `total_count // PAGE_SIZE` (floor division) as the page count, so any remainder rows are never fetched, and if `total_count` is smaller than `PAGE_SIZE` zero pages are fetched and no staged users are returned at all.
++- src/sync.py:24 `seen=[]` is a mutable default argument, so the dedupe list persists across separate calls to `sync_users`, permanently skipping any user id already synced in a prior call within the process lifetime instead of only deduping within the current batch.
++- src/report.py:5 The file handle from `open(path, "w")` is never closed when `users` is empty, since the function returns early at line 7 before reaching `f.close()`, leaking a file descriptor.
++- src/sync.py:38 The exception handler now silently discards all per-user sync failures (`except Exception: pass`) instead of logging them via `log.exception`, making sync failures undetectable.

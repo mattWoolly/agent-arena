@@ -1,0 +1,33 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 90.3,
+  "agent_exit": 0,
+  "assistant_messages": 19,
+  "tool_calls": {
+    "Bash": 6,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "total_cost_usd": 0.36773475,
+  "num_turns": 8,
+  "duration_ms": 89297,
+  "duration_api_ms": 90006,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2955,
+  "output_tokens": 7045,
+  "cache_read_tokens": 177690,
+  "final_message": "Both files are written and every constraint passes mechanical verification.\n\n## `summary.json`\n```json\n{\"total_revenue\": 7154.44, \"orders\": 30, \"median_order_value\": 204.95,\n \"top_product_by_revenue\": \"Gadget\",\n \"revenue_by_region\": {\"East\": 1830.79, \"North\": 2176.35, \"South\": 1732.48, \"West\": 1414.82}}\n```\nAll five keys, no extras (`summary.json:1`); `orders` is a JSON integer, `total_revenue` a number.\n\n## Verification against the spec\n- **CSV shape**: 30 order rows (`data/sales.csv:2`\u2013`data/sales.csv:31`), one header, trailing newline, no blank/malformed rows \u2014 so all 30 rows count. All four regions (North/South/East/West) appear in the data, so `revenue_by_region` maps every region present.\n- **Revenue computed, not estimated**: each order = `units * unit_price` via `Decimal` (no float drift), summed to `$7,154.44`.\n- **REPORT.md constraints**: exactly 4 H2 headings in the required order and no other headings (`REPORT.md:1`, `:7`, `:13`, `:19`); 206 words (\u2264 250); Overview states `$7,154.44` and `30 orders` (`REPORT.md:3`); exactly three `- ` bullets in Recommendations at 19/17/18 words each (all \u2264 25, `REPORT.md:21`\u2013`:23`); zero hits for all five forbidden words.\n\n## How the findings interact\nTwo facts compound into the report's central story. Gadget tops revenue at **$2,392.00 (33.4% of total)** from just **7 orders / 16 units** (`REPORT.md:9`), while Sprocket sells **238 units \u2014 14.9\u00d7 Gadget's volume \u2014 yet earns only $1,130.50** (`REPORT.md:9`). Alone, either is a curiosity; together they show revenue is driven by unit price, not volume, which is exactly why the Sprocket reprice/bundle recommendation (`REPORT.md:23`) matters more than chasing units. Regionally, North's dominance (**30.4%, 1.538\u00d7 West**, a **$761.53 = 35%** gap, `REPORT.md:15`) is uneven rather than concentrated, motivating the West recommendation (`REPORT.md:22`).\n\n## Edge case handled\n**Even order count (30)** \u2192 median is the mean of the two middle sorted revenues, **$190.00 and $219.89 = 204.945**. That value ends in an exact `.945`, so rounding to two decimals sits on the half-way point; I used `Decimal` with `ROUND_HALF_UP` (not float arithmetic, which would misrepresent `.945`) to get **`204.95`**, and stated the even-count derivation in the Overview (`REPORT.md:3`).\n\nNo git commit was made; both files are in the current directory only.",
+  "run_env": {
+    "cli_version": "2.1.203 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T21:37:18Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

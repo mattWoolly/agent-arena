@@ -1,0 +1,6 @@
+- src/sync.py:14 pagination loop skips final page when total_count is not evenly divisible by PAGE_SIZE
+- src/sync.py:24 mutable default argument seen=[] persists across function calls, causing duplicates to persist application-wide
+- src/sync.py:35 SQL injection vulnerability using f-string interpolation instead of parameterized query
+- src/sync.py:39 bare except with pass silently hides all exceptions including genuine database errors
+- src/report.py:5 file resource leak when not users condition returns early without closing file
+- src/report.py:11 IndexError when user email lacks @ symbol or is None, violating nullable email field assumption

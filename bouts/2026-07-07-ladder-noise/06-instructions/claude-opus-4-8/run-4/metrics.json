@@ -1,0 +1,33 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 101.2,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "total_cost_usd": 0.19316475,
+  "num_turns": 5,
+  "duration_ms": 100183,
+  "duration_api_ms": 101818,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2820,
+  "output_tokens": 3123,
+  "cache_read_tokens": 99663,
+  "final_message": "Both files are written and validated mechanically. All constraints pass.\n\n**`summary.json`** (exactly five keys):\n```json\n{\n  \"total_revenue\": 7154.44,\n  \"orders\": 30,\n  \"median_order_value\": 204.94,\n  \"top_product_by_revenue\": \"Gadget\",\n  \"revenue_by_region\": {\"North\": 2176.35, \"South\": 1732.48, \"East\": 1830.79, \"West\": 1414.82}\n}\n```\n\n**`REPORT.md`** verification:\n- **Headings**: exactly four H2, correct order/spelling, no others.\n- **Word count**: 154 (\u2264 250).\n- **Overview**: contains `$7,154.44` total revenue and `30` orders.\n- **Recommendations**: exactly 3 bullets (18, 16, 17 words \u2014 all \u2264 25), each grounded in the data.\n- **Forbidden words**: none of leverage/delve/robust/seamless/revolutionize present.\n\nKey figures (all computed from the 30 CSV rows): total revenue **$7,154.44**, median order value **$204.94**, top product **Gadget** ($2,392.00). No git commits made; all work stayed in the current directory.",
+  "run_env": {
+    "cli_version": "2.1.203 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T21:15:49Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

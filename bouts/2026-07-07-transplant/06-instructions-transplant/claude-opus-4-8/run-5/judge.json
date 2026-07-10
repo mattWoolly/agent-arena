@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. West is \"roughly 65% of North's total\" and Gadget is \"33.43% of revenue\" rather than bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data, e.g. \"Reassess Sprocket pricing: high volume at $4.75 yields just 15.80% of revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations such as mean-above-median skew, Gadget's price-driven lead \"despite modest unit volume,\" and Sprocket's high-volume/low-revenue mismatch."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. Gadget \"$2,392.00 (33.43% of revenue)\" and West \"roughly 65% of North's total\" and \"trails leading North by 35%\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data, e.g. \"Reassess Sprocket pricing: high volume at $4.75 yields just 15.80% of revenue\" and \"Grow West region sales: at $1,414.82 it trails leading North by 35%\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, such as the mean/median skew (\"a few high-value orders pull the average above the midpoint\") and Sprocket's high-volume-low-revenue mismatch at \"$4.75\"."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 percentages ('33.43% of revenue'), ratios ('roughly 65% of North's total'), and gaps ('trails leading North by 35%')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures and an action ('Reassess Sprocket pricing: high volume at $4.75 yields just 15.80% of revenue')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations \u2014 the median/mean skew ('a few high-value orders pull the average above the midpoint'), Gadget's price-driven lead 'despite modest unit volume', and Sprocket's high-volume/low-revenue mismatch."
+      }
+    }
+  ]
+}

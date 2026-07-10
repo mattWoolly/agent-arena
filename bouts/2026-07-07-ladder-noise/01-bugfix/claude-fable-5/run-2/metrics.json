@@ -1,0 +1,35 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 47.8,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "total_cost_usd": 0.357786,
+  "num_turns": 7,
+  "duration_ms": 46637,
+  "duration_api_ms": 46738,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2822,
+  "output_tokens": 1616,
+  "cache_read_tokens": 127989,
+  "final_message": "All 6 tests pass. There were two bugs in `lrucache/cache.py`, both one-line fixes:\n\n1. **`get` didn't refresh recency** (`cache.py:30`) \u2014 a cache hit returned the value without moving the key to the end of the `OrderedDict`, so reads didn't count as \"use\" and a just-read key could still be evicted as least-recently-used. Fixed by adding `move_to_end` on a non-expired hit.\n\n2. **`put` evicted on updates** (`cache.py:34`) \u2014 the eviction check ran even when the key already existed, so overwriting a key in a full cache wrongly evicted another entry despite the size not growing. Fixed by only evicting when the key is new.\n\n`SOLUTION.md` is written with the same explanation, and `python3 -m pytest -q` reports `6 passed`.",
+  "run_env": {
+    "cli_version": "2.1.202 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T19:24:29Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 16 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

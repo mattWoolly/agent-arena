@@ -1,0 +1,34 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 37.7,
+  "agent_exit": 0,
+  "assistant_messages": 20,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 7,
+    "Write": 3
+  },
+  "tool_calls_total": 12,
+  "total_cost_usd": 0.2032375,
+  "num_turns": 13,
+  "duration_ms": 36621,
+  "duration_api_ms": 37143,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2953,
+  "output_tokens": 2354,
+  "cache_read_tokens": 146186,
+  "final_message": "The refactor is complete and all 4 tests pass unmodified.\n\n## Summary\n\nRefactored `reportgen` from passing a plain dict around to a typed, frozen dataclass:\n\n- **`reportgen/config.py`** \u2014 Replaced the `DEFAULTS` dict with a `@dataclass(frozen=True)` `Config` holding the four settings with their original types and defaults (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config` now validates every JSON key against the dataclass fields \u2014 raising `ValueError` naming any unknown key \u2014 then constructs and returns a `Config`.\n- **`reportgen/formatter.py`** and **`reportgen/loader.py`** \u2014 Switched from subscript access (`config[\"...\"]`) to attribute access (`config.output_format`, `config.title`, `config.include_summary`, `config.max_rows`).\n\nVerification: `grep` confirms no `config[...]`/`cfg[...]` subscripting remains anywhere in `reportgen/`, and `python3 -m pytest -q` reports **4 passed** with the tests untouched. No commits were made.\n\nNote on the new validation: since `Config` has no `**kwargs`, unknown keys would already raise `TypeError` at construction \u2014 but the explicit check raises `ValueError` naming the offending key, exactly as required.",
+  "run_env": {
+    "cli_version": "2.1.202 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T20:04:42Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

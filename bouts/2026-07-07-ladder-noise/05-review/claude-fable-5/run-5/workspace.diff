@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..1e2bd35
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides, so the final partial page is never fetched — e.g. 150 staged users yields only 100, and any count under 100 fetches nothing at all.
++- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so a later `sync_users` invocation in the same process silently skips every user id synced by an earlier call (legitimate re-syncs with updated emails are dropped).
++- src/sync.py:35 SQL injection regression: the parameterized UPDATE was replaced with f-string interpolation of `email` into the statement, allowing crafted emails to inject SQL and breaking on legitimate emails containing a single quote.
++- src/sync.py:39 Per-user sync failures are now silently swallowed with `pass` instead of being logged via `log.exception`, so errors (including the quote-breakage introduced on line 35) disappear without a trace while `sync_users` returns a lower count with no diagnostics.
++- src/report.py:6 The empty-`users` early return leaks the file handle opened without a context manager on line 5 and leaves the report truncated to an empty file, dropping the header/failure count that was previously written; any exception during the writes also leaks the handle since the `with` block was removed.
++- src/report.py:11 `user["email"].lower()` raises AttributeError when email is None — db.py documents users.email as nullable and the old code substituted "unverified" — and `.split("@")[1]` raises IndexError for any email without an "@".

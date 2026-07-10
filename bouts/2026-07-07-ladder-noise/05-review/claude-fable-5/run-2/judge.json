@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :38 finding mechanistically links two defects: the bare `except Exception: pass` swallows the per-user errors 'including the quote-breakage above' from :35, so those failures 'go completely unnoticed.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the mechanism, e.g. floor division 'drops the final partial page, so up to 99 trailing staged users are never fetched' and the mutable default 'is shared across calls, so a second invocation silently skips any user id already synced.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains that `except Exception: pass` swallows the quote-breakage error from line 35 so 'failures (including the quote-breakage above) go completely unnoticed', a real compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the mechanism, e.g. the mutable default `seen=[]` 'is shared across calls, so a second sync_users() invocation silently skips any user id already synced.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically links two defects: the quote-breaking statement from sync.py:35 raises an error that the 'except Exception: pass' then swallows so 'failures (including the quote-breakage above) go completely unnoticed.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'Floor division ... drops the final partial page, so up to 99 trailing staged users are never fetched' and mutable default 'is shared across calls, so a second sync_users() invocation silently skips any user id already synced.'"
+      }
+    }
+  ]
+}

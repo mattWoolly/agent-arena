@@ -1,0 +1,33 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 40.8,
+  "agent_exit": 0,
+  "assistant_messages": 14,
+  "tool_calls": {
+    "Bash": 5,
+    "Write": 2
+  },
+  "tool_calls_total": 7,
+  "total_cost_usd": 0.1922851,
+  "num_turns": 8,
+  "duration_ms": 39733,
+  "duration_api_ms": 43109,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 2951,
+  "output_tokens": 3383,
+  "cache_read_tokens": 263492,
+  "final_message": "Both files are complete and verified against every constraint:\n\n- **REPORT.md** \u2014 4 H2 headings in exact order/spelling, no other headings, 164 words total, total revenue stated as `$7,154.44` with `30 orders`, exactly 3 recommendation bullets (14\u201315 words each, grounded in the data), no banned words.\n- **summary.json** \u2014 valid JSON with exactly the 5 required keys, all values computed directly from the CSV (30 orders, median $204.94, top product Gadget, revenue by region for all 4 regions).",
+  "run_env": {
+    "cli_version": "2.1.203 (Claude Code)",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-07T21:15:08Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}
