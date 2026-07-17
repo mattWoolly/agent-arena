@@ -11,6 +11,8 @@ bin/
   run-bout.sh    # run all (or selected) tasks for N models, with repeats and serial mode
   run-task.sh    # run ONE model on ONE task: seed workspace, run claude -p, grade
   arena-proxy.sh # start/stop a local translation proxy for models with no Anthropic-compatible endpoint
+  run-task-codex.sh # run-task.sh's Codex-CLI counterpart: same fixtures/graders, codex exec driver, "<model>-codex" cells
+  metrics_codex.py  # metrics for codex --json transcripts (same output keys; cost from per-turn usage + env/prices.json)
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
 env/
@@ -123,6 +125,17 @@ solutions are unreachable by construction. The finished workspace is copied back
 into `bouts/` for publication. After every run a peek check greps the transcript
 for references to the arena tree or grader assets and flags the run if any appear;
 workspaces are fresh git repos so every change is diffable and attributable.
+
+## Cross-driver runs (harness comparison)
+
+`bin/run-task-codex.sh` runs a model under the Codex CLI against the same
+fixtures, byte-identical PROMPT.md, and the same hidden graders, labeling
+cells `<model>-codex` so they sit beside Claude-Code-driven cells in one
+results table. Auth uses an isolated API-key `CODEX_HOME` in `.codex-arena/`
+(gitignored), never the user's `~/.codex` session; the `env/<label>.leakscan`
+hook covers the key. Codex "turns" are whole prompt→completion cycles, so
+compare effort across drivers on tool calls, tokens, wall, and cost, not
+turn counts.
 
 ## Rubric judging (depth qualities)
 
