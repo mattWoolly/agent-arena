@@ -20,6 +20,19 @@ OUT_DIR="$BOUT_DIR/$TASK_NAME/$MODEL"
 mkdir -p "$OUT_DIR"
 LABEL="$TASK_NAME/$MODEL${RUN_IDX:+ run-$RUN_IDX}"
 
+# Optional per-model environment: env/<model>.env holds endpoint/auth vars
+# (e.g. ANTHROPIC_BASE_URL + ANTHROPIC_AUTH_TOKEN for models served through
+# an Anthropic-compatible endpoint). Sourced with allexport so it applies to
+# this run's process only; run-bout.sh launches one process per (task, model)
+# cell, so models never share it. Secrets live here and are gitignored —
+# never in recorded artifacts.
+MODEL_ENV="$ROOT/env/$MODEL.env"
+MODEL_ENV_REC="none"
+if [[ -f "$MODEL_ENV" ]]; then
+  set -a; . "$MODEL_ENV"; set +a
+  MODEL_ENV_REC="env/$MODEL.env"
+fi
+
 # Seed an isolated workspace from the fixture, apply optional mutations, baseline it.
 WS=$(mktemp -d "${TMPDIR:-/tmp}/arena-ws.XXXXXX")
 trap 'rm -rf "$WS"' EXIT
@@ -45,6 +58,8 @@ CLI_VERSION=$(claude --version 2>/dev/null | head -1)
 cat > "$OUT_DIR/run_env.json" <<EOF
 {
   "cli_version": "$CLI_VERSION",
+  "base_url": "${ANTHROPIC_BASE_URL:-https://api.anthropic.com}",
+  "model_env": "$MODEL_ENV_REC",
   "effort": "$EFFORT",
   "setting_sources": "$SETTING_SOURCES",
   "max_turns": $MAX_TURNS,
@@ -82,6 +97,17 @@ if [[ -n "$PEEK" ]]; then
   echo "[$LABEL] WARNING: transcript references grader assets: $PEEK" >&2
 else
   echo "clean" > "$OUT_DIR/peek_check"
+fi
+
+# Secret-leak check: transcripts and workspaces are published, and the agent
+# can read its own environment. If the auth token appears in anything we
+# publish, flag it loudly before it leaves this machine.
+if [[ -n "${ANTHROPIC_AUTH_TOKEN:-}" ]]; then
+  if grep -qF "$ANTHROPIC_AUTH_TOKEN" "$OUT_DIR/transcript.jsonl" || \
+     grep -rqF "$ANTHROPIC_AUTH_TOKEN" "$WS" 2>/dev/null; then
+    echo "SECRET LEAK: auth token appears in transcript or workspace" >> "$OUT_DIR/peek_check"
+    echo "[$LABEL] WARNING: AUTH TOKEN LEAKED into published artifacts — do not publish this run" >&2
+  fi
 fi
 
 # Capture exactly what the agent changed.

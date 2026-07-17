@@ -9,3 +9,7 @@ bouts/*/*/*/run-*/workspace/*
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# per-model env files hold API secrets; only examples are tracked
+env/*.env
+!env/*.env.example

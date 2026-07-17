@@ -12,6 +12,9 @@ bin/
   run-task.sh    # run ONE model on ONE task: seed workspace, run claude -p, grade
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
+env/
+  <model>.env         # optional per-model environment (endpoint/auth); gitignored
+  <model>.env.example # tracked template with placeholders, no secrets
 tasks/
   01-bugfix/         # SWE-bench style: fix library code until tests pass
   02-synthesis/      # HumanEval/MBPP style: implement 5 specified functions
@@ -55,10 +58,27 @@ wall-clock is a claim you intend to publish. Any argument that names a
 directory under `tasks/` selects that task; everything else is a model ID.
 
 Run configuration is pinned and recorded per run (`run_env.json`, merged into
-`metrics.json`): CLI version, `--effort` (default `xhigh`, override with
-`ARENA_EFFORT`), and `--setting-sources` (default `project`, override with
+`metrics.json`): CLI version, API base URL, per-model env file (if any),
+`--effort` (default `xhigh`, override with `ARENA_EFFORT`), and
+`--setting-sources` (default `project`, override with
 `ARENA_SETTING_SOURCES`) — so runs never silently inherit the host machine's
 user-level Claude configuration.
+
+### Non-Anthropic models
+
+A model served through an Anthropic-compatible endpoint (e.g. Moonshot's
+`kimi-k3`) runs under the same harness: put its endpoint and auth vars in
+`env/<model>.env` (copy the tracked `.env.example`, fill in the key). If that
+file exists, `run-task.sh` sources it with allexport for that run's process
+only — one process per (task, model) cell, so models never share environment.
+The base URL and env-file name (never its contents) are recorded in
+`run_env.json`. Real `.env` files are gitignored; only `.env.example`
+templates are tracked.
+
+Because the agent can read its own environment and transcripts/workspaces are
+published, every run also gets a secret-leak check: if the auth token appears
+in `transcript.jsonl` or the finished workspace, `peek_check` records
+`SECRET LEAK` and the run is flagged as unpublishable.
 
 Requirements: `claude` CLI on PATH (authed), `python3`, `pytest`, `jq`, `make`, `git`.
 
