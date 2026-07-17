@@ -59,6 +59,7 @@ cat > "$OUT_DIR/run_env.json" <<EOF
 {
   "cli_version": "$CLI_VERSION",
   "base_url": "${ANTHROPIC_BASE_URL:-https://api.anthropic.com}",
+  "proxy_upstream": "${ARENA_PROXY_UPSTREAM:-none}",
   "model_env": "$MODEL_ENV_REC",
   "effort": "$EFFORT",
   "setting_sources": "$SETTING_SOURCES",
@@ -100,14 +101,24 @@ else
 fi
 
 # Secret-leak check: transcripts and workspaces are published, and the agent
-# can read its own environment. If the auth token appears in anything we
-# publish, flag it loudly before it leaves this machine.
-if [[ -n "${ANTHROPIC_AUTH_TOKEN:-}" ]]; then
-  if grep -qF "$ANTHROPIC_AUTH_TOKEN" "$OUT_DIR/transcript.jsonl" || \
-     grep -rqF "$ANTHROPIC_AUTH_TOKEN" "$WS" 2>/dev/null; then
-    echo "SECRET LEAK: auth token appears in transcript or workspace" >> "$OUT_DIR/peek_check"
-    echo "[$LABEL] WARNING: AUTH TOKEN LEAKED into published artifacts — do not publish this run" >&2
+# can read its own environment. If the auth token, or any value emitted by
+# the model's optional env/<model>.leakscan script (run here in a subshell,
+# never exported to the agent), appears in anything we publish, flag it
+# loudly before it leaves this machine.
+leak_scan() {
+  local sec="$1" what="$2"
+  [[ -z "$sec" ]] && return 0
+  if grep -qF "$sec" "$OUT_DIR/transcript.jsonl" || \
+     grep -rqF "$sec" "$WS" 2>/dev/null; then
+    echo "SECRET LEAK: $what appears in transcript or workspace" >> "$OUT_DIR/peek_check"
+    echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
   fi
+}
+leak_scan "${ANTHROPIC_AUTH_TOKEN:-}" "auth token"
+if [[ -f "$ROOT/env/$MODEL.leakscan" ]]; then
+  while IFS= read -r _sec; do
+    leak_scan "$_sec" "leakscan value"
+  done < <(bash "$ROOT/env/$MODEL.leakscan" 2>/dev/null)
 fi
 
 # Capture exactly what the agent changed.

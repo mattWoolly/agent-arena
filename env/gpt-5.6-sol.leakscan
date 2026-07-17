@@ -1,0 +1,5 @@
+# Extra secret values the post-run leak check should scan published
+# artifacts for, one per line on stdout. run-task.sh executes this file in
+# its own subshell AFTER the agent finishes; values printed here never enter
+# the contestant's environment. This file contains no secrets itself.
+(. "$HOME/.secrets" >/dev/null 2>&1; printf '%s\n' "${OPENAI_API_KEY:-}")

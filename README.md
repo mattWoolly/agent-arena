@@ -10,6 +10,7 @@ everything, and let the graders (not vibes) decide.
 bin/
   run-bout.sh    # run all (or selected) tasks for N models, with repeats and serial mode
   run-task.sh    # run ONE model on ONE task: seed workspace, run claude -p, grade
+  arena-proxy.sh # start/stop a local translation proxy for models with no Anthropic-compatible endpoint
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
 env/
@@ -78,7 +79,26 @@ templates are tracked.
 Because the agent can read its own environment and transcripts/workspaces are
 published, every run also gets a secret-leak check: if the auth token appears
 in `transcript.jsonl` or the finished workspace, `peek_check` records
-`SECRET LEAK` and the run is flagged as unpublishable.
+`SECRET LEAK` and the run is flagged as unpublishable. A model may also ship
+an `env/<model>.leakscan` script (tracked; contains no secrets) that prints
+extra secret values, one per line; run-task.sh executes it in a subshell
+after the agent finishes and scans published artifacts for each value, so
+secrets that never enter the agent's environment are still checked.
+
+### Models with no Anthropic-compatible endpoint (translation proxy)
+
+Some vendors (OpenAI) don't serve an Anthropic-compatible endpoint. For those,
+`bin/arena-proxy.sh start <model>` runs a local LiteLLM proxy
+(`env/litellm.<model>.yaml`, bound to 127.0.0.1, pid/log under `.proxy/`)
+that translates the Messages API to the vendor's, and the model's env file
+points `ANTHROPIC_BASE_URL` at it. The upstream key is pulled from
+`~/.secrets` at proxy launch and exported only to the proxy process; the
+contestant never holds it, and the model's `.leakscan` file lets the leak
+check scan for it anyway. Set `ARENA_PROXY_UPSTREAM` in the env file: it is
+recorded verbatim in `run_env.json` so published runs say what actually sat
+behind localhost (`base_url` alone would just say 127.0.0.1). Disclose the
+translation layer in anything published from such runs; tool-calling behavior
+through a third-party translator is not attributable to the model alone.
 
 Requirements: `claude` CLI on PATH (authed), `python3`, `pytest`, `jq`, `make`, `git`.
 
