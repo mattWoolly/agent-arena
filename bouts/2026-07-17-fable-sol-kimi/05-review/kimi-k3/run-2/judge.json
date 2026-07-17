@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is written standalone with no cross-reference, so no compound failure mode combining separate defects (e.g. the swallowed error at :39 with the append-before-update at :31) is ever explained."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. \"Mutable default argument `seen=[]` is shared across all calls, so every user synced ... is permanently skipped as a 'duplicate' in later runs.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line citation (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each bullet describes a single defect in isolation and no finding explains how two defects combine into a compound failure mode (e.g. the swallowed exceptions at :39 are never linked to the premature seen-marking at :31)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism and triggering condition, e.g. \"`seen.append(user[\"id\"])` runs before the UPDATE succeeds, so a user whose sync fails is still marked as seen and will be skipped on any retry.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is described in isolation with no compound failure mode explained\u2014e.g. the swallowed exception at :39 and the mark-seen-before-success at :31 are never connected into a combined mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. ':24 Mutable default argument seen=[] is shared across all calls, so every user...is permanently skipped as a \"duplicate\" in later runs.'"
+      }
+    }
+  ]
+}

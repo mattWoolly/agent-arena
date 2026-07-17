@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains that marking a user seen before the try block 'compound[s] the persistent-default bug at line 24 into permanent data loss for that user.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'range(total_count // PAGE_SIZE) drops the final partial page, so the last total_count % 100 staged users are never fetched.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure: marking a user seen before the try block combines with the persistent mutable-default `seen` at line 24 so a failed UPDATE user is never retried, 'compounding ... into permanent data loss for that user.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` 'drops the final partial page, so the last `total_count % 100` staged users are never fetched.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line citation (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure: marking a user 'seen' before the try block 'compounding the persistent-default bug at line 24 into permanent data loss for that user.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. 'range(total_count // PAGE_SIZE) drops the final partial page, so the last total_count % 100 staged users are never fetched.'"
+      }
+    }
+  ]
+}

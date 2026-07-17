@@ -1,0 +1,37 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 92.2,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Read": 1,
+    "Write": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 3,
+  "total_cost_usd": 0.222131,
+  "num_turns": 4,
+  "duration_ms": 90848,
+  "duration_api_ms": 94491,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 19729,
+  "output_tokens": 3342,
+  "cache_read_tokens": 79872,
+  "final_message": "All five functions are implemented in `problems.py` and every check passed:\n\n- **`parse_duration`** \u2014 a `fullmatch` regex `(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?` enforces order, rejects duplicates/negatives/whitespace/trailing garbage/unknown units, and non-string input raises `ValueError`; empty match (all groups `None`) also raises.\n- **`luhn_valid`** \u2014 strips spaces/hyphens, returns `False` on empty or non-digit input (never raises), then the standard double-every-second-from-the-right checksum.\n- **`flatten`** \u2014 recursive walk, non-mutating; empty nested dicts contribute nothing, lists and other non-dicts kept as values, custom `sep` supported.\n- **`top_k_frequent`** \u2014 `Counter` + sort by `(-count, word)`; returns `[]` for `k <= 0`, caps at distinct-word count naturally via slicing.\n- **`rolling_max`** \u2014 monotonic deque of indices in O(n); raises `ValueError` for `window <= 0`, returns `[]` when `window > len(nums)`.\n\nVerification included all docstring examples, edge cases (bad durations, `\"0\"` vs other single digits for Luhn, mutation check, tie-breaking), 500 randomized brute-force comparisons for `rolling_max`, and a 2,000,000-element run with window 5000 to confirm the linear-time path.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T18:51:59Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 65 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

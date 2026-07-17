@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..1a0373a
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 Floor division `total_count // PAGE_SIZE` skips the final partial page, so up to 99 trailing rows are silently dropped and any total_count under 100 fetches nothing at all.
++- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so a later `sync_users` invocation silently skips any user id processed in an earlier call and their updates are never applied.
++- src/sync.py:35 Building the UPDATE with an f-string instead of bound parameters is a SQL injection vulnerability, and even benign emails containing a single quote (e.g. o'brien@x.com) break the statement.
++- src/sync.py:39 `except Exception: pass` silently swallows per-user sync failures that were previously logged via log.exception, making failed updates invisible.
++- src/report.py:7 The early return when `users` is empty leaves the just-opened file handle unclosed (and with no context manager, any exception during the writes also leaks it), while the truncated file loses the failures count the old report recorded.
++- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError for NULL emails (the schema documents email as nullable and the old code substituted "unverified") and IndexError for emails without an "@".

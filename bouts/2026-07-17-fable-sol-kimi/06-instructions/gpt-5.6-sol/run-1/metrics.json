@@ -1,0 +1,42 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 74.0,
+  "agent_exit": 0,
+  "assistant_messages": 28,
+  "tool_calls": {
+    "TaskCreate": 3,
+    "TaskUpdate": 6,
+    "Read": 2,
+    "Bash": 4,
+    "TaskGet": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 20,
+  "total_cost_usd": 0.40268,
+  "num_turns": 21,
+  "duration_ms": 72776,
+  "duration_api_ms": 72837,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 423471,
+  "output_tokens": 2779,
+  "cache_read_tokens": 399566,
+  "final_message": "Created and validated:\n\n- `REPORT.md`\n- `summary.json`\n\nAll specified formatting, content, calculation, and word-count constraints passed. No git commit was created.",
+  "total_cost_usd_cli": 2.1868300000000005,
+  "cost_source": "proxy-usage-log (21 requests)",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T20:16:06Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

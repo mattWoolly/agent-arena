@@ -1,0 +1,11 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..0f52cbe
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,5 @@
++- src/sync.py:14 Floor-dividing the total count omits the final partial page (and returns no users at all when fewer than 100 are staged).
++- src/sync.py:24 The mutable `seen` default is shared across invocations, so later syncs incorrectly skip IDs processed or attempted by earlier calls.
++- src/sync.py:35 Interpolating the email directly into SQL makes valid addresses containing quotes fail and allows a crafted staged email to alter the statement and update unintended rows.
++- src/report.py:6 Returning after opening the report for an empty user list leaks the file descriptor and leaves a truncated blank report instead of the previous zero-user summary.
++- src/report.py:11 Calling `lower()` and indexing the split result crashes report generation for schema-valid NULL emails (and for addresses without an `@`).

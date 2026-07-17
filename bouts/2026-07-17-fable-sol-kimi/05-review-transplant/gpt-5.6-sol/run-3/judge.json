@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`), and even cross-references like `src/db.py:4` and `src/report.py:13` are pinpointed."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The `src/sync.py:31` finding mechanistically explains a compound failure where marking an ID seen before its UPDATE suppresses valid retries, the persistent default at `:24` extends that unretryable state across calls, and `:38` swallows the failure."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. `.lower()` on `email=None` \"raises `AttributeError`\" and floor division \"omits every partial page,\" not just labels."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding opens with a usable file:line reference (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The src/sync.py:31 finding mechanistically explains a compound failure: an ID marked seen before its UPDATE suppresses later valid copies, the persistent default at :24 'extends that unretryable state to later calls while src/sync.py:38 suppresses the failure.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'Calling `.lower()` on the schema-permitted `email=None` edge case... raises `AttributeError`' and 'Floor division omits every partial page.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The src/sync.py:31 finding mechanistically explains a compound failure: marking an ID seen before its UPDATE suppresses later valid copies, the persistent default at :24 extends that unretryable state across calls, and :38 swallows the failure."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division 'omits every partial page' so '101 fetches only 100/101 rows' and calling `.lower()` on `email=None` 'raises AttributeError.'"
+      }
+    }
+  ]
+}

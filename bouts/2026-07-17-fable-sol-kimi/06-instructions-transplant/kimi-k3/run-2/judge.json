@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget leads with $2,392.00 in revenue, about 33.4% of the total\" and \"West trails at $1,414.82 (19.8%).\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products/regions with figures, e.g. \"Prioritize Gadget inventory and promotions, since it generates one-third of all revenue\" and \"Investigate why West underperforms.\""
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The section prose mostly restates table totals and rankings, with the concentration point (\"Gadget...one-third of all revenue\") being the main real, actionable observation."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget leads with $2,392.00 in revenue, about 33.4% of the total' and each region shown with dollars and percentage."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products, regions, and figures ('Prioritize Gadget inventory...one-third of all revenue', 'Investigate why West underperforms', 'Push higher-priced items like Gadget, as median order value sits near $205')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations beyond table restatement\u2014Gadget's revenue concentration at one-third, West as a lagging outlier at 19.8%, and the ~$205 median as a pricing lever."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 product shares ($2,392.00, 33.4%; 29.6%; 21.1%; 15.8%) and regional shares (30.4%, 25.6%, 24.2%, 19.8%)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products/regions and figures ('Prioritize Gadget inventory... one-third of all revenue', 'Investigate why West underperforms', 'median order value sits near $205')."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "It flags concentration (Gadget at one-third) and the West outlier, but the rest of the prose mostly restates the totals and percentages the tables already imply rather than surfacing multiple non-obvious observations."
+      }
+    }
+  ]
+}

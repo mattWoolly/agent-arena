@@ -1,0 +1,12 @@
+{
+  "total_revenue": 7154.44,
+  "orders": 30,
+  "median_order_value": 204.94,
+  "top_product_by_revenue": "Gadget",
+  "revenue_by_region": {
+    "East": 1830.79,
+    "North": 2176.35,
+    "South": 1732.48,
+    "West": 1414.82
+  }
+}

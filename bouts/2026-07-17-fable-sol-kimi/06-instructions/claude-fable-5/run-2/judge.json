@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. West 'roughly 35% below North', Gadget '$2,392.00 from only 16 units, reflecting its high unit price of $149.50', and mean $238.48 vs median $204.94."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products/regions and data-grounded logic, e.g. 'Bundle low-priced Sprockets with Widgets or Gadgets' and 'Investigate West's underperformance versus North.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several non-obvious observations, including the mean/median skew ('a few larger purchases pulling the mean upward'), Sprocket's volume-vs-price inversion (238 units yet lowest revenue at $4.75), and regional concentration ('no single region exceeding a third of the total')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure\u2014unit prices ($149.50, $4.75), the mean-vs-median gap ($238.48 vs $204.94), and 'West trailed at $1,414.82, roughly 35% below North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions and ties to data, e.g. 'Bundle low-priced Sprockets with Widgets or Gadgets to convert Sprocket's high unit volume' and 'Investigate West's underperformance versus North.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several non-obvious, actionable points\u2014Sprocket sells the most units (238) yet earns least due to its $4.75 price, the mean exceeds the median due to large purchases, and 'no single region exceeding a third of the total.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure\u2014e.g., 'West trailed at $1,414.82, roughly 35% below North' and 'no single region exceeding a third of the total.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products and figures, e.g., 'Bundle low-priced Sprockets with Widgets or Gadgets' and 'Investigate West's underperformance versus North.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable observations beyond the tables, such as the mean-vs-median skew and 'Sprocket contributed $1,130.50 despite selling the most units (238), because of its low $4.75 price point.'"
+      }
+    }
+  ]
+}

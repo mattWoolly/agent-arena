@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains a compound failure: the raw-SQL query at line 35 raises on an apostrophe/injection email, which is then swallowed by 'except Exception: pass' so it 'vanishes with zero diagnostic trace and no increment to synced.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. the FD leak because 'f.close() at line 13 is never reached' on early return or exception, and the crash on 'email=None (AttributeError)' and missing '@' (IndexError)."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically explains a compound failure: the raw-SQL apostrophe/injection error at line 35 is swallowed by `except Exception: pass`, so the email 'fails and vanishes with zero diagnostic trace and no increment to `synced`.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. integer division 'truncates the final partial page' and `open()` without a context manager 'leaks the file descriptor... since `f.close()` at line 13 is never reached.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains a compound failure: the bare `except Exception: pass` swallows the OperationalError raised by the apostrophe/injection email from the raw SQL at line 35, so the failure 'vanishes with zero diagnostic trace and no increment to `synced`.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism and breaking conditions, e.g. `total_count // PAGE_SIZE` 'truncates the final partial page, dropping the last 1\u201399 users' and `open()` 'leaks the file descriptor... since `f.close()`... is never reached.'"
+      }
+    }
+  ]
+}

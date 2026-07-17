@@ -1,0 +1,36 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 66.3,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.22736199999999998,
+  "num_turns": 6,
+  "duration_ms": 65197,
+  "duration_api_ms": 68755,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 25860,
+  "output_tokens": 1982,
+  "cache_read_tokens": 97024,
+  "final_message": "All checks pass. Summary of what was produced:\n\n**`summary.json`** (computed from `data/sales.csv`, 30 data rows):\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94 \u2014 edge case: even count (30), so it's the mean of the 15th and 16th sorted order values ($190.00 and $219.89) = 204.945, which is 204.9449\u2026 in IEEE-754 and rounds to 204.94\n- `top_product_by_revenue`: \"Gadget\" ($2,392.00, 33.4% of total \u2014 1.13\u00d7 the runner-up Widget's $2,118.94)\n- `revenue_by_region`: all 4 regions present in the data (North 2176.35, East 1830.79, South 1732.48, West 1414.82); the four values sum to exactly 7154.44, matching `total_revenue`\n\n**`REPORT.md`** (verified mechanically):\n- Exactly four H2 headings in the required order and spelling, no other headings (grep confirmed)\n- 115 words total, under the 250 cap\n- Overview states `$7,154.44` in the exact required format and the 30-order count\n- Exactly 3 `- ` bullets in Recommendations, at 12/11/12 words each (all \u2264 25)\n- Zero occurrences of the five banned words (case-insensitive grep confirmed)\n\nThe report's percentages are computed ratios (e.g., Gadget 2392.00/7154.44 = 33.4%; West trails North by 35.0%), and each recommendation ties to a specific figure. No git commits were made.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T20:33:45Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'account for about 63% of total revenue' and 'gap between the top and bottom regions is roughly $761' \u2014 beyond bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product and region tied to data, e.g. 'Promote Gadget in the West, where overall revenue is weakest' and 'Review Sprocket pricing, since it contributes the least revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple actionable observations like revenue concentration ('Gadget and Widget together account for about 63%') and the regional gap ('roughly $761') rather than just restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'about 63% of total revenue', 'gap between the top and bottom regions is roughly $761', and dollar amounts for each product and region."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product, region, and rationale grounded in the data \u2014 'Promote Gadget in the West, where overall revenue is weakest' and 'Stock more Widget units in the North, the top region'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations beyond the tables, including revenue concentration ('Gadget and Widget together account for about 63%') and the inter-regional gap ('roughly $761')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'about 63% of total revenue', 'gap... is roughly $761', and a '$204.94' median alongside all raw dollar amounts."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product and region tied to the data, e.g. 'Promote Gadget in the West' and 'Stock more Widget units in the North' and 'Review Sprocket pricing.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations beyond the tables \u2014 revenue concentration ('Gadget and Widget together account for about 63%'), the regional gap ('roughly $761'), and median order value."
+      }
+    }
+  ]
+}

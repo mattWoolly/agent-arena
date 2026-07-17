@@ -1,0 +1,36 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 76.4,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.5304715000000001,
+  "num_turns": 6,
+  "duration_ms": 74916,
+  "duration_api_ms": 75521,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 4981,
+  "cache_read_tokens": 133933,
+  "final_message": "Both files are done and every constraint passed a mechanical verification pass.\n\n**What was produced**\n\n- `summary.json` \u2014 total revenue **7154.44** (`summary.json:2`), **30** orders (`summary.json:3`), median order value **204.94** (`summary.json:4`), top product **Gadget** (`summary.json:5`), and all four regions with rounded totals (`summary.json:6-11`).\n- `REPORT.md` \u2014 188 words (75% of the 250-word cap), with the four required H2 headings in order (`REPORT.md:1,5,9,13`), the exact `$7,154.44` format and order count in Overview (`REPORT.md:3`), and exactly three bullets of 19, 16, and 17 words in Recommendations (`REPORT.md:15-17`).\n\n**Key findings from the data** (source rows: `data/sales.csv:2-31`; line 1 is the header, so 31 file lines = 30 orders)\n\n- Gadget is the revenue leader at $2,392.00 (33.4% of total) despite selling only 16 units \u2014 6.6% of the 240+ total unit volume. Sprocket is its mirror image: 238 units but just $1,130.50 (15.8%). These two facts compound: the business's unit volume is concentrated in its least valuable product while its most valuable product barely moves, so a naive \"sell more units\" push would likely grow the worst-performing revenue line. The recommendations address both sides.\n- North leads regions at $2,176.35 (30.4%); West trails at $1,414.82 (19.8%), a 35.0% gap computed as (2,176.35 \u2212 1,414.82) / 2,176.35.\n\n**Edge case handled:** with an even count of 30 orders, the median is the mean of the 15th and 16th sorted per-order revenues \u2014 computed via `statistics.median`, giving $204.94. Rounding was applied only to final aggregates, never to intermediate sums.\n\nNo git commits were made and all work stayed inside the working directory.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T20:25:46Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

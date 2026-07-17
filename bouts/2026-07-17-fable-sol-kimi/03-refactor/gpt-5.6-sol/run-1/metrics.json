@@ -1,0 +1,41 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 123.0,
+  "agent_exit": 0,
+  "assistant_messages": 46,
+  "tool_calls": {
+    "TaskCreate": 3,
+    "TaskUpdate": 6,
+    "Bash": 5,
+    "Read": 12,
+    "Edit": 5
+  },
+  "tool_calls_total": 31,
+  "total_cost_usd": 0.50084,
+  "num_turns": 32,
+  "duration_ms": 121842,
+  "duration_api_ms": 122192,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 392913,
+  "output_tokens": 6286,
+  "cache_read_tokens": 367179,
+  "final_message": "Implemented the configuration refactor:\n\n- Added typed, frozen `Config` dataclass with existing defaults in `reportgen/config.py:5`.\n- Updated `load_config()` to return `Config` and raise `ValueError` naming unknown settings in `reportgen/config.py:13`.\n- Replaced config subscripting with attribute access in:\n  - `reportgen/formatter.py:4`\n  - `reportgen/loader.py:6`\n- Added `Config` type annotations to config consumers.\n- Confirmed no files under `tests/` were modified and no config subscripting remains.\n- No git commits created.\n\nVerification:\n\n```text\n4 passed in 0.02s\n```",
+  "total_cost_usd_cli": 2.1217149999999996,
+  "cost_source": "proxy-usage-log (19 requests)",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T18:57:41Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "3 files changed, 29 insertions(+), 18 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

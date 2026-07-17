@@ -1,0 +1,11 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..d3a32fd
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,5 @@
++- src/sync.py:14 Using floor division for the page count omits every final partial page (and returns no rows at all when fewer than 100 users are staged).
++- src/sync.py:24 The mutable default `seen` list retains IDs across calls, so later sync invocations silently skip records that should be retried or updated.
++- src/sync.py:35 Interpolating `email` and `id` directly into the SQL makes valid quoted email addresses fail and allows staged data to alter the update query.
++- src/report.py:6 Returning on an empty user list after opening the file leaves the report truncated without its zero-user summary and bypasses closing the file handle.
++- src/report.py:11 Calling `lower()` on the schema-permitted `None` email raises an exception and aborts report generation for phone-invited users.

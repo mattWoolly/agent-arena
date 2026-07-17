@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'West trailed at $1,414.82 (19.8%), 35% below North' and 'The gap between the top and bottom regions is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures, e.g. 'Reprice or bundle Sprocket: 238 units sold, the highest volume, yet it earned only 15.8% of revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, including revenue concentration ('33.4% of revenue came from only 16 units') and the high-volume/low-margin pattern where Sprocket leads volume (238 units) but earns least (15.8%)."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget led with $2,392.00 (33.4% of revenue) from just 16 units' and 'West trailed at $1,414.82 (19.8%), 35% below North... gap... is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. 'Investigate West region: its $1,414.82 (19.8%) trails North's $2,176.35 by 35%; replicate North's product mix there.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, including the revenue concentration ('33.4% of revenue came from only 16 units') and the volume/margin inversion ('high-volume, low-margin sales contribute least') plus the mean-vs-median skew note."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Gadget's '33.4% of revenue' and West being '35% below North' with a '$761.53' gap."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region and its figures, e.g. 'Reprice or bundle Sprocket: 238 units sold... yet it earned only 15.8% of revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations like revenue concentration ('33.4% of revenue came from only 16 units') and the high-volume/low-margin outlier ('Sprocket... highest volume, yet earned only 15.8%')."
+      }
+    }
+  ]
+}

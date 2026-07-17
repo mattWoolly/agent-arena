@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Product and regional sections give only bare figures with rankings ('Gadget led ... at $2,392.00'), but recommendations add computed comparisons like the '$761.53' gap and '63.05% of total revenue.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products/regions with figures, e.g. 'apply relevant tactics to West, which trailed North by $761.53' and 'Widget alongside Gadget; together they contributed $4,510.94, or 63.05%.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces the two-product concentration ('63.05% of total revenue') and the North\u2013West gap ('$761.53'), non-obvious, actionable observations beyond the tables' totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Product and regional comparisons are conveyed largely by listing raw dollar totals (e.g., Gadget $2,392.00 ... Sprocket $1,130.50), with only two genuinely computed relational figures \u2014 the $761.53 gap and the 63.05% share."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names concrete products, regions, and figures (\"Study North's sales mix and apply relevant tactics to West, which trailed North by $761.53\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces the non-obvious revenue concentration (\"together they contributed $4,510.94, or 63.05% of total revenue\") and the actionable North\u2013West gap of $761.53 rather than only restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "The body sections list raw dollar figures as bare rankings without computed gaps or ratios, but the recommendations do quantify comparisons ('trailed North by $761.53' and '63.05% of total revenue')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products, regions, and figures (e.g., 'Promote Widget alongside Gadget; together they contributed $4,510.94, or 63.05% of total revenue')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations including the Gadget+Widget concentration ('63.05% of total revenue') and the North-West gap ('trailed North by $761.53') rather than merely restating totals."
+      }
+    }
+  ]
+}

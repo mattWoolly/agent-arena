@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode explained (e.g. the 'except Exception: pass' swallow is noted but never linked to a resulting bad state from another defect)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. 'floor division ... drops the final partial page' and 'mutable default argument seen=[] is shared across calls, so users ... are silently skipped as duplicates.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode explained across defects \u2014 e.g. the 'except Exception: pass' swallowing is noted but never connected to another defect's persisting bad state."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. floor division 'drops the final partial page' and the mutable default 'is shared across calls, so users synced in one run are silently skipped as duplicates.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is listed in isolation with no compound failure mode explained\u2014even the swallowed-exception finding at src/sync.py:38 is not linked to any second defect's persisting bad state."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a concrete failure mechanism, e.g. 'floor division ... drops the final partial page' and 'mutable default argument seen=[] is shared across calls, so users ... are silently skipped as \"duplicates\".'"
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14', 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure \u2014 the id is appended to `seen` before the UPDATE, so 'combined with the shared default at line 24, is never retried,' with the swallowed error at line 38 hiding it."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. floor division 'silently dropping `total_count % PAGE_SIZE` rows' and NULL email 'raises AttributeError when email is NULL.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:31\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "Line 31 explains the compound mode where appending to seen before the UPDATE combined with the shared default at line 24 means a failed user \"is never retried,\" and line 38's swallowing of line 35's syntax errors is also mechanistically tied."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. line 14 \"floor-divides away the final partial page, silently dropping total_count % PAGE_SIZE rows\" with verified loss conditions."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "Line 31 explains that appending to `seen` before the UPDATE, 'combined with the shared default at line 24, is never retried,' and line 38 notes `except Exception: pass` swallows 'the syntax errors caused by line 35' \u2014 both mechanistic compound failures."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor-divides away the final partial page, silently dropping `total_count % PAGE_SIZE` rows' and 'raises AttributeError when email is NULL...and IndexError when an email contains no \"@\"'."
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 0,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons attach raw revenue figures (e.g., \"Gadget led revenue with $2,392.00, followed by Widget at $2,118.94\") but never compute gaps, ratios, or percentages between them."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name specific products/regions with figures (\"Target West for growth initiatives; its $1,414.82 revenue was lowest\") but the actions themselves (\"prioritize,\" \"study,\" \"target for growth\") are generic templates that would fit any sales report."
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose only restates ranked totals the tables already imply (\"North led with $2,176.35, followed by East at $1,830.79...\") without surfacing concentration, gaps, or outliers."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every ranking carries a raw dollar figure (e.g., \"Gadget led revenue with $2,392.00\") but none are computed comparisons like percentages, ratios, or gaps between entities."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name specific products/regions and cite figures, e.g., \"Target West for growth initiatives; its $1,414.82 revenue was lowest among regions.\""
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose only restates totals the tables imply and offers obvious \"promote the leader, grow the laggard\" advice with no concentration, gap, or outlier observation."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every ranking carries an absolute dollar figure (e.g., \"Gadget led revenue with $2,392.00\") but no percentages, ratios, or gaps between entries are computed."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name a specific product or region with its figure (e.g., \"Target West for growth initiatives; its $1,414.82 revenue was lowest\")."
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose merely restates the rankings and totals the tables already imply (e.g., \"Gadget led product revenue at $2,392.00\") with no concentration, gap, or outlier analysis."
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+  test_parse_duration [32mPASSED[0m[32m                        [ 16%][0m
+  test_luhn_valid [32mPASSED[0m[32m                            [ 33%][0m
+  test_flatten [32mPASSED[0m[32m                               [ 50%][0m
+  test_top_k_frequent [32mPASSED[0m[32m                        [ 66%][0m
+  test_rolling_max [32mPASSED[0m[32m                           [ 83%][0m
+  test_rolling_max_is_linear [32mPASSED[0m[32m                 [100%][0m
+SCORE: 6/6

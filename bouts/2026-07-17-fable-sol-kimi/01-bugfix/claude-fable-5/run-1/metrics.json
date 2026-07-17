@@ -1,0 +1,38 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 43.2,
+  "agent_exit": 0,
+  "assistant_messages": 14,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.36457999999999996,
+  "num_turns": 9,
+  "duration_ms": 41639,
+  "duration_api_ms": 41888,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 11,
+  "output_tokens": 1774,
+  "cache_read_tokens": 136073,
+  "final_message": "Done \u2014 `python3 -m pytest -q` passes with all 6 tests green. Two bugs were fixed in `lrucache/cache.py`, both causing valid entries to be wrongly evicted:\n\n1. **`get` didn't refresh recency** (`cache.py:30`): a cache hit returned the value without moving the key to the most-recently-used end of the `OrderedDict`, so eviction order ignored reads. Added `move_to_end(key)` on a non-expired hit.\n\n2. **`put` evicted on in-place updates** (`cache.py:33`): the eviction check fired whenever the cache was at capacity, even when the key being written already existed \u2014 so updating a key in a full cache evicted an unrelated entry. Now it only evicts when the key is new.\n\n`SOLUTION.md` at the repo root documents both root causes.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T18:29:38Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 16 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

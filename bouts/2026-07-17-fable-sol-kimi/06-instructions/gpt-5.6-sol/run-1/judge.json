@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 0,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every comparison carries a dollar figure but they are raw totals attached to rankings (\"North led with $2,176.35, followed by East with $1,830.79\") rather than computed percentages, ratios, or gaps."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product or region with its figure and an action (\"Prioritize Gadget inventory; it generated $2,392.00\"; \"Target West promotions, since its $1,414.82 revenue was lowest\")."
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose only restates the top/bottom rankings already implied by the tables (e.g., recommending Gadget \"the highest product revenue\" and West \"lowest among regions\") with no concentration, gap, or outlier observation."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every comparison carries a raw dollar figure (e.g., \"Gadget led product revenue with $2,392.00, followed by Widget at $2,118.94\"), but none are computed relational figures like gaps, ratios, or percentages between items."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name a specific product/region and cite its figure (e.g., \"Target West promotions, since its $1,414.82 revenue was lowest among regions\")."
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose merely restates ranked totals the tables already imply (\"North led with $2,176.35, followed by East...\") without surfacing concentration, gaps, or outliers."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every comparison attaches the raw dollar total (e.g., \"Gadget led product revenue with $2,392.00, followed by Widget at $2,118.94\") but none is a computed figure like a percentage, ratio, or gap."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with its figure and an action (\"Target West promotions, since its $1,414.82 revenue was lowest among regions\")."
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose only restates ranked totals the tables already imply (e.g., recommendations merely repeat that Gadget \"generated $2,392.00, the highest product revenue\") with no concentration, gap, or outlier observation."
+      }
+    }
+  ]
+}

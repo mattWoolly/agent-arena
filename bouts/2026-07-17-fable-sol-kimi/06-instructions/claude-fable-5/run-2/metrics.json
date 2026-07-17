@@ -1,0 +1,36 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 53.0,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "total_cost_usd": 0.3613115,
+  "num_turns": 5,
+  "duration_ms": 51943,
+  "duration_api_ms": 52660,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 2817,
+  "cache_read_tokens": 106062,
+  "final_message": "Done. Both files are created and validated against every constraint.\n\n**`summary.json`** \u2014 computed directly from the 30 rows in `data/sales.csv`:\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94\n- `top_product_by_revenue`: \"Gadget\"\n- `revenue_by_region`: East 1830.79, North 2176.35, South 1732.48, West 1414.82\n\n**`REPORT.md`** \u2014 verified mechanically:\n- Exactly the four required `##` headings in order, and no other headings (grep confirms only those 4 lines start with `#`)\n- 196 words, under the 250 cap\n- Overview states total revenue as `$7,154.44` and 30 orders\n- Exactly three `- ` bullets in the file, all in Recommendations, each 14\u201318 words and tied to the data (Gadget's revenue-per-unit lead, West trailing North, Sprocket's 238-unit volume)\n- No occurrences of the banned words (case-insensitive grep found none)\n\nNo git commits were made and all work stayed in the current directory.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T20:21:22Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

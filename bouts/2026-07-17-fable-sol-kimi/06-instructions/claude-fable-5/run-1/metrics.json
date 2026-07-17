@@ -1,0 +1,36 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 47.4,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "total_cost_usd": 0.33471749999999995,
+  "num_turns": 5,
+  "duration_ms": 45919,
+  "duration_api_ms": 48096,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 2270,
+  "cache_read_tokens": 106148,
+  "final_message": "Both files are done and verified against every constraint.\n\n**`summary.json`** \u2014 computed directly from the 30 rows in `data/sales.csv`:\n- Total revenue: **$7,154.44** across **30 orders**, median order value $204.94\n- Top product by revenue: **Gadget** ($2,392.00 from just 16 units)\n- Revenue by region: North $2,176.35, East $1,830.79, South $1,732.48, West $1,414.82\n\n**`REPORT.md`** \u2014 199 words with exactly the four required H2 headings in order and no others. The Overview states the total revenue as `$7,154.44` and the 30-order count; Recommendations has exactly three bullets (19, 13, and 20 words each), all grounded in the numbers above. A validation pass confirmed none of the banned words appear and the JSON parses with exactly the five required keys.\n\nNo commits were made and all work stayed inside the current directory.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T20:15:18Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

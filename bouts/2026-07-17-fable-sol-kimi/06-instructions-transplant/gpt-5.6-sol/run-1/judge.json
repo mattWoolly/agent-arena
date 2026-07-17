@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget was \"33.43% of revenue, 12.89% more than Widget's $2,118.94\" and North's share \"was 53.83% above West's revenue.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures, e.g. \"Test Sprocket promotions: its $1,130.50 revenue was 47.26% of Gadget revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations like revenue concentration in Gadget (33.43%), the North\u2013West gap (53.83%), the median-vs-total distinction, and Sprocket's underperformance ratio to Gadget."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget is \"33.43% of revenue, 12.89% more than Widget's\" and North's \"30.42% share was 53.83% above West's revenue\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product or region with its figure, e.g. \"Test Sprocket promotions: its $1,130.50 revenue was 47.26% of Gadget revenue\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations like revenue concentration (\"Gadget generated ... 33.43% of revenue\"), the North\u2013West regional gap, and Sprocket's underperformance ratio to Gadget."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget is \"33.43% of revenue, 12.89% more than Widget's $2,118.94\" and North's share \"was 53.83% above West's revenue.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data, e.g. \"Prioritize Gadget stock: it generated $2,392.00, 33.43% of revenue\" and \"Test Sprocket promotions: its $1,130.50 revenue was 47.26% of Gadget revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable observations beyond restating totals\u2014revenue concentration (Gadget 33.43%), the regional gap (North 53.83% above West), and Sprocket lagging at 47.26% of Gadget."
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. \"Gadget was $273.06, or 12.89%, higher\" and \"North exceeded West by $761.53, or 53.82%\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names concrete products/regions and figures, e.g. \"Test North-specific promotions; North produced $2,176.35, 30.42% of revenue and 53.82% more than West\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations such as top-two product concentration (\"$4,510.94, or 63.05%\") and \"North Gadget orders generated $747.50 (10.45% of total), compounding the leading region and product concentration\"."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget was $273.06, or 12.89%, higher\" and \"North exceeded West by $761.53, or 53.82%\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products/regions and figures, e.g. \"Test North-specific promotions; North produced $2,176.35, 30.42% of revenue and 53.82% more than West\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations like the top-two product concentration ($4,510.94, 63.05%) and the compounding \"North Gadget orders generated $747.50 (10.45% of total)\" region-product concentration."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget was $273.06, or 12.89%, higher' and 'North exceeded West by $761.53, or 53.82%'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions with figures, e.g. 'Test North-specific promotions; North produced $2,176.35, 30.42% of revenue and 53.82% more than West'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations like the top-two product concentration ('$4,510.94, or 63.05%') and 'North Gadget orders generated $747.50 (10.45% of total), compounding the leading region and product concentration'."
+      }
+    }
+  ]
+}

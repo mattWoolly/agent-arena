@@ -1,0 +1,42 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 162.0,
+  "agent_exit": 0,
+  "assistant_messages": 41,
+  "tool_calls": {
+    "Read": 6,
+    "TaskCreate": 3,
+    "TaskUpdate": 6,
+    "Bash": 4,
+    "Write": 2,
+    "TaskGet": 1
+  },
+  "tool_calls_total": 22,
+  "total_cost_usd": 0.59333,
+  "num_turns": 23,
+  "duration_ms": 160865,
+  "duration_api_ms": 161881,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 393093,
+  "output_tokens": 9336,
+  "cache_read_tokens": 367159,
+  "final_message": "Created and validated both requested files:\n\n- `REPORT.md` has the four required H2 sections, 123 words, and exactly three recommendations of 13\u201314 words each (`REPORT.md:1-17`).\n- `summary.json` contains exactly the five required keys and all computed values (`summary.json:1-12`).\n- The even-order median edge case uses the mean of the two middle values, producing `$204.95` (`REPORT.md:3`, `summary.json:4`).\n\nAll figures were calculated from the 30 CSV records (`data/sales.csv:2-31`).",
+  "total_cost_usd_cli": 2.198865,
+  "cost_source": "proxy-usage-log (19 requests)",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T20:40:55Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}
