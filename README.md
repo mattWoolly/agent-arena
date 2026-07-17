@@ -100,6 +100,17 @@ behind localhost (`base_url` alone would just say 127.0.0.1). Disclose the
 translation layer in anything published from such runs; tool-calling behavior
 through a third-party translator is not attributable to the model alone.
 
+The CLI prices unknown model IDs from its own Claude table, so for any model
+listed in `env/prices.json` (list prices per 1M tokens, with cache tiers and
+long-context multipliers where the vendor defines them) `metrics.py`
+recomputes `total_cost_usd` from usage, preferring per-request transcript
+usage and falling back to the result envelope's aggregate when a proxy zeroes
+out per-message usage. The CLI's figure is preserved as `total_cost_usd_cli`
+and `cost_source` records which path priced the run. Caveat, disclosed where
+it matters: if a proxy fails to propagate the vendor's cached-token counts
+(observed with LiteLLM: cache fields all zero), computed cost is an upper
+bound at full input rates.
+
 Requirements: `claude` CLI on PATH (authed), `python3`, `pytest`, `jq`, `make`, `git`.
 
 Agents run with `--dangerously-skip-permissions` in throwaway workspaces created
