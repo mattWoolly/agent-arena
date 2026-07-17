@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings cites a precise file:line such as \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no explanation of how separate defects combine into a compound failure mode (e.g., the swallowed exception at line 39 is never linked to persisting bad state from another defect)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"floor-divides the page count, so the final partial page is never fetched\" and mutable default \"seen=[]\" \"is shared across all calls...so any user id synced once is skipped.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11'), all six precisely located."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation; no compound failure mode combining two defects (e.g. the swallowed exception at :39 preserving bad state elsewhere) is stated."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor-divides the page count, so the final partial page is never fetched' and 'crashes with AttributeError when email is None...and with IndexError when the email contains no \"@\"'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode linking two defects (e.g. the swallowed exception at line 39 is never connected to persisting bad state from another defect)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor-divides the page count, so the final partial page is never fetched' and 'mutable default argument seen=[] is shared across all calls...so any user id synced once is skipped'."
+      }
+    }
+  ]
+}

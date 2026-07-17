@@ -1,0 +1,10 @@
+{
+  "cli_version": "2.1.212 (Claude Code)",
+  "base_url": "https://api.anthropic.com",
+  "model_env": "none",
+  "effort": "xhigh",
+  "setting_sources": "project",
+  "max_turns": 60,
+  "timeout_s": 1500,
+  "started_at": "2026-07-17T07:24:12Z"
+}

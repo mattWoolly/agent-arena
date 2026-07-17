@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line, e.g. `src/sync.py:14` and `src/report.py:11`."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically ties two defects together: `except Exception: pass` swallows the 'quote-in-email failures caused by line 35' so they 'go unnoticed while synced undercounts.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division 'never fetches the final partial page, silently dropping up to 99 users' and the mutable default `seen=[]` 'persists across calls, so any later sync_users call silently skips every user ID processed in an earlier call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically explains a compound failure: 'except Exception: pass swallows per-user sync failures silently... so errors (including the quote-in-email failures caused by line 35) go unnoticed while synced undercounts.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. floor division 'never fetches the final partial page, silently dropping up to 99 users' and the mutable default 'persists across calls, so any later sync_users call silently skips every user ID processed in an earlier call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically explains a compound failure: `except Exception: pass` swallows the 'quote-in-email failures caused by line 35' so those SQL/quote errors go unnoticed while `synced` undercounts."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division 'never fetches the final partial page, silently dropping up to 99 users' and the mutable default 'persists across calls, so any later `sync_users` call silently skips every user ID processed in an earlier call.'"
+      }
+    }
+  ]
+}

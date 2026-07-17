@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure: append-before-update \"combined with the persisted `seen` list (line 24) and the swallowed exception (line 39)\" permanently drops a user from all future syncs."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. floor division means \"the final partial page is never fetched\" and the mutable default `seen=[]` is \"shared across all calls, so every user ID synced in any earlier call is treated as a duplicate.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (sync.py:14/24/31/35/39, report.py:7/11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure: a failed UPDATE marks a user as seen before success, which combined with the persisted mutable-default `seen` list (line 24) and the swallowed exception (line 39) permanently drops that user from all future syncs."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division means \"for total_count=250 only 200 rows... are read and 50 rows... are silently dropped,\" and email=None \"crashes with AttributeError.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding opens with a usable file:line citation (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding mechanistically explains a compound failure: a failed sync marks a user seen before the UPDATE, and 'combined with the persisted seen list (line 24) and the swallowed exception (line 39), a single transient or quote-induced failure permanently drops that user from all future syncs with no trace.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division means 'the final partial page is never fetched' and the mutable default 'seen=[]' is 'shared across all calls' causing later duplicates to be skipped."
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 80.9,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Bash": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.29936425,
+  "num_turns": 6,
+  "duration_ms": 79691,
+  "duration_api_ms": 80395,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 6002,
+  "cache_read_tokens": 132009,
+  "final_message": "Both files are written and every constraint passes verification.\n\n**`summary.json`** (all values computed with exact `Decimal` arithmetic in the compute script, not floats):\n- `total_revenue` 7154.44, `orders` 30, `median_order_value` 204.95, `top_product_by_revenue` \"Gadget\", plus all four regions.\n- **Edge case \u2014 even order count:** with 30 orders (`data/sales.csv` has 30 data rows, `sales.csv:2-31`), the median is the mean of the two middle sorted per-order revenues, 190.00 (order 1003, `sales.csv:4`) and 219.89 (order 1020, `sales.csv:21`): (190.00 + 219.89) / 2 = 204.945, rounded half-up to **204.95**. A `HALF_UP` rounding rule was used deliberately here because the .945 midpoint sits exactly on a rounding boundary \u2014 Python's default banker's rounding would have given 204.94.\n\n**`REPORT.md`** verification (all mechanical, `REPORT.md:1-24`):\n- Word count **160 \u2264 250**; exactly the four required H2 headings in order, no other headings; none of the five banned words present; Overview states `$7,154.44` and 30 orders (`REPORT.md:3`); exactly 3 bullets, each \u2264 25 words (15/15/14).\n\n**Findings and how they interact:**\n- Gadget tops revenue at $2,392.00 = 33.4% of the $7,154.44 total, and earns 2.12\u00d7 Sprocket's $1,130.50 (`REPORT.md:7-9`) \u2014 notable because it does so on *low volume* at a high $149.50 unit price. This compounds with the median-below-mean gap (204.95 vs the 238.48 average, `REPORT.md:3`): the same high-price Gadget orders that dominate product revenue are the large orders pulling the mean above the median, so product concentration and order-value skew are two views of the same driver, not independent facts.\n- North leads regionally at $2,176.35 = 30.4%, and outsells West ($1,414.82, 19.8%) by 53.8% (`REPORT.md:13`). That 53.8% gap across only 30 orders is the single largest lever in the data and grounds the second recommendation.\n\nNo git commits made; all work stayed inside the current directory.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T07:25:10Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

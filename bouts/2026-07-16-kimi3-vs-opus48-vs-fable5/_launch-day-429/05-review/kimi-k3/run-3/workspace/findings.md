@@ -1,0 +1,8 @@
+# Findings
+
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` drops the final partial page (and fetches nothing at all when total_count < PAGE_SIZE), so staged users beyond the last full page are never synced.
+- src/sync.py:24 mutable default argument `seen=[]` is shared across calls, so user IDs synced in a previous invocation are silently skipped in all later calls.
+- src/sync.py:35 the parameterized UPDATE was replaced with an f-string interpolating email and id directly into SQL, introducing SQL injection and breaking on any email containing a single quote.
+- src/sync.py:38 `except Exception: pass` silently swallows all per-user sync failures (previously logged with log.exception), leaving no record of which users failed to sync.
+- src/report.py:5 the report file is opened without a context manager and the empty-users early return at line 7 returns without closing it, leaking the file handle and leaving a truncated empty report (previously the header was still written).
+- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError when email is None (db.py states email is nullable and must be handled; the old code used `or "unverified"`) and with IndexError for addresses lacking "@".

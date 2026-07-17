@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..9fda61a
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor division never fetches the final partial page, silently dropping up to 99 users — and all of them when total_count < 100.
++- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so any later `sync_users` call silently skips every user ID processed in an earlier call, dropping legitimate updates.
++- src/sync.py:35 The UPDATE is built by f-string interpolation instead of the previous bound parameters, a SQL injection vulnerability (and any email containing a single quote breaks or hijacks the statement).
++- src/sync.py:38 `except Exception: pass` swallows per-user sync failures silently, removing the previous `log.exception` so errors (including the quote-in-email failures caused by line 35) go unnoticed while `synced` undercounts.
++- src/report.py:5 The `with open(...)` block was replaced by a bare `open()`/`close()`, leaking the file handle on the empty-users early return and whenever the write loop raises before `f.close()` — and that early return leaves an already-truncated empty report even when there are failures to record.
++- src/report.py:11 `user["email"].lower().split("@")[1]` crashes on nullable emails — AttributeError when email is None (schema documents email as nullable; the old code fell back to "unverified") and IndexError when the email contains no "@".

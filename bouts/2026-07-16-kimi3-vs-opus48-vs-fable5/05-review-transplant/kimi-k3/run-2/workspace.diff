@@ -1,0 +1,15 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..eee1646
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,9 @@
++# Findings
++
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` uses floor division, so the final partial page is never fetched — for total_count=250 only 200 rows (80%) are read and 50 rows (20%) are silently dropped, and for total_count<100 (e.g. 99) zero pages are fetched so 100% of staged users are skipped (only exact multiples of PAGE_SIZE=100 are handled correctly).
++- src/sync.py:24 `seen=[]` is a mutable default argument shared across all calls, so every user ID synced in any earlier call is treated as a duplicate in later calls and silently skipped, making the second and subsequent sync runs in the same process no-ops for previously seen users.
++- src/sync.py:31 `seen.append(user["id"])` runs before the UPDATE succeeds, so a user whose sync fails is permanently marked as seen and never retried — combined with the persisted `seen` list (line 24) and the swallowed exception (line 39), a single transient or quote-induced failure permanently drops that user from all future syncs with no trace.
++- src/sync.py:35 the parameterized UPDATE was replaced with f-string interpolation, so an email containing a single quote (e.g. o'brien@example.com) breaks the statement or allows arbitrary SQL injection from staged data.
++- src/sync.py:39 `except Exception: pass` replaces the previous log.exception, silently swallowing every sync failure (including the SQL errors caused by line 35) so callers see only a reduced `synced` count and can never populate the report's `failures` list.
++- src/report.py:7 the early `return 0` when `users` is empty skips `f.close()`, leaking the file handle (and, because the `with` block was removed at line 5, any exception during the writes below also leaks the handle); it also truncates the report file to zero bytes where the old code still wrote a header.
++- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError when email is None (db.py:4-5 explicitly states users.email is NULLABLE and consumers must handle email=None, which the old `or "unverified"` did) and with IndexError when an email contains no "@", and the crash leaves the report half-written with the handle unclosed.

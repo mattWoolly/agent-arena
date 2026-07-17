@@ -1,0 +1,7 @@
+ SOLUTION.md                                             |  16 ++++++++++++++++
+ __pycache__/conftest.cpython-312-pytest-9.0.3.pyc       | Bin 0 -> 467 bytes
+ lrucache/__pycache__/__init__.cpython-312.pyc           | Bin 0 -> 206 bytes
+ lrucache/__pycache__/cache.cpython-312.pyc              | Bin 0 -> 2682 bytes
+ lrucache/cache.py                                       |   3 ++-
+ .../__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc | Bin 0 -> 13498 bytes
+ 6 files changed, 18 insertions(+), 1 deletion(-)

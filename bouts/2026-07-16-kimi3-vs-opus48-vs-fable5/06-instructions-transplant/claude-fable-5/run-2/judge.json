@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Gadget 'out-earning second-place Widget ($2,118.94, 29.6%) by 12.9%' and North 'averages $272.04 per order against West's $202.12'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures actionably, e.g. 'grow its Gadget sales ($299.00 vs North's $747.50)' and 'Revisit Sprocket pricing... at $4.75 each'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, such as Sprocket being '63.1% of all units sold yield just 15.8% of revenue' and that the regional 'gap comes from order value, not order frequency'."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget 'out-earning second-place Widget by 12.9%' and North '53.8% more than last-place West' plus per-order averages ($272.04 vs $202.12)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures actionably, e.g. 'grow its Gadget sales ($299.00 vs North's $747.50)' and 'Revisit Sprocket pricing... 63.1% of all units sold yield just 15.8% of revenue at $4.75 each.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, e.g. Sprocket's volume/revenue inversion (63.1% of units, 15.8% of revenue) and that the regional gap 'comes from order value, not order frequency.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget \"out-earning second-place Widget ($2,118.94, 29.6%) by 12.9%\" and North \"53.8% more than last-place West.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures and is actionable, e.g. \"grow its Gadget sales ($299.00 vs North's $747.50)\" and \"Revisit Sprocket pricing or bundle it: 63.1% of all units sold yield just 15.8% of revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations like Gadget's revenue concentration from only 16 units, Sprocket's volume/revenue mismatch, and that the North\u2013West gap \"comes from order value, not order frequency.\""
+      }
+    }
+  ]
+}

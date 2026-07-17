@@ -1,0 +1,35 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 84.5,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.586219,
+  "num_turns": 6,
+  "duration_ms": 83341,
+  "duration_api_ms": 84997,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 5821,
+  "cache_read_tokens": 135628,
+  "final_message": "Both files are written and every constraint verified mechanically with a check script.\n\n**Results** (computed from all 30 data rows of `data/sales.csv:2-31`):\n\n- Total revenue **$7,154.44** across **30 orders**, stated in `REPORT.md:3` and `summary.json:2-3`.\n- Median order value **$204.94** (`summary.json:4`). Edge case: the order count is even (30), so per the spec I took the mean of the 15th and 16th sorted per-order revenues rather than a single middle value. The median sits 14.1% below the $238.48 mean, which the Overview calls out.\n- Top product by revenue: **Gadget**, $2,392.00 (`summary.json:5`), 12.9% ahead of Widget's $2,118.94.\n- Regional totals in `summary.json:6-11`: North $2,176.35, East $1,830.79, South $1,732.48, West $1,414.82. Rounding edge case: I rounded each region's *total* (not per-order values), and the rounded regional sums add back to exactly $7,154.44, so there is no penny drift against `total_revenue`.\n\n**Constraint verification** (all confirmed by script output above):\n\n- `REPORT.md` has exactly the four required H2 headings in order and no other headings (`REPORT.md:1,7,11,15`), 223 words of the 250 allowed (89.2% of budget), the exact `$7,154.44` string, and zero hits on the five banned words including substring matches like \"leveraging\".\n- Recommendations (`REPORT.md:17-19`) has exactly three `- ` bullets at 17, 17, and 18 words \u2014 and I kept bullets out of the other sections so a file-wide bullet count also yields exactly 3.\n- `summary.json` has exactly the five required keys with correct types.\n\nOne compound pattern worth noting from the data: Sprocket's two weaknesses interact \u2014 it accounts for 63.1% of all units sold (238 of 377) but only 15.8% of revenue, because its $4.75 unit price is ~1/31 of Gadget's $149.50. High volume at that price means fulfillment effort concentrates on the least profitable product, which is why two of the three recommendations target the price-mix rather than raw volume.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T07:26:32Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

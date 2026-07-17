@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget 'finishing 12.9% ahead of Widget' and North '53.8% above the weakest region, West'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products/regions and data figures, e.g. 'lifting it to the $1,788.61 regional average would add $373.79, about 5.2% of total revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget earning '31.5 times more revenue per unit' and the median/mean spread showing revenue 'spread fairly evenly ... rather than driven by a few outliers.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget is '12.9% ahead of Widget', 'earns 31.5 times more revenue per unit', and North is '53.8% above the weakest region, West'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures actionable as written, e.g. 'lifting it to the $1,788.61 regional average would add $373.79, about 5.2% of total revenue' and 'Bundle $4.75 Sprockets (238 units sold) with Widget orders'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations such as Gadget's revenue concentration '33.4% of revenue from only 16 units', Sprocket's volume-vs-value outlier '31.5 times more revenue per unit', and that the regional gap 'reflects volume, not product mix.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget is \"12.9% ahead of Widget\" and \"earns 31.5 times more revenue per unit sold,\" and North is \"53.8% above the weakest region, West.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, figures, and regions with actionable numbers, e.g. \"lifting it [West] to the $1,788.61 regional average would add $373.79, about 5.2% of total revenue\" and \"Bundle $4.75 Sprockets (238 units sold) with Widget orders.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, such as Gadget's revenue-per-unit dominance (\"31.5 times more revenue per unit sold\") and the finding that the regional gap \"reflects volume, not product mix\" since every region bought all four products."
+      }
+    }
+  ]
+}

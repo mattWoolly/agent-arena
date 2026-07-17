@@ -1,0 +1,37 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 50.1,
+  "agent_exit": 0,
+  "assistant_messages": 21,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 6,
+    "Write": 2,
+    "Edit": 1
+  },
+  "tool_calls_total": 13,
+  "total_cost_usd": 0.4754775,
+  "num_turns": 14,
+  "duration_ms": 48943,
+  "duration_api_ms": 48879,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 13,
+  "output_tokens": 3391,
+  "cache_read_tokens": 159688,
+  "final_message": "Done \u2014 all 4 tests pass unmodified, and the refactor is complete.\n\nWhat changed:\n\n- **`reportgen/config.py`** \u2014 replaced the `DEFAULTS` dict with a frozen dataclass `Config(title: str = \"Report\", output_format: str = \"text\", max_rows: int = 10, include_summary: bool = True)`. `load_config(path)` now validates the JSON keys against the dataclass fields via `dataclasses.fields()` and raises `ValueError: Unknown config key: 'max_rowz'` (naming the offending key) before constructing `Config(**raw)`, so JSON values still override defaults.\n- **`reportgen/formatter.py`** \u2014 all `config[\"...\"]` subscripts switched to `config.output_format`, `config.title`, `config.include_summary`.\n- **`reportgen/loader.py`** \u2014 `config[\"max_rows\"]` \u2192 `config.max_rows`.\n- **`reportgen/main.py`** and **`__init__.py`** \u2014 untouched; they never subscripted the config.\n\nVerified:\n- `python3 -m pytest -q` \u2192 4 passed.\n- A grep for `cfg[`/`config[` patterns across `reportgen/` finds nothing.\n- A smoke script confirmed defaults, JSON overrides, frozenness (`FrozenInstanceError` on assignment), and the new unknown-key `ValueError`.\n\nNo files under `tests/` were touched, and no git commits were made.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:28:32Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

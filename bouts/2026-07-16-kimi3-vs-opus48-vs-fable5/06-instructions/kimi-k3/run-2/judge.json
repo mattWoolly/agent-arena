@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'top two products account for about 63% of total revenue', 'West lags at $1,414.82, roughly 20% of total revenue', and 'trails North by about $761'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with data, e.g. 'Focus sales effort on the West region, which trails North by about $761' and 'Review Sprocket pricing or demand, as it contributes the least revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple actionable, non-obvious observations \u2014 concentration ('top two products account for about 63%'), the regional gap ('$761'), and the West outlier at 'roughly 20% of total revenue'."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 top two products \"account for about 63%\", West is \"roughly 20% of total revenue\", and it \"trails North by about $761\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products/regions with figures, e.g. \"Focus sales effort on the West region, which trails North by about $761\" and \"Review Sprocket pricing... as it contributes the least revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations \u2014 revenue concentration (\"top two products account for about 63%\"), the regional gap ($761), and the West/Sprocket outliers \u2014 rather than merely restating table totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'top two products account for about 63% of total revenue', West is 'roughly 20% of total revenue', and it 'trails North by about $761'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product or region grounded in the data ('Focus sales effort on the West region, which trails North by about $761', 'Review Sprocket pricing... it contributes the least revenue')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like revenue concentration ('top two products account for about 63%') and the outlier gap ('West lags... roughly 20% of total revenue and the weakest')."
+      }
+    }
+  ]
+}

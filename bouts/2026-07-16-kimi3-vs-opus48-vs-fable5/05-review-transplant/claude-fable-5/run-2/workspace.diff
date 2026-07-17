@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..2251519
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` drops the final partial page, losing `total_count % 100` rows (e.g. 250 rows fetches only 200 = 80%) and silently fetching 0% whenever total_count < 100.
++- src/sync.py:35 Switching from a parameterized query to an f-string opens SQL injection and breaks on ordinary apostrophe emails (`o'brien@x.com` raises OperationalError; payload `x' WHERE 1=1 --` overwrites every users row).
++- src/sync.py:24 Mutable default `seen=[]` is shared across calls, so any user id synced in one call is permanently skipped in later calls, making repeated syncs of the same records return 0 and apply no updates.
++- src/sync.py:38 Replacing `log.exception` with `except Exception: pass` swallows all failures, which compounds the line-35 bug: an apostrophe/injection email now fails silently with no log and the row is never synced yet no error surfaces.
++- src/report.py:5 `open(path, "w")` without a context manager leaks the file handle on the early `return 0` at line 7 and on any mid-loop exception (line 11), since `f.close()` at line 13 is only reached on the fully-successful path.
++- src/report.py:11 `user["email"].lower().split("@")[1]` crashes on the documented NULLABLE email (None → AttributeError) and on any address lacking "@" (IndexError), regressing the old `user["email"] or "unverified"` null-handling and aborting the whole report.

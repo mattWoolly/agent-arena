@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..2876573
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 range(total_count // PAGE_SIZE) floor-division drops the final partial page (and every row when total_count < PAGE_SIZE), so fetch_staged_users silently returns fewer staged users than exist
++- src/sync.py:17 the paginated SELECT uses LIMIT/OFFSET without ORDER BY, so row order is undefined and rows can be skipped or duplicated across page boundaries
++- src/sync.py:24 mutable default argument seen=[] is shared across calls, and since ids are appended at line 31 before the sync attempt, users seen (or failed) in an earlier call are silently skipped by every later call in the process
++- src/sync.py:35 email is interpolated into the UPDATE via f-string instead of a bound parameter, allowing SQL injection (e.g. "x', active=0 --" mass-updates all rows) and causing syntax errors for apostrophe-containing emails
++- src/sync.py:39 bare except: pass replaces the previous log.exception, so failed syncs are swallowed with no record and are indistinguishable from success
++- src/report.py:7 the early return for empty users skips f.close(), leaking the file handle (writes are not in a context manager, so a write-time exception leaks it too)
++- src/report.py:11 user["email"].lower().split("@")[1] crashes with AttributeError when email is None (nullable per src/db.py:4-5) and with IndexError when the email contains no "@"

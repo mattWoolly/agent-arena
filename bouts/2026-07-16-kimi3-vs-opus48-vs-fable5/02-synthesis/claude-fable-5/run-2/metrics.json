@@ -1,0 +1,36 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 84.4,
+  "agent_exit": 0,
+  "assistant_messages": 19,
+  "tool_calls": {
+    "Read": 1,
+    "Edit": 7,
+    "Bash": 1
+  },
+  "tool_calls_total": 9,
+  "total_cost_usd": 0.7081845,
+  "num_turns": 10,
+  "duration_ms": 83274,
+  "duration_api_ms": 82986,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 19,
+  "output_tokens": 6087,
+  "cache_read_tokens": 235424,
+  "final_message": "All five functions are implemented in `problems.py` and every check passes, including a 1M-element performance run for `rolling_max` (0.39s).\n\nHow each is implemented:\n\n- **`parse_duration`** \u2014 a single anchored regex `(?:([0-9]+)h)?(?:([0-9]+)m)?(?:([0-9]+)s)?` via `fullmatch`, requiring at least one group. This structurally rejects out-of-order units, duplicates, bare units, negatives, whitespace, and trailing garbage; `[0-9]` (not `\\d`) also rejects Unicode digits, and non-string input raises `ValueError` up front.\n- **`luhn_valid`** \u2014 strips spaces/hyphens, returns `False` for empty results, non-strings, or anything outside ASCII `0-9`, then runs the standard right-to-left Luhn doubling. `\"0\"` passes (sum 0), other single digits fail.\n- **`flatten`** \u2014 recursive walk building joined keys with `sep`, using a `None` prefix sentinel so an empty-string top-level key still joins correctly. Empty nested dicts contribute nothing, non-dict values (lists included) pass through untouched, and the input is never mutated.\n- **`top_k_frequent`** \u2014 `Counter` plus one sort keyed on `(-count, word)`; returns `[]` for `k <= 0` and all distinct words when `k` exceeds them.\n- **`rolling_max`** \u2014 monotonic deque of indices (O(n) total), `ValueError` for `window <= 0`, `[]` when `window > len(nums)`.\n\nMy throwaway test covered all docstring examples, the listed error cases, a randomized brute-force cross-check for `rolling_max` (300 cases), and the timing test \u2014 everything passed.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:10:42Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 58 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..a12583c
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 Pagination loop `range(total_count // PAGE_SIZE)` drops the final partial page: any total_count not a multiple of 100 loses the tail (250 rows -> 50 dropped = 20%; 150 rows -> 33%) and any store under 100 fetches 0 rows (100% data loss).
++- src/sync.py:24 Mutable default argument `seen=[]` is shared across every call, so after the first process-lifetime sync each id is permanently in `seen`; verified re-runs of the same ids return 0 synced, silently skipping legitimate re-syncs (e.g. a changed email).
++- src/sync.py:35 SQL injection / correctness regression: replacing the parameterized query with f-string interpolation of `email` and `id` breaks on valid emails containing apostrophes (o'brien@x.com) and allows arbitrary SQL injection via the email field.
++- src/sync.py:38 `except Exception: pass` silently swallows all per-row failures (regression from `log.exception`), which compounds src/sync.py:35: apostrophe/injection-triggered SQL errors now vanish with no log and no failure count, so broken syncs look successful.
++- src/report.py:5 File opened with bare `open()` instead of a context manager and never closed on the early `return 0` (empty users) at line 7 or on any exception raised in the loop, leaking the handle while having already truncated the existing report file.
++- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError when email is None (db.py:4 notes email is NULLABLE; the removed `or "unverified"` fallback previously handled this) and with IndexError on any email lacking "@"; either exception aborts the report mid-write and leaks the open file from line 5.

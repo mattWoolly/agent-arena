@@ -1,0 +1,35 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 43.6,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "total_cost_usd": 0.171178,
+  "num_turns": 5,
+  "duration_ms": 42387,
+  "duration_api_ms": 45427,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 2539,
+  "cache_read_tokens": 102892,
+  "final_message": "Both files are done and every constraint passes validation.\n\n**`summary.json`** \u2014 five keys exactly:\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94 (mean of the two middle values of 30 orders)\n- `top_product_by_revenue`: \"Gadget\"\n- `revenue_by_region`: North 2176.35, South 1732.48, East 1830.79, West 1414.82\n\n**`REPORT.md`** \u2014 verified mechanically:\n- Exactly the four required H2 headings, in order, with no other headings of any level.\n- 187 words (\u2264 250).\n- Overview states total revenue as `$7,154.44` and 30 orders.\n- Recommendations has exactly three bullets (20, 17, and 16 words), each grounded in the computed figures.\n- None of the banned words appear.\n\nAll numbers were computed directly from `data/sales.csv`. No commits were made, and I worked only inside the current directory.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T06:44:02Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

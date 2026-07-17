@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..72293de
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` integer-divides, so the final partial page is never fetched — any count not a multiple of 100 silently loses the remainder (e.g. total_count=250 fetches 200, dropping 50 = 20%), and every count below 100 (edge case: total_count in 1..99) yields 0 pages and drops 100% of users.
++- src/sync.py:24 mutable default argument `seen=[]` is shared across all calls, so IDs accumulate process-wide and any user already synced in an earlier `sync_users` call is silently skipped on later runs (even when their staged email changed), defeating the intended per-batch dedupe.
++- src/sync.py:35 email and id are interpolated into the SQL via f-string (replacing the old parameterized query), which is a SQL-injection vulnerability and also breaks on legitimate emails containing a single quote such as `o'brien@x.com` (db.py allows arbitrary TEXT emails).
++- src/sync.py:38 `except Exception: pass` swallows every failure with no logging (the old code called `log.exception`); combined with the broken SQL at line 35, an apostrophe/injection email raises, is silently discarded, is not counted in `synced`, and leaves no trace — so corrupted syncs become invisible.
++- src/report.py:5 the file is opened without a context manager and is not closed on the early `return 0` path (line 7) nor when any later write/parse raises, leaking the file handle; this compounds with line 11 because the None-email crash there skips the sole `f.close()` at line 13, leaking the handle on every report that includes a phone-invited user.
++- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is NULL (db.py notes phone-invited users have email=None until verified; the old code guarded with `user["email"] or "unverified"`) and raises IndexError on any email lacking an `@`, aborting the whole report.

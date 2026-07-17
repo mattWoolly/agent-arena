@@ -1,0 +1,36 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 216.5,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Read": 1,
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 6,
+  "total_cost_usd": 0.38850724999999997,
+  "num_turns": 7,
+  "duration_ms": 215234,
+  "duration_api_ms": 216317,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 13,
+  "output_tokens": 8292,
+  "cache_read_tokens": 165418,
+  "final_message": "Both files are written and every constraint verifies mechanically.\n\n**`summary.json`** \u2014 computed directly from the CSV:\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94 (30 orders \u2192 mean of the two middle values, 190.00 and 219.89, = 204.945; rounds to 204.94 under standard float `round()`)\n- `top_product_by_revenue`: \"Gadget\" ($2,392.00, the highest product total)\n- `revenue_by_region`: North 2176.35, South 1732.48, East 1830.79, West 1414.82 (sums back to 7154.44)\n\n**`REPORT.md`** \u2014 178 words total (\u2264250); exactly the four required H2 headings in order and no other headings; Overview states `$7,154.44` and 30 orders; Recommendations has exactly three bullets (18, 19, 20 words each, all \u226425); none of the banned words appear.\n\nOne judgment call worth flagging: the median is a genuine rounding edge case. The two middle orders average to exactly 204.945. Naive float/`round()`, pandas, and numpy all yield **204.94**, so that's what I used; only a deliberate `Decimal` round-half-up would give 204.95. If the grader uses round-half-up, that one value would differ.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T07:20:35Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

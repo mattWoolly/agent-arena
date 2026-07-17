@@ -1,0 +1,6 @@
+- src/sync.py:14 Integer division `total_count // PAGE_SIZE` drops the final partial page, so any staged users beyond the last full 100-row page are silently never fetched or synced.
+- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so IDs synced in one call are remembered and wrongly skipped on every subsequent call to sync_users.
+- src/sync.py:35 Building the UPDATE with an f-string reintroduces SQL injection and breaks on any email containing a single quote (e.g. o'brien@x.com), replacing the safe parameterized query.
+- src/sync.py:38 Replacing `log.exception` with `except Exception: pass` silently swallows all sync failures, hiding errors (now more likely due to the string-built SQL) with no logging or count of failures.
+- src/report.py:5 File is opened without a context manager and leaked: the early `return 0` when users is empty (and any exception in the loop) exits before `f.close()`, leaking the file handle.
+- src/report.py:11 `user["email"].lower()` crashes with AttributeError when email is None (email is NULLABLE per schema); the previous `email or "unverified"` guard was removed, and `split("@")[1]` also raises IndexError for emails lacking '@'.

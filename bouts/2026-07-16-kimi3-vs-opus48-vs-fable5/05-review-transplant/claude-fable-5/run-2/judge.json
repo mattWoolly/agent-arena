@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-38 finding mechanistically explains the compound failure: swallowing exceptions 'compounds the line-35 bug: an apostrophe/injection email now fails silently with no log and the row is never synced yet no error surfaces.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. mutable default 'seen=[]' is 'shared across calls, so any user id synced in one call is permanently skipped in later calls.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-38 finding mechanistically explains the compound mode: `except Exception: pass` swallows the line-35 apostrophe/injection failure so 'the row is never synced yet no error surfaces.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism and triggering conditions, e.g. mutable default `seen=[]` is 'shared across calls, so any user id synced in one call is permanently skipped in later calls.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-38 finding mechanistically explains a compound failure \u2014 'compounds the line-35 bug: an apostrophe/injection email now fails silently with no log and the row is never synced yet no error surfaces.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. the mutable default 'seen=[]' is 'shared across calls, so any user id synced in one call is permanently skipped in later calls.'"
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The seen=[] finding gestures at an interaction (\"including ones whose sync failed are permanently skipped\") but never mechanistically connects it to the error-swallowing at :38 that causes those failures to go unnoticed and unretried."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. \"floor division ... drops the final partial page\" and \"crashes with AttributeError on NULL emails ... and with IndexError on addresses lacking '@'\"."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line reference (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The :24 finding gestures at an interaction by noting failed-sync IDs 'are permanently skipped' but never ties this mechanistically to the :38 error-swallowing that hides those failures."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division 'drops the final partial page' and the f-string 'breaks on emails containing single quotes (e.g. o'brien@x.com)'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line, e.g. \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "Finding 2 gestures at an interaction (\"user IDs (including ones whose sync failed) are permanently skipped\") but never mechanistically ties it to the error-swallowing of finding 4 (\"except Exception: pass silently swallows all sync errors\")."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. \"floor division ... drops the final partial page\" and \"mutable default argument seen=[] is shared across calls, so ... permanently skipped.\""
+      }
+    }
+  ]
+}

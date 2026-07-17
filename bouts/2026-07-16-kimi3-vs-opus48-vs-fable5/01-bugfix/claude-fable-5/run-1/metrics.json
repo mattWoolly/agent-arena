@@ -1,0 +1,37 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 35.3,
+  "agent_exit": 0,
+  "assistant_messages": 14,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.345286,
+  "num_turns": 9,
+  "duration_ms": 34168,
+  "duration_api_ms": 34305,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 1731,
+  "cache_read_tokens": 132569,
+  "final_message": "Done \u2014 `python3 -m pytest -q` now passes all 6 tests. There were two bugs in `lrucache/cache.py`:\n\n1. **`get` didn't refresh recency** (`cache.py:30`). A hit returned the value without moving the key to the most-recently-used end of the `OrderedDict`, so reading an entry didn't protect it from eviction \u2014 the next `put` evicted it anyway. Fixed by adding `move_to_end(key)` on a non-expired hit.\n\n2. **`put` evicted even when updating an existing key** (`cache.py:33`). The eviction check only looked at `len >= capacity`, so overwriting a key in a full cache wrongly kicked out the least-recently-used entry. Fixed by evicting only when the key is new and the cache is at capacity.\n\n`SOLUTION.md` is written at the repo root with the same explanation, and nothing under `tests/` was touched.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T04:59:16Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 16 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

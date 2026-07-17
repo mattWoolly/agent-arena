@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. West 'trailed at $1,414.82, about 65% of North's total' and Sprocket 'moving 238 units... because of its $4.75 price'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. 'Review Sprocket pricing: 238 units sold... produced only $1,130.50... at $4.75 per unit.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations like the Sprocket volume/revenue inversion, West's single Gadget order versus two elsewhere, and Gadget's high-price/low-volume revenue lead."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. West 'trailed at $1,414.82, about 65% of North's total' and Sprocket's '238 units... only $1,130.50... $4.75 per unit'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. 'Review Sprocket pricing: 238 units sold... produced only $1,130.50, the lowest product revenue at $4.75 per unit.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several non-obvious, actionable observations like Sprocket's highest volume yet lowest revenue and Gadget's low-volume/high-revenue concentration plus West's single Gadget order versus two elsewhere."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. West is \"$1,414.82, about 65% of North's total\" and Sprocket's \"238 units\" yielding \"$1,130.50\" at \"$4.75 per unit.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific region/product with figures, e.g. \"Focus sales effort on West, the weakest region ($1,414.82); it placed only one Gadget order versus two in every other region.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations like Gadget's revenue lead from \"only 16 units\" via its \"$149.50 unit price\" and Sprocket's high-volume/low-revenue mismatch (\"238 units\" but \"lowest product revenue\")."
+      }
+    }
+  ]
+}

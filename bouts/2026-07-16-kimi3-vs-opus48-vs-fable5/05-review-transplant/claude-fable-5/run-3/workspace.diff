@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..75aede9
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides, so the trailing partial page is never fetched — any total_count not an exact multiple of 100 silently drops `total_count % 100` rows, and a total_count under 100 fetches nothing at all (100% loss).
++- src/sync.py:24 The mutable default `seen=[]` is shared across all calls to sync_users, so a user id synced in one call is silently skipped in every later call in the same process, dropping legitimate re-syncs and updates.
++- src/sync.py:35 The UPDATE interpolates `email` (attacker/user-supplied staging data) via an f-string instead of the previous parameterized query, creating a SQL injection vector; even a benign apostrophe (e.g. o'brien@example.com) breaks the statement.
++- src/sync.py:39 `except Exception: pass` replaces the previous `log.exception`, so per-user sync failures are swallowed with zero diagnostics.
++- src/report.py:7 The empty-users early return exits after `open(path, "w")` has already truncated the report, leaking the open file handle and leaving an empty file where the old code still wrote the header and failure count.
++- src/report.py:11 `user["email"].lower()` raises AttributeError when email is NULL (users.email is nullable per db.py's schema note) and `.split("@")[1]` raises IndexError for any email without "@" — the old code handled None via `or "unverified"`.
++- src/report.py:13 `f.close()` is not protected by with/finally, so any exception while writing (e.g. the line-11 crash on a NULL email) leaks the handle and leaves a partially written report on disk.

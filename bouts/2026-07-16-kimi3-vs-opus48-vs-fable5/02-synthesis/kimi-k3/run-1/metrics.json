@@ -1,0 +1,36 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 94.2,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Read": 1,
+    "Write": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 3,
+  "total_cost_usd": 0.199727,
+  "num_turns": 4,
+  "duration_ms": 93071,
+  "duration_api_ms": 97022,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 16376,
+  "output_tokens": 3055,
+  "cache_read_tokens": 82944,
+  "final_message": "All five functions are implemented in `problems.py` and verified:\n\n- **`parse_duration`** \u2014 single anchored regex `^(?:(\\d+)h)?(?:(\\d+)m)?(?:(\\d+)s)?$` enforces ordering, rejects duplicates/unknown units/whitespace/negatives/garbage, and requires at least one component (regex match + all-`None` groups \u2192 `ValueError`).\n- **`luhn_valid`** \u2014 strips spaces/hyphens, returns `False` for empty or non-digit input (never raises, including non-string input), then standard Luhn with double-and-subtract-9 on alternating digits from the right.\n- **`flatten`** \u2014 recursive walk building joined keys; nested dicts recurse (empty ones contribute nothing), non-dict values kept as-is, input untouched.\n- **`top_k_frequent`** \u2014 `Counter` + sort by `(-count, word)`, sliced to `k`; `k <= 0` short-circuits to `[]`.\n- **`rolling_max`** \u2014 monotonic deque of indices; `ValueError` for `window <= 0`, `[]` when window exceeds length.\n\nChecks run: every docstring example, ~20 invalid `parse_duration` inputs, empty/mutated-input cases for `flatten`, 300 randomized brute-force cross-checks for `rolling_max`, and a 2M-element timing run (0.78s, well within O(n)).",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:09:07Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 59 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

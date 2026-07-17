@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no cross-defect compound failure mechanism identified (the only multi-effect note, report.py:7's unclosed handle from an exception, is contained within a single finding, not an interaction between separate defects)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'truncates instead of rounding up, so the final partial page is never fetched' and 'Mutable default argument seen=[] is shared across calls, so a later sync_users invocation silently skips every user ID.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is treated independently; no cross-defect compound failure mode (e.g. the `except Exception: pass` swallowing the SQL-injection or None-email crash) is described, only within-finding consequences."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the mechanism, e.g. `range(total_count // PAGE_SIZE)` truncates instead of rounding up so the final partial page is never fetched, and `seen=[]` is shared across calls silently skipping already-processed IDs."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The report.py:7 finding gestures at a compound mode\u2014\"any exception during the writes leaves the file...unclosed\"\u2014which overlaps the report.py:11 crash, but never explicitly names line 11's exception as the trigger for line 7's handle leak."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a mechanism, e.g. `range(total_count // PAGE_SIZE)` \"truncates instead of rounding up, so the final partial page is never fetched\" and mutable `seen=[]` is \"shared across calls, so a later...invocation silently skips every user ID.\""
+      }
+    }
+  ]
+}

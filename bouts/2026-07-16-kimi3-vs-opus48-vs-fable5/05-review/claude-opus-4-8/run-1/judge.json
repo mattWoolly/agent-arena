@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode linking two separate defects\u2014the closest (leaked handle from early return) is internal to a single finding, not an interaction between defects."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the mechanism, e.g. 'Mutable default argument seen=[] is shared across calls, so IDs accumulated in one invocation cause those users to be silently skipped in every later call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no statement of how two defects combine into a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the mechanism, e.g. 'range(total_count // PAGE_SIZE) drops the final partial page, so any users past the last full multiple of PAGE_SIZE are never fetched.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a precise file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is described in isolation; even the potentially-linked swallowing at `sync.py:39` and the exceptions at `report.py:11` are never connected into a compound failure mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism or triggering condition, e.g. `seen=[]` is 'shared across calls, so IDs accumulated in one invocation cause those users to be silently skipped in every later call.'"
+      }
+    }
+  ]
+}

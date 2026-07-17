@@ -1,0 +1,9 @@
+ Makefile                                           |   2 +-
+ SOLUTION.md                                        |  29 +++++++++++++++++++++
+ __pycache__/conftest.cpython-312-pytest-9.0.3.pyc  | Bin 0 -> 483 bytes
+ data/config.json                                   |   2 +-
+ scripts/run_checks.sh                              |   8 +++---
+ src/pipeline/__pycache__/__init__.cpython-312.pyc  | Bin 0 -> 142 bytes
+ src/pipeline/__pycache__/transform.cpython-312.pyc | Bin 0 -> 1097 bytes
+ .../test_transform.cpython-312-pytest-9.0.3.pyc    | Bin 0 -> 4592 bytes
+ 8 files changed, 35 insertions(+), 6 deletions(-)

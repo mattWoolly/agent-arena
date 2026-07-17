@@ -1,0 +1,6 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` drops the final partial page, so any users past the last full multiple of PAGE_SIZE are never fetched (and if total_count < PAGE_SIZE, none are fetched at all).
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across calls, so IDs accumulated in one invocation cause those users to be silently skipped in every later call.
+- src/sync.py:35 Switching to an f-string interpolated query introduces SQL injection via `email`/`id` and also breaks on any email containing a single quote.
+- src/sync.py:39 The handler now `pass`es instead of `log.exception`, silently swallowing all sync failures that were previously logged.
+- src/report.py:5 File is opened without a context manager, so the early `return 0` (and any exception mid-write) leaks the open file handle since `f.close()` at the end is never reached.
+- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is None (nullable per schema) and IndexError for any email without an "@", regressing the prior `email or "unverified"` handling.

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'North out-earns West by 1.54 times' and 'Sprocket moves 238 units (63.1% of volume) but earns just 15.8% of revenue at $4.75'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions with figures and concrete actions, e.g. 'West trails North by 54% ($1,414.82 vs $2,176.35); redirect promotion to West'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, including the mean>median skew from high-price Gadget orders and Gadget's '33.4% of revenue from only 16 units (4.2% of volume)' concentration versus Sprocket's inverse volume/revenue mismatch."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. \"North out-earns West by 1.54 times\" and \"Sprocket moves 238 units (63.1% of volume) but earns just 15.8% of revenue.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. \"West trails North by 54% ($1,414.82 vs $2,176.35); redirect promotion to West.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations like the mean-vs-median skew from high-price Gadget orders, Gadget's 33.4% revenue from only 4.2% of volume, and Sprocket's inverse volume/revenue concentration."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget leads at $2,392.00 (33.4% of revenue)' and 'North out-earns West by 1.54 times'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. 'Sprocket moves 238 units (63.1% of volume) but earns just 15.8% of revenue at $4.75; test a higher price or bundling.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable observations appear, including the mean-vs-median skew explanation and 'Gadget yields 33.4% of revenue from only 16 units (4.2% of volume)' revealing concentration."
+      }
+    }
+  ]
+}

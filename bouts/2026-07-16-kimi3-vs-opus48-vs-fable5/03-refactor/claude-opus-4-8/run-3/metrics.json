@@ -1,0 +1,37 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 37.0,
+  "agent_exit": 0,
+  "assistant_messages": 22,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 2
+  },
+  "tool_calls_total": 13,
+  "total_cost_usd": 0.2110245,
+  "num_turns": 14,
+  "duration_ms": 35893,
+  "duration_api_ms": 36294,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 15,
+  "output_tokens": 2576,
+  "cache_read_tokens": 174590,
+  "final_message": "The refactor is complete and verified. Summary of changes:\n\n**`reportgen/config.py`** \u2014 Replaced the `DEFAULTS` dict with a frozen dataclass `Config` holding the four typed fields (`title: str`, `output_format: str`, `max_rows: int`, `include_summary: bool`) with the same defaults. `load_config` now validates every JSON key against the dataclass's field names, raising `ValueError` naming any unknown key, then constructs and returns a `Config` (JSON values override defaults via `Config(**raw)`).\n\n**`reportgen/formatter.py`** \u2014 Switched all `config[...]` reads to attribute access (`config.output_format`, `config.title`, `config.include_summary`).\n\n**`reportgen/loader.py`** \u2014 `config[\"max_rows\"]` \u2192 `config.max_rows`.\n\n**`reportgen/main.py`** / **`reportgen/__init__.py`** \u2014 No changes needed; they only pass the config object through.\n\nVerification:\n- `python3 -m pytest -q` \u2192 **4 passed** (tests unmodified).\n- Grep confirms no `cfg[...]`/`config[...]` subscripting remains in `reportgen/`.\n\nNothing under `tests/` was touched, and no commits were made.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:27:54Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}
