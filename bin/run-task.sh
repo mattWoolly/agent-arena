@@ -69,6 +69,11 @@ cat > "$OUT_DIR/run_env.json" <<EOF
 }
 EOF
 
+# If a translation proxy is logging per-request usage, remember where its
+# log ends now; the delta after the run is this run's true usage record.
+USAGE_LOG="$ROOT/.proxy/usage.jsonl"
+USAGE_OFF=$(stat -c%s "$USAGE_LOG" 2>/dev/null || echo 0)
+
 echo "[$LABEL] starting"
 START=$(date +%s.%N)
 (
@@ -137,6 +142,13 @@ rm -rf "$OUT_DIR/workspace"
 mkdir -p "$OUT_DIR/workspace"
 cp -a "$WS/." "$OUT_DIR/workspace/"
 rm -rf "$OUT_DIR/workspace/.git"
+
+# Capture this run's slice of the proxy usage log (true per-request tokens
+# and cost, including cache tiers the Anthropic-format translation drops).
+if [[ -f "$USAGE_LOG" ]]; then
+  tail -c +"$((USAGE_OFF + 1))" "$USAGE_LOG" > "$OUT_DIR/proxy_usage.jsonl"
+  [[ -s "$OUT_DIR/proxy_usage.jsonl" ]] || rm -f "$OUT_DIR/proxy_usage.jsonl"
+fi
 
 # Metrics from transcript + result envelope (+ run_env.json + peek_check).
 python3 "$ROOT/bin/metrics.py" "$OUT_DIR" "$MODEL" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"

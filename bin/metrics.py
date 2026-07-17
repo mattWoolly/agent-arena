@@ -66,6 +66,36 @@ def computed_cost(out: Path, model: str) -> tuple[float, str] | None:
     return None
 
 
+def proxy_usage_cost(out: Path):
+    """Sum the run's slice of the translation proxy's usage log.
+
+    proxy_usage.jsonl (captured by run-task.sh) holds one record per API
+    request with LiteLLM's response_cost, computed against the vendor's real
+    price sheet including cache tiers the Anthropic-format translation drops.
+    Returns (cost, source, cached_tokens) or None.
+    """
+    ppath = out / "proxy_usage.jsonl"
+    if not ppath.exists():
+        return None
+    total = 0.0
+    cached = 0
+    n = 0
+    for line in ppath.read_text().splitlines():
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if rec.get("response_cost") is None:
+            continue
+        total += rec["response_cost"]
+        n += 1
+        details = (rec.get("raw_usage") or {}).get("prompt_tokens_details") or {}
+        cached += details.get("cached_tokens") or 0
+    if n == 0:
+        return None
+    return round(total, 5), f"proxy-usage-log ({n} requests)", cached
+
+
 def main(out_dir: str, model: str) -> None:
     out = Path(out_dir)
     metrics = {"model": model}
@@ -111,10 +141,16 @@ def main(out_dir: str, model: str) -> None:
         metrics["output_tokens"] = mu.get("outputTokens")
         metrics["cache_read_tokens"] = mu.get("cacheReadInputTokens")
         metrics["final_message"] = (r.get("result") or "")[:4000]
-        cc = computed_cost(out, model)
+        # Cost-source preference: the proxy's own per-request usage log
+        # (exact, cache-aware) > env/prices.json recompute > the CLI figure
+        # (fiction for model IDs the CLI cannot price).
+        pu = proxy_usage_cost(out)
+        cc = pu or computed_cost(out, model)
         if cc is not None:
             metrics["total_cost_usd_cli"] = metrics.get("total_cost_usd")
-            metrics["total_cost_usd"], metrics["cost_source"] = cc
+            metrics["total_cost_usd"], metrics["cost_source"] = cc[:2]
+            if pu and cc[2] is not None:
+                metrics["cache_read_tokens"] = cc[2]
 
     epath = out / "run_env.json"
     if epath.exists():

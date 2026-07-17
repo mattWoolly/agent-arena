@@ -100,16 +100,20 @@ behind localhost (`base_url` alone would just say 127.0.0.1). Disclose the
 translation layer in anything published from such runs; tool-calling behavior
 through a third-party translator is not attributable to the model alone.
 
-The CLI prices unknown model IDs from its own Claude table, so for any model
-listed in `env/prices.json` (list prices per 1M tokens, with cache tiers and
-long-context multipliers where the vendor defines them) `metrics.py`
-recomputes `total_cost_usd` from usage, preferring per-request transcript
-usage and falling back to the result envelope's aggregate when a proxy zeroes
-out per-message usage. The CLI's figure is preserved as `total_cost_usd_cli`
-and `cost_source` records which path priced the run. Caveat, disclosed where
-it matters: if a proxy fails to propagate the vendor's cached-token counts
-(observed with LiteLLM: cache fields all zero), computed cost is an upper
-bound at full input rates.
+The CLI prices unknown model IDs from its own Claude table, and LiteLLM's
+Anthropic-format translation drops cached-token counts (LiteLLM issues
+27763/9812), so proxied runs get two layers of cost repair. First choice: a
+custom proxy callback (`env/litellm_usage_logger.py`, wired via the model's
+LiteLLM config) appends each request's raw usage and LiteLLM's cache-aware
+`response_cost` to `.proxy/usage.jsonl`; run-task.sh captures the run's
+slice as `proxy_usage.jsonl` in the run dir, and `metrics.py` sums it
+(`cost_source: proxy-usage-log`), also restoring the true cached-token
+count. Fallback: for models listed in `env/prices.json` (list prices per 1M
+tokens with cache tiers and long-context multipliers), `metrics.py`
+recomputes from transcript or envelope usage; without cache visibility that
+figure is an upper bound at full input rates. The CLI's figure is always
+preserved as `total_cost_usd_cli` and `cost_source` records which path
+priced the run.
 
 Requirements: `claude` CLI on PATH (authed), `python3`, `pytest`, `jq`, `make`, `git`.
 

@@ -10,3 +10,4 @@ model_list:
       api_key: os.environ/OPENAI_API_KEY
 litellm_settings:
   drop_params: true
+  callbacks: ["litellm_usage_logger.usage_logger"]
