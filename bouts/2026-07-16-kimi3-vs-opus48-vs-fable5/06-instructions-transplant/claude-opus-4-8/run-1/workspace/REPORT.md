@@ -1,0 +1,17 @@
+## Overview
+
+Across 30 orders, total revenue was $7,154.44, averaging $238.48 per order. The median order value is $204.95, below the mean, showing that a few large orders lift the average. Data spans four products and four regions with no missing rows.
+
+## Top Products
+
+Gadget leads at $2,392.00 (33.4% of revenue), earning from a $149.50 unit price despite low volume. Widget follows at $2,118.94 (29.6%), then Doohickey $1,513.00 (21.1%) and Sprocket $1,130.50 (15.8%). Gadget earns 2.12x Sprocket's total.
+
+## Regional Performance
+
+North is strongest at $2,176.35 (30.4%), then East $1,830.79 (25.6%), South $1,732.48 (24.2%), and West $1,414.82 (19.8%). North outsells West by 53.8%, a wide spread across only 30 orders.
+
+## Recommendations
+
+- Prioritize Gadget stock and promotion; it produces 33.4% of revenue from high-price, low-volume sales alone.
+- Investigate West's $1,414.82 result; closing the 53.8% gap to North is the largest regional upside.
+- Pair low-value Sprocket with Gadget to raise its 15.8% share without discounting top earners.

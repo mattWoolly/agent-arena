@@ -1,0 +1,37 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 33.2,
+  "agent_exit": 0,
+  "assistant_messages": 21,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 7,
+    "Write": 2,
+    "Edit": 1
+  },
+  "tool_calls_total": 12,
+  "total_cost_usd": 0.18107799999999996,
+  "num_turns": 13,
+  "duration_ms": 32078,
+  "duration_api_ms": 32477,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 11,
+  "output_tokens": 2316,
+  "cache_read_tokens": 127302,
+  "final_message": "All 4 tests pass unmodified, and no config subscripting remains in `reportgen/`. Here's what changed:\n\n- **`reportgen/config.py`** \u2014 Replaced the `DEFAULTS` dict with a `@dataclass(frozen=True) Config` holding the four typed fields and their original defaults. `load_config` now validates the JSON: any key not matching a `Config` field raises `ValueError` naming that key, then returns `Config(**raw)` (defaults fill in what's missing, as before).\n- **`reportgen/formatter.py`** \u2014 `config[\"...\"]` \u2192 `config.output_format`, `config.title`, `config.include_summary`.\n- **`reportgen/loader.py`** \u2014 `config[\"max_rows\"]` \u2192 `config.max_rows`.\n\n`main.py` and `__init__.py` needed no changes (they only pass the config through). Nothing under `tests/` was touched, and no commits were made.\n\nOne behavior note worth flagging: the new unknown-key check uses `raw` before construction, so a bad key produces the required `ValueError` rather than the `TypeError` that `Config(**raw)` alone would raise \u2014 giving a clear message that names the offending key.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:21:04Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

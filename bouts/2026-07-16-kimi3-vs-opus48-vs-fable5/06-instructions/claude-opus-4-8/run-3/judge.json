@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 revenue totals, the $149.50 vs $4.75 prices, AOV of $238, and the 'roughly $761' gap between North and West."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures, e.g. 'Support West with targeted campaigns; at $1,414.82 it trails North by $761' and 'Bundle low-price, high-volume Sprocket...to raise its $1,130.50 total.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations beyond totals \u2014 Gadget's revenue concentration 'from just nine orders,' the $761 regional gap 'showing uneven demand,' and Sprocket's high-volume/low-price outlier profile."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., regional totals ($2,176.35 vs $1,414.82), the derived '$761' gap, average order value '$238', and per-unit prices like '$149.50'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with data figures, e.g., 'Support West with targeted campaigns; at $1,414.82 it trails North by $761'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like Gadget 'earning the most revenue from just nine orders' (concentration) and Sprocket's 'high volume but a low $4.75 price' rather than restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 product totals ($2,392.00, $2,118.94), the region gap ('roughly $761'), average order value (~$238), and unit price ($149.50)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with data \u2014 'Prioritize Gadget inventory... at $149.50 per unit', 'Support West... trails North by $761', and 'Bundle low-price, high-volume Sprocket... to raise its $1,130.50 total'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations beyond restated totals \u2014 Gadget's revenue concentration ('the most revenue from the fewest orders'), the North\u2013West demand gap, and Sprocket's high-volume/low-price outlier profile."
+      }
+    }
+  ]
+}

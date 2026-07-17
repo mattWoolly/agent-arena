@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding mechanistically explains a compound failure: marking users seen before sync \"compounding with the persistent default list (line 24) and swallowed exceptions (line 39) into permanent silent data loss.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism (e.g. floor-division \"drops 99 = 49.7%\", None email \"raises AttributeError\", f-string is \"a SQL injection vector\") rather than only labeling the defect."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding explains a mechanistic compound failure: marking seen before the attempt, 'compounding with the persistent default list (line 24) and swallowed exceptions (line 39) into permanent silent data loss.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor-divides the page count, so the final partial page is never fetched' and 'no ORDER BY, so row order across page queries is undefined.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line citation (e.g. \"src/sync.py:31\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding mechanistically explains a compound failure: marking users seen before sync, combined with the persistent default list (line 24) and swallowed exceptions (line 39), produces \"permanent silent data loss.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. floor division means \"the final partial page is never fetched\" and the None email \"raises AttributeError ... crashing the report mid-write.\""
+      }
+    }
+  ]
+}

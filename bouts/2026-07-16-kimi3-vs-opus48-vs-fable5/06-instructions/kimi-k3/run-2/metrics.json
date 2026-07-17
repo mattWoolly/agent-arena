@@ -1,0 +1,35 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 57.4,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "total_cost_usd": 0.20280399999999998,
+  "num_turns": 5,
+  "duration_ms": 56281,
+  "duration_api_ms": 66000,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 25032,
+  "output_tokens": 1196,
+  "cache_read_tokens": 95488,
+  "final_message": "Both files are done and validated against every constraint.\n\n**`REPORT.md`** \u2014 131 words, exactly four H2 headings in the required order, no banned words, Overview states total revenue `$7,154.44` and 30 orders, and Recommendations has exactly 3 bullets (14/11/12 words each), all grounded in the computed numbers.\n\n**`summary.json`** \u2014 exactly five keys:\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94\n- `top_product_by_revenue`: \"Gadget\"\n- `revenue_by_region`: North 2176.35, East 1830.79, South 1732.48, West 1414.82\n\nAll figures computed from `data/sales.csv` with Python (revenue = units \u00d7 unit_price per row); no commits made.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T16:53:54Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

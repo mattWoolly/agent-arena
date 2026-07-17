@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Gadget's \"$2,392.00 from only 16 units\" at \"$149.50 unit price\" and West being \"roughly 35% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region and its data grounding, e.g. \"Review Sprocket pricing, as its high unit sales contribute little revenue\" and \"Investigate why West underperforms.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces non-obvious observations like Sprocket's 198 units yielding the least revenue due to its $4.75 price and Gadget's high revenue-per-unit despite low volume, both actionable beyond restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., Gadget's \"$2,392.00 from only 16 units\" via \"$149.50 unit price\" and West \"roughly 35% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name products/regions with data grounding, e.g. \"Review Sprocket pricing, as its high unit sales contribute little revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations like Sprocket's high volume/low revenue outlier and Gadget's revenue concentration from just 16 units rather than restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 revenue per product ($2,392.00 from 16 units at $149.50), unit counts, and the gap 'roughly 35% below North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name specific products/regions tied to data ('Prioritize Gadget... highest revenue per unit,' 'Investigate why West underperforms,' 'Review Sprocket pricing')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's high revenue from few units versus Sprocket's 198 units yielding little revenue at $4.75, and West trailing 35% below North."
+      }
+    }
+  ]
+}

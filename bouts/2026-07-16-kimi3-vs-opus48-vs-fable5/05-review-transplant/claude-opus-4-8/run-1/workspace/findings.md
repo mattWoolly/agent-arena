@@ -1,0 +1,6 @@
+- src/sync.py:14 Pagination loops `range(total_count // PAGE_SIZE)`, so floor division drops the last `total_count % 100` rows whenever total_count is not a multiple of 100, and fetches zero pages (100% loss) when total_count < 100.
+- src/sync.py:24 `sync_users(users, seen=[])` uses a mutable default list that persists across calls, so every id synced in one call is treated as a duplicate and skipped in all later calls in the same process.
+- src/sync.py:35 The UPDATE is built by f-string interpolating `email` and `id`, reintroducing SQL injection and breaking on any legitimate email containing an apostrophe (e.g. o'brien@example.com).
+- src/sync.py:38 The handler now does `pass` instead of `log.exception`, silently swallowing every failure (including the SQL errors from line 35) so failed syncs leave no trace.
+- src/report.py:5 `write_report` opens the file without a context manager or try/finally, leaking the file descriptor when `users` is empty (early return at line 7) or when any write raises.
+- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is None (schema notes email is NULLABLE for phone-invited users) and IndexError for emails lacking "@".

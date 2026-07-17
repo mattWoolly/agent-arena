@@ -1,0 +1,37 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 47.3,
+  "agent_exit": 0,
+  "assistant_messages": 21,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 4
+  },
+  "tool_calls_total": 15,
+  "total_cost_usd": 0.4386435,
+  "num_turns": 16,
+  "duration_ms": 46041,
+  "duration_api_ms": 46185,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 13,
+  "output_tokens": 2740,
+  "cache_read_tokens": 159734,
+  "final_message": "Done. All 4 tests pass unmodified, and the refactor meets every requirement:\n\n- **`reportgen/config.py`** \u2014 replaced the `DEFAULTS` dict with a frozen `Config` dataclass carrying the same four typed fields and defaults (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config` now validates the JSON keys against `fields(Config)` and raises `ValueError: Unknown config key: 'colour'`-style errors naming the offending key, then returns `Config(**raw)` so file values override defaults exactly as before.\n- **`reportgen/formatter.py`** and **`reportgen/loader.py`** \u2014 converted all subscript access (`config[\"title\"]`, `config[\"max_rows\"]`, etc.) to attribute access. A `grep` for `cfg[`/`config[` across `reportgen/` confirms nothing remains; `main.py` and `__init__.py` needed no changes since they just pass the object through.\n\nI also spot-checked the new behavior directly: an unknown key raises the required `ValueError`, and mutating a `Config` instance raises `FrozenInstanceError`. No tests were touched and no commits were made.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:21:39Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

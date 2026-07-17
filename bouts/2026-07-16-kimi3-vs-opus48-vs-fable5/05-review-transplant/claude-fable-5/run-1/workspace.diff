@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..a62ba65
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides, silently dropping the final partial page (up to 99 of every `total_count` rows, and 100% of rows when total_count < 100, e.g. 99 rows fetches 0).
++- src/sync.py:24 mutable default argument `seen=[]` persists across calls, so a later `sync_users` batch containing an already-seen id silently skips that user's update (a retry with corrected data for the same ids applies 0% of them).
++- src/sync.py:35 the UPDATE was changed from a parameterized query to an f-string, creating a SQL injection via the attacker-controlled `email` value and breaking any legitimate email containing a single quote (e.g. o'brien@example.com).
++- src/sync.py:38 the `except Exception: pass` replaces `log.exception`, silently swallowing every per-user sync failure so dropped updates (including the quote/injection errors from line 35) leave zero diagnostic trace.
++- src/report.py:7 when `users` is empty the function returns after `open(path, "w")` has already truncated the report, without closing the file handle and without writing the header/failure count the old code wrote (100% of the `failures` information is lost).
++- src/report.py:11 `user["email"].lower()` raises AttributeError for the NULL emails db.py documents as valid (and `.split("@")[1]` raises IndexError for @-less emails), and because the file is not opened in a `with` block the crash also leaks the handle and leaves an already-truncated, partially written report.

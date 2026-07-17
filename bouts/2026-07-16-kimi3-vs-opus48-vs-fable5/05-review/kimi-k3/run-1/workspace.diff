@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..09464f0
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` skips the final partial page (and all rows when total_count < PAGE_SIZE), so staged users beyond the last full page are never fetched or synced.
++- src/sync.py:24 mutable default argument `seen=[]` is shared across calls, causing users synced in a previous invocation to be silently skipped in all subsequent invocations.
++- src/sync.py:31 `seen.append(user["id"])` runs before the sync attempt, so a user whose UPDATE raises is still marked as seen and will never be retried.
++- src/sync.py:35 building the UPDATE with an f-string instead of parameters allows SQL injection via email/id and breaks on any email containing a single quote.
++- src/sync.py:38 `except Exception: pass` silently swallows all sync failures (previously logged), hiding data-loss errors from operators.
++- src/report.py:7 early `return 0` when users is empty never closes the opened file handle, leaking it (and leaving a truncated empty file).
++- src/report.py:11 `user["email"].lower()` raises AttributeError for NULL emails (db.py notes email is nullable) and `split("@")[1]` raises IndexError for addresses without '@'.

@@ -1,0 +1,7 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` skips the final partial page, so up to PAGE_SIZE-1 trailing rows are silently dropped (and nothing is fetched at all when total_count < 100).
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across calls, so a later `sync_users` invocation silently skips every user id already processed (even if its sync failed) in any earlier call.
+- src/sync.py:35 The UPDATE is built with an f-string instead of the previous parameterized query, introducing SQL injection and breaking on any email containing a single quote.
+- src/sync.py:39 `except Exception: pass` silently swallows per-user sync failures that were previously logged, so errors (including those triggered by the injection bug) go completely unreported.
+- src/report.py:5 The file is opened without a context manager, so the handle leaks on the early return at line 7 and whenever any write raises an exception.
+- src/report.py:7 The empty-users early return truncates the report file and exits before writing the header/failure count that the old code always emitted, losing the failures information.
+- src/report.py:11 `user["email"].lower()` raises AttributeError when email is NULL (schema documents email as nullable) and `split("@")[1]` raises IndexError for emails without an '@' (e.g. the empty string sync.py stores for None emails).

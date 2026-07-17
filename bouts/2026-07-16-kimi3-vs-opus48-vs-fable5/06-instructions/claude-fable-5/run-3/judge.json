@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons are mostly bare revenue rankings ('Gadget led... $2,392.00', 'Widget followed at $2,118.94'), with only one computed comparison ('roughly 35% below North's $2,176.35') plus per-unit prices."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with figures and an actionable move, e.g. 'Sprocket sold 238 units yet earned just $1,130.50; consider raising its $4.75 price or bundling.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations\u2014Sprocket's highest volume (238 units) yet lowest revenue, Gadget's high revenue from just 16 units, and West being 'the only region below $1,500'\u2014beyond restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. West is \"$1,414.82, roughly 35% below North's $2,176.35\" and Sprocket's \"238 units... at only $4.75 each.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures, e.g. \"Sprocket sold 238 units yet earned just $1,130.50; consider raising its $4.75 price or bundling it.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's high revenue from \"just 16 units\" versus Sprocket's inverse of \"238 units... ranked last with $1,130.50.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. 'West trails all regions at $1,414.82, roughly 35% below North's $2,176.35' plus per-unit prices ($4.75, $149.50) and unit counts throughout."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures and an actionable move, e.g. 'Sprocket sold 238 units yet earned just $1,130.50; consider raising its $4.75 price or bundling it with higher-margin products.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations surface, such as Gadget's high revenue from 'just 16 units' at $149.50 and Sprocket ranking 'last' despite 'by far the highest volume' at 238 units."
+      }
+    }
+  ]
+}

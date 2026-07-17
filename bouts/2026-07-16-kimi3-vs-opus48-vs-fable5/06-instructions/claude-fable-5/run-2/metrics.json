@@ -1,0 +1,36 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 66.0,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Read": 1,
+    "Bash": 2,
+    "Write": 3
+  },
+  "tool_calls_total": 6,
+  "total_cost_usd": 0.5561235,
+  "num_turns": 7,
+  "duration_ms": 64862,
+  "duration_api_ms": 64496,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 5212,
+  "cache_read_tokens": 136141,
+  "final_message": "Both files are written and every constraint verified programmatically.\n\n**`REPORT.md`** \u2014 220 words (under the 250 limit), exactly the four required H2 headings in order with no other headings, Overview states the total revenue as `$7,154.44` and 30 orders, Recommendations has exactly three bullets (21, 20, and 20 words each), and none of the banned words appear.\n\n**`summary.json`** \u2014 exactly the five required keys, all recomputed from the CSV:\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94 (mean of the two middle values across the 30 orders)\n- `top_product_by_revenue`: \"Gadget\" ($2,392.00, ahead of Widget at $2,118.94)\n- `revenue_by_region`: North 2176.35, South 1732.48, East 1830.79, West 1414.82\n\nThe verification script re-derived every number independently from `data/sales.csv` and confirmed the JSON matches exactly. No git commits were made and all work stayed in the current directory.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T06:59:04Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

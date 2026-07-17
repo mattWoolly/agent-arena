@@ -1,0 +1,37 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 64.0,
+  "agent_exit": 0,
+  "assistant_messages": 14,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "total_cost_usd": 0.32047799999999993,
+  "num_turns": 7,
+  "duration_ms": 62855,
+  "duration_api_ms": 75948,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 48101,
+  "output_tokens": 1197,
+  "cache_read_tokens": 100096,
+  "final_message": "All 6 tests pass. Two bugs fixed in `lrucache/cache.py`:\n\n1. **`get` didn't refresh recency** \u2014 added `self._data.move_to_end(key)` on a successful (non-expired) lookup, so reads count as \"use\" per the docstring.\n2. **`put` evicted unconditionally at capacity** \u2014 updating an existing key evicted another entry even though the size doesn't grow. Now eviction only happens when the key is new and the cache is full.\n\nRoot causes are documented in `SOLUTION.md`.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:03:17Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 18 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

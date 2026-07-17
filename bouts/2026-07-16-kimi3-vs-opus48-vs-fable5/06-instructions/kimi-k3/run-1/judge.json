@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., the regional gap is quantified as \"$761.53, roughly 19% of the regional revenue total,\" and product comparisons pair revenue with unit counts."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures, e.g., \"Invest in West, the weakest region at $1,414.82\" and \"review its pricing, since 238 units returned only $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's high revenue from \"only 16 units\" and Sprocket having \"the largest unit count but the lowest revenue per unit by far.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. the regional gap is quantified as \"$761.53, roughly 19% of the regional revenue total\" and products are compared by revenue and unit counts ($2,392.00 from 16 units vs. $1,130.50 on 238 units)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with its figure, e.g. \"Invest in West, the weakest region at $1,414.82\" and \"Keep Sprocket as a volume driver but review its pricing, since 238 units returned only $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations such as Gadget's high revenue from \"only 16 units\" and Sprocket being \"the largest unit count but the lowest revenue per unit by far,\" beyond mere total restatement."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. the region gap is quantified as \"$761.53, roughly 19% of the regional revenue total\" and products cite both revenue and units ($2,392.00 from only 16 units)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product or region with its figure, e.g. \"Keep Sprocket as a volume driver but review its pricing, since 238 units returned only $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's high revenue from few units and Sprocket being \"the largest unit count but the lowest revenue per unit by far,\" rather than restating totals."
+      }
+    }
+  ]
+}

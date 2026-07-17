@@ -1,0 +1,37 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 70.7,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "total_cost_usd": 0.252136,
+  "num_turns": 8,
+  "duration_ms": 69541,
+  "duration_api_ms": 74775,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 32576,
+  "output_tokens": 1256,
+  "cache_read_tokens": 115712,
+  "final_message": "Done. `python3 -m pytest -q` passes (6/6).\n\n**Bugs fixed in `lrucache/cache.py`:**\n\n1. **`get` didn't refresh recency** (`cache.py:30`) \u2014 a hit never moved the key to the MRU end, so recently-read entries could be evicted. Added `self._data.move_to_end(key)` on hits.\n2. **`put` evicted unconditionally at capacity** (`cache.py:33`) \u2014 updating an existing key evicted the LRU entry first, even though no new slot was needed. Now eviction only happens when inserting a *new* key.\n\n`SOLUTION.md` written with the root-cause explanation.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T04:59:52Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 19 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

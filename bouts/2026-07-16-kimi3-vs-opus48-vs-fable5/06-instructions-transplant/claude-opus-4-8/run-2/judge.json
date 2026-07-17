@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget outsells Widget by 12.9% in revenue\" and West \"is 53.8% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures, e.g. \"Prioritize Gadget stock in North and East\" and bundling Sprocket's \"$4.75 price with high-value Gadget purchases.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like the right-skewed distribution and that \"North's lead rests on a single $598.00 Gadget order\" and West trailing \"despite only one fewer order.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget outsells Widget by 12.9% in revenue\" and West \"is 53.8% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures, e.g. \"Prioritize Gadget stock in North and East\" and bundling Sprocket's \"$4.75 price with high-value Gadget purchases.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, such as the right-skew from high-value orders, North's lead resting \"on a single $598.00 Gadget order,\" and West trailing \"despite only one fewer order.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget outsells Widget by 12.9% in revenue\" and West \"is 53.8% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures, e.g. \"Prioritize Gadget stock in North and East, where high-price orders drive Gadget's 33.4% revenue share.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations such as the right-skewed distribution and that \"North's lead rests on a single $598.00 Gadget order plus steady Widget volume.\""
+      }
+    }
+  ]
+}

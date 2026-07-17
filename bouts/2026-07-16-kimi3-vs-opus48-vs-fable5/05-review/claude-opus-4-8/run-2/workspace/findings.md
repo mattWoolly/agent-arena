@@ -1,0 +1,6 @@
+- src/sync.py:14 Integer floor division in `range(total_count // PAGE_SIZE)` drops the final partial page (and fetches nothing at all when total_count < PAGE_SIZE), silently losing staged users.
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across calls, so IDs synced in one invocation are wrongly skipped on every later invocation of `sync_users`.
+- src/sync.py:35 Switching from a parameterized query to an f-string interpolates `email` and `id` directly into SQL, introducing SQL injection and breaking on legitimate emails containing an apostrophe.
+- src/sync.py:39 Replacing `log.exception(...)` with `pass` silently swallows sync errors, hiding failures instead of recording them.
+- src/report.py:5 File is opened without a context manager and leaked: the `if not users: return 0` early return (and any exception during writing) exits before `f.close()`.
+- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is None (schema says email is nullable) and IndexError when the email has no '@', a regression from the prior None-safe handling.

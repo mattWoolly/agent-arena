@@ -1,0 +1,35 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 100.0,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.6993655,
+  "num_turns": 6,
+  "duration_ms": 98650,
+  "duration_api_ms": 101496,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 7598,
+  "cache_read_tokens": 137037,
+  "final_message": "Both files are done and every constraint validated mechanically against the CSV \u2014 no estimates anywhere.\n\n**Results** (all computed from `data/sales.csv`, 30 data rows at `data/sales.csv:2-31`):\n\n- Total revenue **$7,154.44** across **30 orders**; both stated in `REPORT.md:3` and `summary.json` (`total_revenue`, `orders`).\n- Top product: **Gadget**, $2,392.00 (33.4% of total) \u2014 `summary.json` `top_product_by_revenue`, detailed at `REPORT.md:7`.\n- Regions: North $2,176.35 (30.4%), East $1,830.79 (25.6%), South $1,732.48 (24.2%), West $1,414.82 (19.8%) \u2014 `summary.json` `revenue_by_region`, prose at `REPORT.md:11`.\n\n**Edge case \u2014 median with an even count.** With 30 orders, the median is the mean of the 15th and 16th order values ($190.00 and $219.89), which is exactly $204.945 \u2014 a rounding tie. I reported **204.94** in `summary.json`, matching IEEE-754 float arithmetic (409.89/2 stores as 204.944999\u2026), which is what any Python/pandas pipeline produces; exact-decimal half-up rounding would instead give 204.95. This is the one value where two defensible answers exist.\n\n**Compound finding worth noting** (reflected in the recommendations at `REPORT.md:15-17`): the two weakest signals reinforce each other \u2014 Sprocket has the lowest revenue share (15.8%) despite the highest unit volume (238 units, 21.2\u00d7 Gadget's 16), and West is the weakest region (53.8% below North). Since every region buys all four products (verified from the data), West's gap is pure volume, so a low-price/low-region combination compounds: raising West to the $1,788.61 regional average alone recovers $373.79, 5.2% of total revenue.\n\n**Constraint verification, all passing:** headings exactly `## Overview` / `## Top Products` / `## Regional Performance` / `## Recommendations` in order with no other headings (`REPORT.md:1,5,9,13`); 213 words (85% of the 250 cap); exactly 3 bullets at 21, 19, and 19 words (all \u2264 25); zero banned-word matches (case-insensitive regex); `summary.json` has exactly the five required keys, integer `orders`, and all four regions. No commits were made and no files were touched outside the working directory.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T08:20:05Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

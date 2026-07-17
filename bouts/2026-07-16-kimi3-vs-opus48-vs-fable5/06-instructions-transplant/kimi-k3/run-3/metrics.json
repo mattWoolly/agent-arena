@@ -1,0 +1,35 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 90.4,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Bash": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.207271,
+  "num_turns": 6,
+  "duration_ms": 89384,
+  "duration_api_ms": 92924,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 18888,
+  "output_tokens": 1943,
+  "cache_read_tokens": 128512,
+  "final_message": "Both files are written and validated.\n\n**`summary.json`** \u2014 computed from `data/sales.csv:1-31` (30 data rows, revenue = `units * unit_price` per row):\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94 (even count, mean of the two middle per-order revenues)\n- `top_product_by_revenue`: \"Gadget\" ($2,392.00)\n- `revenue_by_region`: East 1830.79, North 2176.35, South 1732.48, West 1414.82 \u2014 the four region values sum exactly to total_revenue, so no order was dropped or double-counted.\n\n**`REPORT.md`** \u2014 constraint check results:\n- Exactly four H2 headings in the required order and spelling, no other headings (verified by regex over the file).\n- 163 words total, under the 250-word cap (headings included in the count).\n- Overview states `$7,154.44` in the exact `$12,345.67` format plus the 30-order count.\n- Recommendations has exactly three `- ` bullets of 16, 15, and 12 words \u2014 all under 25.\n- None of the five banned words appear (case-insensitive scan came back empty).\n\nCompound-effect note on the data story: Gadget is the top product by revenue ($2,392.00, 33.4% of total) despite selling only 16 units \u2014 the fewest of any product \u2014 while Sprocket sells the most units (238, ~14.9\u00d7 Gadget's volume) yet earns the least revenue ($1,130.50). Combined with West trailing North by 53.8% ($1,414.82 vs $2,176.35) on a nearly identical order count (7 vs 8), the report's three recommendations target high-price-unit availability, the West revenue gap, and Sprocket's weak per-order yield rather than raw unit volume.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T17:02:19Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

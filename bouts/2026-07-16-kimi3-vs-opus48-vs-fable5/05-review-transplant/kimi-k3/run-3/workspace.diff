@@ -1,0 +1,14 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..29b5af5
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,8 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides the page count, so the final partial page is never fetched (e.g. 199 staged users drops 99 = 49.7%; fewer than 100 drops 100%), whereas the old code fetched every staged row.
++- src/sync.py:17 The new LIMIT/OFFSET pagination has no ORDER BY, so row order across page queries is undefined and page windows shift if staged_users is written between queries, skipping or duplicating rows.
++- src/sync.py:24 Mutable default argument `seen=[]` is shared across all calls to sync_users, so dedupe state leaks between invocations: any user id synced once is permanently skipped for the life of the process and the list grows unboundedly.
++- src/sync.py:31 `seen.append(user["id"])` runs before the sync attempt, so a user whose UPDATE raises is still marked as seen and never retried — compounding with the persistent default list (line 24) and swallowed exceptions (line 39) into permanent silent data loss.
++- src/sync.py:35 Building the UPDATE with an f-string instead of parameters is a SQL injection vector and breaks on legitimate emails containing apostrophes (e.g. o'brien@x.com raises a syntax error that line 39 then swallows, silently skipping the user).
++- src/sync.py:39 `except Exception: pass` replaces the previous log.exception, so every sync failure is silently discarded with no logging, no failure count, and no retry signal.
++- src/report.py:7 The early `return 0` when users is empty leaks the file handle opened at line 5 (the `with` block was removed), and any exception raised during the write loop leaks it as well.
++- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is None (src/db.py:4-5 states users.email is NULLABLE and consumers must handle email=None, which the old `or "unverified"` code did) and IndexError when the address contains no "@", crashing the report mid-write.

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. West 'about 35% below North', the '$760' regional gap, and Sprocket's '238 units yielded only $1,130.50'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products, regions, and figures\u2014'Prioritize Gadget promotion', 'Investigate West's shortfall versus North... $760 regional gap', and 'Reassess Sprocket pricing... 238 units yielded only $1,130.50'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's high revenue-per-unit from 'only 16 units' and Sprocket 'moving the most volume (238 units)' yet earning the least, plus West's underperformance."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. 'West trails at $1,414.82, about 35% below North' and 'the gap between the top and bottom regions is roughly $760'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region and cites figures, e.g. 'Reassess Sprocket pricing or bundling: 238 units yielded only $1,130.50, the weakest revenue despite the highest sales volume.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's high revenue-per-unit ('$2,392.00 in revenue from only 16 units') versus Sprocket's high-volume/low-revenue inversion ('238 units, brought in just $1,130.50')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. 'West trails at $1,414.82, about 35% below North' and 'The gap between the top and bottom regions is roughly $760'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region and cites data, e.g. 'Reassess Sprocket pricing or bundling: 238 units yielded only $1,130.50'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable points like Gadget's high revenue-per-unit from 'only 16 units' versus Sprocket 'moving the most volume (238 units)' yet earning the least, plus West's regional shortfall."
+      }
+    }
+  ]
+}

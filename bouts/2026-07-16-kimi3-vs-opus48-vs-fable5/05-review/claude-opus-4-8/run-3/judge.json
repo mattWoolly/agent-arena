@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :38 finding mechanistically links two defects: the string-built SQL (:35) now raises more errors which the 'except Exception: pass' silently swallows 'with no logging or count of failures.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. mutable default `seen=[]` 'persists across calls, so IDs synced in one call are remembered and wrongly skipped on every subsequent call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically links two defects\u2014the f-string SQL failures (line 35) are 'now more likely due to the string-built SQL' and are then silently swallowed by 'except Exception: pass ... with no logging.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. integer division 'drops the final partial page, so any staged users beyond the last full 100-row page are silently never fetched' and email None 'crashes with AttributeError.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding explains a compound failure: the f-string SQL at :35 makes exceptions 'now more likely,' and the bare `except Exception: pass` silently swallows them 'with no logging or count of failures.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. mutable default `seen=[]` 'persists across calls, so IDs synced in one call are remembered and wrongly skipped on every subsequent call.'"
+      }
+    }
+  ]
+}

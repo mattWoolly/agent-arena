@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line citation (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The write-up mechanistically links defects, e.g. `split(\"@\")[1] raises IndexError ... (e.g. the empty string sync.py stores for None emails)` and line 39's swallowing of `errors (including those triggered by the injection bug)`."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. the mutable default `seen=[]` is `shared across calls, so a later sync_users invocation silently skips every user id already processed`."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line citation (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:11 finding explains a compound failure mechanistically \u2014 sync.py stores an empty string for None emails, which then makes `split(\"@\")[1]` raise IndexError downstream, and the :39 finding notes injection errors get swallowed and thus unreported."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` \"skips the final partial page, so up to PAGE_SIZE-1 trailing rows are silently dropped.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The write-up mechanistically links defects\u2014line 39's `except Exception: pass` swallows the errors 'triggered by the injection bug' at line 35, and line 11's IndexError arises from 'the empty string sync.py stores for None emails,' explaining a real compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. the mutable default `seen=[]` is 'shared across calls, so a later `sync_users` invocation silently skips every user id already processed.'"
+      }
+    }
+  ]
+}

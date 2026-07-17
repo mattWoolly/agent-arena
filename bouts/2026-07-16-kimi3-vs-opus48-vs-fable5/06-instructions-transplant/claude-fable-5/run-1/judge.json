@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure (e.g., \"out-earned Widget by 12.9%\", \"53.8% ahead of West's\", \"separated by only 1.4 points while the North-to-West gap spans 10.6 points\")."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with data (\"Grow Gadget sales: only 16 units produced 33.4% of revenue\"; \"Bundle low-priced Sprockets... drove 63.1% of units sold but only 15.8% of revenue\"; \"Investigate West, the weakest region at 19.8%\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations surface \u2014 the median-mean skew from large orders, Sprocket's volume-vs-revenue mismatch (\"63.1% of all 377 units sold\" but 15.8% revenue), and the 1/31 price ratio driving it."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g., 'Gadget out-earned Widget by 12.9%', 'North...53.8% ahead of West's', and 'separated by only 1.4 points while the North-to-West gap spans 10.6 points'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions with figures, e.g., 'Bundle low-priced Sprockets...they drove 63.1% of units sold but only 15.8% of revenue' and 'Investigate West, the weakest region at 19.8% of revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations surface, including the Sprocket volume/revenue mismatch (63.1% of units, 15.8% of revenue), Gadget's revenue concentration (16 units = 33.4%), and the median sitting 14.1% below the mean due to large orders."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure\u2014e.g., Gadget 'out-earned Widget by 12.9%', North '53.8% ahead of West', and 'separated by only 1.4 points while the North-to-West gap spans 10.6 points'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures, e.g., 'Bundle low-priced Sprockets...they drove 63.1% of units sold but only 15.8% of revenue' and 'Investigate West, the weakest region at 19.8% of revenue'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, including revenue concentration ('only 16 units produced 33.4% of revenue'), the Sprocket volume-vs-revenue mismatch, and the mean-median skew from large orders."
+      }
+    }
+  ]
+}

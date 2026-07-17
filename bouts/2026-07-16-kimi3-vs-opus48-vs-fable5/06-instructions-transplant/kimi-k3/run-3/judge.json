@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Gadget's '$2,392.00 in revenue, about 33.4% of the total' and 'North outperformed West by roughly 53.8%, a gap of $761.53.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions and data, e.g. 'Prioritize Gadget stock' and 'Bundle Sprocket with higher-priced items to lift its low per-order revenue contribution.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations, e.g. 'Sprocket moves the most units but earns the least revenue, reflecting its low $4.75 price' and Gadget delivering a third of revenue 'from only 16 units sold.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 Gadget's 'about 33.4% of the total,' 'North outperformed West by roughly 53.8%, a gap of $761.53,' and unit/price breakdowns."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products and data-grounded figures \u2014 'Prioritize Gadget stock... a third of revenue from the fewest units,' 'Investigate West's weaker sales; it lags North by over half,' and 'Bundle Sprocket with higher-priced items.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces several non-obvious points \u2014 'Sprocket moves the most units but earns the least revenue, reflecting its low $4.75 price,' Gadget's revenue-per-unit dominance, and West lagging 'despite a similar order count.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 Gadget is '33.4% of the total', North 'outperformed West by roughly 53.8%, a gap of $761.53', and Sprocket's low revenue is tied to its '$4.75 price'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product and figures and is actionable as written, e.g. 'Prioritize Gadget stock... it delivers a third of revenue from the fewest units' and 'Bundle Sprocket with higher-priced items to lift its low per-order revenue contribution.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations such as Gadget's revenue concentration 'from only 16 units sold', the inverse 'Sprocket moves the most units but earns the least revenue', and West lagging 'despite a similar order count.'"
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..de9f380
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 floor division in `range(total_count // PAGE_SIZE)` drops the final partial page (and fetches nothing at all when total_count < PAGE_SIZE), so staged users are silently skipped.
++- src/sync.py:24 mutable default argument `seen=[]` is shared across calls, so user IDs (including ones whose sync failed) are permanently skipped on every subsequent invocation.
++- src/sync.py:35 building the UPDATE with an f-string instead of parameters reintroduces SQL injection and breaks on emails containing single quotes (e.g. o'brien@x.com).
++- src/sync.py:38 `except Exception: pass` silently swallows all sync errors (previously logged via log.exception), making failures invisible and the `synced` count unreliable.
++- src/report.py:5 replacing the `with` block with a bare `open()` leaks the file handle on the empty-users early return (line 7) and whenever a write raises.
++- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError on NULL emails (db.py schema notes state email is nullable and must be handled as None) and with IndexError on addresses lacking '@'.

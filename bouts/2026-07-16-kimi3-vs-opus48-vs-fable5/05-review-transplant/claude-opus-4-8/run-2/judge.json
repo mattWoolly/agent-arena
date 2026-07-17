@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains a compound failure: 'except Exception: pass ... compounds src/sync.py:35: apostrophe/injection-triggered SQL errors now vanish with no log and no failure count, so broken syncs look successful.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism (e.g. 'range(total_count // PAGE_SIZE) drops the final partial page' and 'crashes with AttributeError when email is None ... and with IndexError on any email lacking @')."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (sync.py:14, :24, :35, :38; report.py:5, :11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains a compound failure: `except Exception: pass` swallows the apostrophe/injection SQL errors from sync.py:35 'so broken syncs look successful.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` 'drops the final partial page' and the mutable default `seen=[]` is 'shared across every call' causing silent skips."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11'), all precise."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :38 finding mechanistically explains a compound mode: 'except Exception: pass ... compounds src/sync.py:35: apostrophe/injection-triggered SQL errors now vanish with no log and no failure count, so broken syncs look successful.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. the pagination loop 'drops the final partial page' with data-loss math and the mutable default 'shared across every call' causing silent skips of legitimate re-syncs."
+      }
+    }
+  ]
+}

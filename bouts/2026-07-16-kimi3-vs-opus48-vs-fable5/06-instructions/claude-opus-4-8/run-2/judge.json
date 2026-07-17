@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure\u2014product revenues, the $761 leading-to-lagging regional gap, and the $4,510.94 top-two total framed as 'well over half of total revenue.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products/regions with figures, e.g. 'Prioritize Gadget and Widget inventory, since together they generate $4,510.94' and 'Investigate why West lags at $1,414.82.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations beyond the tables\u2014product concentration ('top two products together account for the majority'), the regional spread ('gap ... is roughly $761'), and the median implying skewed order sizes."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. the top two products' combined \"$4,510.94, well over half of total revenue\" and the regional \"gap between the leading and lagging regions is roughly $761.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products, regions, and figures (\"Prioritize Gadget and Widget inventory,\" \"Investigate why West lags at $1,414.82... close the gap with North\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations like product concentration (\"top two products together account for the majority\") and the median-vs-mean skew (\"a handful of larger orders sit alongside many smaller ones\")."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. product revenues ($2,392.00 vs $2,118.94), the combined $4,510.94, and the ~$761 regional gap."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures ('Prioritize Gadget and Widget... $4,510.94', 'Investigate why West lags at $1,414.82')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces concentration ('top two products together account for the majority', $4,510.94 over half), the regional gap (~$761), and skew via median ($204.94) \u2014 multiple actionable observations."
+      }
+    }
+  ]
+}

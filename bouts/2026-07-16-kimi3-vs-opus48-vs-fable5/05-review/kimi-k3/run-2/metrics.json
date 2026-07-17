@@ -1,0 +1,36 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 188.6,
+  "agent_exit": 0,
+  "assistant_messages": 14,
+  "tool_calls": {
+    "Bash": 1,
+    "Read": 5,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "total_cost_usd": 0.285369,
+  "num_turns": 8,
+  "duration_ms": 186337,
+  "duration_api_ms": 194457,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 24179,
+  "output_tokens": 4490,
+  "cache_read_tokens": 104448,
+  "final_message": "Findings written to `findings.md`. Summary of the 6 defects introduced by this diff:\n\n| Location | Defect |\n|---|---|\n| `src/sync.py:14` | Floor division in page loop drops the last partial page (and all rows when `total_count < 100`) |\n| `src/sync.py:24` | Mutable default `seen=[]` persists across calls \u2014 users synced once are skipped forever |\n| `src/sync.py:35` | Parameterized UPDATE replaced with f-string \u2192 SQL injection / breaks on quoted emails |\n| `src/sync.py:39` | `log.exception` \u2192 bare `pass` silently swallows all sync failures |\n| `src/report.py:7` | Early return leaks the opened file handle |\n| `src/report.py:11` | `.lower()` on nullable `email` (per `db.py` schema notes) crashes on `None`; `[1]` crashes on missing `@` |",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:52:31Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 6 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

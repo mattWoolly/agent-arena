@@ -1,0 +1,36 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 80.0,
+  "agent_exit": 0,
+  "assistant_messages": 21,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 7,
+    "Write": 3
+  },
+  "tool_calls_total": 13,
+  "total_cost_usd": 0.23766600000000002,
+  "num_turns": 14,
+  "duration_ms": 78840,
+  "duration_api_ms": 82969,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 26219,
+  "output_tokens": 1795,
+  "cache_read_tokens": 123392,
+  "final_message": "Done. The refactor:\n\n- **`reportgen/config.py`** \u2014 replaced the `DEFAULTS` dict with a frozen dataclass `Config` (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config(path)` validates each JSON key against the dataclass fields, raising `ValueError(\"Unknown config setting: '<key>'\")` for unknown ones, then returns `Config(**raw)` so file values override defaults exactly as before.\n- **`reportgen/formatter.py`** and **`reportgen/loader.py`** \u2014 switched `config[\"...\"]` to attribute access (`config.output_format`, `config.title`, `config.include_summary`, `config.max_rows`).\n- **`reportgen/main.py`** \u2014 unchanged; it only passes the config between functions, never subscripts it.\n\nVerified: `grep` confirms no `cfg[`/`config[` subscripting remains in `reportgen/` (only `rows[...]` on CSV data, which is fine), all 4 existing tests pass unmodified, unknown keys raise `ValueError` naming the key, and the dataclass is genuinely frozen. No commits made.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:22:27Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

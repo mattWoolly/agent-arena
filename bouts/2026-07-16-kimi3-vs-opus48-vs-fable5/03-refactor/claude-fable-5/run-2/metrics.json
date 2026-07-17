@@ -1,0 +1,37 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 43.4,
+  "agent_exit": 0,
+  "assistant_messages": 21,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 6,
+    "Write": 1,
+    "Edit": 4
+  },
+  "tool_calls_total": 14,
+  "total_cost_usd": 0.43819050000000004,
+  "num_turns": 15,
+  "duration_ms": 42260,
+  "duration_api_ms": 42439,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 13,
+  "output_tokens": 2776,
+  "cache_read_tokens": 158806,
+  "final_message": "Done. The refactor is complete and all 4 existing tests pass unmodified.\n\nWhat changed:\n\n- **`reportgen/config.py`** \u2014 replaced the `DEFAULTS` dict with a frozen dataclass `Config` carrying the same four typed fields and defaults (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config(path)` now validates the JSON keys against `dataclasses.fields(Config)` and raises `ValueError: Unknown config key: '<key>'` for anything unrecognized, then returns `Config(**raw)` so file values override defaults exactly as before.\n- **`reportgen/formatter.py`** and **`reportgen/loader.py`** \u2014 switched all config subscripting to attribute access (`config.output_format`, `config.title`, `config.include_summary`, `config.max_rows`). A grep confirms no `cfg[...]`/`config[...]` remains anywhere in `reportgen/`.\n- `main.py` and `__init__.py` needed no changes since they only pass the config through.\n\nVerified: `python3 -m pytest -q` passes (4 passed), and I spot-checked the new behavior directly \u2014 an unknown key raises `ValueError` naming it, overrides merge with defaults correctly, and assigning to a field raises `FrozenInstanceError`. No commits were made and nothing under `tests/` was touched.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T05:23:48Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 20 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

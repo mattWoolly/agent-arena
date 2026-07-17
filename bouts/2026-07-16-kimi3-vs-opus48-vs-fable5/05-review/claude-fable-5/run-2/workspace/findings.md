@@ -1,0 +1,6 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` truncates instead of rounding up, so the final partial page is never fetched (e.g. 250 rows yields only 200, and any total under 100 yields zero rows).
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across calls, so a later `sync_users` invocation silently skips every user ID processed in any earlier call.
+- src/sync.py:35 Building the UPDATE with an f-string instead of bound parameters is a SQL injection vulnerability (a quote in `email` breaks or rewrites the query), regressing the previously parameterized statement.
+- src/sync.py:39 `except Exception: pass` silently swallows per-user sync failures that were previously logged with `log.exception`, hiding data-loss errors.
+- src/report.py:7 The early `return 0` (and any exception during the writes) leaves the file opened on line 5 unclosed, leaking the handle and having already truncated an existing report; the `with` block was removed.
+- src/report.py:11 `user["email"].lower()` crashes with AttributeError when email is None (schema documents email as nullable; old code handled it with `or "unverified"`), and `.split("@")[1]` raises IndexError for emails without "@".

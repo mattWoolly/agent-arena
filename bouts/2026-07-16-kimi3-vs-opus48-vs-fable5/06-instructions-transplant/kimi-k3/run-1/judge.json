@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget leads with $2,392.00 (33.4% of revenue) despite only 16 units sold\" and each region shows dollars and percent share."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures, e.g. \"Promote Gadget bundles in West, its weakest region\" and \"Review Sprocket pricing; it moves 238 units but yields the lowest revenue share.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations surface concentration and inversions like Gadget's revenue lead \"despite only 16 units sold\" and Widget's highest volume (106 units) yet second in revenue."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget leads with $2,392.00 (33.4% of revenue)' and 'West trails at $1,414.82 (19.8%)'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product, region, and data point, e.g. 'Promote Gadget bundles in West, its weakest region' and 'Review Sprocket pricing; it moves 238 units but yields the lowest revenue share.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable non-obvious observations surface, e.g. 'Gadget leads... despite only 16 units sold, driven by its $149.50 price' and Widget leading volume (106 units) yet trailing Gadget in revenue."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget leads with $2,392.00 (33.4% of revenue) despite only 16 units sold\" and \"North tops the regions at $2,176.35 (30.4%)\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product, region, and figure, e.g. \"Promote Gadget bundles in West, its weakest region\" and \"Review Sprocket pricing; it moves 238 units but yields the lowest revenue share.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Gadget's revenue lead \"despite only 16 units sold, driven by its $149.50 price\" and Sprocket moving the most units yet earning the lowest share."
+      }
+    }
+  ]
+}

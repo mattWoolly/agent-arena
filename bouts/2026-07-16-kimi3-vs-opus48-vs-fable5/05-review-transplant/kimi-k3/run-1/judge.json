@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. \"src/sync.py:35\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "Finding 3 gestures at a compound effect\u2014\"ids are appended at line 31 before the sync attempt, so users ... (or failed) ... are silently skipped\"\u2014but never explicitly ties it to the bare-except swallow at line 39 that makes the persisted bad state invisible, so the cross-defect mechanism is only half-stated."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states a failure mechanism rather than a label, e.g. \"floor-division drops the final partial page\" and \"crashes with AttributeError when email is None ... and with IndexError when the email contains no '@'\"."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The seen=[] finding gestures at persistence of 'users seen (or failed) in an earlier call' but never mechanistically ties the swallowed bare-except failure at :39 to the pre-sync append at :24 as a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism or triggering condition, e.g. 'floor-division drops the final partial page' and 'crashes with AttributeError when email is None ... and with IndexError when the email contains no @'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:7\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The seen=[] finding notes \"users seen (or failed) in an earlier call are silently skipped,\" gesturing at how failed syncs persist in shared state but never mechanistically ties this to the separate bare-except finding at line 39 that actually swallows those failures."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism and triggering conditions (e.g. floor-division \"drops the final partial page (and every row when total_count < PAGE_SIZE)\" and email \".split(\"@\")[1] crashes with AttributeError when email is None ... and IndexError when the email contains no \"@\"\")."
+      }
+    }
+  ]
+}

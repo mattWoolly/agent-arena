@@ -1,0 +1,35 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 1122.4,
+  "agent_exit": 0,
+  "assistant_messages": 18,
+  "tool_calls": {
+    "Bash": 5,
+    "Write": 2
+  },
+  "tool_calls_total": 7,
+  "total_cost_usd": 0.593925,
+  "num_turns": 8,
+  "duration_ms": 1121346,
+  "duration_api_ms": 1603104,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 60566,
+  "output_tokens": 9007,
+  "cache_read_tokens": 131840,
+  "final_message": "Both files are written and validated. All numbers were computed from `data/sales.csv:2-31` (30 data rows under the header at line 1) using exact decimal arithmetic \u2014 no float drift.\n\n**Results**\n- Total revenue **$7,154.44** across **30 orders** (all `order_id`s unique, so row count = order count) \u2014 stated at `REPORT.md:3` and `summary.json:2-3`.\n- Median order value **$204.95** (`summary.json:4`).\n- Top product: **Gadget** at $2,392.00 \u2014 33.4% of revenue from only 16 units, versus Sprocket's 238 units (14.9\u00d7 the units) yielding just $1,130.50 (15.8%) \u2014 `REPORT.md:7`, `summary.json:5`.\n- Regions: North $2,176.35 (30.4%), East $1,830.79 (25.6%), South $1,732.48 (24.2%), West $1,414.82 (19.8%) \u2014 `REPORT.md:11`, `summary.json:6-11`. The four region values sum to exactly $7,154.44, matching total revenue with $0.00 discrepancy.\n\n**Edge case \u2014 the median.** With 30 orders, the median is the mean of the 15th and 16th sorted order values: ($190.00 + $219.89) / 2 = **exactly $204.945**, a half-cent tie. I rounded half-up to **$204.95**, the standard meaning of \"rounded to 2 decimals\" applied to the exact decimal value. Note that Python's `round(204.945, 2)` would instead give $204.94, because the binary float for 204.945 is actually 204.94499999\u2026 \u2014 I deliberately did not use float rounding here.\n\n**Compound interaction.** The Gadget-vs-Sprocket gap and the regional gap reinforce each other in the West: West is both the weakest region ($1,414.82, 35.0% below North's $2,176.35) and its revenue leans on low-price volume products, so the region's shortfall understates how little high-margin product it sells \u2014 the recommendation at `REPORT.md:16` targets the region, while `REPORT.md:15` and `REPORT.md:17` target the product mix causing it.\n\n**Constraint verification (mechanical checks all pass).** `REPORT.md` is 141 words (limit 250); exactly four H2 headings in the required order at lines 1, 5, 9, 13 with no other headings; exactly three `- ` bullets at lines 15\u201317 of 18, 17, and 20 words respectively (limit 25 each, counting the `-` token); none of the five banned words appear. `summary.json` contains exactly the five required keys.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T07:43:38Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

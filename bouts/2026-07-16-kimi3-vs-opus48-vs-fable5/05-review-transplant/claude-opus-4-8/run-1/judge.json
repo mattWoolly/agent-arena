@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding explains a compound failure mode mechanistically\u2014`pass` \"silently swallowing every failure (including the SQL errors from line 35) so failed syncs leave no trace,\" showing how the swallowed exception hides the SQL defect."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"floor division drops the last `total_count % 100` rows\" and mutable default \"persists across calls, so every id synced in one call is treated as a duplicate.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically links two defects: the `pass` handler is 'silently swallowing every failure (including the SQL errors from line 35) so failed syncs leave no trace.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. floor division 'drops the last `total_count % 100` rows' and the mutable default list 'persists across calls, so every id synced in one call is treated as a duplicate.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically links two defects\u2014the `pass` handler 'silently swallowing every failure (including the SQL errors from line 35) so failed syncs leave no trace'\u2014explaining how one defect hides another's failures."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism and triggering conditions, e.g. floor division 'drops the last `total_count % 100` rows' and the mutable default meaning 'every id synced in one call is treated as a duplicate and skipped in all later calls.'"
+      }
+    }
+  ]
+}

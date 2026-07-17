@@ -1,0 +1,42 @@
+diff --git a/REPORT.md b/REPORT.md
+new file mode 100644
+index 0000000..d1257e6
+--- /dev/null
++++ b/REPORT.md
+@@ -0,0 +1,17 @@
++## Overview
++
++Total revenue was $7,154.44 across 30 orders placed between 2026-05-02 and 2026-05-21. The median order value was $204.94.
++
++## Top Products
++
++Gadget led all products with $2,392.00 in revenue, about 33.4% of the total, from only 16 units sold. Widget followed at $2,118.94 (106 units), then Doohickey at $1,513.00 (17 units) and Sprocket at $1,130.50 (238 units). Sprocket moves the most units but earns the least revenue, reflecting its low $4.75 price.
++
++## Regional Performance
++
++North generated the most revenue at $2,176.35 from 8 orders. East followed with $1,830.79 (7 orders), South with $1,732.48 (8 orders), and West trailed at $1,414.82 (7 orders). North outperformed West by roughly 53.8%, a gap of $761.53.
++
++## Recommendations
++
++- Prioritize Gadget stock and promotions; it delivers a third of revenue from the fewest units sold.
++- Investigate West's weaker sales; it lags North by over half despite a similar order count.
++- Bundle Sprocket with higher-priced items to lift its low per-order revenue contribution.
+diff --git a/summary.json b/summary.json
+new file mode 100644
+index 0000000..bb73f36
+--- /dev/null
++++ b/summary.json
+@@ -0,0 +1,12 @@
++{
++  "total_revenue": 7154.44,
++  "orders": 30,
++  "median_order_value": 204.94,
++  "top_product_by_revenue": "Gadget",
++  "revenue_by_region": {
++    "East": 1830.79,
++    "North": 2176.35,
++    "South": 1732.48,
++    "West": 1414.82
++  }
++}
+\ No newline at end of file

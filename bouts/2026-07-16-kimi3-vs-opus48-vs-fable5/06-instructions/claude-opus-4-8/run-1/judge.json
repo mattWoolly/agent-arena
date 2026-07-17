@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'top two products account for roughly 63% of total revenue', West is 'about 35% below North', and 'spread between the highest and lowest regions is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with its figure and an action, e.g. 'Investigate West's $1,414.82 performance, the weakest region, and apply North's stronger sales tactics.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations including revenue concentration ('top two products account for roughly 63%'), the regional gap ('$761.53, indicating uneven but not extreme geographic concentration'), and the median/mix note about premium vs high-volume items."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 top two products \"account for roughly 63% of total revenue,\" West is \"about 35% below North,\" and the regional spread is \"$761.53.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with its figure, e.g. \"Expand Gadget availability... the largest revenue source at $2,392.00\" and \"Investigate West's $1,414.82 performance.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple actionable, non-obvious observations \u2014 revenue concentration (\"top two products account for roughly 63%\"), the price-vs-volume dynamic (\"high unit price despite modest volumes\" vs \"steady, high-count sales\"), and geographic spread of \"$761.53, indicating uneven but not extreme geographic concentration.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'top two products account for roughly 63% of total revenue', West 'about 35% below North', and 'spread... is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with its figure, e.g. 'Investigate West's $1,414.82 performance' and 'Protect Widget volume, which generates $2,118.94'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like revenue concentration ('top two products account for roughly 63%'), regional gap analysis ('$761.53... uneven but not extreme geographic concentration'), and the price-vs-volume dynamic behind Gadget and Widget."
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line reference (e.g. 'src/sync.py:31', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The line 31 finding gestures at an interaction by noting a user 'whose UPDATE raises is still marked as seen and will never be retried,' but never mechanistically ties this to the line 38 'except Exception: pass' swallow that would together cause silent permanent data loss."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. mutable default 'shared across calls, causing users synced in a previous invocation to be silently skipped' and early return 'never closes the opened file handle, leaking it.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding stands alone; even the related :31 (\"still marked as seen\") and :38 (\"silently swallows all sync failures\") defects are never connected into a stated compound failure mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"mutable default argument `seen=[]` is shared across calls, causing users ... to be silently skipped\" and \"early `return 0` when users is empty never closes the opened file handle, leaking it.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The :31 finding gestures at an interaction (\"a user whose UPDATE raises is still marked as seen and will never be retried\"), which implicitly depends on the shared `seen` default (:24) and the swallowed exception (:38), but the combining mechanism across those separate defects is never explicitly stated."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism rather than a bare label, e.g. `range(total_count // PAGE_SIZE)` \"skips the final partial page... so staged users beyond the last full page are never fetched\" and `split(\"@\")[1]` \"raises IndexError for addresses without '@'\"."
+      }
+    }
+  ]
+}

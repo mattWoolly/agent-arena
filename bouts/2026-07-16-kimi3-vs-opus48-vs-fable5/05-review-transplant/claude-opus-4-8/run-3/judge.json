@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 38 finding mechanistically explains a compound failure: the broken SQL at line 35 raises on an apostrophe email, which `except Exception: pass` swallows so it 'is silently discarded, is not counted in synced, and leaves no trace,' and line 5/11 similarly explains the None-email crash skipping `f.close()` to leak the handle."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` 'integer-divides, so the final partial page is never fetched' and mutable default `seen=[]` 'is shared across all calls, so IDs accumulate process-wide.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (sync.py:14, :24, :35, :38; report.py:5, :11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains a compound failure \u2014 the broken SQL at line 35 raises on an apostrophe email, which the bare `except Exception: pass` swallows so it 'is silently discarded, is not counted in synced, and leaves no trace.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. mutable default `seen=[]` 'is shared across all calls, so IDs accumulate process-wide' causing already-synced users to be skipped."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a precise file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains how the swallowed exception combines with the broken SQL at line 35 so an apostrophe email 'raises, is silently discarded, is not counted in synced, and leaves no trace,' and report.py:5 explains the None-email crash at line 11 skipping f.close()."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism and triggering conditions (e.g. integer division 'drops 100%' for total_count in 1..99, mutable default `seen=[]` 'shared across all calls')."
+      }
+    }
+  ]
+}
