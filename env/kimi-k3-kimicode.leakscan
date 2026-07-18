@@ -1,0 +1,5 @@
+# Extra secret values the post-run leak check should scan published
+# artifacts for, one per line on stdout. The Moonshot platform key sits in
+# .kimi-arena/.kimi-code/config.toml, which the agent's shell can read (its
+# HOME points there). This file contains no secrets itself.
+(. "$HOME/.secrets" >/dev/null 2>&1; printf '%s\n' "${KIMI_API_KEY:-}")
