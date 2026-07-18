@@ -1,0 +1,5 @@
+- src/sync.py:14 Floor-dividing the count omits `total_count % 100` staged users (100% of users when the count is 1–99), so the function does not fetch all staged users unless the count is an exact multiple of 100.
+- src/sync.py:24 The mutable `seen` default persists IDs across invocations, causing 100% of previously encountered IDs to be skipped on later syncs and compounding line 31's pre-write marking by making even failed updates permanently non-retryable in-process.
+- src/sync.py:35 Interpolating the email and ID directly into SQL lets an email containing a quote alter the `UPDATE` target or syntax, and line 38 then silently converts syntax failures into missing syncs.
+- src/report.py:5 Opening the report outside a context manager leaks the descriptor on the empty-user return at line 7 and on every parsing or write exception, while also leaving the report truncated or partially written.
+- src/report.py:11 Calling `lower()` and indexing the split result crashes reporting for the schema-permitted `email=None` edge case and for any non-NULL address without `@`, so one such user prevents 100% of subsequent users from being reported.

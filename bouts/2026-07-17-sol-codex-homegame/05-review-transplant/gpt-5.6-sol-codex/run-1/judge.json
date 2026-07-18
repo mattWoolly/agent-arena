@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains the compound failure: IDs are marked seen before the update succeeds, which 'compounds with the persistent default at line 24 so 100% of rows whose first update fails are silently suppressed on every later default-argument retry.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. the floor-division 'drops every nonzero count not divisible by 100' and interpolating email into SQL lets 'a crafted WHERE...update multiple users.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g., 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding explains a real compound mode mechanistically: marking IDs seen before update succeeds 'compounds with the persistent default at line 24 so 100% of rows whose first update fails are silently suppressed on every later default-argument retry.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a mechanism, e.g. the floor-divided page count 'drops the final 1/101 (0.99%) for 101 rows' and interpolating email 'lets an apostrophe either make 100% of that row's update fail or alter the statement.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding mechanistically explains a compound failure: IDs marked seen before update success \"compounds with the persistent default at line 24 so 100% of rows whose first update fails are silently suppressed on every later default-argument retry.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. the floor-divided page count \"drops the final 1/101 (0.99%) for 101 rows\" and SQL interpolation lets an apostrophe \"alter the statement (for example a crafted `WHERE` can update multiple users)\"."
+      }
+    }
+  ]
+}

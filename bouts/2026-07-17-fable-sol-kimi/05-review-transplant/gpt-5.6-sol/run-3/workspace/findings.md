@@ -1,0 +1,6 @@
+- src/sync.py:14 Floor division omits every partial page: `total_count=99` fetches 0/99 rows (0%), while `total_count=101` fetches only 100/101 rows (99.0%).
+- src/sync.py:24 The mutable default retains IDs across calls, so after one successful one-record sync, a second call carrying an updated version of that record skips 1/1 updates (100%).
+- src/sync.py:31 Marking an ID seen before its UPDATE means a failed first copy suppresses 1/1 later valid copies (100%), and the persistent default at src/sync.py:24 extends that unretryable state to later calls while src/sync.py:38 suppresses the failure.
+- src/sync.py:35 Interpolating an email into SQL allows an address such as `x' WHERE 1=1 --` to overwrite N/N users (100%) rather than the intended 1/N user.
+- src/report.py:6 Returning on the zero-user edge case after the open at src/report.py:5 leaves the report truncated and bypasses the close at src/report.py:13, so a run with one failure records 0/1 failures (0%).
+- src/report.py:11 Calling `.lower()` on the schema-permitted `email=None` edge case at src/db.py:4 raises `AttributeError`, producing 0/1 user-detail rows (0%) for a single phone-invited user and compounding the failure by bypassing the close at src/report.py:13.

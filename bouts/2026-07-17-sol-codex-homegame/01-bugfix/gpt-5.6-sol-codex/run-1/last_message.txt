@@ -1,0 +1,3 @@
+Fixed both LRU bookkeeping bugs and added `SOLUTION.md`.
+
+Verification: `python3 -m pytest -q` → **6 passed**.

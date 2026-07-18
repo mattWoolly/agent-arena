@@ -1,0 +1,6 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` truncates the final partial page, dropping the last 1–99 users (100% loss when total_count<100, 33% at 150, 20% at 250).
+- src/sync.py:24 mutable default `seen=[]` persists across calls, so re-syncing the same users skips every one of them (100% skipped on the second call).
+- src/sync.py:35 f-string interpolation into the UPDATE is a SQL injection hole and also breaks on legitimate apostrophe emails like `o'brien@example.com`, which raise OperationalError instead of updating.
+- src/sync.py:38 `except Exception: pass` silently swallows every sync failure (dropping the old `log.exception`); combined with the raw-SQL query at line 35, an apostrophe/injection email fails and vanishes with zero diagnostic trace and no increment to `synced`.
+- src/report.py:5 `open()` without a context manager leaks the file descriptor on both the early `return 0` (line 7, empty users) and any exception from line 11, since `f.close()` at line 13 is never reached.
+- src/report.py:11 `user["email"].lower().split("@")[1]` crashes on email=None (AttributeError; db.py notes email is NULLABLE for phone-invited users) and on emails lacking "@" (IndexError), whereas the pre-change code guarded with `email or "unverified"`.

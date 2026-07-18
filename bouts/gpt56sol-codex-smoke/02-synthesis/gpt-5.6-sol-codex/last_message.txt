@@ -1,0 +1,9 @@
+Implemented all five functions in `problems.py`:
+
+- Duration parsing and validation
+- Luhn checksum
+- Nested dictionary flattening
+- Top-k frequency sorting
+- O(n) rolling maximum
+
+Focused edge-case checks and compilation passed.

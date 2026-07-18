@@ -1,0 +1,41 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 116.8,
+  "agent_exit": 0,
+  "assistant_messages": 35,
+  "tool_calls": {
+    "TaskCreate": 3,
+    "TaskUpdate": 6,
+    "Read": 2,
+    "Bash": 5,
+    "Write": 2
+  },
+  "tool_calls_total": 18,
+  "total_cost_usd": 0.47508,
+  "num_turns": 19,
+  "duration_ms": 115712,
+  "duration_api_ms": 117588,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 358835,
+  "output_tokens": 6235,
+  "cache_read_tokens": 334698,
+  "final_message": "- Created the four-section report with three recommendations: `REPORT.md:1-17`.\n- Created the five-key JSON summary with $7,154.44 revenue, 30 orders, and a $204.95 median: `summary.json:1-12`.\n- Included all four regional totals: `summary.json:6-11`.",
+  "total_cost_usd_cli": 1.95005,
+  "cost_source": "proxy-usage-log (18 requests)",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T20:27:03Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

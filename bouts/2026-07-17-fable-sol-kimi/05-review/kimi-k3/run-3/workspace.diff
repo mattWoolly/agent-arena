@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..2cf57bd
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` only fetches full pages, so the final partial page (and any total under PAGE_SIZE) is silently dropped and not all staged users are returned.
++- src/sync.py:24 Mutable default argument `seen=[]` is shared across calls, so users synced in a previous call are wrongly skipped as duplicates in every subsequent call.
++- src/sync.py:31 The user id is appended to `seen` before the sync attempt, so a failed sync still marks the id as seen and it is skipped on any later occurrence in the batch (and forever after, given the shared default).
++- src/sync.py:35 Replacing the parameterized query with f-string interpolation of `email` introduces a SQL injection vulnerability and breaks on emails containing single quotes.
++- src/sync.py:39 `except Exception: pass` silently swallows all sync failures (the previous code logged them), so errors leave no trace and the failure count is lost.
++- src/report.py:7 The early `return 0` on empty `users` never closes the file opened at line 5, leaking the file handle and leaving a truncated empty file instead of a report.
++- src/report.py:11 `user["email"].lower()` raises AttributeError when email is None (email is nullable per db.py schema notes, and the old code handled None), crashing the report and leaving the file unclosed since f.close() is never reached.

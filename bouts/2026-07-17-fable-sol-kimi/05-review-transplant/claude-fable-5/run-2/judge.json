@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-38 finding mechanistically ties two defects together: the `except: pass` change silently discards the OperationalErrors that the line-35 f-string injection now produces, and line 11 similarly links to the empty strings 'src/sync.py:33 normalizes NULLs into.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division 'drops the final partial page, so a 250-row staging table fetches only 200 rows' and the mutable default `seen=[]` 'is shared across all calls in the process.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :38 finding mechanistically links the swallowed exception to line 35, noting the `pass` handler silently discards \"the syntax errors line 35 now produces,\" and :11 explains NULLs normalized to empty strings at sync.py:33 then crash on `.split(\"@\")[1]`."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a concrete failure mechanism, e.g. floor division \"drops the final partial page, so a 250-row staging table fetches only 200 rows\" and the mutable default `seen=[]` \"is shared across all calls in the process.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The src/sync.py:38 finding mechanistically explains that the `pass` handler silently swallows the OperationalErrors produced by the line 35 SQLi change, and src/report.py:11 explains that the empty strings sync.py:33 normalizes NULLs into then cause the report's `.split(\"@\")[1]` to raise IndexError."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'Floor division ... drops the final partial page, so a 250-row staging table fetches only 200 rows' rather than merely labeling the defect."
+      }
+    }
+  ]
+}

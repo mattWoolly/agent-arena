@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget 'exceeded Widget's $2,118.94 by $273.06, or 12.89%' and 'North exceeded West by $761.53, 53.83% of West'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with data figures, e.g. 'Test West growth campaigns; its $1,414.82 is 19.78% of revenue, versus North's 30.42%'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like revenue concentration (Gadget 33.43%) and the North-Gadget outlier ('North-Gadget's $747.50 was 10.45% of total') rather than just restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget 'exceeded Widget's $2,118.94 by $273.06, or 12.89%' and 'North exceeded West by $761.53, 53.83% of West'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with backing figures, e.g. 'Test West growth campaigns; its $1,414.82 is 19.78% of revenue, versus North's 30.42%.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear\u2014revenue concentration (Gadget '33.43% of revenue'), the North\u2013West gap ('53.83% of West'), and the North-Gadget cross-segment outlier ('$747.50 was 10.45% of total')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget 'exceeded Widget's $2,118.94 by $273.06, or 12.89%' and 'North exceeded West by $761.53, 53.83% of West'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions with figures, e.g. 'Test West growth campaigns; its $1,414.82 is 19.78% of revenue, versus North's 30.42%'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several non-obvious, actionable observations like the North-Gadget cell being 10.45% of total revenue and North exceeding West by 53.83%, beyond mere totals."
+      }
+    }
+  ]
+}

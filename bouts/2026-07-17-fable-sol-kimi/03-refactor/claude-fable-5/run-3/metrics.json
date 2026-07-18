@@ -1,0 +1,38 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 48.0,
+  "agent_exit": 0,
+  "assistant_messages": 20,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 6,
+    "Write": 2,
+    "Edit": 1
+  },
+  "tool_calls_total": 12,
+  "total_cost_usd": 0.43046200000000007,
+  "num_turns": 13,
+  "duration_ms": 46596,
+  "duration_api_ms": 50608,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 13,
+  "output_tokens": 2704,
+  "cache_read_tokens": 158340,
+  "final_message": "Done. The refactor is complete and all 4 existing tests pass unmodified.\n\nWhat changed:\n\n- **`reportgen/config.py`** \u2014 replaced the `DEFAULTS` dict with a frozen dataclass `Config` carrying the same four typed fields and defaults (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config(path)` now validates the JSON keys against the dataclass fields and raises `ValueError: Unknown config key: '<key>'` for anything unrecognized, then returns `Config(**raw)` so file values override defaults as before.\n- **`reportgen/formatter.py`** \u2014 all `config[\"...\"]` subscripts converted to attribute access (`config.output_format`, `config.title`, `config.include_summary`).\n- **`reportgen/loader.py`** \u2014 `config[\"max_rows\"]` \u2192 `config.max_rows`.\n- **`reportgen/main.py`** and **`__init__.py`** needed no changes since they never subscripted the config.\n\nVerified: `python3 -m pytest -q` passes (4 passed), a grep confirms no `cfg[...]`/`config[...]` subscripting remains anywhere in `reportgen/`, and I exercised the new behavior directly \u2014 an unknown key like `max_rowz` raises `ValueError` naming it, and mutating a `Config` instance raises `FrozenInstanceError`. No commits were made; tests were untouched.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T19:06:36Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

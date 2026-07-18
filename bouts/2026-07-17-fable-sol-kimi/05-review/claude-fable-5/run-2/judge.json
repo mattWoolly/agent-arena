@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no cross-defect compound failure mode explained (e.g. the swallowed exception at :39 is never linked to the mutable-default state at :24)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. floor division 'skips the final partial page, so up to 99 trailing rows are silently dropped' and 'seen=[]' persists 'so a later sync_users invocation silently skips any user id processed in an earlier call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation\u2014e.g. sync.py:39's swallowed failures are never mechanistically linked to sync.py:35's SQL-breaking single quotes\u2014so no compound failure mode is explained."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a mechanism (e.g. floor division 'skips the final partial page, so up to 99 trailing rows are silently dropped' and mutable default 'persists across calls, so a later sync_users invocation silently skips any user id')."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode across separate defects explained\u2014the closest is a single-finding note that report.py:7 lacks a context manager, not an interaction between two defects."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. \"Floor division ... skips the final partial page, so up to 99 trailing rows are silently dropped\" and mutable default \"persists across calls, so a later sync_users invocation silently skips any user id.\""
+      }
+    }
+  ]
+}

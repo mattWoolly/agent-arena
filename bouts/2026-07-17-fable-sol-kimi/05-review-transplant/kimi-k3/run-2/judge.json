@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding explains a compound mode mechanistically \u2014 marking-seen-before-sync combined with the persistent default at line 24 means a failed user is \"permanently skipped on every retry\" \u2014 and line 39 shows the swallowed exception hiding the line 35 quote-breakage."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` \"drops the final partial page\" causing quantified data loss and `except Exception: pass` \"silently swallows all sync errors ... so failures ... are invisible.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding mechanistically explains the compound mode\u2014a failed UPDATE is marked seen and, 'combined with the persistent default at line 24, is permanently skipped on every retry'\u2014and line 39's swallowing hides 'the quote-breakage from line 35'."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'range(total_count // PAGE_SIZE) drops the final partial page' and 'except Exception: pass silently swallows all sync errors...so failures...are invisible.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11') with no vague or missing locations."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "It mechanistically explains at least one compound failure \u2014 line 31's early append 'combined with the persistent default at line 24, is permanently skipped on every retry' and line 39 swallowing 'the quote-breakage from line 35' so failures are invisible."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. 'range(total_count // PAGE_SIZE) drops the final partial page' and 'crashes with AttributeError when email is None'."
+      }
+    }
+  ]
+}

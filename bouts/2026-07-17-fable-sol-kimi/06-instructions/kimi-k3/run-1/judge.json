@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. West trailing at $1,414.82 is quantified as 'roughly 65% of North's total,' and units are paired with revenue throughout ('$2,392.00 from only 16 units')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with data figures and an action, e.g. 'Push Sprocket upsells; it moves the most units (238) but only $1,130.50 in revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations, such as the revenue-per-unit inversion where Gadget earns most from 16 units while Sprocket sells 238 units for the least revenue, and West's gap to North."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Gadget's '$2,392.00 in revenue from only 16 units' and West being 'roughly 65% of North's total.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region and cites data figures, e.g. 'Push Sprocket upsells; it moves the most units (238) but only $1,130.50 in revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable outliers, like Gadget's high revenue on few units and Sprocket selling the most units (238) yet earning the least revenue, rather than restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, including the ratio \"West trails at $1,414.82, roughly 65% of North's total\" and revenue-per-unit contrasts like Gadget's $2,392.00 on 16 units versus Widget's $2,118.94 on 106 units."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name products/regions and cite figures, e.g. \"Push Sprocket upsells; it moves the most units (238) but only $1,130.50 in revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations such as the inverted units-to-revenue relationship (Sprocket sells 238 units but earns least while Gadget earns most on 16 units) and the West-vs-North regional gap."
+      }
+    }
+  ]
+}

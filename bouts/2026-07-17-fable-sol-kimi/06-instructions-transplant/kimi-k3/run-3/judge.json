@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget leads with $2,392.00 in revenue (33.4% of total)' and 'North generates the most revenue at $2,176.35 (30.4%)'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures, e.g. 'Raise Sprocket price or bundle it; 238 units sold bring only $1,130.50 at $4.75 each.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations such as 'Sprocket sells the most units, 238, but at the lowest price of $4.75' and Gadget leading revenue 'despite low unit volume.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget leads with $2,392.00 in revenue (33.4% of total)\" and \"West trails at $1,414.82 (19.8%)\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with data, e.g. \"Raise Sprocket price or bundle it; 238 units sold bring only $1,130.50 at $4.75 each\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious points like \"Sprocket sells the most units, 238, but at the lowest price of $4.75\" and West's revenue gap."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget leads with $2,392.00 in revenue (33.4% of total)' and 'North generates the most revenue at $2,176.35 (30.4%)'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with its figures, e.g. 'Raise Sprocket price or bundle it; 238 units sold bring only $1,130.50 at $4.75 each' and 'Investigate West region underperformance...only $1,414.82, about 19.8%'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like 'Sprocket sells the most units, 238, but at the lowest price of $4.75' and Gadget leading revenue 'despite low unit volume,' beyond restating totals."
+      }
+    }
+  ]
+}

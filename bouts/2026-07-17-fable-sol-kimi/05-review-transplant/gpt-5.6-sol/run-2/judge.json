@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (src/sync.py:14, :17, :24, :31, :35 and src/report.py:5, :11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure where adding the ID to `seen` before update succeeds combines with the shared mutable default and swallowed exception to 'poison retries across subsequent calls without exposing the original failure.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. 'Floor-dividing `total_count` by the 100-row page size drops every final partial page' and 'Opening the report with `\"w\"` before checking for an empty user list truncates 100% of the previous report.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:31`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure\u2014adding an ID to `seen` before the update succeeds combines with the shared mutable default and the swallowed exception to 'poison retries across subsequent calls without exposing the original failure.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor-dividing `total_count` 'drops every final partial page' and opening with `\"w\"` before the empty check 'truncates 100% of the previous report.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "It mechanistically explains compound failures, e.g. the pre-success `seen` add 'compounds with the shared default and swallowed exception to poison retries across subsequent calls without exposing the original failure.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism (e.g. 'Floor-dividing `total_count` by the 100-row page size drops every final partial page' and mutable default `seen` persisting IDs 'until process restart')."
+      }
+    }
+  ]
+}

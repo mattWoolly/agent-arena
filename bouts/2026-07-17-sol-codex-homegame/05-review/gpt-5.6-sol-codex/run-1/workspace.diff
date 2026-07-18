@@ -1,0 +1,11 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..744c17b
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,5 @@
++- src/sync.py:14 Using floor division for the page count drops every remainder page and returns no users at all when `total_count` is below `PAGE_SIZE`.
++- src/sync.py:24 The mutable `seen` default persists IDs across calls, causing later independent sync operations to silently skip users synced by earlier calls.
++- src/sync.py:35 Interpolating staged email and ID values directly into SQL permits SQL injection and also makes ordinary emails containing apostrophes fail to sync.
++- src/report.py:5 Returning early for an empty user list leaves the opened report file descriptor unclosed.
++- src/report.py:11 Calling `lower()` and indexing the result of `split("@")` crashes report generation for schema-valid NULL emails or addresses without an `@`.

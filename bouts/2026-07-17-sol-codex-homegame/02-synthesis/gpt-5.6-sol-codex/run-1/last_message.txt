@@ -1,0 +1,1 @@
+Implemented all five functions in `problems.py`. Focused edge-case checks and syntax compilation pass.

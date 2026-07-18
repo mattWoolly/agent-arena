@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 0,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 0,
+        "why": "Every comparison is a bare ranking with a raw total pulled from the tables (\"Gadget ranked first with $2,392.00\", \"North led with $2,176.35\") \u2014 no percentages, ratios, or gaps are computed."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product or region with its exact figure and an action (\"Prioritize Gadget availability; it generated the highest product revenue at $2,392.00\", \"Target West for growth initiatives; its $1,414.82 revenue was the lowest\")."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "Nearly all prose restates table rankings/totals, with the median order value ($204.95) being the only figure not directly implied by the ranked tables."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Each comparison carries a raw revenue figure (e.g. \"Gadget ranked first with $2,392.00, followed by Widget at $2,118.94\") but none are expressed as computed gaps, ratios, or percentages between items."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure (\"Prioritize Gadget availability; it generated the highest product revenue at $2,392.00\", \"Target West for growth initiatives; its $1,414.82 revenue was the lowest\")."
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose merely restates the highest/lowest totals already shown in the tables (\"its $2,176.35 revenue exceeded every other region\") without surfacing concentration, computed gaps, or outliers."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Each item carries a raw dollar figure (e.g. \"Gadget ranked first with $2,392.00... Widget at $2,118.94\") but comparisons are bare rankings with no computed gaps, percentages, or ratios."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure, e.g. \"Prioritize Gadget availability; it generated the highest product revenue at $2,392.00\" and \"Target West for growth initiatives; its $1,414.82 revenue was the lowest.\""
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose only restates rankings and totals the tables already imply (\"North led with $2,176.35... West... was the lowest\") without surfacing concentration, gaps, or outliers."
+      }
+    }
+  ]
+}

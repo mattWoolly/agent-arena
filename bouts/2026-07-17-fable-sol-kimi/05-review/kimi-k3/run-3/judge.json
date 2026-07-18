@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding mechanistically compounds two defects: appending the id to `seen` before sync marks a failed sync as seen, and 'forever after, given the shared default' (line 24's mutable default), so the id is permanently skipped."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` 'only fetches full pages, so the final partial page ... is silently dropped.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :31 finding mechanistically combines two defects \u2014 'a failed sync still marks the id as seen and it is skipped on any later occurrence in the batch (and forever after, given the shared default)' \u2014 explaining how the shared mutable default makes the premature-append error permanent."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. 'Mutable default argument seen=[] is shared across calls, so users synced in a previous call are wrongly skipped as duplicates.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :31 finding mechanistically explains a compound failure: appending the id before the sync attempt combines with the shared mutable default (:24) so 'a failed sync still marks the id as seen ... (and forever after, given the shared default).'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a failure mechanism, e.g. 'range(total_count // PAGE_SIZE) only fetches full pages, so the final partial page ... is silently dropped' and 'user[\"email\"].lower() raises AttributeError when email is None.'"
+      }
+    }
+  ]
+}

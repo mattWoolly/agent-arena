@@ -1,0 +1,9 @@
+FOUND  pagination-off-by-one
+FOUND  mutable-default-seen
+FOUND  sql-injection
+FOUND  swallowed-exception
+FOUND  file-handle-leak
+FOUND  none-email-crash
+findings lines parsed: 9; unmatched (potential FPs): 0
+precision: 1.00
+SCORE: 6/6

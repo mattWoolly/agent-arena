@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..fc27944
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 Floor division drops every partial final page: 101 staged rows yield 100/101 (99.0%), while the 1–99-row edge case yields 0 rows (0%).
++- src/sync.py:24 The mutable default retains IDs across calls, so after syncing an ID once, a later call with its changed record syncs 0/1 records (0%) instead of 1/1 (100%).
++- src/sync.py:31 Adding an ID to `seen` before its UPDATE succeeds, compounded by the persistent default at line 24, prevents 100% of subsequent retries for that ID after one failed attempt.
++- src/sync.py:35 Interpolating staged email text into SQL lets a crafted value such as `x' WHERE 1=1 --` update N/N users (100%) instead of the intended 1/N, and an ordinary apostrophe makes the update fail.
++- src/report.py:5 Replacing the context manager with manual close leaves 1/1 opened descriptors dependent on garbage collection whenever the early return at line 7 or domain parsing at line 11 exits first, compounding either edge case with an empty or partial report.
++- src/report.py:6 The zero-user branch returns after truncating the destination, producing 0/2 expected summary lines (0%) and bypassing the explicit close at line 13.
++- src/report.py:11 Domain extraction raises for the schema-permitted `email=None` and for empty or missing-`@` edge cases, so a one-user report writes 0/1 user lines (0%) and, with line 5, remains partial and not deterministically closed.

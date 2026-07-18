@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget out-earned it 2.1x while selling 14.9x fewer units' and 'North averaged $272.04 per order, 35% above West's $202.12'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures, e.g. 'Promote Gadget in West: only 2 of 16 Gadget units sold there, yet Gadget drives 33.4% of company revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable non-obvious observations appear, such as Sprocket moving '63% of all units sold, yet earned the least' and North's revenue lead driven by order size rather than count."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g., 'Gadget out-earned it 2.1x while selling 14.9x fewer units' and 'the 1.54x gap between North and West' with 35% and 26% deltas."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures actionable as written, e.g., 'Promote Gadget in West: only 2 of 16 Gadget units sold there, yet Gadget drives 33.4% of company revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations surface, e.g., Sprocket 'moved 238 units, 63% of all units sold, yet earned the least' and North's 35%-higher order size driven by Gadget mix."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget out-earned it 2.1x while selling 14.9x fewer units\" and \"North averaged $272.04 per order, 35% above West's $202.12.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. \"Promote Gadget in West: only 2 of 16 Gadget units sold there, yet Gadget drives 33.4% of company revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations like Sprocket being \"63% of all units sold\" yet earning the least, and that the North-West gap \"reflects order size\" rather than order count."
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 117.2,
+  "agent_exit": 0,
+  "assistant_messages": 22,
+  "tool_calls": {
+    "Read": 6,
+    "Bash": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.33914,
+  "num_turns": 9,
+  "duration_ms": 116021,
+  "duration_api_ms": 117597,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 123654,
+  "output_tokens": 5854,
+  "cache_read_tokens": 101055,
+  "final_message": "Created `findings.md` with 7 findings (`findings.md:1-7`).",
+  "total_cost_usd_cli": 0.7646200000000001,
+  "cost_source": "proxy-usage-log (7 requests)",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T19:45:06Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 7 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..6630e48
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` drops the final partial page — with total_count=250 only 200/250 rows (80%) are fetched, and with total_count<100 zero rows are fetched at all (100% data loss), so staged users are silently never synced.
++- src/sync.py:24 mutable default argument `seen=[]` persists across calls, so every user id synced (or attempted) in any earlier invocation is skipped as a "duplicate" in all later invocations of the process.
++- src/sync.py:31 `seen.append(user["id"])` runs before the sync attempt, so a user whose UPDATE fails is still marked as seen and, combined with the persistent default at line 24, is permanently skipped on every retry.
++- src/sync.py:35 the previously parameterized UPDATE is replaced by an f-string interpolating `email` and `id` directly into SQL, introducing SQL injection, and any email containing a single quote breaks the statement.
++- src/sync.py:39 `except Exception: pass` silently swallows all sync errors (previously logged via log.exception), so failures — including the quote-breakage from line 35 — are invisible and the affected users are silently dropped.
++- src/report.py:7 the early `return 0` when `users` is empty returns without closing the file opened at line 5, leaking the handle and leaving the report truncated/empty instead of containing the summary header.
++- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError when email is None (the schema notes in src/db.py:4-5 state email is NULLABLE, and the old code handled it with `or "unverified"`), and raises IndexError for any address lacking "@", aborting the report and leaking the open file.

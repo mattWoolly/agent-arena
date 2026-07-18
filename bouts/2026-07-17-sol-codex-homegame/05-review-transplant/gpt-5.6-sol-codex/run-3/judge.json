@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 24 finding mechanistically explains a compound failure \u2014 the persistent `seen` default 'compounding line 31's pre-write marking by making even failed updates permanently non-retryable in-process' (and line 35+38 similarly)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. line 11 crashes 'for the schema-permitted `email=None` edge case...so one such user prevents 100% of subsequent users from being reported.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 24 finding mechanistically explains a compound failure: the mutable `seen` default \"compounding line 31's pre-write marking by making even failed updates permanently non-retryable in-process.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor-dividing \"omits `total_count % 100` staged users\" and interpolating email into SQL \"lets an email containing a quote alter the `UPDATE` target or syntax.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11'), several even citing secondary lines like 31 and 38."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 24 finding mechanistically explains a compound mode\u2014the mutable `seen` default 'compounding line 31's pre-write marking by making even failed updates permanently non-retryable in-process'\u2014and line 35 shows quote-injection failures being 'silently convert[ed]' into missing syncs by line 38."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'Floor-dividing the count omits `total_count % 100` staged users' and 'Calling `lower()` and indexing the split result crashes reporting for the schema-permitted `email=None` edge case.'"
+      }
+    }
+  ]
+}

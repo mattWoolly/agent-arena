@@ -1,0 +1,3 @@
+ SOLUTION.md       | 5 +++++
+ lrucache/cache.py | 3 ++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)

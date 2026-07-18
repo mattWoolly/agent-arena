@@ -1,0 +1,38 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 58.3,
+  "agent_exit": 0,
+  "assistant_messages": 14,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "total_cost_usd": 0.19207899999999994,
+  "num_turns": 7,
+  "duration_ms": 57166,
+  "duration_api_ms": 62396,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 19340,
+  "output_tokens": 1163,
+  "cache_read_tokens": 132608,
+  "final_message": "All 6 tests pass. Two bugs fixed in `lrucache/cache.py`:\n\n1. **`get` didn't refresh recency** (cache.py:30) \u2014 a hit never moved the key to the MRU end, so a just-read key could be evicted. Added `self._data.move_to_end(key)` before returning the value.\n2. **`put` evicted on updates** (cache.py:33) \u2014 the capacity check ran even when the key already existed, evicting an innocent entry before a size-neutral overwrite. Guarded with `key not in self._data`.\n\n`SOLUTION.md` written with the root causes.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T18:34:02Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 17 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

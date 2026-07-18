@@ -1,0 +1,14 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..546d68b
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,8 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` uses floor division, so the final partial page is never fetched — up to 99 trailing users are silently dropped, and any total_count under 100 fetches nothing at all.
++- src/sync.py:17 The paginated SELECT has no ORDER BY, so row order across separate LIMIT/OFFSET queries is unspecified and users can be duplicated or skipped between pages.
++- src/sync.py:24 Mutable default argument `seen=[]` persists across invocations, so a second call to `sync_users()` silently skips every user id processed by any earlier call.
++- src/sync.py:35 The UPDATE is built with an f-string instead of the original parameterized query, making it SQL-injectable via the email value (an email containing a single quote breaks or hijacks the statement).
++- src/sync.py:39 `except Exception: pass` replaces the original `log.exception(...)`, silently swallowing per-user sync failures so failed rows disappear with no trace.
++- src/report.py:5 The file is opened without a context manager, so the early `return 0` on line 7 (and any exception raised in the loop) leaks the open handle after the report file has already been truncated to empty.
++- src/report.py:11 `user["email"].lower()` raises AttributeError when email is None, which db.py explicitly documents as a case consumers must handle (the original code fell back to "unverified").
++- src/report.py:11 `.split("@")[1]` raises IndexError for any email lacking an "@", e.g. the empty-string emails that sync_users writes for users with null staged emails.

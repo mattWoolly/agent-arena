@@ -1,0 +1,12 @@
+{
+  "cli_version": "codex-cli 0.144.4",
+  "driver": "codex exec --json -s workspace-write --dangerously-bypass-approvals-and-sandbox",
+  "base_url": "https://api.openai.com (native)",
+  "proxy_upstream": "none",
+  "model_env": "none",
+  "effort": "codex-default",
+  "setting_sources": "none (--ignore-user-config, isolated CODEX_HOME)",
+  "max_turns": 60,
+  "timeout_s": 1500,
+  "started_at": "2026-07-17T23:51:53Z"
+}

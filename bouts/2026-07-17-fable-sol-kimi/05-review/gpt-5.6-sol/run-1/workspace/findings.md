@@ -1,0 +1,6 @@
+- src/sync.py:14 Floor division omits the final partial page, so tables with fewer than 100 staged users return none and other non-multiples of 100 lose their trailing users.
+- src/sync.py:24 The mutable default `seen` list persists IDs across invocations, causing later sync runs to skip legitimate updates for users processed by an earlier run.
+- src/sync.py:31 IDs are marked as seen before their updates succeed, so a failed update cannot be retried in a later batch or invocation using that `seen` state.
+- src/sync.py:35 Interpolating staged values into SQL makes valid emails containing apostrophes fail and allows crafted email values to alter the update query.
+- src/report.py:6 Returning after opening the file leaves an empty-user report blank, hides any reported failures, and bypasses the explicit file close.
+- src/report.py:11 Calling `lower()` and indexing the split result crashes report generation for schema-permitted NULL emails or addresses without an `@`.

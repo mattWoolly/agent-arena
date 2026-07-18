@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 Gadget is \"12.9% ahead of Widget,\" North's mean order is \"$272.04 versus $202.12 in West, a 34.6% difference,\" and West \"trails North by 35.0%.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product with data-grounded figures \u2014 \"Grow Gadget sales: 16 units produced $2,392.00... highest revenue per unit ($149.50),\" \"Investigate West,\" and \"Review Sprocket pricing... $4.75 each.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations, e.g. Sprocket \"sold the most units by far \u2014 238... yet returned the least revenue\" and the regional gap arising from order size rather than order count."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. Gadget is \"12.9% ahead of Widget,\" North's mean order is \"$272.04 versus $202.12 in West, a 34.6% difference.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with grounding figures, e.g. \"Review Sprocket pricing: 238 units (63.1% of all units sold) yielded only 15.8% of revenue at $4.75 each.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, such as Sprocket selling \"the most units by far \u2014 238... yet returned the least revenue\" and Gadget's highest revenue per unit at \"$149.50.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. Gadget is \"12.9% ahead of Widget\", North's mean order is \"$272.04 versus $202.12 in West, a 34.6% difference\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures, e.g. \"Review Sprocket pricing: 238 units (63.1% of all units sold) yielded only 15.8% of revenue at $4.75 each.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations, e.g. Sprocket \"sold the most units by far \u2014 238... yet returned the least revenue\" and North vs West gap explained by order size rather than count."
+      }
+    }
+  ]
+}

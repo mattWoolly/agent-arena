@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Gadget at '$2,392.00 in revenue, about 33% of the total' and West '$1,414.82, about 19.8%'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures, e.g. 'Promote Gadget in West, where its revenue is $299.00 versus $747.50 in North and South'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious points like Sprocket selling 'the most units (238) but at the lowest unit price, so it contributed the least revenue' and West's uniquely weak Gadget sales."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure\u2014'$2,392.00 in revenue, about 33% of the total', 'North...$2,176.35, roughly 30.4%', 'West trailed at $1,414.82, about 19.8%'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product, region, and figure and is actionable as written, e.g. 'Promote Gadget in West, where its revenue is $299.00 versus $747.50 in North and South'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations, such as the units-vs-revenue outlier ('Sprocket sold the most units (238) but at the lowest unit price, so it contributed the least revenue') and the regional Gadget gap in West."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Gadget's '$2,392.00 in revenue, about 33% of the total' and West 'about 19.8%' with regional percentages throughout."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures, e.g. 'Promote Gadget in West, where its revenue is $299.00 versus $747.50 in North and South.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like the Sprocket outlier ('sold the most units (238) but at the lowest unit price, so it contributed the least revenue') and the West Gadget gap."
+      }
+    }
+  ]
+}

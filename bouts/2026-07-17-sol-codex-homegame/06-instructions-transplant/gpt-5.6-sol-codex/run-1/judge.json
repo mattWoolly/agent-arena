@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure ('33.43% of revenue; that was 12.89% more than Widget's', 'North 53.83% higher', 'by 3.81 percentage points')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products/regions with figures ('Prioritize Gadget: its 33.43% revenue share', 'Study North's sales mix', 'Address West and Sprocket together; their respective shares were lowest at 19.78% and 15.80%')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations beyond totals \u2014 Gadget's revenue concentration, the North\u2013West gap, and pairing the two lowest-share segments (West and Sprocket) for joint attention."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure (e.g., \"33.43% of revenue; that was 12.89% more than Widget's\" and \"North 53.83% higher\")."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products/regions with figures (e.g., \"Prioritize Gadget: its 33.43% revenue share exceeded Widget's by 3.81 percentage points\" and \"Address West and Sprocket together\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations\u2014revenue concentration, the North/West gap, and grouping the two lowest shares (West 19.78%, Sprocket 15.80%)\u2014rather than just restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget was '12.89% more than Widget's $2,118.94' and North '53.83% higher' than West."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names concrete products/regions with figures, e.g. 'Prioritize Gadget: its 33.43% revenue share exceeded Widget's by 3.81 percentage points' and 'Address West and Sprocket together; their respective shares were lowest at 19.78% and 15.80%'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces concentration and gaps beyond raw totals\u2014Gadget's 33.43% share, the 53.83% North-West gap, and grouping the two lowest performers (West and Sprocket)."
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "model": "gpt-5.6-sol-codex",
+  "wall_seconds": 35.4,
+  "agent_exit": 0,
+  "num_turns": 1,
+  "assistant_messages": 1,
+  "tool_calls": {
+    "command_execution": 4,
+    "file_change": 1
+  },
+  "tool_calls_total": 5,
+  "input_tokens": 76700,
+  "cache_read_tokens": 62392,
+  "output_tokens": 1745,
+  "total_cost_usd": 0.15509,
+  "cost_source": "computed:env/prices.json (codex per-turn usage, 1 turns)",
+  "final_message": "Created and validated:\n\n- [REPORT.md](/tmp/arena-ws.sl3icG/REPORT.md)\n- [summary.json](/tmp/arena-ws.sl3icG/summary.json)\n\nAll specified formatting and content constraints pass.",
+  "run_env": {
+    "cli_version": "codex-cli 0.144.4",
+    "driver": "codex exec --json -s workspace-write --dangerously-bypass-approvals-and-sandbox",
+    "base_url": "https://api.openai.com (native)",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "codex-default",
+    "setting_sources": "none (--ignore-user-config, isolated CODEX_HOME)",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T23:54:14Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

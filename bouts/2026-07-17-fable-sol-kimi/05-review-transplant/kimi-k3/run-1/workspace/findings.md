@@ -1,0 +1,7 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` drops the final partial page, so the last `total_count % 100` staged users are never fetched (and when total_count < 100, zero users are fetched at all).
+- src/sync.py:24 mutable default argument `seen=[]` persists across calls, so user IDs synced in a previous invocation are silently skipped in all later invocations.
+- src/sync.py:35 SQL is built by f-string interpolation of `email` and `user['id']` instead of parameters, so an email containing a quote breaks or injects SQL (SQL injection vulnerability).
+- src/sync.py:39 `except Exception: pass` silently swallows all sync errors and drops the previous failure logging, so failed updates are invisible (and callers can no longer count failures).
+- src/sync.py:31 `seen.append(user["id"])` happens before the try block, so a user whose UPDATE raises is marked as seen and never retried on subsequent runs — compounding the persistent-default bug at line 24 into permanent data loss for that user.
+- src/report.py:6 the early `return 0` for empty `users` happens after `open(path, "w")` at line 5 without closing the file, leaking the file handle (and leaving a truncated empty file at `path`).
+- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError when email is None (db.py:4-5 states users.email is nullable) and with IndexError when the email contains no "@", whereas the old code handled None via the "unverified" fallback.

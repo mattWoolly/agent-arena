@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line reference (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:11 finding mechanistically links two defects \u2014 sync writing \"empty-string emails ... for users with null staged emails\" causes the report's `.split(\"@\")[1]` to raise IndexError."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism rather than a label, e.g. floor division means \"the final partial page is never fetched\" and the mutable default \"persists across invocations, so a second call ... silently skips every user id.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:11 IndexError finding mechanistically links two defects across files \u2014 sync_users writing 'empty-string emails ... for users with null staged emails' causes `.split(\"@\")[1]` to raise IndexError in the report."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. floor division means 'the final partial page is never fetched' and the mutable default 'persists across invocations, so a second call ... silently skips every user id'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:11 finding mechanistically links two defects: \".split(\"@\")[1] raises IndexError for ... the empty-string emails that sync_users writes for users with null staged emails,\" explaining how the sync defect feeds the report crash."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. floor division means \"the final partial page is never fetched\" and the mutable default \"persists across invocations, so a second call ... silently skips every user id.\""
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 84.0,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "total_cost_usd": 0.208337,
+  "num_turns": 7,
+  "duration_ms": 82863,
+  "duration_api_ms": 87681,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 21119,
+  "output_tokens": 1478,
+  "cache_read_tokens": 131584,
+  "final_message": "Done. The full test suite passes (6/6).\n\n**Bugs fixed in `lrucache/cache.py`:**\n\n1. **`get` didn't refresh recency** \u2014 it returned the value without moving the key to the MRU end of the `OrderedDict`, so recently-read keys were still evicted first. Added `move_to_end(key)` on a successful, non-expired get (`cache.py:30`).\n\n2. **`put` evicted unconditionally when full** \u2014 updating an already-cached key in a full cache evicted an unrelated LRU entry first. The capacity check now only evicts for genuinely new keys (`cache.py:33`).\n\n`SOLUTION.md` documents the root causes. Nothing under `tests/` was touched and no commits were made.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T18:35:37Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 20 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically links the swallowing defect to the injection defect \u2014 'failed updates (including the injection-induced syntax errors) disappear with no trace' \u2014 a real compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. the mutable default 'seen=[] persists across calls, so a later sync_users invocation silently skips every user id seen in any earlier call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :39 finding mechanistically ties two defects together: the injection at :35 produces syntax errors that the bare `except Exception: pass` silently swallows, so 'the injection-induced syntax errors disappear with no trace.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. mutable default `seen=[]` 'persists across calls, so a later `sync_users` invocation silently skips every user id seen in any earlier call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :39 finding mechanistically ties the swallowed `except Exception: pass` to the :35 SQL injection defect, noting 'failed updates (including the injection-induced syntax errors) disappear with no trace.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism and triggering conditions, e.g. mutable default `seen=[]` 'persists across calls, so a later `sync_users` invocation silently skips every user id seen in any earlier call.'"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..ec0834c
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,7 @@
++- src/sync.py:14 Floor-dividing `total_count` by the 100-row page size drops every final partial page (0% of 1–99 rows and only 80% of 250 rows are returned), so those users are never synchronized and a sub-100 result can compound with `write_report` by being mistaken for an empty sync that truncates the prior report.
++- src/sync.py:17 Paginating a changing table with `LIMIT`/`OFFSET` but no stable `ORDER BY` or snapshot can skip or duplicate users between pages (deleting one of 200 rows after page 1 yielded only 198 of the 199 remaining rows, 99.5% coverage), and the deduplication logic can remove a duplicate but cannot recover the skipped user.
++- src/sync.py:24 The mutable default `seen` list persists IDs across calls, so a second sync of an updated user processes 0 of 1 records (0%) and leaves the primary row stale until process restart or an explicitly fresh list is supplied.
++- src/sync.py:31 Adding an ID to `seen` before its update succeeds makes a failed first duplicate suppress a valid later duplicate (0 of 2 inputs update the row, 0%), and this compounds with the shared default and swallowed exception to poison retries across subsequent calls without exposing the original failure.
++- src/sync.py:35 Interpolating schema-permitted email text directly into SQL lets an email such as `pwned' -- ` update 3 of 3 rows (100%) instead of 1 of 3 (33.3%), while an ordinary apostrophe causes a silently skipped update that is then poisoned by `seen`.
++- src/report.py:5 Opening the report with `"w"` before checking for an empty user list truncates 100% of the previous report and returns without explicitly closing the file, an edge case triggered both by a genuinely empty sync and by the sub-100 pagination defect.
++- src/report.py:11 Assuming every nullable, unconstrained email is a valid address makes `None` raise `AttributeError` and text without `@` raise `IndexError` after 100% of the previous report has already been truncated, leaving no complete replacement and bypassing the explicit close.

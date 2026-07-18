@@ -17,3 +17,6 @@ bouts/*/_launch-day-429/*/*/run-*/workspace/*
 !bouts/*/_launch-day-429/*/*/run-*/workspace/findings.md
 !bouts/*/_launch-day-429/*/*/run-*/workspace/REPORT.md
 !bouts/*/_launch-day-429/*/*/run-*/workspace/summary.json
+.proxy/
+
+.codex-arena/

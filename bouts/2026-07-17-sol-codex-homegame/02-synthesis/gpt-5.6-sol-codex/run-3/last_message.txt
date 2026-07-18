@@ -1,0 +1,3 @@
+Implemented all five functions in `problems.py`.
+
+Verified with focused edge-case checks, syntax compilation, and `git diff --check`. All passed.

@@ -1,0 +1,17 @@
+## Overview
+
+Total revenue was $7,154.44 across 30 orders ([summary.json](/tmp/arena-ws.gVwEAD/summary.json:2), [summary.json](/tmp/arena-ws.gVwEAD/summary.json:3)). With an even 30 orders, averaging the two middle values gives a $204.95 median (data/sales.csv:2-31; [summary.json](/tmp/arena-ws.gVwEAD/summary.json:4)).
+
+## Top Products
+
+Gadget led with $2,392.00, 12.9% above Widget's $2,118.94 (data/sales.csv:2-31).
+
+## Regional Performance
+
+North generated $2,176.35, 53.8% more than West's $1,414.82 ([summary.json](/tmp/arena-ws.gVwEAD/summary.json:7), [summary.json](/tmp/arena-ws.gVwEAD/summary.json:10)). East produced $1,830.79 and South $1,732.48 ([summary.json](/tmp/arena-ws.gVwEAD/summary.json:8), [summary.json](/tmp/arena-ws.gVwEAD/summary.json:9)).
+
+## Recommendations
+
+- Prioritize Gadget: its $2,392.00 revenue exceeded Widget by 12.9% (data/sales.csv:2-31).
+- Study North's mix; its $2,176.35 revenue was 18.9% above East ([summary.json](/tmp/arena-ws.gVwEAD/summary.json:7), [summary.json](/tmp/arena-ws.gVwEAD/summary.json:9)).
+- Address West; its $1,414.82 revenue trailed North by 35.0% ([summary.json](/tmp/arena-ws.gVwEAD/summary.json:7), [summary.json](/tmp/arena-ws.gVwEAD/summary.json:10)).

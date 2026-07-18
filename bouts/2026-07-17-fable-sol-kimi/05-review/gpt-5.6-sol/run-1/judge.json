@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The sync.py:31 finding gestures at the persistent `seen` state making failed updates unretriable \"in a later batch or invocation using that seen state,\" implicitly touching the mutable-default defect at :24, but never spells out the compound mechanism combining the two."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states a failure mechanism, e.g. \"Floor division omits the final partial page, so tables with fewer than 100 staged users return none\" and NULL emails \"crashes report generation ... without an `@`.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The report.py:6 finding gestures at cross-defect impact (\"hides any reported failures\") but never explains the mechanism by which one defect's failure feeds another's bad state."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. \"IDs are marked as seen before their updates succeed, so a failed update cannot be retried\" rather than merely labeling the bug."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line reference (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The sync.py:31 finding gestures at how premature marking combines with the persistent `seen` state ('cannot be retried in a later batch or invocation using that `seen` state') but doesn't foreground it as a compound of two separate defects with the mechanism spelled out."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism rather than a label, e.g. 'Floor division omits the final partial page, so tables with fewer than 100 staged users return none' and 'Calling `lower()` and indexing the split result crashes... for schema-permitted NULL emails or addresses without an `@`.'"
+      }
+    }
+  ]
+}

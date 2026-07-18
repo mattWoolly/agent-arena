@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most statements cite raw figures (e.g., \"Gadget leads revenue at $2,392.00 from just 16 units\") but only one comparison is genuinely computed (\"trails North by roughly $761.53\"), with no ratios, percentages, or revenue-per-unit figures."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names concrete products, a region, and data (\"Investigate West region underperformance... since it trails North by roughly $761.53\" and \"bundle it [Sprocket] with higher-priced items to raise its low revenue per unit\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations\u2014Gadget's high revenue \"despite recording the lowest unit volume,\" Sprocket's high volume but \"low revenue per unit,\" and the West-North revenue gap\u2014rather than restating table totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons attach each item's own absolute figure ('Gadget leads revenue at $2,392.00', 'West lags at $1,414.82') rather than computed differences/ratios, with only the West-North gap ('roughly $761.53') being a true computed comparison."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region and cites data\u2014'Prioritize Gadget', 'Investigate West region... it trails North by roughly $761.53', and 'bundle [Sprocket] with higher-priced items to raise its low revenue per unit.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations\u2014Gadget's high revenue from just 16 units, Sprocket's highest volume (238 units) yet lowest revenue per unit, and West's ~$761.53 gap behind North."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons cite raw revenue/unit figures rather than computed relatives, with only the one true derived gap ('trails North by roughly $761.53') and qualitative unit-economics ('high unit price', 'low revenue per unit')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with data ('Prioritize Gadget...lowest unit volume', 'Investigate West...trails North by roughly $761.53', 'bundle [Sprocket] with higher-priced items to raise its low revenue per unit')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several non-obvious, actionable observations\u2014Gadget's high revenue from just 16 units vs. Sprocket's 238-unit volume yielding the lowest revenue, plus West's regional shortfall\u2014rather than restating totals."
+      }
+    }
+  ]
+}

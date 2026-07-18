@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..d1f0230
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 The floor-divided page count drops 100% of rows when `total_count` is 1–99 and drops the final 1/101 (0.99%) for 101 rows, so every nonzero count not divisible by 100 loses its remainder while the exact-multiple edge case alone is complete.
++- src/sync.py:24 The mutable default `seen` survives across invocations, causing a second independent sync to skip 100% of IDs successfully processed by the first invocation rather than deduplicating only within that call.
++- src/sync.py:31 IDs are marked seen before their update succeeds, which compounds with the persistent default at line 24 so 100% of rows whose first update fails are silently suppressed on every later default-argument retry.
++- src/sync.py:35 Interpolating `email` directly into SQL lets an apostrophe either make 100% of that row's update fail or alter the statement (for example a crafted `WHERE` can update multiple users), whereas parameter binding treated the same value solely as data.
++- src/report.py:5 Opening the report without a context manager leaks 1 file descriptor on the empty-user early return and on each exception before line 13, including the nullable-email failure at line 11.
++- src/report.py:11 Calling `lower()` and indexing split element 1 raises for the schema-supported `email=None` edge case and for any address lacking `@`, aborting the report after processing 0% of that offending row.

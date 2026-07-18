@@ -1,0 +1,5 @@
+- src/sync.py:14 Using floor division for the page count drops every remainder page (and returns no users at all when fewer than 100 are staged).
+- src/sync.py:24 The mutable default `seen` list persists IDs across calls, causing later sync runs in the same process to silently skip users.
+- src/sync.py:35 Interpolating email and ID directly into SQL makes valid emails containing apostrophes fail and permits SQL injection from crafted input.
+- src/report.py:5 Opening the report without a context manager leaks the file descriptor on the empty-users return and on any exception while rendering.
+- src/report.py:11 Calling `lower()` and indexing the split result crashes reporting for schema-valid NULL emails (and for addresses without an `@`).

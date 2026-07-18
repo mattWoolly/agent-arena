@@ -59,6 +59,7 @@ cat > "$OUT_DIR/run_env.json" <<EOF
 {
   "cli_version": "$CLI_VERSION",
   "base_url": "${ANTHROPIC_BASE_URL:-https://api.anthropic.com}",
+  "proxy_upstream": "${ARENA_PROXY_UPSTREAM:-none}",
   "model_env": "$MODEL_ENV_REC",
   "effort": "$EFFORT",
   "setting_sources": "$SETTING_SOURCES",
@@ -67,6 +68,11 @@ cat > "$OUT_DIR/run_env.json" <<EOF
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
+
+# If a translation proxy is logging per-request usage, remember where its
+# log ends now; the delta after the run is this run's true usage record.
+USAGE_LOG="$ROOT/.proxy/usage.jsonl"
+USAGE_OFF=$(stat -c%s "$USAGE_LOG" 2>/dev/null || echo 0)
 
 echo "[$LABEL] starting"
 START=$(date +%s.%N)
@@ -100,14 +106,24 @@ else
 fi
 
 # Secret-leak check: transcripts and workspaces are published, and the agent
-# can read its own environment. If the auth token appears in anything we
-# publish, flag it loudly before it leaves this machine.
-if [[ -n "${ANTHROPIC_AUTH_TOKEN:-}" ]]; then
-  if grep -qF "$ANTHROPIC_AUTH_TOKEN" "$OUT_DIR/transcript.jsonl" || \
-     grep -rqF "$ANTHROPIC_AUTH_TOKEN" "$WS" 2>/dev/null; then
-    echo "SECRET LEAK: auth token appears in transcript or workspace" >> "$OUT_DIR/peek_check"
-    echo "[$LABEL] WARNING: AUTH TOKEN LEAKED into published artifacts — do not publish this run" >&2
+# can read its own environment. If the auth token, or any value emitted by
+# the model's optional env/<model>.leakscan script (run here in a subshell,
+# never exported to the agent), appears in anything we publish, flag it
+# loudly before it leaves this machine.
+leak_scan() {
+  local sec="$1" what="$2"
+  [[ -z "$sec" ]] && return 0
+  if grep -qF "$sec" "$OUT_DIR/transcript.jsonl" || \
+     grep -rqF "$sec" "$WS" 2>/dev/null; then
+    echo "SECRET LEAK: $what appears in transcript or workspace" >> "$OUT_DIR/peek_check"
+    echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
   fi
+}
+leak_scan "${ANTHROPIC_AUTH_TOKEN:-}" "auth token"
+if [[ -f "$ROOT/env/$MODEL.leakscan" ]]; then
+  while IFS= read -r _sec; do
+    leak_scan "$_sec" "leakscan value"
+  done < <(bash "$ROOT/env/$MODEL.leakscan" 2>/dev/null)
 fi
 
 # Capture exactly what the agent changed.
@@ -126,6 +142,13 @@ rm -rf "$OUT_DIR/workspace"
 mkdir -p "$OUT_DIR/workspace"
 cp -a "$WS/." "$OUT_DIR/workspace/"
 rm -rf "$OUT_DIR/workspace/.git"
+
+# Capture this run's slice of the proxy usage log (true per-request tokens
+# and cost, including cache tiers the Anthropic-format translation drops).
+if [[ -f "$USAGE_LOG" ]]; then
+  tail -c +"$((USAGE_OFF + 1))" "$USAGE_LOG" > "$OUT_DIR/proxy_usage.jsonl"
+  [[ -s "$OUT_DIR/proxy_usage.jsonl" ]] || rm -f "$OUT_DIR/proxy_usage.jsonl"
+fi
 
 # Metrics from transcript + result envelope (+ run_env.json + peek_check).
 python3 "$ROOT/bin/metrics.py" "$OUT_DIR" "$MODEL" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"

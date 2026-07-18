@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:11', 'src/report.py:7')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically explains the compound failure: 'a quote-containing email breaks the SQL, the error vanishes, and the id is marked seen so it is never retried' combining lines 31/35/39."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. the mutable default 'seen=[]' is 'shared across calls, so every user synced in a first call is permanently skipped as a \"duplicate\"'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-39 finding mechanistically explains the compound failure: 'a quote-containing email breaks the SQL, the error vanishes, and the id is marked seen so it is never retried' across lines 31/35/39."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'mutable default argument seen=[] is shared across calls, so every user synced in a first call is permanently skipped as a duplicate.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:7')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically explains a compound failure: 'a quote-containing email breaks the SQL, the error vanishes, and the id is marked seen so it is never retried' linking defects at lines 31/35/39."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. 'range(total_count // PAGE_SIZE) drops the final partial page' and 'seen.append(user[\"id\"]) runs before the sync attempt, so a user whose UPDATE fails is still marked as seen.'"
+      }
+    }
+  ]
+}

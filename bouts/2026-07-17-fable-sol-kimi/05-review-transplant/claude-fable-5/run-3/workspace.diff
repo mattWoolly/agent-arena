@@ -1,0 +1,31 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..b503a30
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,9 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides away the final partial page, silently dropping `total_count % PAGE_SIZE` rows (verified: 250 rows -> 200 fetched, a 20% loss) and fetching nothing at all when total_count < 100 (verified: 50 rows -> 0 fetched, 100% loss).
++- src/sync.py:17 The paginated SELECT has no ORDER BY, so row order across successive LIMIT/OFFSET queries is unspecified and any concurrent insert/delete between pages shifts offsets, causing rows to be skipped or read twice.
++- src/sync.py:24 Mutable default argument `seen=[]` is shared across all calls to sync_users, so a user id processed in one call is silently skipped in every later call in the process (verified: a second call with updated emails applied only 1 of 3 updates, skipping the 2 previously-seen ids).
++- src/sync.py:31 The user id is appended to `seen` before the UPDATE is attempted, so a user whose sync fails is marked as done and, combined with the shared default at line 24, is never retried (verified: user 1's failed update in call 1 caused call 2's corrected email to be skipped).
++- src/sync.py:35 The UPDATE is built by f-string interpolation instead of the previous parameterized query, creating SQL injection through the email value and breaking on any legitimate email containing a single quote (verified: "o'brien@x.com" produces a SQL syntax error and the row is never updated).
++- src/sync.py:38 `except Exception: pass` replaces the previous `log.exception`, silently swallowing every per-user sync failure — including the syntax errors caused by line 35 — leaving no trace that rows were not synced.
++- src/report.py:5 The file is opened without a context manager and `f.close()` at line 13 is only reached on full success, so the handle leaks (and buffered writes may never be flushed) whenever any write raises, e.g. the crash at line 11.
++- src/report.py:7 The empty-users early return happens after `open(path, "w")` has already truncated the file, so it leaks the open handle and leaves a zero-byte report, discarding the header and the failure count even when `failures` is non-empty.
++- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is NULL (db.py:4-5 documents email as nullable, and the old code fell back to "unverified") and IndexError when an email contains no "@" (both verified).
+diff --git a/src/__pycache__/__init__.cpython-312.pyc b/src/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..daaa61b
+Binary files /dev/null and b/src/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/__pycache__/db.cpython-312.pyc b/src/__pycache__/db.cpython-312.pyc
+new file mode 100644
+index 0000000..c43a6e9
+Binary files /dev/null and b/src/__pycache__/db.cpython-312.pyc differ
+diff --git a/src/__pycache__/report.cpython-312.pyc b/src/__pycache__/report.cpython-312.pyc
+new file mode 100644
+index 0000000..ec22657
+Binary files /dev/null and b/src/__pycache__/report.cpython-312.pyc differ
+diff --git a/src/__pycache__/sync.cpython-312.pyc b/src/__pycache__/sync.cpython-312.pyc
+new file mode 100644
+index 0000000..f732074
+Binary files /dev/null and b/src/__pycache__/sync.cpython-312.pyc differ

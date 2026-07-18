@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., West \"trailed at $1,414.82, roughly 35% below North\" and Gadget's \"$2,392.00 in revenue from only 16 units, reflecting its high unit price of $149.50.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures \u2014 \"Investigate West's underperformance ($1,414.82 versus North's $2,176.35)\" and \"bundling low-priced Sprockets with Widgets to raise order values.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations such as median ($204.94) vs. mean ($238.48) showing no dominant outlier, Gadget's high-price/low-volume revenue lead, and Sprocket's high-volume/low-revenue mismatch."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. West 'roughly 35% below North', per-unit prices ($149.50, $4.75), and mean vs median ($238.48 vs $204.94)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names concrete products, regions, and figures, such as 'Investigate West's underperformance ($1,414.82 versus North's $2,176.35)' and bundling Sprockets with Widgets."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations, including the price-volume inversion (Gadget's revenue from just 16 units vs Sprocket's 238 units at low revenue) and the North\u2013West coverage gap."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 unit prices ($149.50 vs $4.75), revenue-per-volume contrasts, and 'West trailed at $1,414.82, roughly 35% below North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and exact figures \u2014 'Investigate West's underperformance ($1,414.82 versus North's $2,176.35)' and 'bundling low-priced Sprockets with Widgets.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear: Gadget's high price driving revenue on only 16 units, Sprocket's 238-unit volume yielding the lowest revenue at $4.75/unit, and the North\u2013West coverage gap."
+      }
+    }
+  ]
+}

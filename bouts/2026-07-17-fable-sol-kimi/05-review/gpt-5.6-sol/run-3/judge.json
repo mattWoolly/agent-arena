@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no explanation of how separate defects combine into a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor division for the page count omits every final partial page' and 'Calling lower() on the schema-permitted None email raises an exception.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the five findings carries a usable file:line (e.g., 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode explained across defects (e.g., the unclosed handle at report.py:6 is never linked to the exception at report.py:11)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a concrete failure mechanism, such as floor division that 'omits every final partial page' and calling `lower()` on a `None` email that 'raises an exception and aborts report generation.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode explained across separate defects."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. \"Calling `lower()` on the schema-permitted `None` email raises an exception and aborts report generation.\""
+      }
+    }
+  ]
+}

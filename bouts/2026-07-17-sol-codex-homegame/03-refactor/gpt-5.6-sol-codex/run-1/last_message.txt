@@ -1,0 +1,10 @@
+Implemented the frozen, typed `Config` dataclass and updated all modules to use attribute access.
+
+Also added unknown-key validation with the offending key named in `ValueError`.
+
+Verification:
+
+- `python3 -m pytest -q`: **4 passed**
+- Confirmed frozen behavior and unknown-key rejection
+- No tests modified
+- No config subscripting remains in `reportgen/`

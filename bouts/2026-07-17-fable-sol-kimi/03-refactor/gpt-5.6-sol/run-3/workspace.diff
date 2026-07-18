@@ -1,0 +1,89 @@
+diff --git a/reportgen/config.py b/reportgen/config.py
+index 0e22455..4a638ab 100644
+--- a/reportgen/config.py
++++ b/reportgen/config.py
+@@ -1,17 +1,23 @@
+ import json
++from dataclasses import dataclass, fields
+ 
+-DEFAULTS = {
+-    "title": "Report",
+-    "output_format": "text",  # "text" or "markdown"
+-    "max_rows": 10,
+-    "include_summary": True,
+-}
+ 
++@dataclass(frozen=True)
++class Config:
++    title: str = "Report"
++    output_format: str = "text"  # "text" or "markdown"
++    max_rows: int = 10
++    include_summary: bool = True
+ 
+-def load_config(path):
++
++def load_config(path) -> Config:
+     """Load config from a JSON file, filling in defaults for missing keys."""
+     with open(path) as f:
+         raw = json.load(f)
+-    cfg = dict(DEFAULTS)
+-    cfg.update(raw)
+-    return cfg
++
++    known_settings = {field.name for field in fields(Config)}
++    for key in raw:
++        if key not in known_settings:
++            raise ValueError(f"Unknown config setting: {key}")
++
++    return Config(**raw)
+diff --git a/reportgen/formatter.py b/reportgen/formatter.py
+index 8a9cb98..10b03ac 100644
+--- a/reportgen/formatter.py
++++ b/reportgen/formatter.py
+@@ -1,8 +1,11 @@
+-def format_report(config, rows):
++from .config import Config
++
++
++def format_report(config: Config, rows):
+     """Render rows as text or markdown, per the config."""
+     lines = []
+-    if config["output_format"] == "markdown":
+-        lines.append(f"# {config['title']}")
++    if config.output_format == "markdown":
++        lines.append(f"# {config.title}")
+         if rows:
+             headers = list(rows[0].keys())
+             lines.append("| " + " | ".join(headers) + " |")
+@@ -10,10 +13,10 @@ def format_report(config, rows):
+             for row in rows:
+                 lines.append("| " + " | ".join(str(row[h]) for h in headers) + " |")
+     else:
+-        lines.append(config["title"])
+-        lines.append("=" * len(config["title"]))
++        lines.append(config.title)
++        lines.append("=" * len(config.title))
+         for row in rows:
+             lines.append(", ".join(f"{k}={v}" for k, v in row.items()))
+-    if config["include_summary"]:
++    if config.include_summary:
+         lines.append(f"({len(rows)} rows)")
+     return "\n".join(lines) + "\n"
+diff --git a/reportgen/loader.py b/reportgen/loader.py
+index 9ee51cb..2e8b774 100644
+--- a/reportgen/loader.py
++++ b/reportgen/loader.py
+@@ -1,9 +1,11 @@
+ import csv
+ 
++from .config import Config
+ 
+-def load_rows(config, path):
++
++def load_rows(config: Config, path):
+     """Load rows from a CSV file, truncated to the configured maximum."""
+     with open(path, newline="") as f:
+         reader = csv.DictReader(f)
+         rows = list(reader)
+-    return rows[: config["max_rows"]]
++    return rows[: config.max_rows]

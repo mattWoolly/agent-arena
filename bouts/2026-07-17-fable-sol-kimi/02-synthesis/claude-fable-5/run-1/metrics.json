@@ -1,0 +1,37 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 87.6,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Read": 1,
+    "Edit": 6,
+    "Bash": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.659808,
+  "num_turns": 9,
+  "duration_ms": 85794,
+  "duration_api_ms": 85124,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 17,
+  "output_tokens": 5704,
+  "cache_read_tokens": 212330,
+  "final_message": "All five functions are implemented in `problems.py` and every docstring edge case passes my checks, including a 1M-element performance test for `rolling_max` (0.4s).\n\nImplementation notes:\n\n- **`parse_duration`** \u2014 matched against a single regex `(?:([0-9]+)h)?(?:([0-9]+)m)?(?:([0-9]+)s)?` with `fullmatch`, which enforces component order, no duplicates, no whitespace, and no trailing garbage in one shot. Non-strings and the all-components-missing case (which also covers `\"\"`) raise `ValueError`. I used `[0-9]` rather than `\\d` so Unicode digits like `\"\u0661h\"` are rejected too.\n- **`luhn_valid`** \u2014 strips spaces/hyphens, returns `False` for empty results, non-strings, or anything containing a character outside `0-9` (again avoiding `.isdigit()`, which accepts characters `int()` can't parse), then runs the standard right-to-left doubling checksum. `\"0\"` validates since its sum is 0.\n- **`flatten`** \u2014 recursive walk building into a fresh dict, tracking \"has a prefix\" as a flag rather than testing for an empty prefix string, so top-level empty-string keys still join correctly. Empty nested dicts fall out naturally; the input is never mutated.\n- **`top_k_frequent`** \u2014 `Counter` plus one sort keyed on `(-count, word)`, returning `[]` for `k <= 0` and slicing handles oversized `k`.\n- **`rolling_max`** \u2014 monotonic-deque of indices (pop smaller values from the back, evict the front when it leaves the window), giving O(n) overall.\n\nNo names, signatures, or docstrings were changed, only the stub bodies plus two stdlib imports (`re`, `collections`) at the top of the file.",
+  "run_env": {
+    "cli_version": "2.1.212 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T18:38:55Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 60 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

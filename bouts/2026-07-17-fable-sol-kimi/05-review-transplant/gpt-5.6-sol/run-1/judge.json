@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding opens with a usable file:line citation (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "Line 31 mechanistically explains a compound failure \u2014 adding an ID to `seen` before the UPDATE succeeds, 'compounded by the persistent default at line 24, prevents 100% of subsequent retries for that ID after one failed attempt.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'Interpolating staged email text into SQL lets a crafted value such as `x' WHERE 1=1 --` update N/N users' rather than merely labeling it SQL injection."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "Line 31 mechanistically explains a compound failure: adding an ID to `seen` before the UPDATE succeeds, 'compounded by the persistent default at line 24, prevents 100% of subsequent retries for that ID after one failed attempt.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the mechanism, e.g. 'Interpolating staged email text into SQL lets a crafted value such as `x' WHERE 1=1 --` update N/N users' explaining the SQL-injection failure condition."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding mechanistically explains a compound failure: adding an ID to `seen` before its UPDATE succeeds, 'compounded by the persistent default at line 24, prevents 100% of subsequent retries for that ID after one failed attempt.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism and its triggering conditions, e.g. 'Floor division drops every partial final page: 101 staged rows yield 100/101' and 'Interpolating staged email text into SQL lets a crafted value... update N/N users.'"
+      }
+    }
+  ]
+}

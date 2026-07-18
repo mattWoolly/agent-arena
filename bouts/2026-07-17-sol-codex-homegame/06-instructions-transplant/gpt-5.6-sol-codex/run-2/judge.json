@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 '12.89% more', 'North exceeded West by 53.82%', '33.43% of total', '52.74% below Gadget's'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures ('Test Sprocket promotions; its $1,130.50 revenue was 52.74% below Gadget's')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations about concentration and gaps ('$2,392.00 revenue was 33.43% of total', 'North's $2,176.35 was 30.42% of total', Sprocket '52.74% below')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Every comparison carries a computed figure \u2014 'Gadget generated $2,392.00, 12.89% more than Widget's $2,118.94', 'North exceeded West by 53.82%', and each recommendation cites a percentage."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name specific products/regions with data-grounded figures, e.g. 'Test Sprocket promotions; its $1,130.50 revenue was 52.74% below Gadget's'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces concentration and gaps beyond the tables, noting Gadget was '33.43% of total', North '30.42% of total', and Sprocket '52.74% below Gadget's'."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. Gadget is \"12.89% more than Widget's $2,118.94\" and \"North exceeded West by 53.82%.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with a data figure, e.g. \"Test Sprocket promotions; its $1,130.50 revenue was 52.74% below Gadget's.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations like concentration (\"33.43% of total\", \"30.42% of total\") and the Sprocket gap (\"52.74% below Gadget's\") rather than just restating totals."
+      }
+    }
+  ]
+}
