@@ -1,0 +1,35 @@
+{
+  "model": "kimi-k3-kimicode",
+  "wall_seconds": 278.2,
+  "agent_exit": 0,
+  "final_message": "All five functions are implemented in `problems.py`, verified, and the throwaway test file has been removed. Signatures and docstrings are untouched; only module-level imports (`re`, `deque`) and a compiled regex were added.\n\nWhat each implementation does:\n\n- `parse_duration` \u2014 validates with an anchored regex `(?:([0-9]+)h)?(?:([0-9]+)m)?(?:([0-9]+)s)?`, which inherently enforces h\u2192m\u2192s ordering, at most one of each unit, digits before every unit, and no whitespace/trailing garbage. Non-strings and empty input raise `ValueError` before the regex; an all-empty group match is rejected too.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` for non-strings, empty results, or any non-ASCII-digit character (never raises). Standard Luhn doubling from the right; `\"0\"` passes naturally since `0 % 10 == 0`.\n- `flatten` \u2014 recursive walk joining keys with `sep`; empty nested dicts contribute nothing, lists and other non-dict values pass through as-is, input is only read.\n- `top_k_frequent` \u2014 frequency map sorted by `(-count, word)`, sliced to `k`; `k <= 0` returns `[]`, oversized `k` returns all distinct words, comparison stays case-sensitive.\n- `rolling_max` \u2014 monotonic deque of indices with strictly decreasing values: each element enters and leaves the deque once, giving true O(n).\n\nVerification (throwaway script, since removed): all docstring examples plus edge cases \u2014 invalid durations (`\"30m1h\"`, `\"1h2h\"`, `\"-1h\"`, `\"1h \"`, `\"1h!\"`, `None`, `123`, unicode digits), Luhn empties/non-digits/`\"0\"` vs `\"5\"`, empty-dict and non-mutation checks for `flatten`, tie-breaks and `k` edges for `top_k_frequent`, and 300 randomized `rolling_max` comparisons against a brute-force reference. The performance requirement holds: 1M elements with window 1000 ran in 0.4s.",
+  "num_turns": 11,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Read": 2,
+    "Edit": 6,
+    "Write": 1,
+    "Bash": 2
+  },
+  "tool_calls_total": 11,
+  "input_tokens": 307386,
+  "cache_read_tokens": 275968,
+  "output_tokens": 10270,
+  "total_cost_usd": 0.33109,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 11 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=.kimi-arena)",
+    "effort": "max (kimi-code default for k3)",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-18T01:05:53Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 69 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

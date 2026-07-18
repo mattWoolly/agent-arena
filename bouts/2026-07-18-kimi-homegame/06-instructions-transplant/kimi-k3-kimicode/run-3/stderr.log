@@ -1,0 +1,51 @@
+31 data/sales.csv
+order_id,date,region,product,units,unit_price
+1001,2026-05-02,North,Widget,12,19.99
+1002,2026-05-02,South,Gadget,3,149.50
+1003,2026-05-03,East,Sprocket,40,4.75
+1004,2026-05-03,West,Widget,7,19.99
+total: 7154.44
+median: 204.95 | middle two: 190.00 219.89
+products: {'Gadget': Decimal('2392.00'), 'Widget': Decimal('2118.94'), 'Doohickey': Decimal('1513.00'), 'Sprocket': Decimal('1130.50')}
+regions: {'North': Decimal('2176.35'), 'East': Decimal('1830.79'), 'South': Decimal('1732.48'), 'West': Decimal('1414.82')}
+ties for top: ['Gadget']
+min/max order: 47.50 598.00
+units per product: {'Widget': 106, 'Gadget': 16, 'Sprocket': 238, 'Doohickey': 17}
+orders per region: {'North': 8, 'South': 8, 'East': 7, 'West': 7}
+2:1001,2026-05-02,North,Widget,12,19.99
+5:1004,2026-05-03,West,Widget,7,19.99
+10:1009,2026-05-06,North,Widget,20,19.99
+11:1010,2026-05-07,South,Widget,4,19.99
+16:1015,2026-05-10,East,Widget,15,19.99
+19:1018,2026-05-12,South,Widget,9,19.99
+20:1019,2026-05-13,East,Widget,6,19.99
+21:1020,2026-05-14,West,Widget,11,19.99
+26:1025,2026-05-17,North,Widget,8,19.99
+31:1030,2026-05-21,South,Widget,14,19.99
+---
+3:1002,2026-05-02,South,Gadget,3,149.50
+8:1007,2026-05-05,East,Gadget,1,149.50
+13:1012,2026-05-08,West,Gadget,2,149.50
+18:1017,2026-05-12,North,Gadget,4,149.50
+23:1022,2026-05-15,South,Gadget,2,149.50
+28:1027,2026-05-19,East,Gadget,3,149.50
+30:1029,2026-05-20,North,Gadget,1,149.50
+166 REPORT.md
+---
+4
+3
+0
+---
+{
+  "total_revenue": 7154.44,
+  "orders": 30,
+  "median_order_value": 204.95,
+  "top_product_by_revenue": "Gadget",
+  "revenue_by_region": {
+    "North": 2176.35,
+    "South": 1732.48,
+    "East": 1830.79,
+    "West": 1414.82
+  }
+}
+summary.json OK: {'total_revenue': 7154.44, 'orders': 30, 'median_order_value': 204.95, 'top_product_by_revenue': 'Gadget', 'revenue_by_region': {'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}}

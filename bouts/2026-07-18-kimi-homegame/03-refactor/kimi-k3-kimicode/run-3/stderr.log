@@ -1,0 +1,36 @@
+/usr/bin/python3: No module named pytest
+ValueError: Unknown config key: bogus_key
+Config(title='Report', output_format='text', max_rows=3, include_summary=True)
+frozen: True
+/home/mwoolly/.local/bin/pytest
+3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]
+Package                 Version
+----------------------- ---------------
+appdirs                 1.4.4
+attrs                   23.2.0
+audioread               3.0.1
+Traceback (most recent call last):
+  File "/home/mwoolly/.local/bin/pytest", line 5, in <module>
+    from pytest import console_main
+ModuleNotFoundError: No module named 'pytest'
+#!/usr/bin/python3
+/usr/bin/python3
+/usr/bin/python3.12
+/usr/bin/python3.12-config
+/usr/bin/python3-config
+WARNING: Skipping /usr/lib/python3.12/dist-packages/charset_normalizer-3.3.2.dist-info due to invalid metadata entry 'name'
+WARNING: Package(s) not found: pytest
+.
+.
+.
+.
+                                                                     [100%]
+
+4 passed in 0.03s
+ M reportgen/config.py
+ M reportgen/formatter.py
+ M reportgen/loader.py
+?? .venv/
+?? __pycache__/
+?? reportgen/__pycache__/
+?? tests/__pycache__/

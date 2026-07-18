@@ -1,0 +1,34 @@
+{
+  "model": "kimi-k3-kimicode",
+  "wall_seconds": 223.7,
+  "agent_exit": 0,
+  "final_message": "Both files are written and verified. All figures computed from `data/sales.csv` with Decimal arithmetic (no float drift), and the two independent breakdowns cross-check: product revenues and region revenues each sum to the $7,154.44 total.\n\n**summary.json** \u2014 exactly five keys: `total_revenue` 7154.44, `orders` 30, `median_order_value` 204.95, `top_product_by_revenue` \"Gadget\", and `revenue_by_region` covering all four regions.\n\n**REPORT.md** \u2014 166 words (limit 250), exactly four H2 headings in the required order, exactly three bullets in Recommendations (16, 16, and 13 words each, limit 25), and zero occurrences of the five banned words (verified by case-insensitive grep).\n\nEdge cases handled:\n- **Even-count median**: 30 orders, so the median is the mean of the 15th and 16th sorted order values \u2014 $190.00 (order 1003, `data/sales.csv:4`) and $219.89 (order 1020, `data/sales.csv:21`) \u2014 giving 204.945, rounded half-up to 204.95.\n- **No ties**: Gadget leads Widget by 12.9% ($2,392.00 vs $2,118.94), so `top_product_by_revenue` is unambiguous.\n- **Clean input**: all 30 rows parsed with no missing fields or duplicate order IDs, so no rows were dropped.\n\nOne notable compound finding in the report: Sprocket pairs the highest unit volume (238 of 377 units, 63.1%) with the lowest unit price ($4.75), which together drag it to last place in revenue (15.8%) despite dominating volume \u2014 the basis for the pricing recommendation.",
+  "num_turns": 7,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "input_tokens": 166433,
+  "cache_read_tokens": 149760,
+  "output_tokens": 5859,
+  "total_cost_usd": 0.18283,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 7 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=.kimi-arena)",
+    "effort": "max (kimi-code default for k3)",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-18T02:27:08Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

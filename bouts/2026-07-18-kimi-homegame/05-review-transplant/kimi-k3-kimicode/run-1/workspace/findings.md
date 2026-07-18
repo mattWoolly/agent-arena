@@ -1,0 +1,7 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` only iterates whole pages, silently dropping the final partial page — 100% of staged rows are missed when total_count < 100, and `total_count % 100` rows are missed otherwise (e.g. 50 of 250 rows = 20% dropped).
+- src/sync.py:24 mutable default argument `seen=[]` is shared across all calls in the process, so 100% of users synced in an earlier call are silently skipped by every later call.
+- src/sync.py:31 the id is appended to `seen` before the UPDATE is attempted, so a user whose sync fails is recorded as already-synced and is never retried (permanently, in combination with the line-24 shared default).
+- src/sync.py:35 interpolating `email` and `id` directly into the SQL string via f-string is an SQL-injection vector, and it breaks the statement outright on the edge case of an email containing a single quote (e.g. o'brien@example.com).
+- src/sync.py:38 `except Exception: pass` swallows every sync failure with no logging (the old code logged them), so failures — including the quote breakage from line 35 — leave zero trace.
+- src/report.py:7 the early `return 0` for an empty users list never closes the file opened at line 5, leaking the file handle and leaving a truncated empty report (the old code still wrote a header).
+- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError on email=None (users.email is NULLABLE per src/db.py:4-5) and IndexError on any email lacking "@", so one bad row crashes 100% of the report.

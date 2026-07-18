@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons attach raw dollar totals (e.g., \"East contributed $1,830.79 (7 orders), South $1,732.48\") but never compute a percentage, ratio, or gap between them."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with figures and is actionable, e.g., \"Bundle Sprocket with higher-priced items; it moves 238 units but yields only $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations, notably Gadget's \"most revenue... despite the fewest units sold (16)\" and Sprocket's high-volume/low-yield mismatch."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Rankings carry raw figures (e.g., \"Widget followed at $2,118.94 (106 units)\") but the report never computes a percentage, ratio, or gap \u2014 the Gadget/Sprocket per-unit contrasts are implied rather than calculated."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures and an action, e.g., \"Bundle Sprocket with higher-priced items; it moves 238 units but yields only $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations \u2014 Gadget leading revenue \"despite the fewest units sold (16)\" and Sprocket's high volume/low yield \u2014 rather than just restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Rankings carry raw absolute figures (e.g., \"North generated the most revenue at $2,176.35... West trailed at $1,414.82\") but no computed gaps, percentages, or ratios between them, though the Gadget/Sprocket recs imply per-unit contrasts."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with its figure and an action, e.g., \"Bundle Sprocket with higher-priced items; it moves 238 units but yields only $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple actionable, non-obvious observations\u2014Gadget's high revenue from the fewest units (16), Sprocket's high volume but low yield, and West as the weakest region\u2014rather than just restating totals."
+      }
+    }
+  ]
+}

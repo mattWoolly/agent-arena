@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-31 finding mechanistically explains a compound failure \u2014 a failed sync is appended to `seen` before the UPDATE, so 'in combination with the line-24 shared default' the user is permanently never retried, and line-38 notes the swallowed exception hides 'the quote breakage from line 35.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. line 24's mutable default 'is shared across all calls in the process, so 100% of users synced in an earlier call are silently skipped.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-31 finding explains the compound mode mechanistically \u2014 a failed user is appended to `seen` before the UPDATE and, 'in combination with the line-24 shared default,' is never retried \u2014 and line 38 explains that `except Exception: pass` swallows 'the quote breakage from line 35,' leaving zero trace."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` 'only iterates whole pages, silently dropping the final partial page,' and email=None 'raises AttributeError ... so one bad row crashes 100% of the report.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/sync.py:31`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "It mechanistically explains at least two compound failures \u2014 line 38's `except Exception: pass` swallowing the quote breakage from line 35 leaving 'zero trace,' and line 31 appending to `seen` before the UPDATE combined with line 24's shared default causing failed users to be 'never retried (permanently)'."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. line 14 'only iterates whole pages, silently dropping the final partial page' and report.py:11 'raises AttributeError on email=None ... and IndexError on any email lacking \"@\"'."
+      }
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "total_revenue": 7154.44,
+  "orders": 30,
+  "median_order_value": 204.95,
+  "top_product_by_revenue": "Gadget",
+  "revenue_by_region": {
+    "East": 1830.79,
+    "North": 2176.35,
+    "South": 1732.48,
+    "West": 1414.82
+  }
+}
+
+--- detail ---
+per-order revenues sorted: ['47.50', '79.96', '85.50', '89.00', '118.75', '119.94', '139.93', '149.50', '149.50', '159.92', '166.25', '178.00', '178.00', '179.91', '190.00', '219.89', '237.50', '239.88', '267.00', '279.86', '285.00', '299.00', '299.00', '299.85', '356.00', '399.80', '445.00', '448.50', '448.50', '598.00']
+median raw: 204.945
+by_product: {'Doohickey': '1513.00', 'Gadget': '2392.00', 'Sprocket': '1130.50', 'Widget': '2118.94'}
+units_by_product: {'Widget': 10, 'Gadget': 7, 'Sprocket': 7, 'Doohickey': 6}
+by_region: {'East': '1830.79', 'North': '2176.35', 'South': '1732.48', 'West': '1414.82'}
+region share %: {'East': '25.59', 'North': '30.42', 'South': '24.22', 'West': '19.78'}
+total raw: 7154.44
+orders in region: {'East': 7, 'North': 8, 'South': 8, 'West': 7}
+avg order value: 238.48
+statistics.median float: 204.945 -> 204.94
+float sum/2: 204.945 -> 204.94
+exact decimal: 204.945 HALF_UP: 204.95 HALF_EVEN: 204.94
+float pipeline median: 204.94
+float pipeline total: 7154.44
+float regions: {'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}
+Doohickey share: 21.15 rev/order: 252.17
+Gadget share: 33.43 rev/order: 341.71
+Sprocket share: 15.80 rev/order: 161.50
+Widget share: 29.62 rev/order: 211.89
+East share: 25.59
+North share: 30.42
+South share: 24.22
+West share: 19.78
+West trails North by: 34.99
+South trails North by: 20.40
+Gadget/Sprocket revenue ratio: 2.12
+North/West ratio: 1.5383
+Sprocket units: 238
+Widget units: 106
+{
+  "total_revenue": 7154.44,
+  "orders": 30,
+  "median_order_value": 204.94,
+  "top_product_by_revenue": "Gadget",
+  "revenue_by_region": {
+    "East": 1830.79,
+    "North": 2176.35,
+    "South": 1732.48,
+    "West": 1414.82
+  }
+}
+--- headings ---
+1:## Overview
+4:## Top Products
+7:## Regional Performance
+10:## Recommendations
+--- wc -w ---
+167 REPORT.md
+--- alt word count (split on \w+) ---
+215
+--- bullets ---
+11:- Prioritize Gadget inventory and promotions: its 7 orders produce 33.43% of revenue, the best per-order yield at $341.71.
+12:- Grow West sales; it trails North by 34.99% despite nearly equal order counts (7 versus 8).
+13:- Bundle or reprice Sprocket: 238 units return only 15.80% of revenue at the lowest unit price, $4.75.
+bullet count: 3
+--- per-bullet words ---
+19
+17
+18
+--- forbidden ---
+forbidden grep exit: 1
+--- revenue format ---
+2:The 30 orders in data/sales.csv:2-31 generated total revenue of $7,154.44. The average order is worth $238.48, 16.37% above the $204.94 median, so a few large orders pull the mean upward.
+--- json valid + keys ---
+['median_order_value', 'orders', 'revenue_by_region', 'top_product_by_revenue', 'total_revenue']
+float int float str dict
+{'total_revenue': 7154.44, 'orders': 30, 'median_order_value': 204.94, 'top_product_by_revenue': 'Gadget', 'revenue_by_region': {'East': 1830.79, 'North': 2176.35, 'South': 1732.48, 'West': 1414.82}}
+total 1116
+drwxrwxr-x     4 mwoolly mwoolly    4096 Jul 17 20:26 .
+drwxrwxrwt 16237 root    root    1118208 Jul 17 20:26 ..
+drwxrwxr-x     2 mwoolly mwoolly    4096 Jul  6 19:43 data
+drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 20:20 .git
+-rw-rw-r--     1 mwoolly mwoolly    1098 Jul 17 20:25 REPORT.md
+-rw-rw-r--     1 mwoolly mwoolly     232 Jul 17 20:25 summary.json

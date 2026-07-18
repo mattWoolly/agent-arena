@@ -1,0 +1,35 @@
+{
+  "model": "kimi-k3-kimicode",
+  "wall_seconds": 401.8,
+  "agent_exit": 0,
+  "final_message": "Both files are produced and verified. All numbers were computed from `data/sales.csv:2-31` (30 data rows after the header at `data/sales.csv:1`).\n\n**`summary.json`** \u2014 exactly five keys, computed values:\n- `total_revenue`: 7154.44, `orders`: 30, `median_order_value`: 204.94, `top_product_by_revenue`: \"Gadget\", `revenue_by_region`: East 1830.79, North 2176.35, South 1732.48, West 1414.82.\n\n**`REPORT.md`** \u2014 verified mechanically:\n- Exactly four H2 headings in the required order (`REPORT.md:1,4,7,10`); `grep '^#'` finds no other headings.\n- 167 words by whitespace count, 215 by `\\w+` tokenization \u2014 under 250 either way.\n- Overview (`REPORT.md:2`) states `$7,154.44` and 30 orders.\n- Exactly three `- ` bullets (`REPORT.md:11-13`), at 19, 17, and 18 words \u2014 each under the 25-word cap.\n- Case-insensitive grep confirms none of leverage/delve/robust/seamless/revolutionize appear.\n\nEdge cases handled:\n- **Median with even count**: 30 orders, so the median is the mean of the 15th and 16th sorted order values ($190.00 and $219.89) = exactly 204.945 \u2014 a half-cent boundary. Python's `round()` on floats and Decimal half-even both give 204.94; only explicit half-up gives 204.95. I used 204.94 to match the standard `round(statistics.median(...), 2)` computation. All other values (total, region sums) round identically under both modes, so this is the only boundary-sensitive number.\n- **Ties**: none \u2014 product revenues ($2,392.00 / $2,118.94 / $1,513.00 / $1,130.50) and region revenues are all distinct, so `top_product_by_revenue` needed no tie-breaking rule.\n\nQuantified findings (all derivable from `data/sales.csv:2-31`):\n- Gadget (`data/sales.csv:3,8,13,18,23,28,30`) earns $2,392.00 \u2014 33.43% of revenue from only 7 of 30 orders (23.33%), at $341.71 per order, 2.12\u00d7 Sprocket's total revenue despite Sprocket moving 238 units versus Gadget's 24.\n- North leads regions at $2,176.35 (30.42%), 53.83% above West's $1,414.82 (19.78%), with nearly equal order counts (8 vs 7).\n- **Compound effect**: Sprocket combines the lowest unit price ($4.75) with the highest unit volume (238 units), so its volume advantage is fully canceled by price \u2014 it returns only 15.80% of revenue, and its $161.50 revenue per order is 47.27% below Gadget's $341.71. Similarly, West's shortfall compounds with Sprocket concentration: West's 7 orders are 41.7% Sprocket/Doohickey low-price lines, which is why it trails North by 34.99% on nearly the same order count rather than by a small margin.",
+  "num_turns": 12,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Read": 1,
+    "Write": 2,
+    "Bash": 6,
+    "Edit": 2
+  },
+  "tool_calls_total": 11,
+  "input_tokens": 331030,
+  "cache_read_tokens": 308224,
+  "output_tokens": 10701,
+  "total_cost_usd": 0.3214,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 12 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=.kimi-arena)",
+    "effort": "max (kimi-code default for k3)",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-18T02:20:25Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

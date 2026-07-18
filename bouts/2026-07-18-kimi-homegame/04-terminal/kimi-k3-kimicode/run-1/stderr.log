@@ -1,0 +1,156 @@
+Makefile:4: *** missing separator.  Stop.
+.PHONY: test check$
+$
+test: check$
+    python3 -m pytest -q tests/$
+$
+check:$
+^I./scripts/run_checks.sh$
+./scripts/run_checks.sh
+make: ./scripts/run_checks.sh: Permission denied
+make: *** [Makefile:7: check] Error 127
+-rw-rw-r-- 1 mwoolly mwoolly 98 Jul 17 19:32 scripts/run_checks.sh
+-rwxrwxr-x 1 mwoolly mwoolly 98 Jul 17 19:32 scripts/run_checks.sh
+./scripts/run_checks.sh
+make: ./scripts/run_checks.sh: No such file or directory
+make: *** [Makefile:7: check] Error 127
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators
+0000000   #   !   /   b   i   n   /   b   a   s   h  \r  \n   s   e   t
+0000020       -   e  \r  \n   p   y   t   h   o   n   3       t   o   o
+0000040   l   s   /   v   a   l   i   d   a   t   e   _   c   o   n   f
+0000060   i   g   .   p   y       d   a   t   a   /   c   o   n   f   i
+0000100   g   .   j   s   o   n  \r  \n   e   c   h   o       "   a   l
+0000120   l       c   h   e   c   k   s       p   a   s   s   e   d   "
+0000140  \r  \n
+0000142
+-rwxrwxr-x 1 mwoolly mwoolly 94 Jul 17 19:34 scripts/run_checks.sh
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+/usr/bin/python3: No module named pytest
+make: *** [Makefile:4: test] Error 1
+total 1132
+drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 19:32 .
+drwxrwxrwt 16237 root    root    1118208 Jul 17 19:34 ..
+-rw-rw-r--     1 mwoolly mwoolly      92 Jul  6 19:41 conftest.py
+drwxrwxr-x     2 mwoolly mwoolly    4096 Jul  6 19:40 data
+drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 19:32 .git
+-rw-rw-r--     1 mwoolly mwoolly      94 Jul 17 19:33 Makefile
+drwxrwxr-x     2 mwoolly mwoolly    4096 Jul 17 19:32 scripts
+drwxrwxr-x     3 mwoolly mwoolly    4096 Jul  6 19:40 src
+drwxrwxr-x     2 mwoolly mwoolly    4096 Jul  6 19:41 tests
+drwxrwxr-x     2 mwoolly mwoolly    4096 Jul  6 19:40 tools
+/home/mwoolly/.local/bin/pytest
+pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+/usr/bin/python3
+/usr/bin/python3.12
+/usr/bin/python3.12-config
+/usr/bin/python3-config
+/usr/bin/python-dotenv
+#!/usr/bin/python3
+sys.path = [
+    '/tmp/arena-ws.tbq2Ew',
+    '/usr/lib/python312.zip',
+    '/usr/lib/python3.12',
+    '/usr/lib/python3.12/lib-dynload',
+    '/usr/local/lib/python3.12/dist-packages',
+    '/usr/lib/python3/dist-packages',
+    '/usr/lib/python3.12/dist-packages',
+]
+USER_BASE: '/home/mwoolly/projects/agent-arena/.kimi-arena/.local' (doesn't exist)
+USER_SITE: '/home/mwoolly/projects/agent-arena/.kimi-arena/.local/lib/python3.12/site-packages' (doesn't exist)
+ENABLE_USER_SITE: True
+LESSCLOSE=/usr/bin/lesspipe %s %s
+LESSOPEN=| /usr/bin/lesspipe %s
+---
+---
+HOME=/home/mwoolly/projects/agent-arena/.kimi-arena
+iniconfig
+iniconfig-2.3.0.dist-info
+pluggy
+pluggy-1.6.0.dist-info
+_pytest
+pytest
+pytest-9.0.3.dist-info
+pytest_forked
+pytest_forked-1.6.0.dist-info
+pytest_mock
+pytest_mock-3.15.1.dist-info
+---
+/usr
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+import re
+import sys
+from pytest import console_main
+96c37da baseline
+---
+ M Makefile
+ M data/config.json
+ M scripts/run_checks.sh
+---
+* 96c37da baseline
+ Makefile              | 2 +-
+ data/config.json      | 2 +-
+ scripts/run_checks.sh | 8 ++++----
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+---
+.PHONY: test check$
+$
+test: check$
+    python3 -m pytest -q tests/$
+$
+check:$
+^I./scripts/run_checks.sh$
+---
+0000000   #   !   /   b   i   n   /   b   a   s   h  \r  \n   s   e   t
+0000020       -   e  \r  \n   p   y   t   h   o   n   3       t   o   o
+0000040   l   s   /   v   a   l   i   d   a   t   e   _   c   o   n   f
+0000060   i   g   .   p   y       d   a   t   a   /   c   o   n   f   i
+0000100   g   .   j   s   o   n  \r  \n   e   c   h   o       "   a   l
+---
+{
+  "source": "s3://ingest/raw",
+  "destination": "s3://ingest/clean",
+  "batch_size": 500,
+}
+---
+100644 blob 3b5763a43a5cd2addbb4c1d361c11acb3d465f10      97	Makefile
+100644 blob bde0c87dfbf5776d44e83a505979e8618ee0d4b3      92	conftest.py
+100644 blob 240e3fc9f565faa57537d98c3e2c0758a7818b72      94	data/config.json
+100644 blob 1db22701b3b89d432131c7cf997cda972be84c85      98	scripts/run_checks.sh
+100644 blob e69de29bb2d1d6434b8b29ae775ad8c2e48c5391       0	src/pipeline/__init__.py
+100644 blob 035b566957c60c21199779d9d54a317542fbf0ad     661	src/pipeline/transform.py
+100644 blob 9851570ac63356fbba6bfd5afeb24eceec3d6de2     516	tests/test_transform.py
+100644 blob 7e4f67a268449ff523156ac5bbe22016f6596fe4     550	tools/validate_config.py
+Traceback (most recent call last):
+  File "/home/mwoolly/.local/bin/pytest", line 5, in <module>
+    from pytest import console_main
+=== exit: 0
+pytest 9.0.3
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+PYTHONPATH="/home/mwoolly/.local/lib/python3.12/site-packages${PYTHONPATH:+:$PYTHONPATH}" python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s
+exit: 0
+...                                                                      [100%]
+3 passed in 0.01s
+normal-HOME exit: 0
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+PYTHONPATH="/home/mwoolly/.local/lib/python3.12/site-packages${PYTHONPATH:+:$PYTHONPATH}" python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s
+FINAL EXIT: 0

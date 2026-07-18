@@ -1,0 +1,20 @@
+order_id,date,region,product,units,unit_price
+1001,2026-05-02,North,Widget,12,19.99
+1002,2026-05-02,South,Gadget,3,149.50
+1003,2026-05-03,East,Sprocket,40,4.75
+1004,2026-05-03,West,Widget,7,19.99
+31 data/sales.csv
+total: 7154.44
+orders: 30
+median: 204.94
+top_product: Gadget 2392.0
+regions: {'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}
+products: {'Widget': 2118.94, 'Gadget': 2392.0, 'Sprocket': 1130.5, 'Doohickey': 1513.0}
+avg order: 238.48
+word count: 129 (limit 250)
+headings: ['## Overview', '## Top Products', '## Regional Performance', '## Recommendations']
+banned: []
+bullets: 3 | words each: [14, 18, 15]
+rev format ok: True
+json keys: ['median_order_value', 'orders', 'revenue_by_region', 'top_product_by_revenue', 'total_revenue']
+{"total_revenue": 7154.44, "orders": 30, "median_order_value": 204.94, "top_product_by_revenue": "Gadget", "revenue_by_region": {"North": 2176.35, "South": 1732.48, "East": 1830.79, "West": 1414.82}}

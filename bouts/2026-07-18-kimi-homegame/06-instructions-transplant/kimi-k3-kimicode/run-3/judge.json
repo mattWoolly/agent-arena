@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Widget 'earning 12.9% less than Gadget' and North '1.54x West's $1,414.82'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures, e.g. 'Push Gadget stock in North, where order 1017 earned $598.00' and 'Reconsider Sprocket pricing... at $4.75 per unit.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable non-obvious observations, notably Sprocket selling '63.1% of units but only 15.8% of revenue' and the West region being '35.0% below North.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Widget 'earning 12.9% less than Gadget', North '1.54x West's', and West '35.0% below North'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures, e.g. 'Push Gadget stock in North, where order 1017 earned $598.00' and 'Reconsider Sprocket pricing... at $4.75 per unit'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like Sprocket's volume/revenue mismatch ('63.1% of units sold but only 15.8% of revenue') and regional concentration gaps."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Widget 'earning 12.9% less than Gadget' and North '1.54x West's $1,414.82', not bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product, region, and figure and is actionable as written, e.g. 'Push Gadget stock in North, where order 1017 earned $598.00' and 'Reconsider Sprocket pricing... at $4.75 per unit.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, notably the Sprocket volume/revenue mismatch ('63.1% of units sold but only 15.8% of revenue') and the North-West regional gap, beyond restating totals."
+      }
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+total_revenue: 7154.44
+orders: 30
+median: 204.95 | middle values: 190.00 219.89
+products (revenue, units):
+  Gadget: rev=2392.00 units=16
+  Widget: rev=2118.94 units=106
+  Doohickey: rev=1513.00 units=17
+  Sprocket: rev=1130.50 units=238
+regions:
+  East: 1830.79
+  North: 2176.35
+  South: 1732.48
+  West: 1414.82
+PROD Doohickey 1513
+PROD Gadget 2392
+PROD Sprocket 1130.5
+PROD Widget 2118.94
+REG East 1830.79
+REG North 2176.35
+REG South 1732.48
+REG West 1414.82
+TOTAL 7154.44
+Doohickey,East 623
+Doohickey,North 178
+Doohickey,South 89
+Doohickey,West 623
+Gadget,East 598
+Gadget,North 747.5
+Gadget,South 747.5
+Gadget,West 299
+Sprocket,East 190
+Sprocket,North 451.25
+Sprocket,South 356.25
+Sprocket,West 133
+Widget,East 419.79
+Widget,North 799.6
+Widget,South 539.73
+Widget,West 359.82
+--- word count:
+155 REPORT.md
+--- headings:
+1:## Overview
+5:## Top Products
+9:## Regional Performance
+13:## Recommendations
+--- any non-H2 heading lines:
+none
+--- bullet lines:
+3
+--- words per bullet:
+16
+15
+15
+--- banned words:
+none
+--- revenue format:
+$7,154.44
+--- json keys:
+['total_revenue', 'orders', 'median_order_value', 'top_product_by_revenue', 'revenue_by_region']
+['East', 'North', 'South', 'West']
+total 1116
+drwxrwxr-x     4 mwoolly mwoolly    4096 Jul 17 20:18 .
+drwxrwxrwt 16237 root    root    1118208 Jul 17 20:18 ..
+drwxrwxr-x     2 mwoolly mwoolly    4096 Jul  6 19:43 data
+drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 20:15 .git
+-rw-rw-r--     1 mwoolly mwoolly     979 Jul 17 20:18 REPORT.md
+-rw-rw-r--     1 mwoolly mwoolly     232 Jul 17 20:15 summary.json
+153 REPORT.md
+1:## Overview
+5:## Top Products
+9:## Regional Performance
+13:## Recommendations
+3
+banned: none
+16
+15
+15

@@ -1,0 +1,177 @@
+Makefile:4: *** missing separator.  Stop.
+data/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:40 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 17 19:45 ..
+-rw-rw-r-- 1 mwoolly mwoolly   94 Jul  6 19:40 config.json
+
+scripts/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul 17 19:45 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 17 19:45 ..
+-rw-rw-r-- 1 mwoolly mwoolly   98 Jul 17 19:45 run_checks.sh
+
+src/pipeline/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:41 .
+drwxrwxr-x 3 mwoolly mwoolly 4096 Jul  6 19:40 ..
+-rw-rw-r-- 1 mwoolly mwoolly    0 Jul  6 19:40 __init__.py
+-rw-rw-r-- 1 mwoolly mwoolly  661 Jul  6 19:41 transform.py
+
+tools/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:40 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 17 19:45 ..
+-rw-rw-r-- 1 mwoolly mwoolly  550 Jul  6 19:40 validate_config.py
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators
+Makefile:                 ASCII text
+conftest.py:              Python script, ASCII text executable
+data/config.json:         JSON text data
+tools/validate_config.py: Python script, ASCII text executable
+.PHONY: test check$
+$
+test: check$
+    python3 -m pytest -q tests/$
+$
+check:$
+^I./scripts/run_checks.sh$
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable
+-rwxrwxr-x 1 mwoolly mwoolly 94 Jul 17 19:46 scripts/run_checks.sh
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+/usr/bin/python3: No module named pytest
+make: *** [Makefile:4: test] Error 1
+/usr/bin/python3
+/bin/python3
+/home/mwoolly/.local/bin/pytest
+/home/mwoolly/.local/bin/pytest
+/home/mwoolly/.local/bin/pytest
+/usr/bin/python3
+/usr/bin/python3.12
+/usr/bin/python3.12-config
+/usr/bin/python3-config
+/usr/bin/python-dotenv
+Python 3.12.3
+pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'pytest'
+Package                 Version
+----------------------- ---------------
+appdirs                 1.4.4
+attrs                   23.2.0
+audioread               3.0.1
+Babel                   2.10.3
+bcc                     0.29.1
+beautifulsoup4          4.12.3
+blinker                 1.7.0
+bottle                  0.12.25
+Brlapi                  0.8.5
+Brotli                  1.1.0
+certifi                 2023.11.17
+chardet                 5.2.0
+charset-normalizer      3.3.2
+click                   8.1.6
+cloud-init              26.1
+colorama                0.4.6
+command-not-found       0.3
+configobj               5.0.8
+head: cannot open '/home/mwoolly/projects/agent-arena/.kimi-arena/.local/bin/pytest' for reading: No such file or directory
+ls: cannot access '/home/mwoolly/projects/agent-arena/.kimi-arena/.local/lib/'
+: No such file or directory
+sys.path = [
+    '/tmp/arena-ws.GzkEae',
+    '/usr/lib/python312.zip',
+    '/usr/lib/python3.12',
+    '/usr/lib/python3.12/lib-dynload',
+    '/usr/local/lib/python3.12/dist-packages',
+    '/usr/lib/python3/dist-packages',
+    '/usr/lib/python3.12/dist-packages',
+]
+USER_BASE: '/home/mwoolly/projects/agent-arena/.kimi-arena/.local' (doesn't exist)
+USER_SITE: '/home/mwoolly/projects/agent-arena/.kimi-arena/.local/lib/python3.12/site-packages' (doesn't exist)
+ENABLE_USER_SITE: True
+PYTHONNOUSERSITE=
+iniconfig
+iniconfig-2.3.0.dist-info
+pluggy
+pluggy-1.6.0.dist-info
+_pytest
+pytest
+pytest-9.0.3.dist-info
+pytest_forked
+pytest_forked-1.6.0.dist-info
+pytest_mock
+pytest_mock-3.15.1.dist-info
+---
+---
+HOME=/home/mwoolly/projects/agent-arena/.kimi-arena
+PATH=/home/mwoolly/.local/bin:/home/mwoolly/bin:/home/mwoolly/.local/share/pnpm/bin:/home/mwoolly/.opencode/bin:/home/mwoolly/.npm-global/bin:/home/mwoolly/.local/bin:/home/mwoolly/.local/bin:/home/mwoolly/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
+pytest MISSING
+_pytest MISSING
+pluggy MISSING
+iniconfig MISSING
+packaging OK
+lrwxrwxrwx     1 mwoolly mwoolly      59 Jul 17 19:50 iniconfig -> /home/mwoolly/.local/lib/python3.12/site-packages/iniconfig
+lrwxrwxrwx     1 mwoolly mwoolly      56 Jul 17 19:50 pluggy -> /home/mwoolly/.local/lib/python3.12/site-packages/pluggy
+lrwxrwxrwx     1 mwoolly mwoolly      57 Jul 17 19:50 _pytest -> /home/mwoolly/.local/lib/python3.12/site-packages/_pytest
+lrwxrwxrwx     1 mwoolly mwoolly      56 Jul 17 19:50 pytest -> /home/mwoolly/.local/lib/python3.12/site-packages/pytest
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 148, in _get_module_details
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "/tmp/arena-ws.GzkEae/pytest/__init__.py", line 8, in <module>
+    from _pytest._code import ExceptionInfo
+  File "/tmp/arena-ws.GzkEae/_pytest/_code/__init__.py", line 5, in <module>
+    from .code import Code
+  File "/tmp/arena-ws.GzkEae/_pytest/_code/code.py", line 43, in <module>
+    from _pytest._io import TerminalWriter
+  File "/tmp/arena-ws.GzkEae/_pytest/_io/__init__.py", line 3, in <module>
+    from .terminalwriter import get_terminal_width
+  File "/tmp/arena-ws.GzkEae/_pytest/_io/terminalwriter.py", line 19, in <module>
+    from ..compat import assert_never
+  File "/tmp/arena-ws.GzkEae/_pytest/compat.py", line 19, in <module>
+    import py
+ModuleNotFoundError: No module named 'py'
+make: *** [Makefile:4: test] Error 1
+/home/mwoolly/.local/lib/python3.12/site-packages/py
+/home/mwoolly/.local/lib/python3.12/site-packages/py-1.11.0.dist-info
+/home/mwoolly/.local/lib/python3.12/site-packages/pycparser
+/home/mwoolly/.local/lib/python3.12/site-packages/pycparser-3.0.dist-info
+/home/mwoolly/.local/lib/python3.12/site-packages/pyloudnorm
+/home/mwoolly/.local/lib/python3.12/site-packages/pyloudnorm-0.2.0.dist-info
+/home/mwoolly/.local/lib/python3.12/site-packages/py.py
+/home/mwoolly/.local/lib/python3.12/site-packages/pytest
+/home/mwoolly/.local/lib/python3.12/site-packages/pytest-9.0.3.dist-info
+/home/mwoolly/.local/lib/python3.12/site-packages/pytest_forked
+/home/mwoolly/.local/lib/python3.12/site-packages/pytest_forked-1.6.0.dist-info
+/home/mwoolly/.local/lib/python3.12/site-packages/pytest_mock
+/home/mwoolly/.local/lib/python3.12/site-packages/pytest_mock-3.15.1.dist-info
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.02s
+exit=0
+ M Makefile
+ M data/config.json
+ M scripts/run_checks.sh
+?? __pycache__/
+?? _pytest
+?? iniconfig
+?? pluggy
+?? py
+?? pytest
+?? src/pipeline/__pycache__/
+?? tests/__pycache__/

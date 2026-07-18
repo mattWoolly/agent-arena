@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line citation (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-31 finding mechanistically explains a compound failure: premature `seen.append()` + line-39 silent `except` + line-24 persistent default list means \"a single transient failure permanently and invisibly skips that user in all future runs.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` \"drops the final partial page\" so \"with total_count=250 only 200 of 250 staged rows are fetched.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-31 finding mechanistically explains a compound failure: a transient failure is marked 'seen' before the UPDATE succeeds, then swallowed by the line-39 silent except and persisted by the line-24 default list, 'permanently and invisibly skips that user in all future runs.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism and conditions, e.g. line-14 'drops the final partial page... with total_count=250 only 200 of 250 staged rows are fetched.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-31 finding mechanistically explains the compound failure: premature `seen.append()` + line-39 silent `except` + line-24 persistent default list causes a transient failure to permanently and invisibly skip a user across all future runs."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism and breaking conditions (e.g. `range(total_count // PAGE_SIZE)` drops the final partial page so with total_count=250 only 200 rows are fetched)."
+      }
+    }
+  ]
+}
