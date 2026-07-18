@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget was \"12.9% above Widget's $2,118.94\" and North was \"53.8% more than West's $1,414.82\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with data, e.g. \"Prioritize Gadget: its $2,392.00 revenue exceeded Widget by 12.9%\" and \"Address West; its $1,414.82 revenue trailed North by 35.0%\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations like the computed median ($204.95) and the specific regional gaps (North 18.9% above East, West 35.0% below North) beyond restating raw totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 '12.9% above Widget', '53.8% more than West', '18.9% above East', and 'trailed North by 35.0%'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with its figure, e.g. 'Address West; its $1,414.82 revenue trailed North by 35.0%'."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "It quantifies the North\u2013West gap but otherwise mostly restates ranked totals the tables imply, and the median is stated without contrasting it to the mean to reveal skew or concentration."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 '12.9% above Widget', '53.8% more than West', '18.9% above East', and '35.0%' \u2014 rather than bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region and figure, e.g. 'Prioritize Gadget: its $2,392.00 revenue exceeded Widget by 12.9%' and 'Address West; its $1,414.82 revenue trailed North by 35.0%'."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "It computes a median ($204.95) distinct from totals and flags the North\u2013West gap, but the recommendations mostly re-state ranked totals as gaps rather than surfacing multiple non-obvious observations."
+      }
+    }
+  ]
+}

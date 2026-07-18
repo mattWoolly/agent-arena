@@ -1,0 +1,8 @@
+Fixed all merge/configuration issues:
+
+- Corrected Makefile recipe indentation.
+- Restored executable permission and LF endings for `run_checks.sh`.
+- Fixed invalid trailing comma in `config.json`.
+- Added `SOLUTION.md`.
+
+`make test` now passes: **3 tests passed**.

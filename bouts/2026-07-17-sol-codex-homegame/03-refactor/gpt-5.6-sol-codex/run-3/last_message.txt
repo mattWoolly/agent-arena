@@ -1,0 +1,5 @@
+Implemented the frozen, typed `Config` dataclass and attribute-based access throughout `reportgen`.
+
+Also added unknown-key validation with a key-naming `ValueError`.
+
+Verification: `python3 -m pytest -q` → **4 passed**.

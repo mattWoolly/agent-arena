@@ -1,0 +1,6 @@
+Created and validated:
+
+- [REPORT.md](/tmp/arena-ws.ZggLOZ/REPORT.md:1)
+- [summary.json](/tmp/arena-ws.ZggLOZ/summary.json:1)
+
+The even-count median uses the mean of the two middle orders, rounded to $204.95 ([summary.json](/tmp/arena-ws.ZggLOZ/summary.json:4)).

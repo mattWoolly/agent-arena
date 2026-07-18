@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..f38126d
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 Using `total_count // 100` omits the entire remainder page (for the edge case of 1–99 rows it fetches 0%, and for 101 rows it fetches 100/101 = 99.01%).
++- src/sync.py:24 The mutable default preserves IDs across independent calls, so a second sync containing only previously processed IDs skips 100% of its input.
++- src/sync.py:31 Recording an ID before its update succeeds compounds the persistent default-state defect by making one transiently failed row ineligible for 100% of later retry calls.
++- src/sync.py:35 Interpolating `email` directly into SQL lets one apostrophe make an otherwise valid address fail and lets crafted input alter which rows the `UPDATE` affects.
++- src/report.py:6 The empty-users edge case returns before closing the opened file, leaking 1 file descriptor per call.
++- src/report.py:11 Calling `lower()` and indexing split element 1 aborts the report for the schema-permitted `email=None` edge case and for any address containing 0 `@` characters, instead of reporting those users.

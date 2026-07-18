@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the five findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode explained, even though report.py:5 and report.py:11 both concern report generation."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. \"floor division for the page count drops every remainder page\" and \"mutable `seen` default persists IDs across calls, causing later ... sync operations to silently skip users.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the five findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding stands alone with no compound failure mode explained across defects; no interaction mechanism is described."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. 'the mutable `seen` default persists IDs across calls, causing later independent sync operations to silently skip users'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is standalone; no finding explains a compound failure mode emerging from two defects interacting."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"mutable `seen` default persists IDs across calls, causing later independent sync operations to silently skip users\"."
+      }
+    }
+  ]
+}

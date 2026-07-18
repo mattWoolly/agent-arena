@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode or mechanism of interaction between defects stated."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. the mutable `seen` default 'persists IDs across calls, causing later sync runs to silently skip legitimate updates.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line reference such as \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode or mechanism linking two defects together."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a mechanism, e.g. \"the mutable `seen` default persists IDs across calls, causing later sync runs to silently skip legitimate updates.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is treated in isolation with no mechanism describing how two defects combine into a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'the mutable `seen` default persists IDs across calls, causing later sync runs to silently skip legitimate updates' and 'Calling `lower()` on nullable emails raises an exception.'"
+      }
+    }
+  ]
+}

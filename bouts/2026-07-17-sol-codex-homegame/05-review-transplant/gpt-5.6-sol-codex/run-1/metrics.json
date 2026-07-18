@@ -1,0 +1,34 @@
+{
+  "model": "gpt-5.6-sol-codex",
+  "wall_seconds": 44.1,
+  "agent_exit": 0,
+  "num_turns": 1,
+  "assistant_messages": 1,
+  "tool_calls": {
+    "command_execution": 3,
+    "file_change": 1
+  },
+  "tool_calls_total": 4,
+  "input_tokens": 66783,
+  "cache_read_tokens": 52068,
+  "output_tokens": 1283,
+  "total_cost_usd": 0.1381,
+  "cost_source": "computed:env/prices.json (codex per-turn usage, 1 turns)",
+  "final_message": "Created [findings.md](/tmp/arena-ws.TRycV8/findings.md) with six verified findings.",
+  "run_env": {
+    "cli_version": "codex-cli 0.144.4",
+    "driver": "codex exec --json -s workspace-write --dangerously-bypass-approvals-and-sandbox",
+    "base_url": "https://api.openai.com (native)",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "codex-default",
+    "setting_sources": "none (--ignore-user-config, isolated CODEX_HOME)",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-17T23:51:08Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 6 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

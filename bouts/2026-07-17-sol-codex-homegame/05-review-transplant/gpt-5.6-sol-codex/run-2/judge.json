@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure: recording an ID before its update succeeds 'compounds the persistent default-state defect by making one transiently failed row ineligible for 100% of later retry calls.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a failure mechanism or breaking condition (e.g. 'The mutable default preserves IDs across independent calls, so a second sync... skips 100% of its input')."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 31 finding mechanistically explains a compound failure: recording an ID before its update succeeds 'compounds the persistent default-state defect' from line 24, making a transiently failed row 'ineligible for 100% of later retry calls.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'The empty-users edge case returns before closing the opened file, leaking 1 file descriptor per call' and 'Interpolating email directly into SQL lets one apostrophe make an otherwise valid address fail.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line, e.g. \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:31 finding mechanistically explains a compound failure: recording an ID before the update succeeds \"compounds the persistent default-state defect by making one transiently failed row ineligible for 100% of later retry calls.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states a failure mechanism or triggering condition, e.g. the report.py:11 note that calling `lower()` and indexing split element 1 \"aborts the report for the schema-permitted `email=None` edge case and for any address containing 0 `@` characters.\""
+      }
+    }
+  ]
+}

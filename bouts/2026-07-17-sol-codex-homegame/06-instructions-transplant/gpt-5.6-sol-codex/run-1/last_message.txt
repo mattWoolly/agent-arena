@@ -1,0 +1,6 @@
+Created and validated:
+
+- [REPORT.md](/tmp/arena-ws.kZWMzl/REPORT.md:1)
+- [summary.json](/tmp/arena-ws.kZWMzl/summary.json:1)
+
+The even-count median is rounded to $204.95 ([summary.json](/tmp/arena-ws.kZWMzl/summary.json:4)).

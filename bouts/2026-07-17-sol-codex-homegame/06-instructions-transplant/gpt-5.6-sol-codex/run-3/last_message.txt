@@ -1,0 +1,1 @@
+Created [REPORT.md](/tmp/arena-ws.gVwEAD/REPORT.md:1) and [summary.json](/tmp/arena-ws.gVwEAD/summary.json:1). The even-order median edge case is documented and handled at [REPORT.md](/tmp/arena-ws.gVwEAD/REPORT.md:3).

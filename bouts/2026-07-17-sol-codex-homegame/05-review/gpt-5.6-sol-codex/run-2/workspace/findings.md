@@ -1,0 +1,5 @@
+- src/sync.py:14 Using floor division for the page count drops every trailing partial page and returns no users at all when the total is below 100.
+- src/sync.py:24 The mutable `seen` default persists IDs across calls, causing later sync runs to silently skip legitimate updates for users processed by an earlier run.
+- src/sync.py:35 Interpolating the email directly into SQL allows crafted emails to alter the statement and makes ordinary addresses containing apostrophes fail to sync.
+- src/report.py:7 Returning for an empty user list without closing the opened report file leaks its file descriptor.
+- src/report.py:11 Calling `lower()` on nullable emails raises an exception for phone-invited users, preventing their report from being generated.

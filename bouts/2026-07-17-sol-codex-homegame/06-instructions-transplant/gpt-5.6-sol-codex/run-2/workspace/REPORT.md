@@ -1,0 +1,17 @@
+## Overview
+
+The 30 orders generated $7,154.44 in revenue (`data/sales.csv:2-31`).
+
+## Top Products
+
+Gadget generated $2,392.00, 12.89% more than Widget's $2,118.94 (`data/sales.csv:3,8,13,18,23,28,30`; `data/sales.csv:2,5,10,11,16,19-21,26,31`).
+
+## Regional Performance
+
+North produced $2,176.35, East $1,830.79, South $1,732.48, and West $1,414.82; North exceeded West by 53.82% (`data/sales.csv:2-31`).
+
+## Recommendations
+
+- Maintain Gadget availability; its $2,392.00 revenue was 33.43% of total (`data/sales.csv:3,8,13,18,23,28,30`).
+- Study North's sales mix; its $2,176.35 revenue was 30.42% of total (`data/sales.csv:2,6,10,14,18,22,26,30`).
+- Test Sprocket promotions; its $1,130.50 revenue was 52.74% below Gadget's (`data/sales.csv:4,7,14,17,22,25,27`).

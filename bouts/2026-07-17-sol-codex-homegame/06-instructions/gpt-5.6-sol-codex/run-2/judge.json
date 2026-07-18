@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every product and region carries an absolute dollar figure (e.g., \"Gadget led revenue at $2,392.00, followed by Widget at $2,118.94\"), but comparisons are never expressed as computed gaps, ratios, or percentages between items."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name a specific product or region with its figure and action (e.g., \"Study North's sales mix and apply successful tactics in West, the lowest-revenue region\")."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The only observation beyond restating table totals is the \"median order value was $204.95,\" while the rest and all recommendations simply repeat the revenue rankings without surfacing concentration, gaps, or outliers."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Figures accompany every item (e.g., \"Gadget led revenue at $2,392.00, followed by Widget at $2,118.94\") but these are raw totals, not computed comparisons like gaps, ratios, or percentages."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with its figure, e.g., \"Study North's sales mix and apply successful tactics in West, the lowest-revenue region\" and \"Seek Sprocket growth opportunities; it generated the least product revenue at $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose restates the ranked totals the tables already imply and the recommendations are obvious (\"Prioritize Gadget sales, the highest-revenue product\") with no concentration, gap, or outlier observations."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every comparison carries a raw dollar total (e.g., \"Gadget led revenue at $2,392.00, followed by Widget at $2,118.94\") but none are expressed as computed gaps, ratios, or percentages."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region and cites a figure, e.g., \"Study North's sales mix and apply successful tactics in West, the lowest-revenue region\" and \"Seek Sprocket growth opportunities; it generated the least product revenue at $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The prose largely restates the ranked totals the tables imply, with the median order value ($204.95) as the only observation beyond simple top/bottom rankings, and no analysis of concentration, gaps, or outliers."
+      }
+    }
+  ]
+}

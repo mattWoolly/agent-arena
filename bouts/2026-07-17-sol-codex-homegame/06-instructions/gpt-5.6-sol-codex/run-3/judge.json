@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most figures are bare values attached to rankings (e.g. \"Gadget led revenue at $2,392.00\"), with only one true computed comparison, \"trails North by $761.53\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region and figure, e.g. \"Prioritize Gadget sales, the highest-revenue product at $2,392.00\" and West trailing North \"by $761.53\"."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The prose mostly restates totals the tables imply, offering just one actionable observation\u2014the $761.53 North\u2013West gap suggesting tactic transfer."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons are bare rankings with raw dollar figures (\"Gadget led revenue at $2,392.00, followed by Widget at $2,118.94\"), but one computed gap appears (\"trails North by $761.53\")."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with a data figure (\"Prioritize Gadget sales...$2,392.00\"; \"apply successful tactics to West, which trails North by $761.53\"; \"Seek Sprocket volume growth...$1,130.50\")."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The prose mostly restates rankings and totals the tables imply, with only the North\u2013West gap of \"$761.53\" surfacing as a genuine computed observation."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons are bare rankings with absolute dollar figures (\"North led with $2,176.35... East generated $1,830.79\"), with only one computed gap (\"trails North by $761.53\") and no percentages or ratios."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure (\"Prioritize Gadget sales... at $2,392.00\", \"apply successful tactics to West, which trails North by $761.53\", \"Seek Sprocket volume growth... $1,130.50\")."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The prose largely restates table totals, with the computed West-vs-North gap of \"$761.53\" being the only non-obvious, actionable observation surfaced."
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+Fixed both LRU bugs and added `SOLUTION.md`.
+
+- Reads now refresh recency.
+- Updating existing keys no longer evicts entries.
+- Tests: `6 passed`.

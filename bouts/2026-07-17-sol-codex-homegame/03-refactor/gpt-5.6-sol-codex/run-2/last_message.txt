@@ -1,0 +1,5 @@
+Implemented the frozen, typed `Config` dataclass and attribute-based access throughout `reportgen`.
+
+Also added unknown-key validation with the offending key named in `ValueError`.
+
+Verification: `4 passed in 0.03s`.
