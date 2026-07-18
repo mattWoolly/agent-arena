@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..ae8474c
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 floor division in `range(total_count // PAGE_SIZE)` drops the final partial page, so 250 staged rows fetch only 200 and any total under PAGE_SIZE (e.g. 37) fetches zero rows.
++- src/sync.py:24 mutable default argument `seen=[]` persists dedupe state across calls, so user IDs from earlier invocations are silently skipped in all later invocations.
++- src/sync.py:35 f-string interpolation of `email` and `id` into the UPDATE statement replaces parameter binding, enabling SQL injection and raising a syntax error on emails containing an apostrophe.
++- src/sync.py:39 bare `except Exception: pass` silently discards all update failures (previously logged via log.exception), and since the ID was already appended to `seen` the failed user is never retried or reported.
++- src/report.py:7 the early `return 0` on empty users skips `f.close()`, and the removed `with` block means any exception during the write loop (e.g. from line 11) also leaves the file handle open and buffered data unflushed.
++- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError on NULL emails (db.py:4-5 states email is nullable) and IndexError on addresses lacking "@", aborting report generation mid-file.

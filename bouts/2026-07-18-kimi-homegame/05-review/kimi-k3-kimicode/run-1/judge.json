@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Findings are listed independently with no cross-defect mechanism stated\u2014e.g. the error-swallowing at :39 and the mark-seen-before-update at :31 are never connected into a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. :24 explains \"Mutable default argument seen=[] is shared across all calls, so any user id synced once is permanently skipped.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line, e.g. \"src/sync.py:31\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding stands alone with no cross-references, and no compound failure mode (e.g. the swallowed exception at :39 combining with the premature seen-marking at :31) is ever articulated."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a mechanism, e.g. \":7 ... early `return 0` ... never reaches `f.close()`, leaking the file handle\" and \":35 f-string interpolation ... introducing SQL injection and breaking on emails containing a quote.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is listed in isolation with no explanation of how any two combine into a compound failure mode (e.g. the swallowed errors at line 39 are never linked to the premature seen-marking at line 31)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. \"appended to `seen` before the UPDATE runs, so a record whose sync fails is marked as seen and never retried.\""
+      }
+    }
+  ]
+}

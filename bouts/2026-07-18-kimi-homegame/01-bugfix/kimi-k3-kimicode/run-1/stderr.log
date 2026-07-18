@@ -1,0 +1,56 @@
+/usr/bin/python3: No module named pytest
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+test_cache.py
+/home/mwoolly/.local/bin/pytest
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+ModuleNotFoundError: No module named 'pytest'
+Traceback (most recent call last):
+  File "/home/mwoolly/.local/bin/pytest", line 5, in <module>
+    from pytest import console_main
+ModuleNotFoundError: No module named 'pytest'
+#!/usr/bin/python3
+/usr/bin/python3
+/usr/bin/python3.12
+/usr/bin/python3.12-config
+/usr/bin/python3-config
+Python 3.12.3
+pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+.FF...                                                                   [100%]
+=================================== FAILURES ===================================
+__________________________ test_get_refreshes_recency __________________________
+
+    def test_get_refreshes_recency():
+        c = LRUCache(2)
+        c.put("a", 1)
+        c.put("b", 2)
+        assert c.get("a") == 1  # "a" is now most recently used
+        c.put("c", 3)  # must evict "b", the least recently used
+>       assert c.get("a") == 1
+E       AssertionError: assert None == 1
+E        +  where None = get('a')
+E        +    where get = <lrucache.cache.LRUCache object at 0x72701c0fdeb0>.get
+
+tests/test_cache.py:29: AssertionError
+_______________ test_updating_existing_key_does_not_evict_others _______________
+
+    def test_updating_existing_key_does_not_evict_others():
+        c = LRUCache(2)
+        c.put("x", 1)
+        c.put("y", 2)
+        c.put("y", 3)  # update in place; "x" must survive
+>       assert c.get("x") == 1
+E       AssertionError: assert None == 1
+E        +  where None = get('x')
+E        +    where get = <lrucache.cache.LRUCache object at 0x72701c0fe090>.get
+
+tests/test_cache.py:39: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_cache.py::test_get_refreshes_recency - AssertionError: asse...
+FAILED tests/test_cache.py::test_updating_existing_key_does_not_evict_others
+2 failed, 4 passed in 0.04s
+......                                                                   [100%]
+6 passed in 0.01s

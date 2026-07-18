@@ -1,0 +1,87 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..115ba52 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	PYTHONPATH=/home/mwoolly/.local/lib/python3.12/site-packages python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..263265b
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,26 @@
++# SOLUTION
++
++`make test` failed for four environment/config reasons. Fixes applied (no changes under `tests/`, no checks removed):
++
++1. **Makefile recipe indented with spaces** — `make` aborted with
++   `missing separator`. The `test` recipe line used 4 spaces; replaced with a
++   real tab (Makefile).
++
++2. **Invalid JSON in `data/config.json`** — trailing comma after
++   `"batch_size": 500` made `tools/validate_config.py` fail to parse it.
++   Removed the trailing comma.
++
++3. **`scripts/run_checks.sh` not executable and saved with CRLF line
++   endings** — `./scripts/run_checks.sh` failed (`Permission denied` /
++   `No such file or directory`, because the shebang was `#!/bin/bash\r`).
++   Converted the file to LF line endings and set the executable bit
++   (`chmod +x`).
++
++4. **`python3 -m pytest` could not find pytest** — pytest 9.0.3 is installed
++   in the user site-packages (`/home/mwoolly/.local/lib/python3.12/site-packages`),
++   but the shell's `HOME` is redirected, so that directory is not on
++   `sys.path`. Prefixed the pytest command in the Makefile with
++   `PYTHONPATH=/home/mwoolly/.local/lib/python3.12/site-packages` so the same
++   test suite runs with the installed pytest.
++
++Result: `make test` exits 0 — config validation passes and all 3 tests pass.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..e4264b6
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"
+diff --git a/src/pipeline/__pycache__/__init__.cpython-312.pyc b/src/pipeline/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..b3c2fde
+Binary files /dev/null and b/src/pipeline/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/pipeline/__pycache__/transform.cpython-312.pyc b/src/pipeline/__pycache__/transform.cpython-312.pyc
+new file mode 100644
+index 0000000..ce04a4d
+Binary files /dev/null and b/src/pipeline/__pycache__/transform.cpython-312.pyc differ
+diff --git a/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..4994cba
+Binary files /dev/null and b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc differ

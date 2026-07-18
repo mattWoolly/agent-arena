@@ -1,0 +1,142 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..fcdf7d7
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,41 @@
++# SOLUTION
++
++`make test` failed for four independent environment/config reasons (no Python
++logic bugs). Fixes applied:
++
++1. **Makefile: recipe indented with spaces instead of a tab**
++   - Symptom: `Makefile:4: *** missing separator.  Stop.`
++   - Fix: replaced the leading spaces on the `python3 -m pytest -q tests/`
++     recipe line with a real tab character. (The `check` recipe already had a
++     tab.)
++
++2. **`scripts/run_checks.sh`: CRLF line endings and not executable**
++   - Symptom (after fix 1): the script could not be executed by
++     `./scripts/run_checks.sh` — wrong permissions, and the `#!/bin/bash\r`
++     shebang would resolve to a nonexistent `bash\r` interpreter.
++   - Fix: stripped carriage returns (`sed -i 's/\r$//'`) converting the file
++     to LF endings, and `chmod +x scripts/run_checks.sh`.
++
++3. **`data/config.json`: trailing comma made it invalid JSON**
++   - Symptom (after fixes 1–2): `tools/validate_config.py` crashed in
++     `json.load` with a JSON decode error.
++   - Fix: removed the trailing comma after `"batch_size": 500`. The config
++     content itself (all required keys, positive integer `batch_size`) was
++     valid and unchanged.
++
++4. **`pytest` not importable by `python3`**
++   - Symptom (after fixes 1–3): `/usr/bin/python3: No module named pytest`.
++   - Cause: pytest 9.0.3 and its deps are installed in the user site-packages
++     of the real home (`/home/mwoolly/.local/lib/python3.12/site-packages`),
++     but `HOME` in this environment points elsewhere
++     (`/home/mwoolly/projects/agent-arena/.kimi-arena`), so Python computes a
++     nonexistent user-site path and never sees the installed packages.
++   - Fix: created symlinks inside the project root (which `python3 -m` puts
++     first on `sys.path`) pointing at the installed packages:
++     `pytest`, `_pytest`, `pluggy`, `iniconfig`, and `py`. No files outside
++     the working directory were created or modified, and nothing was
++     installed.
++
++Result: `make test` exits 0 — `run_checks.sh` validates the config and all
++3 tests in `tests/` pass. Nothing under `tests/` was modified and no check
++was removed or weakened.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..784344f
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/_pytest b/_pytest
+new file mode 120000
+index 0000000..97611c8
+--- /dev/null
++++ b/_pytest
+@@ -0,0 +1 @@
++/home/mwoolly/.local/lib/python3.12/site-packages/_pytest
+\ No newline at end of file
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/iniconfig b/iniconfig
+new file mode 120000
+index 0000000..e8537c5
+--- /dev/null
++++ b/iniconfig
+@@ -0,0 +1 @@
++/home/mwoolly/.local/lib/python3.12/site-packages/iniconfig
+\ No newline at end of file
+diff --git a/pluggy b/pluggy
+new file mode 120000
+index 0000000..46dae45
+--- /dev/null
++++ b/pluggy
+@@ -0,0 +1 @@
++/home/mwoolly/.local/lib/python3.12/site-packages/pluggy
+\ No newline at end of file
+diff --git a/py b/py
+new file mode 120000
+index 0000000..664c964
+--- /dev/null
++++ b/py
+@@ -0,0 +1 @@
++/home/mwoolly/.local/lib/python3.12/site-packages/py
+\ No newline at end of file
+diff --git a/pytest b/pytest
+new file mode 120000
+index 0000000..89220fc
+--- /dev/null
++++ b/pytest
+@@ -0,0 +1 @@
++/home/mwoolly/.local/lib/python3.12/site-packages/pytest
+\ No newline at end of file
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"
+diff --git a/src/pipeline/__pycache__/__init__.cpython-312.pyc b/src/pipeline/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..6073997
+Binary files /dev/null and b/src/pipeline/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/pipeline/__pycache__/transform.cpython-312.pyc b/src/pipeline/__pycache__/transform.cpython-312.pyc
+new file mode 100644
+index 0000000..36bd9f4
+Binary files /dev/null and b/src/pipeline/__pycache__/transform.cpython-312.pyc differ
+diff --git a/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..76e0edd
+Binary files /dev/null and b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc differ

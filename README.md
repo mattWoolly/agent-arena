@@ -137,6 +137,14 @@ hook covers the key. Codex "turns" are whole prompt→completion cycles, so
 compare effort across drivers on tool calls, tokens, wall, and cost, not
 turn counts.
 
+`bin/run-task-kimi.sh` does the same for Kimi Code (`kimi -p`, stream-json;
+prompt mode auto-approves), labeling cells `kimi-k3-kimicode`. It runs with
+`HOME` pointed at the isolated `.kimi-arena/` (gitignored), whose config
+uses the metered Moonshot platform API key rather than the user's
+device-code login. Per-turn usage is taken from the session's `wire.jsonl`
+(copied into the run dir) and priced by `bin/metrics_kimi.py` from
+`env/prices.json`.
+
 ## Rubric judging (depth qualities)
 
 Deterministic graders decide pass/fail; some qualities they can't price

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically links two defects: the bare except swallows the failure while 'the ID was already appended to `seen`' (line 24's dedupe), so the failed user is never retried or reported."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a mechanism, e.g. floor division 'drops the final partial page, so 250 staged rows fetch only 200' and NULL emails 'raises AttributeError ... aborting report generation mid-file.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically links two defects\u2014the bare except swallowing failures and the seen-append at line 24\u2014so 'the failed user is never retried or reported.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a failure mechanism, e.g. floor division 'drops the final partial page, so 250 staged rows fetch only 200' and NULL email 'raises AttributeError...aborting report generation mid-file.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically links the swallowed exception to the :24 dedupe state \u2014 'since the ID was already appended to `seen` the failed user is never retried or reported' \u2014 a real compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division 'drops the final partial page, so 250 staged rows fetch only 200' and NULL emails raise 'AttributeError ... aborting report generation mid-file'."
+      }
+    }
+  ]
+}

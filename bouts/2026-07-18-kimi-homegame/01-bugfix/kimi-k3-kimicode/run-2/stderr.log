@@ -1,0 +1,113 @@
+/usr/bin/python3: No module named pytest
+conftest.py
+lrucache
+README.md
+tests
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+# lrucache
+
+A tiny LRU cache with optional TTL. Run tests with `python3 -m pytest -q`.
+/usr/bin/python3
+/usr/bin/pip3
+Python 3.12.3
+/usr/bin/python3
+/usr/bin/python3.12
+/usr/bin/python3.12-config
+/usr/bin/python3-config
+/usr/bin/python-dotenv
+Package                 Version
+----------------------- ---------------
+appdirs                 1.4.4
+attrs                   23.2.0
+audioread               3.0.1
+Babel                   2.10.3
+bcc                     0.29.1
+beautifulsoup4          4.12.3
+blinker                 1.7.0
+bottle                  0.12.25
+Brlapi                  0.8.5
+Brotli                  1.1.0
+certifi                 2023.11.17
+chardet                 5.2.0
+charset-normalizer      3.3.2
+click                   8.1.6
+cloud-init              26.1
+colorama                0.4.6
+command-not-found       0.3
+configobj               5.0.8
+contourpy               1.0.7
+cryptography            41.0.7
+cssselect               1.2.0
+cupshelpers             1.0
+cycler                  0.11.0
+dbus-python             1.3.2
+decorator               5.1.1
+defer                   1.0.6
+defusedxml              0.7.1
+distro                  1.9.0
+.
+F
+F
+.
+.
+.
+                                                                   [100%]
+
+=================================== FAILURES ===================================
+__________________________ test_get_refreshes_recency __________________________
+
+    def test_get_refreshes_recency():
+        c = LRUCache(2)
+        c.put("a", 1)
+        c.put("b", 2)
+        assert c.get("a") == 1  # "a" is now most recently used
+        c.put("c", 3)  # must evict "b", the least recently used
+>       assert c.get("a") == 1
+E       AssertionError: assert None == 1
+E        +  where None = get('a')
+E        +    where get = <lrucache.cache.LRUCache object at 0x703279ca6360>.get
+
+tests/test_cache.py:29: AssertionError
+_______________ test_updating_existing_key_does_not_evict_others _______________
+
+    def test_updating_existing_key_does_not_evict_others():
+        c = LRUCache(2)
+        c.put("x", 1)
+        c.put("y", 2)
+        c.put("y", 3)  # update in place; "x" must survive
+>       assert c.get("x") == 1
+E       AssertionError: assert None == 1
+E        +  where None = get('x')
+E        +    where get = <lrucache.cache.LRUCache object at 0x703279ca6210>.get
+
+tests/test_cache.py:39: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_cache.py::test_get_refreshes_recency - AssertionError: asse...
+FAILED tests/test_cache.py::test_updating_existing_key_does_not_evict_others
+2 failed, 4 passed in 0.04s
+.
+.
+.
+.
+.
+.
+                                                                   [100%]
+
+6 passed in 0.01s
+note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
+hint: See PEP 668 for the detailed specification.
+/usr/bin/python3: No module named pytest
+.
+.
+.
+.
+.
+.
+                                                                   [100%]
+
+6 passed in 0.01s
+ lrucache/cache.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)

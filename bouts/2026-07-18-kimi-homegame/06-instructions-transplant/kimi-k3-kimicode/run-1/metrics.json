@@ -1,0 +1,35 @@
+{
+  "model": "kimi-k3-kimicode",
+  "wall_seconds": 311.8,
+  "agent_exit": 0,
+  "final_message": "Done. Both deliverables are written and verified.\n\n**Files produced**\n- `REPORT.md` \u2014 153 words (\u2264250), exactly four H2 headings at `REPORT.md:1,5,9,13`, exactly three `- ` bullets at `REPORT.md:15\u201317` (16/15/15 words each, \u226425), zero banned words, and the revenue formatted as `$7,154.44` at `REPORT.md:3`.\n- `summary.json` \u2014 exactly five keys: `total_revenue` 7154.44 (`summary.json:2`), `orders` 30 (`:3`), `median_order_value` 204.95 (`:4`), `top_product_by_revenue` \"Gadget\" (`:5`), `revenue_by_region` with all four regions (`:6\u201310`).\n\n**Key numbers** (computed from `data/sales.csv:2\u201331`, the 30 data rows under the header at `:1`; computed with Decimal arithmetic and cross-checked by an independent `awk` pass \u2014 both agreed to the cent)\n- Total revenue $7,154.44; average order $238.48; median $204.95.\n- Gadget leads product revenue at $2,392.00 (33.4% of total), 12.9% ahead of Widget's $2,118.94 (29.6%), despite selling only 16 units vs Widget's 106.\n- North leads regions at $2,176.35 (30.4%); West trails at $1,414.82 (19.8%) \u2014 35.0% below North, i.e. North exceeds West by 53.8%.\n\n**Edge cases handled**\n- *Even-count median*: 30 orders \u2192 mean of the 15th/16th sorted values ($190.00, $219.89) = $204.945, an exact half-cent. I used `ROUND_HALF_UP` on Decimal \u2192 204.95; Python's built-in `round()` would have banker's-rounded to 204.94.\n- *\"Top product\" ambiguity*: by revenue it's Gadget, but by units it's Sprocket (238 of 377 total units, 63.1%) \u2014 the spec says revenue, so Gadget.\n- *Bullet grounding*: West is last in only 3 of 4 product lines (South is last in Doohickey at $89.00), so the bullet says \"three of four,\" not \"every.\"\n\n**Compound effect worth noting**: Sprocket's 63.1% unit share with a $4.75 price yields just 15.8% of revenue, while Gadget's 4.2% unit share yields 33.4% \u2014 volume and revenue rankings are inverted, so a units-based strategy would misallocate effort. West's shortfall compounds similarly: it's not one weak product but last place in three product lines simultaneously, which is why the recommendation targets the region as a whole rather than a single SKU.",
+  "num_turns": 13,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Read": 3,
+    "Write": 2,
+    "Bash": 6,
+    "Edit": 2
+  },
+  "tool_calls_total": 13,
+  "input_tokens": 340481,
+  "cache_read_tokens": 326912,
+  "output_tokens": 8379,
+  "total_cost_usd": 0.26447,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 13 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=.kimi-arena)",
+    "effort": "max (kimi-code default for k3)",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-18T02:15:12Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

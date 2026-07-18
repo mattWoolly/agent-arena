@@ -1,0 +1,25 @@
+/usr/bin/python3: No module named pytest
+/usr/bin/python3
+/bin/python3
+/home/mwoolly/.local/bin/pytest
+/home/mwoolly/.local/bin/pytest
+/home/mwoolly/.local/bin/pytest
+conftest.py
+reportgen
+tests
+/usr/bin/python3 3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]
+Traceback (most recent call last):
+  File "/home/mwoolly/.local/bin/pytest", line 5, in <module>
+    from pytest import console_main
+ModuleNotFoundError: No module named 'pytest'
+#!/usr/bin/python3
+.
+.
+.
+.
+                                                                     [100%]
+
+4 passed in 0.03s
+ValueError: Unknown config key: 'bogus'
+defaults: Config(title='Report', output_format='text', max_rows=10, include_summary=True)
+frozen ok

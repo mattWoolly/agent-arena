@@ -1,0 +1,34 @@
+{
+  "model": "kimi-k3-kimicode",
+  "wall_seconds": 196.6,
+  "agent_exit": 0,
+  "final_message": "All five functions are implemented in `problems.py`, with signatures and docstrings unchanged, stdlib only (`re`, `collections`):\n\n- `parse_duration` \u2014 `re.fullmatch` with optional `([0-9]+)h/m/s` groups enforces ordering, no duplicates, no negatives/whitespace/garbage; rejects non-strings and the all-empty match with `ValueError`.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` on empty or any non-ASCII-digit char (never raises), standard right-to-left doubling checksum.\n- `flatten` \u2014 recursive walk into a fresh dict (input untouched); empty nested dicts emit nothing, lists kept as leaf values, custom `sep` honored.\n- `top_k_frequent` \u2014 `Counter` + sort by `(-count, word)`; `k <= 0` \u2192 `[]`, oversized `k` handled by slicing.\n- `rolling_max` \u2014 monotonic deque of indices, `ValueError` for `window <= 0`, `[]` for `window > len(nums)`.\n\nVerification: a throwaway check (run via stdin, no files left behind) covered every docstring example plus edge cases \u2014 invalid duration shapes, full-width digits for Luhn, input non-mutation for flatten, case-sensitive ties, and 3000 randomized brute-force comparisons for `rolling_max`. A 2M-element rolling window ran in 0.79s, confirming the O(n) requirement.",
+  "num_turns": 11,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Read": 2,
+    "Edit": 6,
+    "Bash": 2
+  },
+  "tool_calls_total": 10,
+  "input_tokens": 259292,
+  "cache_read_tokens": 241408,
+  "output_tokens": 5870,
+  "total_cost_usd": 0.21412,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 11 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=.kimi-arena)",
+    "effort": "max (kimi-code default for k3)",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-18T01:16:30Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 54 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

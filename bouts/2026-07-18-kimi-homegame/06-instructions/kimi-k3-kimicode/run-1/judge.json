@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every product and region carries a raw dollar figure (e.g. \"Gadget leads all products with $2,392.00, followed by Widget at $2,118.94\"), but no comparison is expressed as a computed gap, ratio, or percentage."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name a specific product or region and cite data, e.g. \"Revisit Sprocket pricing or bundling, because high unit volume still produces the lowest product revenue.\""
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "It surfaces one genuinely non-obvious observation\u2014Sprocket \"trailed at $1,130.50 despite selling the most units\"\u2014but the remaining points (West weakest, Gadget highest) merely restate the rankings the tables already imply."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons cite raw dollar totals ($2,392.00, $1,414.82) but never compute gaps, ratios, or percentages\u2014e.g., West 'trails every other region by a wide margin' with no figure for that margin."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure (Gadget at $2,392.00, West's low sales, Sprocket pricing/bundling given its unit-volume-vs-revenue mismatch)."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations, notably that Sprocket 'sold the most units' yet has 'the lowest product revenue' and that West trails despite regional parity elsewhere."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every ranking carries a raw dollar total ($2,392.00, $1,414.82) but no comparison is expressed as a computed percentage, ratio, or gap (e.g., West \"trails every other region by a wide margin\" is unquantified)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with a figure and action, e.g., \"Revisit Sprocket pricing or bundling, because high unit volume still produces the lowest product revenue.\""
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "It surfaces one genuine non-obvious observation\u2014Sprocket \"trailed at $1,130.50 despite selling the most units\"\u2014while the rest largely restates totals the tables imply."
+      }
+    }
+  ]
+}

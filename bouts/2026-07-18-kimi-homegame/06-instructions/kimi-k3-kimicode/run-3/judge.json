@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 '63.1% of all units', 'roughly 35% below the North', plus explicit revenue/unit figures for each product and region."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product, region, and figure (e.g. 'Push Gadget in the West, where its single order earned $299.00' and 'Review Sprocket's $4.75 price')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations, notably that Sprocket 'drives 63.1% of units but the lowest product revenue' and Gadget's high revenue 'from only 16 units sold'."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. \"Sprocket moved 238 units, 63.1% of all units, yet earned just $1,130.50\" and \"West trails at $1,414.82, roughly 35% below the North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product, region, and figure, e.g. \"Push Gadget in the West, where its single order earned $299.00\" and \"Review Sprocket's $4.75 price.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations such as the price/volume inversion (\"Sprocket... drives 63.1% of units but the lowest product revenue\") and Gadget's high revenue from only 16 units."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. 'Sprocket moved 238 units, 63.1% of all units, yet earned just $1,130.50' and 'West trails at $1,414.82, roughly 35% below the North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures \u2014 e.g. 'Push Gadget in the West, where its single order earned $299.00' and 'Review Sprocket's $4.75 price.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations like the volume/revenue inversion ('drives 63.1% of units but the lowest product revenue') and the regional revenue gap to close."
+      }
+    }
+  ]
+}

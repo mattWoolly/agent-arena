@@ -1,0 +1,35 @@
+{
+  "model": "kimi-k3-kimicode",
+  "wall_seconds": 105.8,
+  "agent_exit": 0,
+  "final_message": "Done. All 6 tests pass.\n\nTwo bugs in `lrucache/cache.py`, both one-line fixes:\n\n1. **`get` didn't refresh recency** (`lrucache/cache.py:31`) \u2014 the docstring says `get` counts as a \"use\", but it never moved the key, so a just-read entry could be evicted. Added `self._data.move_to_end(key)` on a successful get.\n2. **`put` evicted on updates** (`lrucache/cache.py:34`) \u2014 the capacity check ran even when the key already existed, evicting an innocent entry. Guarded it with `key not in self._data`.\n\nNotes:\n- `tests/` untouched; no commits made.\n- System `python3` has no pytest and is PEP 668 externally-managed, so I created `.venv/` in the working directory and installed pytest there \u2014 run tests with `.venv/bin/python -m pytest -q`.\n- `SOLUTION.md` written with the root-cause summary.",
+  "num_turns": 9,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Read": 2,
+    "Bash": 6,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 10,
+  "input_tokens": 207008,
+  "cache_read_tokens": 192512,
+  "output_tokens": 2246,
+  "total_cost_usd": 0.13493,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 9 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=.kimi-arena)",
+    "effort": "max (kimi-code default for k3)",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-18T01:12:49Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1966 files changed, 369431 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

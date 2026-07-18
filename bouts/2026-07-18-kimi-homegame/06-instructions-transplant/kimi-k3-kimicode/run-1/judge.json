@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget's \"$2,392.00 (33.4% of total) from just 16 units\" and West \"trails at $1,414.82 (19.8%), 35.0% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product, region, and figure, e.g. \"Push Gadget in the West, where its revenue is only $299.00 versus $747.50 in North.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Sprocket selling the most units (238) yet yielding only 15.8% of revenue and West being \"last in three of four product lines.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget's '33.4% of total', Sprocket's '$4.75 unit price', and West being '35.0% below North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product, region, and figure, e.g. 'Push Gadget in the West, where its revenue is only $299.00 versus $747.50 in North.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations surface, e.g. Gadget's revenue lead 'from just 16 units' versus Sprocket's 238 units yielding only 15.8%, and West being 'last in three of four product lines.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"West trails at $1,414.82 (19.8%), 35.0% below North\" and \"Gadget leads revenue at $2,392.00 (33.4% of total) from just 16 units.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product, region, and figures, e.g. \"Push Gadget in the West, where its revenue is only $299.00 versus $747.50 in North.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like Sprocket's high units/low revenue inversion and \"West: last overall at $1,414.82 and last in three of four product lines.\""
+      }
+    }
+  ]
+}

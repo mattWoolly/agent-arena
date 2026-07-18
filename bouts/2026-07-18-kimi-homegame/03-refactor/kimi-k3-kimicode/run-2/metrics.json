@@ -1,0 +1,36 @@
+{
+  "model": "kimi-k3-kimicode",
+  "wall_seconds": 126.1,
+  "agent_exit": 0,
+  "final_message": "Done. All requirements verified:\n\n**Changes**\n- `reportgen/config.py` \u2014 replaced the `DEFAULTS` dict with a frozen `@dataclass Config` (`title=\"Report\"`, `output_format=\"text\"`, `max_rows=10`, `include_summary=True`). `load_config(path)` now returns a `Config` built via `Config(**raw)` after validating keys; an unknown key raises `ValueError: Unknown config key: 'bogus'`.\n- `reportgen/loader.py:9` \u2014 `config[\"max_rows\"]` \u2192 `config.max_rows`.\n- `reportgen/formatter.py` \u2014 all four subscripts (`output_format`, `title` \u00d73, `include_summary`) switched to attribute access.\n- `reportgen/main.py` and `__init__.py` \u2014 unchanged; they already treated config as opaque.\n- `tests/` \u2014 untouched.\n\n**Verification**\n- Grep confirms no `config[`/`cfg[` subscripting remains in `reportgen/`.\n- `4 passed` on the unmodified test suite.\n- Manually confirmed: unknown JSON key raises `ValueError` naming the key, defaults match the old dict, and the dataclass is frozen (assignment raises `FrozenInstanceError`).\n\nOne note: system `python3` had no pytest installed, so I created `.venv/` inside the working directory and ran the tests with `.venv/bin/python -m pytest -q`. Delete `.venv` if you don't want it kept. No git commits were made.",
+  "num_turns": 12,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Read": 7,
+    "Write": 1,
+    "Edit": 4,
+    "Grep": 1,
+    "Bash": 5
+  },
+  "tool_calls_total": 18,
+  "input_tokens": 274620,
+  "cache_read_tokens": 260352,
+  "output_tokens": 2676,
+  "total_cost_usd": 0.16105,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 12 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=.kimi-arena)",
+    "effort": "max (kimi-code default for k3)",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-18T01:27:07Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1970 files changed, 369433 insertions(+), 16 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

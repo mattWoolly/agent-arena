@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The bare-except finding gestures at interaction (\"hiding failures while the partial work is still committed\") and :31 notes failed users are \"never retried,\" but no compound mechanism combining the swallowed exception with the premature seen-append is spelled out across the separate findings."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the mechanism, e.g. \"floor division, so the final partial page is never fetched\" and \"mutable default argument shared across all calls, so IDs synced in a previous call are wrongly skipped.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is described in isolation with no combined failure mode stated\u2014e.g. the swallowed errors at :38 and the premature \"seen\" append at :31 are never linked into a compound mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. \"floor division, so the final partial page is never fetched\" and \"appended to `seen` before the sync attempt, so a user whose sync fails is permanently marked as already-synced.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line citation (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation; no finding references another or explains a compound failure mode (e.g. the premature `seen` append at :31 combined with the error-swallowing `except` at :38 is never connected)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"floor division, so the final partial page is never fetched\" and \"mutable default argument shared across all calls, so IDs synced in a previous call are wrongly skipped.\""
+      }
+    }
+  ]
+}

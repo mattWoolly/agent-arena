@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Findings are listed independently and no compound failure mode combining two distinct defects is explained\u2014the :39 note about the report only describes that finding's own downstream consequence, not a mechanism arising from another defect's state."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism or breaking condition, e.g. mutable default 'seen=[]' is 'shared across all calls...so users synced in one run are wrongly skipped' and email '.split(\"@\")[1] crashes with AttributeError when email is None...and with IndexError for any address lacking \"@\"'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation; even the :39 error-swallowing note only vaguely says the 'report can no longer reflect' failures without mechanistically linking it to the report.py defects."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. `seen=[]` 'is shared across all calls' causing wrongly skipped duplicates, and email None 'crashes with AttributeError.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:7', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The sync.py:39 finding gestures at an interaction \u2014 swallowed errors mean 'the failure count/report can no longer reflect them' \u2014 but never mechanistically links it to a specific second defect as a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'Mutable default argument seen=[] is shared across all calls... so users synced in one run are wrongly skipped as \"duplicates\"'."
+      }
+    }
+  ]
+}

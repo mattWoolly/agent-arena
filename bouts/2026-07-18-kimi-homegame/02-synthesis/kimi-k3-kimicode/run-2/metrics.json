@@ -1,0 +1,34 @@
+{
+  "model": "kimi-k3-kimicode",
+  "wall_seconds": 135.8,
+  "agent_exit": 0,
+  "final_message": "All five functions are implemented in `problems.py` and verified against the docstring examples, edge cases, and a brute-force cross-check:\n\n- `parse_duration` \u2014 `re.fullmatch` with optional `h`/`m`/`s` groups in fixed order; rejects duplicates, out-of-order units, missing numbers, negatives, whitespace, and trailing garbage with `ValueError`.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` on empty or non-digit input, then runs the standard doubling checksum; never raises.\n- `flatten` \u2014 recursive walk joining keys with `sep`; empty nested dicts vanish, non-dict values (lists included) pass through, input untouched.\n- `top_k_frequent` \u2014 `Counter` sorted by `(-count, word)`; returns `[]` for `k <= 0` and all distinct words when `k` overshoots.\n- `rolling_max` \u2014 monotonic deque of indices, O(n); raises `ValueError` for `window <= 0`, returns `[]` when `window > len(nums)`.\n\n`rolling_max` processed 2M elements with window 1000 in 0.73s. Signatures and docstrings are unchanged, stdlib only, no new files.",
+  "num_turns": 10,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Read": 1,
+    "Edit": 6,
+    "Bash": 2
+  },
+  "tool_calls_total": 9,
+  "input_tokens": 224370,
+  "cache_read_tokens": 208640,
+  "output_tokens": 4774,
+  "total_cost_usd": 0.18139,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 10 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=.kimi-arena)",
+    "effort": "max (kimi-code default for k3)",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-18T01:19:48Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 54 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

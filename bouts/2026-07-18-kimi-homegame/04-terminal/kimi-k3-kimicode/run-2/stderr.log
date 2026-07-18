@@ -1,0 +1,135 @@
+Makefile:4: *** missing separator.  Stop.
+.PHONY: test check$
+$
+test: check$
+    python3 -m pytest -q tests/$
+$
+check:$
+^I./scripts/run_checks.sh$
+scripts/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul 17 19:40 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 17 19:40 ..
+-rw-rw-r-- 1 mwoolly mwoolly   98 Jul 17 19:40 run_checks.sh
+
+src/pipeline/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:41 .
+drwxrwxr-x 3 mwoolly mwoolly 4096 Jul  6 19:40 ..
+-rw-rw-r-- 1 mwoolly mwoolly    0 Jul  6 19:40 __init__.py
+-rw-rw-r-- 1 mwoolly mwoolly  661 Jul  6 19:41 transform.py
+
+tests/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:41 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 17 19:40 ..
+-rw-rw-r-- 1 mwoolly mwoolly  516 Jul  6 19:41 test_transform.py
+./scripts/run_checks.sh
+make: ./scripts/run_checks.sh: No such file or directory
+make: *** [Makefile:7: check] Error 127
+#!/bin/bash^M$
+set -e^M$
+python3 tools/validate_config.py data/config.json^M$
+echo "all checks passed"^M$
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+/usr/bin/python3: No module named pytest
+make: *** [Makefile:4: test] Error 1
+/usr/bin/python3
+/bin/python3
+/home/mwoolly/.local/bin/pytest
+/home/mwoolly/.local/bin/pytest
+/home/mwoolly/.local/bin/pytest
+/usr/bin/python3
+/usr/bin/python3.12
+/usr/bin/python3.12-config
+/usr/bin/python3-config
+/usr/bin/python-dotenv
+Python 3.12.3
+pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12)
+#!/usr/bin/python3
+python3.12
+audio_auto_chop-0.1.0.dist-info
+cffi
+cffi-2.0.0.dist-info
+_cffi_backend.cpython-312-x86_64-linux-gnu.so
+clang_format
+clang_format-22.1.3.dist-info
+__editable__.audio_auto_chop-0.1.0.pth
+_editable_impl_musa.pth
+iniconfig
+iniconfig-2.3.0.dist-info
+joblib
+joblib-1.5.3.dist-info
+lazy_loader
+lazy_loader-0.5.dist-info
+librosa
+librosa-0.11.0.dist-info
+llvmlite
+llvmlite-0.47.0.dist-info
+musa-0.1.0.dist-info
+ninja
+/home/mwoolly/projects/agent-arena/.kimi-arena/.local/lib/python3.12/site-packages
+True
+['/usr/local/lib/python3.12/dist-packages']
+NoDefaultCurrentDirectoryInExePath=1
+WINDOWPATH=2
+REMOTE_ALBUM_PATH=files/RED_UPLOADS
+REMOTE_TORRENT_PATH=watch/RED_UPLOADS
+CLAUDE_CODE_EXECPATH=/home/mwoolly/.local/share/claude/versions/2.1.212
+PATH=/home/mwoolly/.local/bin:/home/mwoolly/bin:/home/mwoolly/.local/share/pnpm/bin:/home/mwoolly/.opencode/bin:/home/mwoolly/.npm-global/bin:/home/mwoolly/.local/bin:/home/mwoolly/.local/bin:/home/mwoolly/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+HOME=/home/mwoolly/projects/agent-arena/.kimi-arena
+pluggy
+pluggy-1.6.0.dist-info
+_pytest
+pytest
+pytest-9.0.3.dist-info
+pytest_forked
+pytest_forked-1.6.0.dist-info
+pytest_mock
+pytest_mock-3.15.1.dist-info
+pytest 9.0.3
+Traceback (most recent call last):
+  File "/home/mwoolly/.local/bin/pytest", line 5, in <module>
+    from pytest import console_main
+On branch master
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   Makefile
+	modified:   data/config.json
+	modified:   scripts/run_checks.sh
+
+no changes added to commit (use "git add" and/or "git commit -a")
+13c372d baseline
+error: externally-managed-environment
+
+× This environment is externally managed
+╰─> To install Python packages system-wide, try apt install
+    python3-xyz, where xyz is the package you are trying to
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+PYTHONPATH=/home/mwoolly/.local/lib/python3.12/site-packages python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s
+exit=0
+exit=0

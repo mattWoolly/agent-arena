@@ -1,0 +1,5 @@
+Adjudicated false positive. Every flagged match is the agent's own
+HOME-derived tooling path (.kimi-arena/.local USER_BASE/USER_SITE, printed
+by python/pip because the isolated HOME sits inside the arena repo). No
+grader asset, hidden test, or task solution was referenced. Design note:
+future isolated driver homes belong outside the repo tree.

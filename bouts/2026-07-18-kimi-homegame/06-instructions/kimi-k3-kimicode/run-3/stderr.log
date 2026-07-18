@@ -1,0 +1,22 @@
+total: 7154.44
+orders: 30
+median: 204.94
+avg order: 238.48
+top product: Gadget 2392.0
+product revenue: {'Gadget': 2392.0, 'Widget': 2118.94, 'Doohickey': 1513.0, 'Sprocket': 1130.5}
+product units: {'Sprocket': 238, 'Widget': 106, 'Doohickey': 17, 'Gadget': 16}
+region revenue: {'North': 2176.35, 'East': 1830.79, 'South': 1732.48, 'West': 1414.82}
+sprocket unit share: 63.1 %
+widget rev share: 29.6 %
+word count: 156 (<=250: True )
+all headings: ['## Overview', '## Top Products', '## Regional Performance', '## Recommendations']
+exactly 4 H2 in order: True
+no other heading levels: True
+revenue format present: True
+orders stated: True
+bullets: 3 each <=25 words: [20, 17, 20]
+banned words found: []
+bullets outside Recommendations: []
+json keys: ['total_revenue', 'orders', 'median_order_value', 'top_product_by_revenue', 'revenue_by_region']
+types ok: True True True True True
+values: {'total_revenue': 7154.44, 'orders': 30, 'median_order_value': 204.94, 'top_product_by_revenue': 'Gadget', 'revenue_by_region': {'North': 2176.35, 'East': 1830.79, 'South': 1732.48, 'West': 1414.82}}

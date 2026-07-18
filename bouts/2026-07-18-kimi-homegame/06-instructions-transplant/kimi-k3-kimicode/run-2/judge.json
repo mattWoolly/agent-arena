@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. mean is '16.37% above the $204.94 median' and North is '53.83% above last-place West'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products/regions with figures, e.g. 'Bundle or reprice Sprocket: 238 units return only 15.80% of revenue at the lowest unit price, $4.75.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear \u2014 revenue concentration (Gadget's 33.43% from just 7 orders), the mean-median skew, and the Sprocket outlier of high units/low revenue."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure\u2014e.g., 'North leads at $2,176.35 (30.42%), 53.83% above last-place West' and 'average order... 16.37% above the $204.94 median'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures, e.g., 'Bundle or reprice Sprocket: 238 units return only 15.80% of revenue at the lowest unit price, $4.75.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable, non-obvious observations like mean-median skew, Gadget's concentration ('33.43% of revenue, from just 7 orders'), and Sprocket's high-units/low-revenue paradox."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure\u2014e.g., \"average order is worth $238.48, 16.37% above the $204.94 median\" and \"North...53.83% above last-place West.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with data\u2014e.g., \"Bundle or reprice Sprocket: 238 units return only 15.80% of revenue at the lowest unit price, $4.75.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable non-obvious observations, including mean-median skew, Gadget's best per-order yield ($341.71), and Sprocket's high units but lowest revenue share."
+      }
+    }
+  ]
+}
