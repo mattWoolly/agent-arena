@@ -30,6 +30,10 @@ bouts/
                      # transcript.jsonl, result.json, workspace.diff, grade.txt,
                      # metrics.json, run_env.json, peek_check, workspace/
                      # (workspace/ is local-only and untracked, except findings.md)
+analysis/
+  <date>-<name>/     # pre-registered reanalyses of published bout artifacts:
+                     # DESIGN.md (committed before results), the analysis
+                     # script, and its outputs; no new runs, bouts stay immutable
 ```
 
 Each task directory contains:
