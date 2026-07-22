@@ -1,0 +1,11 @@
+{
+  "cli_version": "2.1.214 (Claude Code)",
+  "base_url": "https://api.z.ai/api/anthropic",
+  "proxy_upstream": "none",
+  "model_env": "env/glm-5.2.env",
+  "effort": "xhigh",
+  "setting_sources": "project",
+  "max_turns": 60,
+  "timeout_s": 1500,
+  "started_at": "2026-07-22T12:29:34Z"
+}

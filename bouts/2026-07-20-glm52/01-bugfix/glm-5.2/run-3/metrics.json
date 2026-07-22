@@ -1,0 +1,40 @@
+{
+  "model": "glm-5.2",
+  "wall_seconds": 65.6,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.08285,
+  "num_turns": 9,
+  "duration_ms": 64720,
+  "duration_api_ms": 65518,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8099,
+  "output_tokens": 2842,
+  "cache_read_tokens": 229824,
+  "final_message": "Done. Both bugs are fixed and the full suite passes (`6 passed`).\n\n**Root causes:**\n1. **`get` didn't refresh recency** \u2014 the docstring states that both `get` and `put` count as a \"use\", but `get` never reordered the `OrderedDict`. So reading a key left it at its old (LRU) position, and the next `put` could evict the just-read entry. Fixed by adding `move_to_end(key)` in `get`.\n2. **`put` evicted on every capacity-full call, even updates** \u2014 the eviction check ran before checking key existence, so updating an existing key (`put(\"y\", 3)` when `\"y\"` is present) wrongly evicted another entry. Fixed by evicting only when inserting a *new* key while at capacity.\n\n`SOLUTION.md` documents both, and I made no changes under `tests/`.",
+  "total_cost_usd_cli": 0.22645700000000002,
+  "cost_source": "computed:env/prices.json (aggregate)",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.2.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-22T12:10:27Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 19 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

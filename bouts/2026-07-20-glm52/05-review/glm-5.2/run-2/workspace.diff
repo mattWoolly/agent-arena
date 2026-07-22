@@ -1,0 +1,11 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..6c21842
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,5 @@
++- src/sync.py:14 Pagination uses range(total_count // PAGE_SIZE), so the last partial page is never fetched and any total_count below PAGE_SIZE yields zero users.
++- src/sync.py:24 The mutable default seen=[] persists across calls, so user ids synced in earlier calls are wrongly skipped as duplicates in every later call.
++- src/sync.py:35 Email and id are interpolated into the SQL via f-string instead of parameters, reintroducing SQL injection and breaking on emails containing an apostrophe.
++- src/report.py:7 When users is empty the function returns immediately after open(path, "w") without closing f, leaking the file handle.
++- src/report.py:11 user["email"].lower().split("@")[1] raises AttributeError when email is None (nullable per schema) and IndexError for empty or @-less emails, where the original handled None.

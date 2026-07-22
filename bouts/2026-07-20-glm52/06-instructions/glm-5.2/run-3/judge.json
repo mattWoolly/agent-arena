@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 1
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Some comparisons carry computed figures (\"about 35% below North\", top two \"over 60% of total revenue\") but the product section relies on bare rankings with raw dollar amounts (\"led with $2,392.00, followed by Widget\") without computed gaps."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name products/regions and one cites a figure, but the actions stay generic (\"Investigate the West region... apply lessons from the stronger North results\") rather than being fully actionable as written."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations surface, including revenue concentration (\"together produced over 60% of total revenue\"), the price-vs-volume driver (\"Gadget's high unit price drove its lead despite lower unit counts\"), and the regional gap."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Some comparisons are computed (West \"about 35% below North\", Gadget+Widget \"over 60% of total revenue\") but product comparisons are bare rankings with raw dollar totals rather than gaps or ratios."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name products/regions but actions are often generic (\"Investigate the West region... apply lessons\", \"Review pricing for Sprocket... to see if volume growth can lift its contribution\") that would fit any sales report."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations: revenue concentration (\"together produced over 60% of total revenue\"), the West-North gap (\"about 35% below North\"), and the price-vs-volume insight (\"Gadget's high unit price drove its lead despite lower unit counts\")."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Some comparisons are computed (\"about 35% below North\", \"over 60% of total revenue\") but the product and regional rankings are carried by bare listed dollar figures like \"Gadget led with $2,392.00, followed by Widget at $2,118.94\" rather than gaps or ratios."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products/regions and cites data (\"Focus promotion on Gadget and Widget... over 60% of total revenue\", \"Investigate the West region, the lowest performer\", \"Review pricing for Sprocket, the lowest-revenue product\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear\u2014concentration (\"together produced over 60% of total revenue\"), an outlier driver (\"Gadget's high unit price drove its lead despite lower unit counts\"), and a quantified gap (\"West trailed... about 35% below North\")."
+      }
+    }
+  ]
+}

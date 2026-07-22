@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..75624d3
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 range(total_count // PAGE_SIZE) uses floor division, so the last partial page is never fetched and zero users are returned when total_count < PAGE_SIZE, silently dropping rows the old single-query fetch returned.
++- src/sync.py:24 the mutable default argument seen=[] is created once and shared across calls, so ids recorded in one sync persist into later sync_users calls and cause legitimately re-synced users to be skipped.
++- src/sync.py:35 the UPDATE is now built with an f-string interpolating email and id instead of the previous parameterized query, enabling SQL injection and turning legitimate emails containing an apostrophe (e.g. O'Brien) into a SQL syntax error.
++- src/sync.py:38 except Exception: pass silently swallows every sync failure, replacing the previous log.exception logging and hiding failed or lost updates.
++- src/report.py:7 the early return on empty users runs after open(path, "w") but before f.close(), leaking the file handle that the old with-block guaranteed to close.
++- src/report.py:11 user["email"].lower().split("@")[1] raises AttributeError when email is None and IndexError when an email has no "@", both cases the previous email-or-"unverified" fallback handled and which db.py documents as nullable.

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Some comparisons are computed (West is \"roughly 35% below the leader\" and top two \"drive over 60% of revenue\"), but most rely on bare rankings with raw dollar values (\"Gadget led all products\", \"North topped regions\", \"trailed\")."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products/regions with figures \u2014 \"Promote Gadget and Widget bundles, since they together drive over 60% of revenue\", \"Investigate the West region's underperformance\", and \"cross-selling higher-priced items like Doohickey\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations: revenue concentration (\"over 60% of revenue\" in two products), the regional gap (\"roughly 35% below the leader\"), and the two-product lead rather than just restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Some comparisons carry computed figures like West being \"roughly 35% below the leader\" and bundles driving \"over 60% of revenue,\" but the product comparisons are mostly bare rankings with raw dollars (\"Gadget led all products... ahead of Widget\") lacking computed gaps."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products, regions, and figures\u2014\"Promote Gadget and Widget bundles, since they together drive over 60% of revenue,\" \"Investigate the West region's underperformance,\" and cross-selling \"Doohickey.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple actionable, non-obvious observations including revenue concentration (\"over 60% of revenue\"), the regional gap (\"roughly 35% below the leader\"), and a cross-sell opportunity for higher-priced items."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Some comparisons carry computed figures (West \"roughly 35% below the leader\", \"over 60% of revenue\") but the product section relies on bare rankings with raw dollars (\"Gadget led\", Doohickey and Sprocket \"trailed\") rather than computed gaps."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "The Gadget/Widget bundle and Doohickey cross-sell recs are named and data-grounded, but \"target it with focused campaigns\" is generic advice lacking any specific figure or tactic."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple actionable, non-obvious observations\u2014the two-product concentration (\"together drive over 60% of revenue\") and the West region's ~35% gap\u2014beyond restating table totals."
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "model": "glm-5.2",
+  "wall_seconds": 86.3,
+  "agent_exit": 0,
+  "assistant_messages": 28,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 2
+  },
+  "tool_calls_total": 14,
+  "total_cost_usd": 0.0964,
+  "num_turns": 15,
+  "duration_ms": 85277,
+  "duration_api_ms": 87337,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 20108,
+  "output_tokens": 2647,
+  "cache_read_tokens": 218560,
+  "final_message": "The refactor is complete and verified. Summary of what changed:\n\n**`reportgen/config.py`** \u2014 replaced the `DEFAULTS` dict + plain dict with a frozen `Config` dataclass:\n```python\n@dataclass(frozen=True)\nclass Config:\n    title: str = \"Report\"\n    output_format: str = \"text\"  # \"text\" or \"markdown\"\n    max_rows: int = 10\n    include_summary: bool = True\n```\n`load_config` now returns a `Config`, rejects unknown keys with a `ValueError` naming them, and lets JSON values override the field defaults via `Config(**raw)`.\n\n**`reportgen/formatter.py`** and **`reportgen/loader.py`** \u2014 converted all config access from subscripting (`config[\"title\"]`, `config[\"max_rows\"]`, etc.) to attribute access (`config.title`, `config.max_rows`, ...).\n\nVerification:\n- `python3 -m pytest -q` \u2192 **4 passed** (tests untouched).\n- `grep` confirms **no `config[...]`/`cfg[...]` subscripts remain** in `reportgen/`.\n- Standalone check confirms an unknown key raises `ValueError: Unknown config key(s): bogus`, the return type is `Config`, and instances are frozen (mutation raises `FrozenInstanceError`).\n\nNothing under `tests/` was modified, no git commits created.",
+  "total_cost_usd_cli": 0.275995,
+  "cost_source": "computed:env/prices.json (aggregate)",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.2.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-22T12:21:48Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 27 insertions(+), 16 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

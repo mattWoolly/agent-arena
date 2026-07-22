@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Findings are listed independently; even the adjacent SQL-syntax-error (:35) and swallowed-exception (:38) defects are never connected into a stated compound failure mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'floor division, so the last partial page is never fetched' and 'mutable default argument seen=[] is created once and shared across calls.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation\u2014e.g. the apostrophe-induced 'SQL syntax error' (sync.py:35) and the 'except Exception: pass' that swallows failures (sync.py:38) are never connected into a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor division, so the last partial page is never fetched' and 'the mutable default argument seen=[] is created once and shared across calls.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding stands alone with no explanation of how two defects combine\u2014e.g. it never notes that the SQL syntax error from the f-string (line 35) would be swallowed by the bare 'except Exception: pass' (line 38)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor division, so the last partial page is never fetched' and 'mutable default argument seen=[] is created once and shared across calls.'"
+      }
+    }
+  ]
+}

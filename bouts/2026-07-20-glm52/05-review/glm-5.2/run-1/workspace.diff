@@ -1,0 +1,11 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..6f98330
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,5 @@
++- src/sync.py:14 Pagination loops `range(total_count // PAGE_SIZE)`, whose floor division drops the final partial page and returns zero users whenever `total_count < PAGE_SIZE`.
++- src/sync.py:24 Mutable default `seen=[]` is shared across calls, so IDs accumulated in one call cause legitimate users to be skipped in later calls (and the list grows without bound).
++- src/sync.py:35 Building the UPDATE via f-string instead of bound parameters reintroduces SQL injection and breaks any email containing an apostrophe (e.g. `O'Brien`).
++- src/report.py:5 `open(path, "w")` without a context manager leaks the file handle on the empty-users early return (line 7) and on any exception in the loop, since `f.close()` is skipped.
++- src/report.py:11 `user["email"].lower()` raises `AttributeError` when email is None, crashing on phone-invited users even though db.py documents `users.email` as NULLABLE (the original used `or "unverified"`).

@@ -1,0 +1,40 @@
+{
+  "model": "glm-5.2",
+  "wall_seconds": 86.4,
+  "agent_exit": 0,
+  "assistant_messages": 18,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.06197,
+  "num_turns": 9,
+  "duration_ms": 85424,
+  "duration_api_ms": 86516,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8623,
+  "output_tokens": 2596,
+  "cache_read_tokens": 150784,
+  "final_message": "All 6 tests pass. Here's a summary of what I did:\n\n## Bugs fixed in `lrucache/cache.py`\n\n**1. `get` didn't refresh recency** \u2014 The docstring says both `get` and `put` count as \"use\", but `get` returned the value without reordering the entry to most-recently-used. Added `self._data.move_to_end(key)` on a successful hit. This was why `test_get_refreshes_recency` failed: reading `\"a\"` didn't promote it, so the next `put` evicted `\"a\"` instead of the actual LRU entry `\"b\"`.\n\n**2. `put` evicted even when updating an existing key** \u2014 The eviction (`popitem`) ran unconditionally whenever the cache was at capacity, before checking whether the key already existed. So `put(\"y\", 3)` on an existing `\"y\"` evicted `\"x\"`. Gated eviction behind a `key not in self._data` check so only genuinely new inserts can trigger eviction.\n\nFinal result: `6 passed`. I wrote the explanation to `SOLUTION.md` and left `tests/` untouched.",
+  "total_cost_usd_cli": 0.183407,
+  "cost_source": "computed:env/prices.json (aggregate)",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.2.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-21T12:10:17Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 17 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

@@ -1,0 +1,40 @@
+{
+  "model": "glm-5.2",
+  "wall_seconds": 68.7,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.10748,
+  "num_turns": 9,
+  "duration_ms": 67779,
+  "duration_api_ms": 68806,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 32076,
+  "output_tokens": 2237,
+  "cache_read_tokens": 203648,
+  "final_message": "Done. All 6 tests pass, and `SOLUTION.md` documents the two root causes:\n\n1. **`get` didn't refresh recency** \u2014 added `move_to_end(key)` on a successful hit so reads count as a use (matching the docstring).\n2. **`put` on an existing key evicted an unrelated entry** \u2014 restructured `put` to handle the existing-key case first (update in place, no eviction), only evicting when inserting a genuinely new key.",
+  "total_cost_usd_cli": 0.318129,
+  "cost_source": "computed:env/prices.json (aggregate)",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.2.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-20T12:15:56Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 24 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

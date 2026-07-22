@@ -1,5 +1,11 @@
 {
   "_comment": "Per-model list prices in USD per 1M tokens, for models the Claude Code CLI cannot price (proxied/non-Anthropic). metrics.py recomputes total_cost_usd per API request from transcript usage when the model appears here; the CLI's figure is preserved as total_cost_usd_cli. Source for gpt-5.6-sol: OpenAI list pricing, July 2026 ($5/$30, cached reads $0.50, cache writes 1.25x, >272k-input requests billed 2x input / 1.5x output).",
+  "_comment_glm": "glm-5.2: Z.ai list pricing per docs.z.ai pricing page as of 2026-07-20 ($1.40/$4.40, cached reads $0.26, no cache-write charge, cache storage limited-time free).",
+  "glm-5.2": {
+    "input": 1.4,
+    "output": 4.4,
+    "cache_read": 0.26
+  },
   "kimi-k3": {
     "input": 3.0,
     "output": 15.0,

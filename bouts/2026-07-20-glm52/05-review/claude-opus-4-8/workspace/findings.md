@@ -1,0 +1,5 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` truncates, silently dropping the final partial page (e.g. total_count=150 fetches only 100 rows, total_count<100 fetches 0 rows).
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across all calls, so subsequent `sync_users` invocations wrongly skip user IDs seen in earlier calls, syncing nothing.
+- src/sync.py:35 Parameterized UPDATE replaced with f-string interpolation, introducing SQL injection and breaking on emails containing a single quote (e.g. `o'brien@x.com`).
+- src/report.py:6 File opened without a context manager leaks the file handle on the `if not users: return 0` early-return path (and on any write exception).
+- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is None (schema notes email is nullable) and IndexError for emails without an `@`.

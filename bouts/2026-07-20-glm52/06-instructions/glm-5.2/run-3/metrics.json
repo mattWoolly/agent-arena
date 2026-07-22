@@ -1,0 +1,39 @@
+{
+  "model": "glm-5.2",
+  "wall_seconds": 66.2,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Read": 1,
+    "Bash": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "total_cost_usd": 0.05241,
+  "num_turns": 5,
+  "duration_ms": 65283,
+  "duration_api_ms": 66482,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 6711,
+  "output_tokens": 2516,
+  "cache_read_tokens": 123904,
+  "final_message": "Both files are produced and every constraint checks out.\n\n**`summary.json`** \u2014 computed exactly from the CSV (independently recomputed to confirm):\n- `total_revenue`: 7154.44\n- `orders`: 30\n- `median_order_value`: 204.94\n- `top_product_by_revenue`: Gadget ($2,392.00)\n- `revenue_by_region`: all four regions (North 2176.35, East 1830.79, South 1732.48, West 1414.82)\n\n**`REPORT.md`** \u2014 verified mechanically:\n- Exactly four H2 headings, in order, spelled exactly as required; no other headings.\n- 147 words (\u2264 250).\n- Overview states total revenue as `$7,154.44` and 30 orders.\n- Recommendations has exactly 3 bullets, each \u2264 25 words (20/16/17), all grounded in the data.\n- None of the forbidden words appear.\n\nNo git commits were made; work stayed in the current directory.",
+  "total_cost_usd_cli": 0.158407,
+  "cost_source": "computed:env/prices.json (aggregate)",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.2.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-22T12:54:50Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}
