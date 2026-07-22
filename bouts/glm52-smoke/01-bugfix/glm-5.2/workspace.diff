@@ -1,0 +1,56 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..0046743
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,15 @@
++# Solution
++
++The test suite caught two LRU-recency bugs in `lrucache/cache.py`:
++
++1. **`get` did not refresh recency.** The contract (stated in the docstring) is that
++   *both* reads and writes count as a "use", but `get` returned the value without
++   touching its position in the backing `OrderedDict`. A `get` therefore failed to
++   promote the entry to most-recently-used, so the wrong key could be evicted on the
++   next insert. Fix: call `self._data.move_to_end(key)` before returning.
++
++2. **`put` on an already-present key evicted an unrelated entry.** `put` evicted the
++   LRU item whenever `len >= capacity`, regardless of whether the key being inserted
++   already existed — so an in-place update of "y" in a full cache first popped "x".
++   Fix: only evict when the key is new (`key not in self._data`) *and* the cache is at
++   capacity.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..9fdb81c
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/lrucache/__pycache__/__init__.cpython-312.pyc b/lrucache/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..fb722fa
+Binary files /dev/null and b/lrucache/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/lrucache/__pycache__/cache.cpython-312.pyc b/lrucache/__pycache__/cache.cpython-312.pyc
+new file mode 100644
+index 0000000..821bd76
+Binary files /dev/null and b/lrucache/__pycache__/cache.cpython-312.pyc differ
+diff --git a/lrucache/cache.py b/lrucache/cache.py
+index 775e593..a936cd2 100644
+--- a/lrucache/cache.py
++++ b/lrucache/cache.py
+@@ -27,10 +27,13 @@ class LRUCache:
+         if self.ttl is not None and self._clock() - ts > self.ttl:
+             del self._data[key]
+             return default
++        self._data.move_to_end(key)  # a read counts as a use
+         return value
+ 
+     def put(self, key, value):
+-        if len(self._data) >= self.capacity:
++        # Only evict when adding a brand-new key beyond capacity; updating an
++        # existing key in place must not change the entry count.
++        if key not in self._data and len(self._data) >= self.capacity:
+             self._data.popitem(last=False)
+         self._data[key] = (value, self._clock())
+         self._data.move_to_end(key)
+diff --git a/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..43a325e
+Binary files /dev/null and b/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc differ
