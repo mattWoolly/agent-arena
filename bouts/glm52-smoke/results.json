@@ -1,0 +1,44 @@
+[
+  {
+    "model": "glm-5.2",
+    "wall_seconds": 64.0,
+    "agent_exit": 0,
+    "assistant_messages": 18,
+    "tool_calls": {
+      "Bash": 3,
+      "Read": 3,
+      "Edit": 2,
+      "Write": 1
+    },
+    "tool_calls_total": 9,
+    "total_cost_usd": 0.0802,
+    "num_turns": 10,
+    "duration_ms": 62842,
+    "duration_api_ms": 67685,
+    "is_error": false,
+    "permission_denials": 0,
+    "input_tokens": 27387,
+    "output_tokens": 1907,
+    "cache_read_tokens": 130432,
+    "final_message": "Done. Both fixes are in `lrucache/cache.py` and `SOLUTION.md` documents the root causes:\n\n1. **`get` didn't refresh recency** \u2014 it returned the value without promoting the entry in the `OrderedDict`, so reads didn't count as a \"use\" despite the docstring saying they should. Added `move_to_end(key)` before returning.\n\n2. **`put` on an existing key evicted a neighbor** \u2014 it checked `len >= capacity` before checking whether the key already existed, so an in-place update in a full cache wrongly popped the LRU entry. Guarded the eviction with `key not in self._data`.\n\nAll 6 tests pass (`6 passed`), no changes were made under `tests/`, and no commits were created.",
+    "total_cost_usd_cli": 0.24982600000000002,
+    "cost_source": "computed:env/prices.json (aggregate)",
+    "run_env": {
+      "cli_version": "2.1.214 (Claude Code)",
+      "base_url": "https://api.z.ai/api/anthropic",
+      "proxy_upstream": "none",
+      "model_env": "env/glm-5.2.env",
+      "effort": "xhigh",
+      "setting_sources": "project",
+      "max_turns": 60,
+      "timeout_s": 1500,
+      "started_at": "2026-07-20T12:14:22Z"
+    },
+    "peek_check": "clean",
+    "diffstat": "6 files changed, 19 insertions(+), 1 deletion(-)",
+    "grade_pass": true,
+    "score": "3/3",
+    "task": "01-bugfix",
+    "run": "run-1"
+  }
+]
