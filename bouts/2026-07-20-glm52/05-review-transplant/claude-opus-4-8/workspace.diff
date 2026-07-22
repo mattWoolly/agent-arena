@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..ef2d05c
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 Pagination loop iterates range(total_count // PAGE_SIZE), silently dropping the final total_count % 100 users (e.g. 20% lost at 250, 33% lost at 150) and fetching zero rows whenever total_count < 100.
++- src/sync.py:24 sync_users uses a mutable default argument seen=[] that persists across every call, so users synced in one invocation are silently skipped forever after (retries and later batches sync nothing).
++- src/sync.py:35 The UPDATE is built via f-string interpolation of email and id, creating a SQL-injection hole and breaking on legitimate emails containing an apostrophe (e.g. o'brien@work.com produces malformed SQL).
++- src/sync.py:38 The except block now does `pass` instead of logging, silently swallowing sync failures—including the SQL errors from line 35—so, together with the seen-before-write marking at line 31, a failed user is invisibly lost and never retried.
++- src/report.py:5 open(path,"w") without a context manager leaks the file handle on the `if not users: return 0` early exit (line 7) and on any write exception, while the "w" mode has already truncated the existing report to empty.
++- src/report.py:11 user["email"].lower().split("@")[1] raises AttributeError on NULL emails—which db.py documents as valid for phone-invited users—and IndexError on empty or "@"-less emails, whereas the old code guarded None with `or "unverified"`.

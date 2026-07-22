@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons are bare dollar rankings ('Gadget led with $2,392.00, followed by Widget at $2,118.94') with only one true computed figure, West being 'roughly 65% of North's total'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with its figure and an action, e.g. 'Bundle Sprocket, the lowest-revenue product at $1,130.50, with stronger sellers.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces non-obvious observations beyond the tables, notably that 'Gadget's lead stems from its high unit price despite low volume' and West's ~65%-of-North gap."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Rankings carry absolute figures and one genuine computed comparison appears (West is \"roughly 65% of North's total\"), but gaps between other products/regions are not computed."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure, e.g. \"Prioritize Gadget stock: it generates the highest revenue ($2,392.00) on low unit counts\" and \"Bundle Sprocket, the lowest-revenue product at $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious observations, including \"Gadget's lead stems from its high unit price despite low volume\" and the computed West-vs-North gap of \"roughly 65%.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons are bare figures/rankings ('Gadget led with $2,392.00, followed by Widget at $2,118.94'), with only one computed comparison ('roughly 65% of North's total')."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure, e.g. 'Grow West sales, the weakest region at $1,414.82' and 'Bundle Sprocket, the lowest-revenue product at $1,130.50'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces non-obvious points like 'Gadget's lead stems from its high unit price despite low volume' and the North\u2013West gap ('roughly 65% of North's total') rather than merely restating totals."
+      }
+    }
+  ]
+}

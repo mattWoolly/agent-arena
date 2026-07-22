@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (src/sync.py:14, :24, :35, src/report.py:7, :11)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode explaining how two defects combine mechanistically."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. the mutable default 'persists across calls, so user ids synced in earlier calls are wrongly skipped as duplicates.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g., \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode connecting separate defects."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g., the mutable default \"persists across calls, so user ids synced in earlier calls are wrongly skipped as duplicates.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the five findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is presented in isolation and no compound failure mode arising from combined defects is described anywhere in the write-up."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"mutable default seen=[] persists across calls, so user ids synced in earlier calls are wrongly skipped as duplicates\"."
+      }
+    }
+  ]
+}

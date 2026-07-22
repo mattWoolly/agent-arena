@@ -1,0 +1,17 @@
+## Overview
+
+Total revenue across the 30 orders (May 2–21, 2026) is $7,154.44, averaging $238.48 per order with a median of $204.94. Four products sell across four regions.
+
+## Top Products
+
+Gadget leads at $2,392.00 (33.4% of revenue) from just 16 units, driven by its $149.50 price. Widget follows at $2,118.94 (29.6%) on 106 units. Doohickey earns $1,513.00 (21.1%). Sprocket, despite selling 238 units — more than every other product combined — brings only $1,130.50 (15.8%) at $4.75 each.
+
+## Regional Performance
+
+North leads with $2,176.35 (30.4%, 8 orders), then East at $1,830.79 (25.6%, 7 orders) and South at $1,732.48 (24.2%, 8 orders). West trails at $1,414.82 (19.8%, 7 orders) — 53.8% below North despite a similar order count.
+
+## Recommendations
+
+- Secure Gadget supply: 16 units generate 33.4% of revenue at $149.50 each, the highest-margin driver in the catalog.
+- Reprice Sprocket: 238 units yield only 15.8% of revenue at $4.75; a modest increase materially lifts total sales.
+- Grow West: its $1,414.82 trails North by 53.8%; shift its mix toward high-value Gadget and Widget orders.

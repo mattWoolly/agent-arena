@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (src/sync.py:14, :24, :35, :39, src/report.py:7, :11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :39 finding mechanistically links two defects: the bare `except Exception: pass` swallows the failures 'including those caused by the broken SQL above' at :35, making them undetectable."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division means 'the final partial page is never fetched' and the mutable `seen=[]` default 'persists across calls' causing wrongful dedupe skips."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically links the bare `except Exception: pass` to the broken SQL above it, explaining that failed updates 'including those caused by the broken SQL above' are silently swallowed and thus undetectable."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division means 'the final partial page is never fetched' and the mutable `seen=[]` 'persists across calls' causing later users to be 'wrongly skipped as duplicates.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :39 finding mechanistically links two defects: 'except Exception: pass silently swallows every sync failure... so failed updates (including those caused by the broken SQL above) are undetectable.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division means 'the final partial page is never fetched' and the mutable default 'persists across calls' causing wrongful dedupe."
+      }
+    }
+  ]
+}

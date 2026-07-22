@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14', 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains the compound mode: the bare except 'compounds the line-35 f-string defect by making apostrophe-broken and injection-failed updates fail silently with no log and a still-incremented `seen`.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a failure mechanism, e.g. sync.py:24's mutable default '`seen=[]` is shared across calls, so IDs appended in one invocation are permanently skipped in every later call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-38 finding mechanistically explains a compound failure: the bare `except Exception: pass` \"swallows every sync error... making apostrophe-broken and injection-failed updates fail silently with no log and a still-incremented `seen`.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a failure mechanism, e.g. mutable default `seen=[]` is \"shared across calls, so IDs appended in one invocation are permanently skipped in every later call... turning per-batch dedupe into cross-call suppression.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line-38 finding mechanistically explains that the bare `except` swallows the line-35 f-string defect so injection/apostrophe-broken updates 'fail silently with no log and a still-incremented seen'."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. floor division makes `range()` 'drop the final partial page' and `user[\"email\"].lower()` 'raises AttributeError when email is None'."
+      }
+    }
+  ]
+}

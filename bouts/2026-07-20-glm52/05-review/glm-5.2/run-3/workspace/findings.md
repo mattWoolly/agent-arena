@@ -1,0 +1,6 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` uses floor division, so when total_count is not a multiple of PAGE_SIZE the final partial page is never fetched (e.g. 150 users → only 100 fetched), silently dropping staged records.
+- src/sync.py:24 `seen=[]` is a mutable default argument, so the dedupe list persists across calls and users synced in one run are wrongly skipped as duplicates in every later call.
+- src/sync.py:35 The UPDATE is built with an f-string interpolating `email` and `id` directly into SQL (regression from the prior parameterized query), introducing SQL injection and breaking on any email containing a single quote.
+- src/sync.py:39 `except Exception: pass` silently swallows every sync failure instead of logging it as before, so failed updates (including those caused by the broken SQL above) are undetectable.
+- src/report.py:7 When `users` is empty the function returns without closing the file opened on line 5, leaking the file handle (and the file is left truncated).
+- src/report.py:11 `user["email"].lower().split("@")[1]` crashes on NULL/empty emails (users.email is nullable per db.py, which the original code guarded with `or "unverified"`) and raises IndexError on any email without an `@`.

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons list raw revenue totals side by side (e.g. \"Gadget led with $2,392.00... ahead of Widget at $2,118.94\") rather than computed gaps or ratios, with only \"about 65% of North's total\" being an actual computed comparison."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure \u2014 \"Focus promotion on Gadget... $2,392.00,\" \"Review the West region, which at $1,414.82 reached about 65% of North's total,\" and \"Revisit Sprocket pricing... only $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations, notably the volume-vs-revenue mismatch (\"Sprocket trailed... despite high unit counts\") and the West/North gap (\"reached about 65% of North's total\")."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a data figure (e.g., \"Gadget led with $2,392.00... ahead of Widget at $2,118.94\") and includes a computed ratio (\"about 65% of North's total\")."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name specific products/regions with figures, e.g., \"Revisit Sprocket pricing, since high unit volume yielded only $1,130.50 in revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations beyond totals, such as the volume-vs-revenue mismatch (\"Sprocket trailed... despite high unit counts\") and the West/North gap at 65%."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons attach raw dollar figures rather than computed gaps/ratios (e.g. \"Gadget led with $2,392.00... ahead of Widget at $2,118.94\"), with only the \"West... about 65% of North's total\" being a genuinely computed figure."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region with its figure \u2014 \"Focus promotion on Gadget... at $2,392.00,\" \"Review the West region, which at $1,414.82,\" and \"Revisit Sprocket pricing... only $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations including the Sprocket price/volume outlier (\"high unit volume yielded only $1,130.50\") and the West-vs-North gap (\"about 65% of North's total\")."
+      }
+    }
+  ]
+}

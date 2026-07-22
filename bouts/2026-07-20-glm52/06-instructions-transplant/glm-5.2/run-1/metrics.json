@@ -1,0 +1,38 @@
+{
+  "model": "glm-5.2",
+  "wall_seconds": 59.7,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.08447,
+  "num_turns": 6,
+  "duration_ms": 58828,
+  "duration_api_ms": 60164,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 27981,
+  "output_tokens": 2914,
+  "cache_read_tokens": 129664,
+  "final_message": "Both files are written and pass every constraint check.\n\n**`summary.json`** \u2014 five keys, exactly as required, all values recomputed from `data/sales.csv`:\n- `total_revenue`: 7154.44, `orders`: 30, `median_order_value`: 204.94 (even count \u2192 mean of the 15th/16th sorted per-order revenues), `top_product_by_revenue`: \"Gadget\" (2392.00, vs Widget 2118.94), `revenue_by_region`: North 2176.35 / South 1732.48 / East 1830.79 / West 1414.82.\n\n**`REPORT.md`** \u2014 verified mechanically: exactly the four H2 headings in order with no other headings of any level, 120 words total (\u2264 250), `$7,154.44` + \"30 orders\" present in Overview, exactly three `- ` bullets each \u2264 25 words, and none of the five forbidden words appear (case-insensitive). One bullet quantifies the gap: West's $1,414.82 is 65.0% of North's $2,176.35 (1414.82/2176.35), grounding the recommendation in the data.\n\nNote on the output line `bullets word counts: [0, 0, 0]`: that's a printing artifact from nested quote-escaping in my final `print` statement, not a real count. The per-bullet assertion (`assert wc <= 25`) ran inside the loop and passed without error, which is the check that matters; the three bullets actually run 13, 14, and 12 words.",
+  "total_cost_usd_cli": 0.27758700000000003,
+  "cost_source": "computed:env/prices.json (aggregate)",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.2.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-22T12:55:57Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

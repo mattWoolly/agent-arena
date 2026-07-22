@@ -1,0 +1,39 @@
+{
+  "model": "glm-5.2",
+  "wall_seconds": 212.5,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Read": 1,
+    "Write": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 3,
+  "total_cost_usd": 0.10932,
+  "num_turns": 4,
+  "duration_ms": 211497,
+  "duration_api_ms": 216385,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 35828,
+  "output_tokens": 8804,
+  "cache_read_tokens": 79296,
+  "final_message": "All 47 checks pass, including the performance test (`rolling_max` on 200k elements in 0.076s \u2014 well within any tight budget).\n\n## Summary\n\nAll five functions are implemented in `problems.py` using only the standard library, with no signature/docstring changes:\n\n- **`parse_duration`** \u2014 a single `fullmatch` regex `(\\d+h)?(\\d+m)?(\\d+s)?` enforces ordering, no-duplicates, digits-only, and full-string consumption in one pass; an empty/whitespace/garbage string yields no match \u2192 `ValueError`. Non-string input is guarded explicitly.\n\n- **`luhn_valid`** \u2014 strips spaces/hyphens, returns `False` (never raises) on empty or non-digit residue, then doubles every second digit from the right (`>9` \u2192 subtract 9) and checks `total % 10 == 0`. `\"0\"` is valid, any other single digit is not.\n\n- **`flatten`** \u2014 recursive helper joins keys with `sep`; empty nested dicts contribute nothing; non-dict values (lists included) are kept as-is; input is never mutated.\n\n- **`top_k_frequent`** \u2014 `k <= 0` \u2192 `[]`; otherwise sort distinct words by `(-count, word)` and slice `[:k]` (naturally returns all when `k` exceeds the distinct count). Case-sensitive via default string ordering.\n\n- **`rolling_max`** \u2014 monotonic `deque` of indices with decreasing values, evicting out-of-window front entries and smaller/equal back entries, so each element is pushed/popped at most once \u2192 O(n). Raises `ValueError` on `window <= 0`, returns `[]` when `window > len`.\n\nNo git commits were created, and only `problems.py` was modified.",
+  "total_cost_usd_cli": 0.438888,
+  "cost_source": "computed:env/prices.json (aggregate)",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.2.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-22T12:14:49Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 70 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

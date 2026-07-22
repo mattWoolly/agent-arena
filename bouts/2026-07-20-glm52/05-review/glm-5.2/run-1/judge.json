@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The report.py:5 finding notes handle leaks on \"any exception in the loop\" and report.py:11 identifies an AttributeError raised in that loop, but the write-up never explicitly connects the crash to the leak as a single compound failure."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"floor division drops the final partial page\" and \"Mutable default `seen=[]` is shared across calls, so IDs accumulated in one call cause legitimate users to be skipped.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the five findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The report.py:5 finding gestures at a compound leak ('on any exception in the loop, since f.close() is skipped') and report.py:11 describes an exception source, but the two defects are never explicitly linked into one mechanistically-stated failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor division drops the final partial page' and 'Mutable default `seen=[]` is shared across calls, so IDs accumulated in one call cause legitimate users to be skipped.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. `src/sync.py:14` and `src/report.py:11`."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The report.py:5 finding notes the handle leaks 'on any exception in the loop' and report.py:11 identifies an AttributeError raised in that loop, but the write-up never explicitly connects the two as one compound failure mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'floor division drops the final partial page and returns zero users whenever total_count < PAGE_SIZE' and the mutable default 'shared across calls, so IDs accumulated in one call cause legitimate users to be skipped in later calls.'"
+      }
+    }
+  ]
+}

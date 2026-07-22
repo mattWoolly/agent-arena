@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons attach raw totals ('North led with $2,176.35, ahead of East at $1,830.79') and note the mean-vs-median skew, but almost none are expressed as computed gaps, ratios, or percentages."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with its figure and an action (e.g. 'Grow West, the lowest region at $1,414.82, toward North's $2,176.35 with targeted promotions')."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The mean/median skew note ('a few large orders raise the mean') is the one genuinely non-obvious observation; the rest largely restates per-product and per-region totals the tables already show."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a dollar figure computed from the data (e.g., \"North led with $2,176.35, ahead of East at $1,830.79\" and \"median order value was $204.94, while the average order value was $238.48\") rather than bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with its figure and an action, e.g., \"Grow West, the lowest region at $1,414.82, toward North's $2,176.35\" and \"Bundle Sprocket... with Widget.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations, including the mean/median skew (\"a few large orders raise the mean\") and Gadget's high per-order price driving top revenue over only 7 orders."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons are bare rankings with listed dollar figures ('Gadget led with $2,392.00, followed by Widget at $2,118.94'), but a few genuine computed comparisons appear like median $204.94 vs average $238.48 showing skew."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region and figure and is actionable, e.g. 'Grow West, the lowest region at $1,414.82, toward North's $2,176.35 with targeted promotions.'"
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "It surfaces one real non-obvious observation\u2014'a few large orders raise the mean' from the median/average gap\u2014but the rest largely restates totals the tables already give."
+      }
+    }
+  ]
+}

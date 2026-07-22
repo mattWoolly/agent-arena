@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:35`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically explains that `except Exception: pass` swallows the line-35 SQL failures so that 'all apostrophe- or injection-caused UPDATE failures are hidden and `synced` silently undercounts with no trace.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a failure mechanism, e.g. integer division means 'the final partial page is never fetched' and `seen=[]` 'is a mutable default argument shared across all calls.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically explains a compound failure: `except Exception: pass` 'compounds with the SQL at line 35 so that all apostrophe- or injection-caused UPDATE failures are hidden and `synced` silently undercounts with no trace.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism (e.g. integer division 'so the final partial page is never fetched' and mutable default 'shared across all calls, so user ids... persist into the next')."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (src/sync.py:14, :24, :35, :39, src/report.py:7, :11)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding mechanistically explains a compound mode: `except Exception: pass` 'compounds with the SQL at line 35 so that all apostrophe- or injection-caused UPDATE failures are hidden and synced silently undercounts with no trace.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. integer division means 'for total_count=150 only 100/150 (67%) of users are returned' and the mutable default `seen=[]` 'shared across all calls, so user ids... persist into the next.'"
+      }
+    }
+  ]
+}
