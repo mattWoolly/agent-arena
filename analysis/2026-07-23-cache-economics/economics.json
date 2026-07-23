@@ -1,0 +1,343 @@
+{
+ "arms": [
+  {
+   "bout": "ladder",
+   "model": "claude-haiku-4-5",
+   "runs": 30,
+   "tokens": {
+    "in": 1692,
+    "write": 432260,
+    "read": 7495518,
+    "out": 88297
+   },
+   "usd": {
+    "usd_in": 0.0017,
+    "usd_write": 0.5403,
+    "usd_read": 0.7496,
+    "usd_out": 0.4415
+   },
+   "usd_total": 1.7331,
+   "read_share_tokens": 0.9349,
+   "read_share_usd": 0.4325,
+   "out_share_tokens": 0.011,
+   "out_share_usd": 0.2547,
+   "effective_input_rate_per_mtok": 0.1629,
+   "effective_input_rate_vs_sticker": 0.1629,
+   "mean_out_tokens_per_run": 2943.2,
+   "mean_out_usd_per_run": 0.01472,
+   "usd_per_run": 0.0578
+  },
+  {
+   "bout": "ladder",
+   "model": "claude-sonnet-5",
+   "runs": 30,
+   "tokens": {
+    "in": 12558,
+    "write": 465251,
+    "read": 8924836,
+    "out": 133010
+   },
+   "usd": {
+    "usd_in": 0.0377,
+    "usd_write": 1.7447,
+    "usd_read": 2.6775,
+    "usd_out": 1.9952
+   },
+   "usd_total": 6.455,
+   "read_share_tokens": 0.9359,
+   "read_share_usd": 0.4148,
+   "out_share_tokens": 0.0139,
+   "out_share_usd": 0.3091,
+   "effective_input_rate_per_mtok": 0.4743,
+   "effective_input_rate_vs_sticker": 0.1581,
+   "mean_out_tokens_per_run": 4433.7,
+   "mean_out_usd_per_run": 0.0665,
+   "usd_per_run": 0.2152
+  },
+  {
+   "bout": "ladder",
+   "model": "claude-opus-4-8",
+   "runs": 30,
+   "tokens": {
+    "in": 87957,
+    "write": 343236,
+    "read": 4693126,
+    "out": 143922
+   },
+   "usd": {
+    "usd_in": 0.4398,
+    "usd_write": 2.1452,
+    "usd_read": 2.3466,
+    "usd_out": 3.598
+   },
+   "usd_total": 8.5296,
+   "read_share_tokens": 0.8908,
+   "read_share_usd": 0.2751,
+   "out_share_tokens": 0.0273,
+   "out_share_usd": 0.4218,
+   "effective_input_rate_per_mtok": 0.9624,
+   "effective_input_rate_vs_sticker": 0.1925,
+   "mean_out_tokens_per_run": 4797.4,
+   "mean_out_usd_per_run": 0.11993,
+   "usd_per_run": 0.2843
+  },
+  {
+   "bout": "ladder",
+   "model": "claude-fable-5",
+   "runs": 30,
+   "tokens": {
+    "in": 87070,
+    "write": 342412,
+    "read": 4998546,
+    "out": 109142
+   },
+   "usd": {
+    "usd_in": 0.8707,
+    "usd_write": 4.2802,
+    "usd_read": 4.9985,
+    "usd_out": 5.4571
+   },
+   "usd_total": 15.6065,
+   "read_share_tokens": 0.9027,
+   "read_share_usd": 0.3203,
+   "out_share_tokens": 0.0197,
+   "out_share_usd": 0.3497,
+   "effective_input_rate_per_mtok": 1.8698,
+   "effective_input_rate_vs_sticker": 0.187,
+   "mean_out_tokens_per_run": 3638.1,
+   "mean_out_usd_per_run": 0.1819,
+   "usd_per_run": 0.5202
+  },
+  {
+   "bout": "3way",
+   "model": "claude-fable-5",
+   "runs": 24,
+   "tokens": {
+    "in": 326,
+    "write": 310688,
+    "read": 3924055,
+    "out": 123677
+   },
+   "usd": {
+    "usd_in": 0.0033,
+    "usd_write": 3.8836,
+    "usd_read": 3.9241,
+    "usd_out": 6.1838
+   },
+   "usd_total": 13.9948,
+   "read_share_tokens": 0.9003,
+   "read_share_usd": 0.2804,
+   "out_share_tokens": 0.0284,
+   "out_share_usd": 0.4419,
+   "effective_input_rate_per_mtok": 1.8443,
+   "effective_input_rate_vs_sticker": 0.1844,
+   "mean_out_tokens_per_run": 5153.2,
+   "mean_out_usd_per_run": 0.25766,
+   "usd_per_run": 0.5831
+  },
+  {
+   "bout": "3way",
+   "model": "gpt-5.6-sol",
+   "runs": 24,
+   "tokens": {
+    "in": 657250,
+    "write": 0,
+    "read": 9003754,
+    "out": 186874
+   },
+   "usd": {
+    "usd_in": 3.2862,
+    "usd_write": 0.0,
+    "usd_read": 4.5019,
+    "usd_out": 5.6062
+   },
+   "usd_total": 13.3943,
+   "read_share_tokens": 0.9143,
+   "read_share_usd": 0.3361,
+   "out_share_tokens": 0.019,
+   "out_share_usd": 0.4186,
+   "effective_input_rate_per_mtok": 0.8061,
+   "effective_input_rate_vs_sticker": 0.1612,
+   "mean_out_tokens_per_run": 7786.4,
+   "mean_out_usd_per_run": 0.23359,
+   "usd_per_run": 0.5581,
+   "cli_vs_recomputed_mean_overstatement": 3.0874,
+   "cli_pairs": 24
+  },
+  {
+   "bout": "3way",
+   "model": "kimi-k3",
+   "runs": 24,
+   "tokens": {
+    "in": 467931,
+    "write": 0,
+    "read": 3656192,
+    "out": 74689
+   },
+   "usd": {
+    "usd_in": 1.4038,
+    "usd_write": 0.0,
+    "usd_read": 1.0969,
+    "usd_out": 1.1203
+   },
+   "usd_total": 3.621,
+   "read_share_tokens": 0.8708,
+   "read_share_usd": 0.3029,
+   "out_share_tokens": 0.0178,
+   "out_share_usd": 0.3094,
+   "effective_input_rate_per_mtok": 0.6063,
+   "effective_input_rate_vs_sticker": 0.2021,
+   "mean_out_tokens_per_run": 3112.0,
+   "mean_out_usd_per_run": 0.04668,
+   "usd_per_run": 0.1509
+  },
+  {
+   "bout": "glm52",
+   "model": "glm-5.2",
+   "runs": 24,
+   "tokens": {
+    "in": 374304,
+    "write": 0,
+    "read": 5416000,
+    "out": 144037
+   },
+   "usd": {
+    "usd_in": 0.524,
+    "usd_write": 0.0,
+    "usd_read": 1.4082,
+    "usd_out": 0.6338
+   },
+   "usd_total": 2.5659,
+   "read_share_tokens": 0.9127,
+   "read_share_usd": 0.5488,
+   "out_share_tokens": 0.0243,
+   "out_share_usd": 0.247,
+   "effective_input_rate_per_mtok": 0.3337,
+   "effective_input_rate_vs_sticker": 0.2384,
+   "mean_out_tokens_per_run": 6001.5,
+   "mean_out_usd_per_run": 0.02641,
+   "usd_per_run": 0.1069,
+   "cli_vs_recomputed_mean_overstatement": 2.2452,
+   "cli_pairs": 24
+  },
+  {
+   "bout": "glm52",
+   "model": "claude-opus-4-8",
+   "runs": 8,
+   "tokens": {
+    "in": 104,
+    "write": 100398,
+    "read": 1227837,
+    "out": 45079
+   },
+   "usd": {
+    "usd_in": 0.0005,
+    "usd_write": 0.6275,
+    "usd_read": 0.6139,
+    "usd_out": 1.127
+   },
+   "usd_total": 2.3689,
+   "read_share_tokens": 0.894,
+   "read_share_usd": 0.2592,
+   "out_share_tokens": 0.0328,
+   "out_share_usd": 0.4757,
+   "effective_input_rate_per_mtok": 0.9349,
+   "effective_input_rate_vs_sticker": 0.187,
+   "mean_out_tokens_per_run": 5634.9,
+   "mean_out_usd_per_run": 0.14087,
+   "usd_per_run": 0.2961
+  }
+ ],
+ "hypotheses": {
+  "H1": {
+   "read_tok_gt_85_all": true,
+   "read_usd_lt_50_any": true,
+   "pass": true
+  },
+  "H2": {
+   "out_tok_lt_5_all": true,
+   "arms_out_usd_gt_30": 7,
+   "pass": true
+  },
+  "H3": {
+   "in_band_all": true,
+   "rates": {
+    "ladder/claude-haiku-4-5": 0.1629,
+    "ladder/claude-sonnet-5": 0.1581,
+    "ladder/claude-opus-4-8": 0.1925,
+    "ladder/claude-fable-5": 0.187,
+    "3way/claude-fable-5": 0.1844,
+    "3way/gpt-5.6-sol": 0.1612,
+    "3way/kimi-k3": 0.2021,
+    "glm52/glm-5.2": 0.2384,
+    "glm52/claude-opus-4-8": 0.187
+   },
+   "pass": true
+  },
+  "H4": {
+   "kimi_out_usd": 0.04668,
+   "sol_out_usd": 0.23359,
+   "kimi_out_tok": 3112.0,
+   "sol_out_tok": 7786.4,
+   "pass": false
+  },
+  "H5": {
+   "mean_overstatement": 3.0874,
+   "pairs": 24,
+   "pass": true
+  }
+ },
+ "prices_used": {
+  "claude-haiku-4-5": {
+   "in": 1.0,
+   "out": 5.0,
+   "read": 0.1,
+   "wmult": 1.25
+  },
+  "claude-sonnet-5": {
+   "in": 3.0,
+   "out": 15.0,
+   "read": 0.3,
+   "wmult": 1.25
+  },
+  "claude-opus-4-8": {
+   "in": 5.0,
+   "out": 25.0,
+   "read": 0.5,
+   "wmult": 1.25
+  },
+  "claude-fable-5": {
+   "in": 10.0,
+   "out": 50.0,
+   "read": 1.0,
+   "wmult": 1.25
+  },
+  "kimi-k3": {
+   "in": 3.0,
+   "out": 15.0,
+   "read": 0.3,
+   "wmult": 1.0
+  },
+  "glm-5.2": {
+   "in": 1.4,
+   "out": 4.4,
+   "read": 0.26,
+   "wmult": 1.0
+  },
+  "gpt-5.6-sol": {
+   "in": 5.0,
+   "out": 30.0,
+   "read": 0.5,
+   "wmult": 1.0,
+   "long_threshold": 272000,
+   "long_in": 2.0,
+   "long_out": 1.5
+  }
+ },
+ "sonnet5_intro_note": {
+  "in": 2.0,
+  "out": 10.0,
+  "read": 0.2,
+  "wmult": 1.25
+ }
+}
