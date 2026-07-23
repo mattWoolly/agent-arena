@@ -162,7 +162,11 @@
    "mean_out_usd_per_run": 0.23359,
    "usd_per_run": 0.5581,
    "cli_vs_recomputed_mean_overstatement": 3.0874,
-   "cli_pairs": 24
+   "cli_display_ratio_of_totals": 3.9552,
+   "cli_pairs": 24,
+   "reasoning_tokens_total": 123588,
+   "mean_reasoning_tokens_per_run": 5149.5,
+   "mean_visible_output_tokens_per_run": 2636.9
   },
   {
    "bout": "3way",
@@ -218,6 +222,7 @@
    "mean_out_usd_per_run": 0.02641,
    "usd_per_run": 0.1069,
    "cli_vs_recomputed_mean_overstatement": 2.2452,
+   "cli_display_ratio_of_totals": 3.2087,
    "cli_pairs": 24
   },
   {
