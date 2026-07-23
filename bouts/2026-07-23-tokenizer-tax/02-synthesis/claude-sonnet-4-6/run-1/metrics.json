@@ -1,0 +1,36 @@
+{
+  "model": "claude-sonnet-4-6",
+  "wall_seconds": 113.5,
+  "agent_exit": 1,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Read": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 2,
+  "total_cost_usd": 0.16117415,
+  "num_turns": 3,
+  "duration_ms": 112390,
+  "duration_api_ms": 113002,
+  "is_error": true,
+  "permission_denials": 0,
+  "input_tokens": 4,
+  "output_tokens": 7968,
+  "cache_read_tokens": 40418,
+  "final_message": "Credit balance is too low",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-23T12:19:44Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 58 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

@@ -1,0 +1,38 @@
+{
+  "model": "claude-sonnet-4-6",
+  "wall_seconds": 30.5,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "total_cost_usd": 0.108251,
+  "num_turns": 8,
+  "duration_ms": 29325,
+  "duration_api_ms": 29607,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 1446,
+  "cache_read_tokens": 147525,
+  "final_message": "Two bugs fixed, all 6 tests pass:\n\n1. **`get` missing `move_to_end`** (`cache.py:30`) \u2014 reading a key didn't promote it to MRU position, so it could be evicted ahead of older items.\n2. **`put` evicting on updates** (`cache.py:33`) \u2014 the capacity check fired even when the key already existed, incorrectly evicting the LRU entry for a zero-net-size update. Fixed by adding `key not in self._data` to the guard.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-23T12:18:42Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 19 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

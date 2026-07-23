@@ -1,0 +1,66 @@
+bout=2026-07-23-tokenizer-tax models=claude-sonnet-4-6 tasks=01-bugfix 02-synthesis 03-refactor 04-terminal 05-review 05-review-transplant 06-instructions 06-instructions-transplant repeats=2 serial=1
+=== 01-bugfix (run 1/2) ===
+[01-bugfix/claude-sonnet-4-6 run-1] starting
+[01-bugfix/claude-sonnet-4-6 run-1] done: agent_exit=0 grade_exit=0 wall=30.5s
+=== 01-bugfix (run 2/2) ===
+[01-bugfix/claude-sonnet-4-6 run-2] starting
+[01-bugfix/claude-sonnet-4-6 run-2] done: agent_exit=0 grade_exit=0 wall=29.8s
+=== 02-synthesis (run 1/2) ===
+[02-synthesis/claude-sonnet-4-6 run-1] starting
+[02-synthesis/claude-sonnet-4-6 run-1] done: agent_exit=1 grade_exit=0 wall=113.5s
+=== 02-synthesis (run 2/2) ===
+[02-synthesis/claude-sonnet-4-6 run-2] starting
+[02-synthesis/claude-sonnet-4-6 run-2] done: agent_exit=1 grade_exit=1 wall=1.7s
+=== 03-refactor (run 1/2) ===
+[03-refactor/claude-sonnet-4-6 run-1] starting
+[03-refactor/claude-sonnet-4-6 run-1] done: agent_exit=1 grade_exit=1 wall=1.8s
+=== 03-refactor (run 2/2) ===
+[03-refactor/claude-sonnet-4-6 run-2] starting
+[03-refactor/claude-sonnet-4-6 run-2] done: agent_exit=1 grade_exit=1 wall=1.7s
+=== 04-terminal (run 1/2) ===
+[04-terminal/claude-sonnet-4-6 run-1] starting
+[04-terminal/claude-sonnet-4-6 run-1] done: agent_exit=1 grade_exit=1 wall=1.7s
+=== 04-terminal (run 2/2) ===
+[04-terminal/claude-sonnet-4-6 run-2] starting
+[04-terminal/claude-sonnet-4-6 run-2] done: agent_exit=1 grade_exit=1 wall=1.9s
+=== 05-review (run 1/2) ===
+[05-review/claude-sonnet-4-6 run-1] starting
+[05-review/claude-sonnet-4-6 run-1] done: agent_exit=1 grade_exit=1 wall=1.5s
+=== 05-review (run 2/2) ===
+[05-review/claude-sonnet-4-6 run-2] starting
+[05-review/claude-sonnet-4-6 run-2] done: agent_exit=1 grade_exit=1 wall=1.7s
+=== 05-review-transplant (run 1/2) ===
+[05-review-transplant/claude-sonnet-4-6 run-1] starting
+[05-review-transplant/claude-sonnet-4-6 run-1] done: agent_exit=1 grade_exit=1 wall=1.6s
+=== 05-review-transplant (run 2/2) ===
+[05-review-transplant/claude-sonnet-4-6 run-2] starting
+[05-review-transplant/claude-sonnet-4-6 run-2] done: agent_exit=1 grade_exit=1 wall=1.8s
+=== 06-instructions (run 1/2) ===
+[06-instructions/claude-sonnet-4-6 run-1] starting
+[06-instructions/claude-sonnet-4-6 run-1] done: agent_exit=1 grade_exit=1 wall=1.6s
+=== 06-instructions (run 2/2) ===
+[06-instructions/claude-sonnet-4-6 run-2] starting
+[06-instructions/claude-sonnet-4-6 run-2] done: agent_exit=1 grade_exit=1 wall=1.6s
+=== 06-instructions-transplant (run 1/2) ===
+[06-instructions-transplant/claude-sonnet-4-6 run-1] starting
+[06-instructions-transplant/claude-sonnet-4-6 run-1] done: agent_exit=1 grade_exit=1 wall=1.9s
+=== 06-instructions-transplant (run 2/2) ===
+[06-instructions-transplant/claude-sonnet-4-6 run-2] starting
+[06-instructions-transplant/claude-sonnet-4-6 run-2] done: agent_exit=1 grade_exit=1 wall=1.7s
+# Bout results: 2026-07-23-tokenizer-tax
+
+| task | model | pass | score | wall(s) | cost($) | turns | out-tok | cache-read-tok |
+|---|---|---|---|---|---|---|---|---|
+| 01-bugfix | claude-sonnet-4-6 | 2/2 | 3/3 | 30 ±0 | 0.11 ±0.00 | 7.0 ±1.4 | 1398 ±68 | 145996 ±2162 |
+| 02-synthesis | claude-sonnet-4-6 | 1/2 | 0/6, 6/6 | 58 ±79 | 0.08 ±0.11 | 2.0 ±1.4 | 7968 | 40418 |
+| 03-refactor | claude-sonnet-4-6 | 0/2 | 2/4 | 2 ±0 | 0.00 ±0.00 | 1.0 ±0.0 | — | — |
+| 04-terminal | claude-sonnet-4-6 | 0/2 | 2/4 | 2 ±0 | 0.00 ±0.00 | 1.0 ±0.0 | — | — |
+| 05-review | claude-sonnet-4-6 | 0/2 | 0/6 | 2 ±0 | 0.00 ±0.00 | 1.0 ±0.0 | — | — |
+| 05-review-transplant | claude-sonnet-4-6 | 0/2 | 0/6 | 2 ±0 | 0.00 ±0.00 | 1.0 ±0.0 | — | — |
+| 06-instructions | claude-sonnet-4-6 | 0/2 | 1/6 | 2 ±0 | 0.00 ±0.00 | 1.0 ±0.0 | — | — |
+| 06-instructions-transplant | claude-sonnet-4-6 | 0/2 | 1/6 | 2 ±0 | 0.00 ±0.00 | 1.0 ±0.0 | — | — |
+
+- **claude-sonnet-4-6**: 3/16 runs passed; per pass-through of all tasks: ~$0.19, ~98s wall
+
+- env: `2.1.214 (Claude Code)`, effort=`xhigh`, setting-sources=`project`
+BOUT COMPLETE: /home/mwoolly/projects/agent-arena/bouts/2026-07-23-tokenizer-tax

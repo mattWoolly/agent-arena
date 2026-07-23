@@ -1,0 +1,2 @@
+FAIL: findings.md not created
+SCORE: 0/6

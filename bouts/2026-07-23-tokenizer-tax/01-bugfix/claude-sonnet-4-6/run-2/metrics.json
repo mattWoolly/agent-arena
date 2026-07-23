@@ -1,0 +1,38 @@
+{
+  "model": "claude-sonnet-4-6",
+  "wall_seconds": 29.8,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 1,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 5,
+  "total_cost_usd": 0.1019639,
+  "num_turns": 6,
+  "duration_ms": 28731,
+  "duration_api_ms": 28651,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 1350,
+  "cache_read_tokens": 144468,
+  "final_message": "**Bug 1 (`get`, line 30):** `get` returned the value without calling `move_to_end`, so reads didn't update LRU order. A later `put` could evict an entry that had just been read.\n\n**Bug 2 (`put`, lines 32\u201334):** `put` checked capacity and evicted *before* checking whether the key already existed. Updating an existing key doesn't add a new entry, so eviction was incorrectly triggered. Fix: only evict when `key not in self._data` and the cache is full.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-23T12:19:14Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 11 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

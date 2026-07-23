@@ -1,0 +1,10 @@
+visible tests: pass
+FAIL: hidden tests failing
+FAIL: config subscripting still present:
+/tmp/arena-ws.0lMoZJ/reportgen/formatter.py:4:    if config["output_format"] == "markdown":
+/tmp/arena-ws.0lMoZJ/reportgen/formatter.py:5:        lines.append(f"# {config['title']}")
+/tmp/arena-ws.0lMoZJ/reportgen/formatter.py:13:        lines.append(config["title"])
+/tmp/arena-ws.0lMoZJ/reportgen/formatter.py:14:        lines.append("=" * len(config["title"]))
+/tmp/arena-ws.0lMoZJ/reportgen/formatter.py:17:    if config["include_summary"]:
+/tmp/arena-ws.0lMoZJ/reportgen/loader.py:9:    return rows[: config["max_rows"]]
+SCORE: 2/4
