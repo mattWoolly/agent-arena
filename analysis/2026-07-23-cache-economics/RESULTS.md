@@ -21,10 +21,14 @@ per-run usage records at list prices; full table in economics.json.
 - **H3 PASS.** The effective input-side rate is 15.8-23.8% of the sticker
   input price in every arm. Agents pay roughly a fifth of sticker for
   context; sticker-price comparisons overstate real gaps.
-- **H5 PASS.** Across all 24 Sol runs, the Claude Code CLI's own cost
-  figure overstated the sidecar-recomputed true cost by a mean 309%
-  (reported ~4.1x actual), because the Anthropic-format translation drops
-  OpenAI's cached-token field (LiteLLM upstream issues 27763, 9812).
+- **H5 PASS.** Across all 24 Sol runs, the Claude Code CLI's displayed
+  cost overstated the sidecar-recomputed true cost by 2.0x to 6.3x per
+  run (mean of per-run ratios 4.09x; ratio of means 3.96x): $17.66
+  displayed vs $4.46 actual per 8-task pass. Cause: the Anthropic-format
+  translation drops OpenAI's cached-token field (LiteLLM upstream issues
+  27763, 9812). The same display error hit the GLM-5.2 arm at 3.21x
+  ($0.343 vs $0.107 per run). Published series notes used the
+  recomputed figures, not the CLI display, in both cases.
 
 ## Deviations from DESIGN.md
 
@@ -44,6 +48,7 @@ per-run usage records at list prices; full table in economics.json.
 ## Secondary observation
 
 The CLI's costUSD for Sonnet 5 in the 2026-07-07 bout reproduces exactly
-at list prices ($3/$15), not the intro pricing in effect at the time; CLI
-cost figures for Sonnet 5 during the intro window overstate the actual
-invoice by roughly 1.4x.
+at list prices ($3/$15), not the intro pricing in effect at the time.
+Since every price class scales by the same factor, the displayed cost is
+exactly 1.5x the intro-priced invoice: $0.2152 displayed vs $0.1434
+invoiced per run for the ladder arm.
