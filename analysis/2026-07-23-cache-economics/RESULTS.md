@@ -7,11 +7,15 @@ per-run usage records at list prices; full table in economics.json.
 ## Hypothesis verdicts (misses first)
 
 - **H4 MISS.** The premise was backwards: Kimi K3 is not the chatty one.
-  GPT-5.6 Sol emitted 2.5x Kimi's output tokens per run (7,786 vs 3,112)
-  in the same harness on the same tasks. Kimi's output dollars are lower
-  ($0.047 vs $0.234 per run), but for two compounding reasons (fewer
-  tokens AND half the output price), not the price-beats-verbosity trade
-  the hypothesis proposed.
+  GPT-5.6 Sol billed 2.5x Kimi's output tokens per run (7,786 vs 3,112)
+  in the same harness on the same tasks. OpenAI's own usage detail
+  (completion_tokens_details.reasoning_tokens, summed per arm by
+  analyze.py) shows why: 5,150 of Sol's 7,786 billed output tokens per
+  run (66.1%) are reasoning tokens with no visible text. Sol's visible
+  output is 2,637 tokens per run, LESS than Kimi's 3,112 billed total.
+  Kimi's output dollars are lower ($0.047 vs $0.234 per run) for two
+  compounding reasons (fewer billed tokens AND half the output price),
+  not the price-beats-verbosity trade the hypothesis proposed.
 - **H1 PASS.** Cache reads are 87.1-93.6% of processed tokens in every
   arm, but under 50% of the dollar bill in 7 of 9 arms (as low as 25.9%
   for the Opus anchor).

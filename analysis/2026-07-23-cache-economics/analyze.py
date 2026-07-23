@@ -104,6 +104,19 @@ def sol_ledger(rdir: Path):
     return reqs
 
 
+def sol_reasoning_tokens(rdir: Path) -> int:
+    """Reasoning tokens billed as output, from OpenAI's own usage detail."""
+    total = 0
+    for line in (rdir / "proxy_usage.jsonl").read_text().splitlines():
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        det = (rec.get("raw_usage") or {}).get("completion_tokens_details") or {}
+        total += det.get("reasoning_tokens") or 0
+    return total
+
+
 def price_request(r: dict, p: dict) -> dict:
     in_mult = out_mult = 1.0
     thr = p.get("long_threshold")
@@ -177,7 +190,15 @@ def main():
             over = [(c - t) / t for c, t in cli_costs]
             arm["cli_vs_recomputed_mean_overstatement"] = round(
                 sum(over) / len(over), 4)
+            arm["cli_display_ratio_of_totals"] = round(
+                sum(c for c, _ in cli_costs) / sum(t for _, t in cli_costs), 4)
             arm["cli_pairs"] = len(cli_costs)
+        if model == "gpt-5.6-sol":
+            rt = sum(sol_reasoning_tokens(rd) for rd in run_dirs(bout, model))
+            arm["reasoning_tokens_total"] = rt
+            arm["mean_reasoning_tokens_per_run"] = round(rt / runs, 1)
+            arm["mean_visible_output_tokens_per_run"] = round(
+                (tot["out"] - rt) / runs, 1)
         arms.append(arm)
         print(f"{bout_label}/{model}: {runs} runs, ${arm['usd_per_run']}/run, "
               f"read {arm['read_share_tokens']:.1%} tok / "
