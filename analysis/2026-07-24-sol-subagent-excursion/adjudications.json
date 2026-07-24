@@ -1,0 +1,45 @@
+{
+  "method": "Hand adjudication per DESIGN.md definitions (match = same path, lines within +/-2, same defect mechanism). Sources: the seven panel reports embedded in transcript task_notification events (materials.md) and the three findings.md deliverables. Agent ids: a631=diff-review (requested opus), ab4a=db-invariants (requested sonnet), a62e=fetch-report (requested sonnet), a45c=tests-only (requested haiku).",
+  "h3_disagreements": [
+    {
+      "claim": "Pagination's quadratic scan work / unbounded result memory is a defect",
+      "reported_by": "a62e (round 2, verified #3): 'The implementation does not bound result memory and adds quadratic scan work -- src/sync.py:13-20 ... At one million rows, that is 10,000 queries and about 5,000,500,000 row positions, versus one scan previously.'",
+      "absent_or_rejected_in": "a631 (round 2, explicitly rejected): 'Pagination as a memory optimization failure: accumulating every page does not bound final memory, but this alone is not a behavioral regression.'",
+      "note": "Direct verified-vs-rejected conflict on the same candidate between two panelists."
+    },
+    {
+      "claim": "Multi-@ addresses are silently misattributed to the wrong domain (report.py:11 split('@')[1])",
+      "reported_by": "a62e (round 2, verified #5): 'attacker@trusted.example@evil.example is reported as trusted.example, not evil.example.'",
+      "absent_or_rejected_in": "a631 and ab4a both cover report.py:11 (None/AttributeError, missing-@/IndexError) and neither mentions the multi-@ misattribution.",
+      "note": "Same file:line audited by three agents; only one saw this defect."
+    },
+    {
+      "claim": "Exception-path descriptor retention is a real leak (report.py:5,11-13)",
+      "reported_by": "a62e (round 2, verified #7): 'the raised exception's traceback retains the write_report frame, whose file object remains open because line 13 is never reached.'",
+      "absent_or_rejected_in": "a631 (round 2, explicitly rejected): 'Deterministic descriptor leakage from the empty-report return: CPython normally closes the local file during finalization.'",
+      "note": "Claims differ in mechanism (traceback retention vs GC finalization) but are opposite verdicts on whether the missing context manager is itself a reportable leak."
+    }
+  ],
+  "h4_dropped": [
+    {
+      "finding": "Quadratic OFFSET scan work / unbounded memory (sync.py:13-20)",
+      "reported_by": "a62e round 1 #4 and round 2 #3 (verified both rounds)",
+      "final_status": "No sync.py line 13-20 performance finding in findings.md; the parent sided with a631's rejection."
+    },
+    {
+      "finding": "Multi-@ domain misattribution (report.py:11 split('@')[1] takes text after the FIRST @)",
+      "reported_by": "a62e round 1 #2 and round 2 #5 (verified both rounds)",
+      "final_status": "findings.md's report.py:11 line covers only None/AttributeError and missing-@/IndexError; the misattribution defect does not appear."
+    },
+    {
+      "finding": "Swallowed exceptions as a standalone defect (sync.py:38-39 'except Exception: pass')",
+      "reported_by": "a631 round 1 and round 2 (verified: 'failures are now silently swallowed ... partial synchronization with no diagnostic')",
+      "final_status": "No sync.py:38/39 line in findings.md. The mechanism survives only as clause text inside the :31 and :35 findings ('swallowed exception', 'silently skipped update'). Adjudicated dropped as a distinct finding per the one-finding-per-line output contract; noted as partially absorbed."
+    }
+  ],
+  "notes": [
+    "ab4a (db-invariants) round-1 findings match the final findings.md nearly 1:1 (sync 14/17/24/31/35, report 5-7/11); no ab4a finding was dropped.",
+    "a45c (tests-only, blinded from diff and src) returned 'No tests or test fixtures exist'; it produced contract absence, not defect findings, so it participates in neither H3 nor H4 counts.",
+    "Sol's own main thread ran runtime repros in parallel with the panel (TaskGet #2 description: 'Runtime repros now cover floor pagination, concurrent OFFSET shifting, mutable default state, failed-update poisoning, SQL injection, and report edge cases; awaiting independent checks')."
+  ]
+}
