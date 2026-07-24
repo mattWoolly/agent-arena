@@ -210,7 +210,7 @@
  "costs": [
   {
    "run": "bouts/2026-07-17-fable-sol-kimi/05-review-transplant/gpt-5.6-sol/run-2",
-   "cli_cost": 3.4823,
+   "cli_cost": 10.191534999999995,
    "real_cost": 3.4823,
    "wall": 829.1,
    "tool_calls": 97,
@@ -218,7 +218,7 @@
   },
   {
    "run": "bouts/2026-07-17-fable-sol-kimi/05-review-transplant/gpt-5.6-sol/run-1",
-   "cli_cost": 0.33914,
+   "cli_cost": 0.7646200000000001,
    "real_cost": 0.3391,
    "wall": 117.2,
    "tool_calls": 8,
@@ -226,7 +226,7 @@
   },
   {
    "run": "bouts/2026-07-17-fable-sol-kimi/05-review-transplant/gpt-5.6-sol/run-3",
-   "cli_cost": 0.34426,
+   "cli_cost": 0.67108,
    "real_cost": 0.3443,
    "wall": 124.8,
    "tool_calls": 8,

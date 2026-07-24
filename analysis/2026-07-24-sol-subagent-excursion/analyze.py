@@ -90,7 +90,10 @@ def run_costs(run):
     real = None
     if os.path.exists(proxy):
         real = sum(json.loads(l)["response_cost"] for l in open(proxy))
-    return {"run": run, "cli_cost": m["total_cost_usd"],
+    # Proxied arms record the harness display separately (total_cost_usd_cli);
+    # for them total_cost_usd is already the proxy-sourced real figure.
+    return {"run": run, "cli_cost": m.get("total_cost_usd_cli",
+                                          m["total_cost_usd"]),
             "real_cost": round(real, 4) if real is not None else None,
             "wall": m["wall_seconds"], "tool_calls": m["tool_calls_total"],
             "out_tok": m["output_tokens"]}
