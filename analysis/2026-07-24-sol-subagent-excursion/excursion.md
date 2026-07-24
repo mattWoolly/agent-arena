@@ -24,9 +24,9 @@ Scorecard: 5/6 hypotheses hit.
 
 | run | real $ | cli $ | wall s | calls | out-tok |
 | --- | --- | --- | --- | --- | --- |
-| 05-review-transplant/gpt-5.6-sol/run-2 | 3.4823 | 3.48 | 829 | 97 | 72830 |
-| 05-review-transplant/gpt-5.6-sol/run-1 | 0.3391 | 0.34 | 117 | 8 | 5854 |
-| 05-review-transplant/gpt-5.6-sol/run-3 | 0.3443 | 0.34 | 125 | 8 | 6447 |
+| 05-review-transplant/gpt-5.6-sol/run-2 | 3.4823 | 10.19 | 829 | 97 | 72830 |
+| 05-review-transplant/gpt-5.6-sol/run-1 | 0.3391 | 0.76 | 117 | 8 | 5854 |
+| 05-review-transplant/gpt-5.6-sol/run-3 | 0.3443 | 0.67 | 125 | 8 | 6447 |
 | 05-review-transplant/claude-fable-5/run-1 | n/a (native) | 0.60 | 140 | 8 | 5213 |
 | 05-review-transplant/claude-fable-5/run-2 | n/a (native) | 0.94 | 170 | 7 | 11397 |
 | 05-review-transplant/claude-fable-5/run-3 | n/a (native) | 1.06 | 202 | 7 | 13389 |
