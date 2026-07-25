@@ -1,0 +1,2384 @@
+{
+ "records": [
+  {
+   "harness": "claude-code",
+   "config": "claude-fable-5",
+   "run": "run-1",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/claude-fable-5/run-1/transcript.jsonl",
+   "n_events": 22,
+   "counts": {
+    "Bash": 12,
+    "Read": 7,
+    "Edit": 2,
+    "Write": 1
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 12,
+     "cmd": "make test 2>&1; echo \"exit=$?\"",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\nexit=2"
+    },
+    {
+     "idx": 14,
+     "cmd": "make test 2>&1; echo \"exit=$?\"",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127\nexit=2"
+    },
+    {
+     "idx": 15,
+     "cmd": "chmod +x /tmp/arena-ws.CiEj7j/scripts/run_checks.sh && make test 2>&1; echo \"exit=$?\"",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127\nexit=2"
+    },
+    {
+     "idx": 17,
+     "cmd": "sed -i 's/\\r$//' /tmp/arena-ws.CiEj7j/scripts/run_checks.sh && make test 2>&1; echo \"exit=$?\"",
+     "surfaced": "F4-json-comma",
+     "result_head": "./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.CiEj7j/tools/validate_config.py\", line 18, in <module>\n    main(sys.argv[1])\n  File \"/tmp/arena-ws.CiEj7j/tools/validat"
+    },
+    {
+     "idx": 19,
+     "cmd": "make test 2>&1; echo \"exit=$?\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    },
+    {
+     "idx": 21,
+     "cmd": "make test >/dev/null 2>&1; echo \"make test exit=$?\"; git -C /tmp/arena-ws.CiEj7j status --short",
+     "surfaced": "other",
+     "result_head": "make test exit=0\n M Makefile\n M data/config.json\n M scripts/run_checks.sh\n?? SOLUTION.md\n?? __pycache__/\n?? src/pipeline/__pycache__/\n?? tests/__pycache__/"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: cat /tmp/arena-ws.CiEj7j/Makefile 2>/dev/null"
+     },
+     "error_seen_at": 12
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: cat -A /tmp/arena-ws.CiEj7j/Makefile"
+     },
+     "error_seen_at": 15
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 6,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.CiEj7j/data/config.json"
+     },
+     "error_seen_at": 17
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 11,
+      "kind": "scan",
+      "ev": "Bash: ls -la /tmp/arena-ws.CiEj7j/scripts /tmp/arena-ws.CiEj7j/tools"
+     },
+     "error_seen_at": 14
+    }
+   ],
+   "gap_seconds": 81.1,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la /tmp/arena-ws.CiEj7j",
+   "opens_with_checker": false,
+   "solution_md": "# Solution\n\n`make test` was failing due to four environment/config problems introduced by the\nbotched merge. No Python logic or tests were changed, and no checks were removed.\n\n## 1. Makefile recipe indented with spaces\n`Makefile` line 4 (the `python3 -m pytest -q tests/` recipe under `test:`) was\nindented with 4 spaces instead of a tab, causing `make: *** missing separator`.\n**Fix:** replaced the spaces with a tab.\n\n## 2. `scripts/run_checks.sh` lost its execute bit\nThe Makefile runs `./scripts/run_checks.sh` directly, but the file was mode\n`-rw-rw-r--`, so make failed with `Permission denied` (exit 127).\n**Fix:** `chmod +x scripts/run_checks.sh`.\n\n## 3. `scripts/run_checks.sh` had CRLF line endings\nThe shebang read `#!/bin/bash\\r`, so the kernel looked for an interpreter named\n`/bin/bash\\r` and execution failed with `No such file or directory` (exit 127).\n**Fix:** converted the file to LF line endings (`sed -i 's/\\r$//'`).\n\n## 4. Trailing comma in `data/config.json`\n`\"batch_size\": 500,` before the closing brace made the file invalid JSON, so\n`tools/validate_config.py` (run by the check step) crashed with a\n`JSONDecodeError`.\n**Fix:** removed the trailing comma.\n\nAfter these fixes, `make test` runs the config validation check and the full\npytest suite (3 tests) and exits 0.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la /tmp/arena-ws.CiEj7j  => total 1124 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 13:09 . ; drwxrwxrwt 16118 root    root    111001",
+    "[1] Bash: cat /tmp/arena-ws.CiEj7j/Makefile 2>/dev/null  => .PHONY: test check ;  ; test: check ;     python3 -m pytest -q tests/ ;  ; check: ; \t./scripts/run_checks.sh",
+    "[2] Bash: cat -A /tmp/arena-ws.CiEj7j/Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[3] Bash: find /tmp/arena-ws.CiEj7j -path '*/.git' -prune -o -type f -print | sort  => /tmp/arena-ws.CiEj7j/conftest.py ; /tmp/arena-ws.CiEj7j/data/config.json ; /tmp/arena-ws.CiEj7j/Makefile ; /tm",
+    "[4] Read: /tmp/arena-ws.CiEj7j/scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\" ; ",
+    "[5] Read: /tmp/arena-ws.CiEj7j/conftest.py  => 1\timport sys ; 2\tfrom pathlib import Path ; 3\t ; 4\tsys.path.insert(0, str(Path(__file__).parent / \"src\")) ; 5\t",
+    "[6] Read: /tmp/arena-ws.CiEj7j/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[7] Read: /tmp/arena-ws.CiEj7j/tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[8] Read: /tmp/arena-ws.CiEj7j/src/pipeline/transform.py  => 1\tdef normalize_record(record): ; 2\t    \"\"\"Lowercase keys, strip string values, drop keys with None values.\"\"\"",
+    "[9] Read: /tmp/arena-ws.CiEj7j/tests/test_transform.py  => 1\tfrom pipeline.transform import batch, normalize_record ; 2\t ; 3\t ; 4\tdef test_normalize_record(): ; 5\t    re",
+    "[10] Read: /tmp/arena-ws.CiEj7j/src/pipeline/__init__.py  => <system-reminder>Warning: the file exists but the contents are empty.</system-reminder>",
+    "[11] Bash: ls -la /tmp/arena-ws.CiEj7j/scripts /tmp/arena-ws.CiEj7j/tools  => /tmp/arena-ws.CiEj7j/scripts: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul 17 13:09 . ; drwxrwxr-x 8 mwo",
+    "[12] Bash: make test 2>&1; echo \"exit=$?\"  => Makefile:4: *** missing separator.  Stop. ; exit=2",
+    "[13] Edit: /tmp/arena-ws.CiEj7j/Makefile  => The file /tmp/arena-ws.CiEj7j/Makefile has been updated successfully. (file state is current in your context \u2014",
+    "[14] Bash: make test 2>&1; echo \"exit=$?\"  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[15] Bash: chmod +x /tmp/arena-ws.CiEj7j/scripts/run_checks.sh && make test 2>&1; echo \"exit=$?\"  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[16] Bash: file /tmp/arena-ws.CiEj7j/scripts/run_checks.sh; head -1 /tmp/arena-ws.CiEj7j/scripts/run_checks.sh | od -c |   => /tmp/arena-ws.CiEj7j/scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line t",
+    "[17] Bash: sed -i 's/\\r$//' /tmp/arena-ws.CiEj7j/scripts/run_checks.sh && make test 2>&1; echo \"exit=$?\"  => ./scripts/run_checks.sh ; Traceback (most recent call last): ;   File \"/tmp/arena-ws.CiEj7j/tools/validate_con",
+    "[18] Edit: /tmp/arena-ws.CiEj7j/data/config.json  => The file /tmp/arena-ws.CiEj7j/data/config.json has been updated successfully. (file state is current in your c",
+    "[19] Bash: make test 2>&1; echo \"exit=$?\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[20] Write: /tmp/arena-ws.CiEj7j/SOLUTION.md  => File created successfully at: /tmp/arena-ws.CiEj7j/SOLUTION.md (file state is current in your context \u2014 no nee",
+    "[21] Bash: make test >/dev/null 2>&1; echo \"make test exit=$?\"; git -C /tmp/arena-ws.CiEj7j status --short  => make test exit=0 ;  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? SOLUTION.md ; ?? __pycach"
+   ],
+   "label": "Fable 5 / Claude Code",
+   "wall_seconds": 97.7
+  },
+  {
+   "harness": "claude-code",
+   "config": "claude-fable-5",
+   "run": "run-2",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/claude-fable-5/run-2/transcript.jsonl",
+   "n_events": 11,
+   "counts": {
+    "Bash": 8,
+    "Edit": 2,
+    "Write": 1
+   },
+   "checker_cycles": 3,
+   "checkers": [
+    {
+     "idx": 3,
+     "cmd": "cat /tmp/arena-ws.p1AHud/src/pipeline/transform.py; echo ---; make test 2>&1 | head -20",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "def normalize_record(record):\n    \"\"\"Lowercase keys, strip string values, drop keys with None values.\"\"\"\n    out = {}\n    for key, value in record.items():\n        if value is None:\n            contin"
+    },
+    {
+     "idx": 7,
+     "cmd": "make test; echo \"exit: $?\"",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127\nexit: 2"
+    },
+    {
+     "idx": 9,
+     "cmd": "sed -i 's/\\r$//' /tmp/arena-ws.p1AHud/scripts/run_checks.sh && make test; echo \"exit: $?\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F3-crlf"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 0,
+      "kind": "scan",
+      "ev": "Bash: ls -la /tmp/arena-ws.p1AHud && cat /tmp/arena-ws.p1AHud/Makefile"
+     },
+     "error_seen_at": 3
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: cat -A /tmp/arena-ws.p1AHud/Makefile; echo ---; cat /tmp/arena-ws.p1AHud/conftest.py; echo ---; ls -la /tmp/arena-ws.p1A"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: cat -A /tmp/arena-ws.p1AHud/Makefile; echo ---; cat /tmp/arena-ws.p1AHud/conftest.py; echo ---; ls -la /tmp/arena-ws.p1A"
+     },
+     "error_seen_at": 7
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: cat /tmp/arena-ws.p1AHud/scripts/run_checks.sh; echo ---; cat /tmp/arena-ws.p1AHud/tools/validate_config.py; echo ---; c"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": 59.0,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la /tmp/arena-ws.p1AHud && cat /tmp/arena-ws.p1AHud/Makefile",
+   "opens_with_checker": false,
+   "solution_md": "# Solution\n\n`make test` was failing due to four environment/config problems introduced by the\nbotched merge. No Python source or test logic needed changes, and no checks were\nremoved or weakened.\n\n## Problems found and fixes\n\n1. **Makefile recipe indented with spaces** \u2014 the `test` target's recipe line\n   (`python3 -m pytest -q tests/`) began with 4 spaces instead of a tab, so make\n   aborted with `Makefile:4: *** missing separator. Stop.`\n   **Fix:** replaced the leading spaces with a tab.\n\n2. **`scripts/run_checks.sh` lost its executable bit** \u2014 the Makefile runs it as\n   `./scripts/run_checks.sh`, which fails with \"Permission denied\" on a\n   non-executable file.\n   **Fix:** `chmod +x scripts/run_checks.sh`.\n\n3. **`scripts/run_checks.sh` had CRLF line endings** \u2014 the shebang line was\n   `#!/bin/bash\\r`, so the kernel reported `No such file or directory` when\n   executing it (there is no interpreter named `/bin/bash\\r`).\n   **Fix:** converted the file to LF line endings (`sed -i 's/\\r$//'`).\n\n4. **`data/config.json` had a trailing comma** \u2014 `\"batch_size\": 500,` before the\n   closing brace is invalid JSON, so `tools/validate_config.py` crashed with a\n   `json.JSONDecodeError` and the `check` target failed.\n   **Fix:** removed the trailing comma.\n\n## Verification\n\n```\n$ make test\n./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\n$ echo $?\n0\n```\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la /tmp/arena-ws.p1AHud && cat /tmp/arena-ws.p1AHud/Makefile  => total 1124 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 13:18 . ; drwxrwxrwt 16118 root    root    111001",
+    "[1] Bash: cat -A /tmp/arena-ws.p1AHud/Makefile; echo ---; cat /tmp/arena-ws.p1AHud/conftest.py; echo ---; ls -la /tmp/ar  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[2] Bash: cat /tmp/arena-ws.p1AHud/scripts/run_checks.sh; echo ---; cat /tmp/arena-ws.p1AHud/tools/validate_config.py; e  => #!/bin/bash\r ; set -e\r ; python3 tools/validate_config.py data/config.json\r ; echo \"all checks passed\"\r ; --- ",
+    "[3] Bash: cat /tmp/arena-ws.p1AHud/src/pipeline/transform.py; echo ---; make test 2>&1 | head -20  => def normalize_record(record): ;     \"\"\"Lowercase keys, strip string values, drop keys with None values.\"\"\" ;  ",
+    "[4] Edit: /tmp/arena-ws.p1AHud/Makefile  => The file /tmp/arena-ws.p1AHud/Makefile has been updated successfully. (file state is current in your context \u2014",
+    "[5] Edit: /tmp/arena-ws.p1AHud/data/config.json  => The file /tmp/arena-ws.p1AHud/data/config.json has been updated successfully. (file state is current in your c",
+    "[6] Bash: chmod +x /tmp/arena-ws.p1AHud/scripts/run_checks.sh  => (Bash completed with no output)",
+    "[7] Bash: make test; echo \"exit: $?\"  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[8] Bash: file /tmp/arena-ws.p1AHud/scripts/run_checks.sh; head -1 /tmp/arena-ws.p1AHud/scripts/run_checks.sh | od -c |   => /tmp/arena-ws.p1AHud/scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line t",
+    "[9] Bash: sed -i 's/\\r$//' /tmp/arena-ws.p1AHud/scripts/run_checks.sh && make test; echo \"exit: $?\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[10] Write: /tmp/arena-ws.p1AHud/SOLUTION.md  => File created successfully at: /tmp/arena-ws.p1AHud/SOLUTION.md (file state is current in your context \u2014 no nee"
+   ],
+   "label": "Fable 5 / Claude Code",
+   "wall_seconds": 73.7
+  },
+  {
+   "harness": "claude-code",
+   "config": "claude-fable-5",
+   "run": "run-3",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/claude-fable-5/run-3/transcript.jsonl",
+   "n_events": 15,
+   "counts": {
+    "Bash": 11,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 1,
+     "cmd": "make test 2>&1 | head -50",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop."
+    },
+    {
+     "idx": 4,
+     "cmd": "make test 2>&1 | head -40",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 6,
+     "cmd": "chmod +x /tmp/arena-ws.oG46ql/scripts/run_checks.sh && make test 2>&1 | head -40",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 8,
+     "cmd": "sed -i 's/\\r$//' /tmp/arena-ws.oG46ql/scripts/run_checks.sh && make test 2>&1 | head -40",
+     "surfaced": "F4-json-comma",
+     "result_head": "./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.oG46ql/tools/validate_config.py\", line 18, in <module>\n    main(sys.argv[1])\n  File \"/tmp/arena-ws.oG46ql/tools/validat"
+    },
+    {
+     "idx": 12,
+     "cmd": "make test 2>&1 | head -60",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    },
+    {
+     "idx": 13,
+     "cmd": "make test > /dev/null 2>&1; echo \"exit code: $?\"",
+     "surfaced": "other",
+     "result_head": "exit code: 0"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 0,
+      "kind": "scan",
+      "ev": "Bash: ls -la /tmp/arena-ws.oG46ql && cat /tmp/arena-ws.oG46ql/Makefile"
+     },
+     "error_seen_at": 1
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: cat -A /tmp/arena-ws.oG46ql/Makefile"
+     },
+     "error_seen_at": 6
+    }
+   ],
+   "gap_seconds": 63.4,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la /tmp/arena-ws.oG46ql && cat /tmp/arena-ws.oG46ql/Makefile",
+   "opens_with_checker": false,
+   "solution_md": "# Solution\n\n`make test` was failing due to four environment/config problems introduced by\nthe botched merge. No Python source or test logic needed changes, and no\nchecks were removed or weakened.\n\n1. **Makefile used spaces instead of a tab** \u2014 the recipe line for the `test`\n   target (`python3 -m pytest -q tests/`) was indented with 4 spaces, causing\n   `Makefile:4: *** missing separator`. Fix: re-indented the recipe with a\n   real tab character.\n\n2. **`scripts/run_checks.sh` lost its executable bit** \u2014 the file was mode\n   `rw-rw-r--`, so make failed with `Permission denied`. Fix:\n   `chmod +x scripts/run_checks.sh`.\n\n3. **`scripts/run_checks.sh` had CRLF line endings** \u2014 the `\\r` after the\n   `#!/bin/bash` shebang made the kernel report `No such file or directory`\n   when executing it. Fix: converted the file to LF endings\n   (`sed -i 's/\\r$//'`).\n\n4. **`data/config.json` had a trailing comma** \u2014 after `\"batch_size\": 500,`,\n   which is invalid JSON, so `tools/validate_config.py` failed with a\n   `JSONDecodeError`. Fix: removed the trailing comma.\n\nAfter these fixes, `make test` runs the config validation check and the full\npytest suite (3 tests) and exits 0.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la /tmp/arena-ws.oG46ql && cat /tmp/arena-ws.oG46ql/Makefile  => total 1124 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 13:21 . ; drwxrwxrwt 16118 root    root    111001",
+    "[1] Bash: make test 2>&1 | head -50  => Makefile:4: *** missing separator.  Stop.",
+    "[2] Bash: cat -A /tmp/arena-ws.oG46ql/Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[3] Bash: printf '.PHONY: test check\\n\\ntest: check\\n\\tpython3 -m pytest -q tests/\\n\\ncheck:\\n\\t./scripts/run_checks.sh\\  => .PHONY: test check$ ; $ ; test: check$ ; ^Ipython3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_checks",
+    "[4] Bash: make test 2>&1 | head -40  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[5] Bash: ls -la /tmp/arena-ws.oG46ql/scripts /tmp/arena-ws.oG46ql/tools && cat /tmp/arena-ws.oG46ql/scripts/run_checks.  => /tmp/arena-ws.oG46ql/scripts: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul 17 13:21 . ; drwxrwxr-x 8 mwo",
+    "[6] Bash: chmod +x /tmp/arena-ws.oG46ql/scripts/run_checks.sh && make test 2>&1 | head -40  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[7] Bash: file /tmp/arena-ws.oG46ql/scripts/run_checks.sh && cat -A /tmp/arena-ws.oG46ql/scripts/run_checks.sh  => /tmp/arena-ws.oG46ql/scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line t",
+    "[8] Bash: sed -i 's/\\r$//' /tmp/arena-ws.oG46ql/scripts/run_checks.sh && make test 2>&1 | head -40  => ./scripts/run_checks.sh ; Traceback (most recent call last): ;   File \"/tmp/arena-ws.oG46ql/tools/validate_con",
+    "[9] Read: /tmp/arena-ws.oG46ql/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[10] Read: /tmp/arena-ws.oG46ql/tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[11] Edit: /tmp/arena-ws.oG46ql/data/config.json  => The file /tmp/arena-ws.oG46ql/data/config.json has been updated successfully. (file state is current in your c",
+    "[12] Bash: make test 2>&1 | head -60  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[13] Bash: make test > /dev/null 2>&1; echo \"exit code: $?\"  => exit code: 0",
+    "[14] Write: /tmp/arena-ws.oG46ql/SOLUTION.md  => File created successfully at: /tmp/arena-ws.oG46ql/SOLUTION.md (file state is current in your context \u2014 no nee"
+   ],
+   "label": "Fable 5 / Claude Code",
+   "wall_seconds": 80.4
+  },
+  {
+   "harness": "claude-code",
+   "config": "gpt-5.6-sol",
+   "run": "run-1",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/gpt-5.6-sol/run-1/transcript.jsonl",
+   "n_events": 36,
+   "counts": {
+    "TaskCreate": 5,
+    "TaskUpdate": 8,
+    "Bash": 12,
+    "Read": 7,
+    "Edit": 2,
+    "Write": 2
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 6,
+     "cmd": "make test",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Exit code 2\nMakefile:4: *** missing separator.  Stop."
+    },
+    {
+     "idx": 19,
+     "cmd": "make test",
+     "surfaced": "F2-exec-bit",
+     "result_head": "Exit code 2\n./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 23,
+     "cmd": "chmod +x scripts/run_checks.sh && make test",
+     "surfaced": "F3-crlf",
+     "result_head": "Exit code 2\n./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 25,
+     "cmd": "make test",
+     "surfaced": "F4-json-comma",
+     "result_head": "Exit code 2\n./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.YJtx0y/tools/validate_config.py\", line 18, in <module>\n    main(sys.argv[1])\n  File \"/tmp/arena-ws.YJtx0y/t"
+    },
+    {
+     "idx": 27,
+     "cmd": "make test",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    },
+    {
+     "idx": 33,
+     "cmd": "make test && git diff --check && git status --short",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 11,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.YJtx0y/scripts/run_checks.sh"
+     },
+     "error_seen_at": 23
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 13,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.YJtx0y/data/config.json"
+     },
+     "error_seen_at": 25
+    }
+   ],
+   "gap_seconds": 96.8,
+   "n_task_mgmt": 13,
+   "first_repo_event": "Bash: make test",
+   "opens_with_checker": true,
+   "solution_md": "# Solution\n\n- **Invalid Makefile recipe indentation:** the `test` recipe used spaces instead of the tab required by `make`. Replaced the spaces with a tab.\n- **Broken check-script metadata and line endings:** `scripts/run_checks.sh` was not executable and had CRLF line endings, which prevented Linux from invoking its Bash shebang. Restored its executable bit and converted it to LF line endings.\n- **Invalid JSON configuration:** `data/config.json` had a trailing comma after `batch_size`. Removed the comma so the existing validation check can parse the file.\n\n`make test` now runs the same configuration validation and pytest suite successfully (3 tests passed).\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] TaskCreate: {\"subject\": \"Reproduce failing test workflow\", \"description\": \"Run make test and capture all environment/confi  => Task #1 created successfully: Reproduce failing test workflow",
+    "[1] TaskCreate: {\"subject\": \"Diagnose configuration problems\", \"description\": \"Inspect project configuration and merge artifac  => Task #2 created successfully: Diagnose configuration problems",
+    "[2] TaskCreate: {\"subject\": \"Fix environment and configuration\", \"description\": \"Apply minimal fixes only within the current d  => Task #3 created successfully: Fix environment and configuration",
+    "[3] TaskCreate: {\"subject\": \"Verify make test passes\", \"description\": \"Run the unchanged make test workflow and confirm it exi  => Task #4 created successfully: Verify make test passes",
+    "[4] TaskCreate: {\"subject\": \"Document fixes in SOLUTION.md\", \"description\": \"After make test exits 0, write a short SOLUTION.m  => Task #5 created successfully: Document fixes in SOLUTION.md",
+    "[5] TaskUpdate: {\"taskId\": \"1\", \"status\": \"in_progress\"}  => Updated task #1 status",
+    "[6] Bash: make test  => Exit code 2 ; Makefile:4: *** missing separator.  Stop.",
+    "[7] Read: /tmp/arena-ws.YJtx0y/Makefile  => <tool_use_error>Invalid pages parameter: \"\". Use formats like \"1-5\", \"3\", or \"10-20\". Pages are 1-indexed.</to",
+    "[8] Bash: find . -maxdepth 3 -type f -print | sort  => ./conftest.py ; ./data/config.json ; ./.git/COMMIT_EDITMSG ; ./.git/config ; ./.git/description ; ./.git/HEAD ",
+    "[9] Bash: git status --short && git diff --check && git log -1 --stat --oneline  => 3d825a6 baseline ;  Makefile                  |  7 +++++++ ;  conftest.py               |  4 ++++ ;  data/conf",
+    "[10] Read: /tmp/arena-ws.YJtx0y/Makefile  => 1\t.PHONY: test check ; 2\t ; 3\ttest: check ; 4\t    python3 -m pytest -q tests/ ; 5\t ; 6\tcheck: ; 7\t\t./scripts/r",
+    "[11] Read: /tmp/arena-ws.YJtx0y/scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\" ; ",
+    "[12] Read: /tmp/arena-ws.YJtx0y/tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[13] Read: /tmp/arena-ws.YJtx0y/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[14] Read: /tmp/arena-ws.YJtx0y/conftest.py  => 1\timport sys ; 2\tfrom pathlib import Path ; 3\t ; 4\tsys.path.insert(0, str(Path(__file__).parent / \"src\")) ; 5\t",
+    "[15] Read: /tmp/arena-ws.YJtx0y/tests/test_transform.py  => 1\tfrom pipeline.transform import batch, normalize_record ; 2\t ; 3\t ; 4\tdef test_normalize_record(): ; 5\t    re",
+    "[16] TaskUpdate: {\"taskId\": \"1\", \"status\": \"completed\"}  => Updated task #1 status",
+    "[17] TaskUpdate: {\"taskId\": \"2\", \"status\": \"in_progress\"}  => Updated task #2 status",
+    "[18] Edit: /tmp/arena-ws.YJtx0y/Makefile  => The file /tmp/arena-ws.YJtx0y/Makefile has been updated successfully. (file state is current in your context \u2014",
+    "[19] Bash: make test  => Exit code 2 ; ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile",
+    "[20] Bash: git ls-files --stage Makefile scripts/run_checks.sh data/config.json  => 100644 3b5763a43a5cd2addbb4c1d361c11acb3d465f10 0\tMakefile ; 100644 240e3fc9f565faa57537d98c3e2c0758a7818b72 0",
+    "[21] Bash: stat -c '%A %a %n' scripts/run_checks.sh Makefile data/config.json  => -rw-rw-r-- 664 scripts/run_checks.sh ; -rw-rw-r-- 664 Makefile ; -rw-rw-r-- 664 data/config.json",
+    "[22] Bash: file Makefile scripts/run_checks.sh data/config.json  => Makefile:              ASCII text ; scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, w",
+    "[23] Bash: chmod +x scripts/run_checks.sh && make test  => Exit code 2 ; ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [",
+    "[24] Write: /tmp/arena-ws.YJtx0y/scripts/run_checks.sh  => The file /tmp/arena-ws.YJtx0y/scripts/run_checks.sh has been updated successfully. (file state is current in y",
+    "[25] Bash: make test  => Exit code 2 ; ./scripts/run_checks.sh ; Traceback (most recent call last): ;   File \"/tmp/arena-ws.YJtx0y/tool",
+    "[26] Edit: /tmp/arena-ws.YJtx0y/data/config.json  => The file /tmp/arena-ws.YJtx0y/data/config.json has been updated successfully. (file state is current in your c",
+    "[27] Bash: make test  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[28] TaskUpdate: {\"taskId\": \"2\", \"status\": \"completed\"}  => Updated task #2 status",
+    "[29] TaskUpdate: {\"taskId\": \"3\", \"status\": \"completed\"}  => Updated task #3 status",
+    "[30] TaskUpdate: {\"taskId\": \"4\", \"status\": \"completed\"}  => Updated task #4 status",
+    "[31] TaskUpdate: {\"taskId\": \"5\", \"status\": \"in_progress\"}  => Updated task #5 status",
+    "[32] Write: /tmp/arena-ws.YJtx0y/SOLUTION.md  => File created successfully at: /tmp/arena-ws.YJtx0y/SOLUTION.md (file state is current in your context \u2014 no nee",
+    "[33] Bash: make test && git diff --check && git status --short  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[34] Bash: rm -rf __pycache__ src/pipeline/__pycache__ tests/__pycache__ && git diff --check && git status --short && git  =>  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? SOLUTION.md ;  mode change 100644 => 100755 ",
+    "[35] TaskUpdate: {\"taskId\": \"5\", \"status\": \"completed\"}  => Updated task #5 status"
+   ],
+   "label": "Sol / Claude Code",
+   "wall_seconds": 106.8
+  },
+  {
+   "harness": "claude-code",
+   "config": "gpt-5.6-sol",
+   "run": "run-2",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/gpt-5.6-sol/run-2/transcript.jsonl",
+   "n_events": 30,
+   "counts": {
+    "TaskCreate": 4,
+    "TaskUpdate": 8,
+    "Bash": 7,
+    "Read": 7,
+    "Edit": 2,
+    "Write": 2
+   },
+   "checker_cycles": 3,
+   "checkers": [
+    {
+     "idx": 5,
+     "cmd": "make test",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Exit code 2\nMakefile:4: *** missing separator.  Stop."
+    },
+    {
+     "idx": 22,
+     "cmd": "chmod +x scripts/run_checks.sh && make test",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    },
+    {
+     "idx": 26,
+     "cmd": "make test",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 11,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.Vdz8Z0/scripts/run_checks.sh"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 14,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.Vdz8Z0/data/config.json"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 22,
+      "kind": "fix",
+      "ev": "Bash: chmod +x scripts/run_checks.sh && make test"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": 70.0,
+   "n_task_mgmt": 12,
+   "first_repo_event": "Bash: make test",
+   "opens_with_checker": true,
+   "solution_md": "# Solution\n\n- The `test` recipe in `Makefile` was indented with spaces, which GNU Make rejected. Replaced the spaces with a recipe tab.\n- `scripts/run_checks.sh` had CRLF line endings and was not executable, so it could not run as the `check` recipe requires. Converted it to LF line endings and restored its executable bit.\n- `data/config.json` had a trailing comma after `batch_size`, making it invalid JSON. Removed the trailing comma.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] TaskCreate: {\"subject\": \"Reproduce the failing test target\", \"description\": \"Run `make test` without modifying checks to c  => Task #1 created successfully: Reproduce the failing test target",
+    "[1] TaskCreate: {\"subject\": \"Diagnose environment and configuration issues\", \"description\": \"Inspect project configuration and  => Task #2 created successfully: Diagnose environment and configuration issues",
+    "[2] TaskCreate: {\"subject\": \"Apply configuration fixes\", \"description\": \"Make the minimal project-local environment/configurat  => Task #3 created successfully: Apply configuration fixes",
+    "[3] TaskCreate: {\"subject\": \"Verify tests and document solution\", \"description\": \"Run the unchanged `make test` to exit 0, the  => Task #4 created successfully: Verify tests and document solution",
+    "[4] TaskUpdate: {\"taskId\": \"1\", \"status\": \"in_progress\"}  => Updated task #1 status",
+    "[5] Bash: make test  => Exit code 2 ; Makefile:4: *** missing separator.  Stop.",
+    "[6] TaskUpdate: {\"taskId\": \"1\", \"status\": \"completed\"}  => Updated task #1 status",
+    "[7] TaskUpdate: {\"taskId\": \"2\", \"status\": \"in_progress\"}  => Updated task #2 status",
+    "[8] Read: /tmp/arena-ws.Vdz8Z0/Makefile  => <tool_use_error>Invalid pages parameter: \"\". Use formats like \"1-5\", \"3\", or \"10-20\". Pages are 1-indexed.</to",
+    "[9] Bash: git status --short && git ls-files  => Makefile ; conftest.py ; data/config.json ; scripts/run_checks.sh ; src/pipeline/__init__.py ; src/pipeline/tr",
+    "[10] Read: /tmp/arena-ws.Vdz8Z0/Makefile  => 1\t.PHONY: test check ; 2\t ; 3\ttest: check ; 4\t    python3 -m pytest -q tests/ ; 5\t ; 6\tcheck: ; 7\t\t./scripts/r",
+    "[11] Read: /tmp/arena-ws.Vdz8Z0/scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\" ; ",
+    "[12] Read: /tmp/arena-ws.Vdz8Z0/conftest.py  => 1\timport sys ; 2\tfrom pathlib import Path ; 3\t ; 4\tsys.path.insert(0, str(Path(__file__).parent / \"src\")) ; 5\t",
+    "[13] Read: /tmp/arena-ws.Vdz8Z0/tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[14] Read: /tmp/arena-ws.Vdz8Z0/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[15] Read: /tmp/arena-ws.Vdz8Z0/tests/test_transform.py  => 1\tfrom pipeline.transform import batch, normalize_record ; 2\t ; 3\t ; 4\tdef test_normalize_record(): ; 5\t    re",
+    "[16] Bash: git ls-files -s Makefile scripts/run_checks.sh data/config.json && stat -c '%A %a %n' scripts/run_checks.sh &&  => 100644 3b5763a43a5cd2addbb4c1d361c11acb3d465f10 0\tMakefile ; 100644 240e3fc9f565faa57537d98c3e2c0758a7818b72 0",
+    "[17] TaskUpdate: {\"taskId\": \"2\", \"status\": \"completed\", \"description\": \"Identified malformed Makefile recipe indentation, a non  => Updated task #2 description, status",
+    "[18] TaskUpdate: {\"taskId\": \"3\", \"status\": \"in_progress\"}  => Updated task #3 status",
+    "[19] Edit: /tmp/arena-ws.Vdz8Z0/Makefile  => The file /tmp/arena-ws.Vdz8Z0/Makefile has been updated successfully. (file state is current in your context \u2014",
+    "[20] Edit: /tmp/arena-ws.Vdz8Z0/data/config.json  => The file /tmp/arena-ws.Vdz8Z0/data/config.json has been updated successfully. (file state is current in your c",
+    "[21] Write: /tmp/arena-ws.Vdz8Z0/scripts/run_checks.sh  => The file /tmp/arena-ws.Vdz8Z0/scripts/run_checks.sh has been updated successfully. (file state is current in y",
+    "[22] Bash: chmod +x scripts/run_checks.sh && make test  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[23] TaskUpdate: {\"taskId\": \"3\", \"status\": \"completed\"}  => Updated task #3 status",
+    "[24] TaskUpdate: {\"taskId\": \"4\", \"status\": \"in_progress\"}  => Updated task #4 status",
+    "[25] Write: /tmp/arena-ws.Vdz8Z0/SOLUTION.md  => File created successfully at: /tmp/arena-ws.Vdz8Z0/SOLUTION.md (file state is current in your context \u2014 no nee",
+    "[26] Bash: make test  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[27] Bash: git diff --check && git status --short && git diff --summary  =>  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? SOLUTION.md ; ?? __pycache__/ ; ?? src/pipel",
+    "[28] Bash: rm -rf __pycache__ src/pipeline/__pycache__ tests/__pycache__ && git status --short && git diff -- Makefile da  =>  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? SOLUTION.md ; diff --git a/Makefile b/Makefi",
+    "[29] TaskUpdate: {\"taskId\": \"4\", \"status\": \"completed\"}  => Updated task #4 status"
+   ],
+   "label": "Sol / Claude Code",
+   "wall_seconds": 79.2
+  },
+  {
+   "harness": "claude-code",
+   "config": "gpt-5.6-sol",
+   "run": "run-3",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/gpt-5.6-sol/run-3/transcript.jsonl",
+   "n_events": 43,
+   "counts": {
+    "TaskCreate": 5,
+    "TaskUpdate": 10,
+    "Bash": 12,
+    "Read": 8,
+    "Edit": 2,
+    "Write": 2,
+    "TaskGet": 4
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 6,
+     "cmd": "make test",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Exit code 2\nMakefile:4: *** missing separator.  Stop."
+    },
+    {
+     "idx": 12,
+     "cmd": "make test",
+     "surfaced": "F2-exec-bit",
+     "result_head": "Exit code 2\n./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 15,
+     "cmd": "chmod +x scripts/run_checks.sh && make test",
+     "surfaced": "F3-crlf",
+     "result_head": "Exit code 2\n./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 25,
+     "cmd": "make test",
+     "surfaced": "F4-json-comma",
+     "result_head": "Exit code 2\n./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.iiJws7/tools/validate_config.py\", line 18, in <module>\n    main(sys.argv[1])\n  File \"/tmp/arena-ws.iiJws7/t"
+    },
+    {
+     "idx": 27,
+     "cmd": "make test",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    },
+    {
+     "idx": 40,
+     "cmd": "make test && rm -rf __pycache__ src/pipeline/__pycache__ tests/__pycache__ && git diff --check && git status --short",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 13,
+      "kind": "scan",
+      "ev": "Bash: git status --short && git ls-files --stage Makefile scripts/run_checks.sh"
+     },
+     "error_seen_at": 15
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 18,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.iiJws7/data/config.json"
+     },
+     "error_seen_at": 25
+    }
+   ],
+   "gap_seconds": 141.7,
+   "n_task_mgmt": 19,
+   "first_repo_event": "Bash: make test",
+   "opens_with_checker": true,
+   "solution_md": "# Solution\n\n- The `test` recipe in `Makefile` used spaces instead of the tab required by Make. Replaced the indentation with a tab.\n- `scripts/run_checks.sh` had lost its executable bit and had CRLF line endings, which broke execution of its shebang on Linux. Restored executable permissions and converted it to LF line endings.\n- `data/config.json` had an invalid trailing comma after `batch_size`. Removed the comma so the existing configuration validation succeeds.\n\n`make test` now runs the unchanged configuration check and pytest suite successfully (3 tests passed).\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] TaskCreate: {\"subject\": \"Reproduce the test failure\", \"description\": \"Run make test and capture all failing checks without  => Task #1 created successfully: Reproduce the test failure",
+    "[1] TaskCreate: {\"subject\": \"Diagnose environment and config issues\", \"description\": \"Inspect repository configuration and mer  => Task #2 created successfully: Diagnose environment and config issues",
+    "[2] TaskCreate: {\"subject\": \"Repair project configuration\", \"description\": \"Apply minimal fixes outside tests and Python sourc  => Task #3 created successfully: Repair project configuration",
+    "[3] TaskCreate: {\"subject\": \"Verify full test target\", \"description\": \"Run make test unchanged until it exits zero and inspect  => Task #4 created successfully: Verify full test target",
+    "[4] TaskCreate: {\"subject\": \"Document the solution\", \"description\": \"After make test passes, write SOLUTION.md briefly listing  => Task #5 created successfully: Document the solution",
+    "[5] TaskUpdate: {\"taskId\": \"1\", \"status\": \"in_progress\"}  => Updated task #1 status",
+    "[6] Bash: make test  => Exit code 2 ; Makefile:4: *** missing separator.  Stop.",
+    "[7] Read: /tmp/arena-ws.iiJws7/Makefile  => <tool_use_error>Invalid pages parameter: \"\". Use formats like \"1-5\", \"3\", or \"10-20\". Pages are 1-indexed.</to",
+    "[8] Read: /tmp/arena-ws.iiJws7/Makefile  => 1\t.PHONY: test check ; 2\t ; 3\ttest: check ; 4\t    python3 -m pytest -q tests/ ; 5\t ; 6\tcheck: ; 7\t\t./scripts/r",
+    "[9] TaskUpdate: {\"taskId\": \"1\", \"status\": \"completed\"}  => Updated task #1 status",
+    "[10] TaskUpdate: {\"taskId\": \"2\", \"status\": \"in_progress\"}  => Updated task #2 status",
+    "[11] Edit: /tmp/arena-ws.iiJws7/Makefile  => The file /tmp/arena-ws.iiJws7/Makefile has been updated successfully. (file state is current in your context \u2014",
+    "[12] Bash: make test  => Exit code 2 ; ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile",
+    "[13] Bash: git status --short && git ls-files --stage Makefile scripts/run_checks.sh  =>  M Makefile ; 100644 3b5763a43a5cd2addbb4c1d361c11acb3d465f10 0\tMakefile ; 100644 1db22701b3b89d432131c7cf997c",
+    "[14] Read: /tmp/arena-ws.iiJws7/scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\" ; ",
+    "[15] Bash: chmod +x scripts/run_checks.sh && make test  => Exit code 2 ; ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [",
+    "[16] Bash: file scripts/run_checks.sh Makefile data/config.json && git diff --summary && git diff -- Makefile scripts/run  => scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators ; Makefile",
+    "[17] Read: /tmp/arena-ws.iiJws7/tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[18] Read: /tmp/arena-ws.iiJws7/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[19] Bash: git ls-files && git status --short  => Makefile ; conftest.py ; data/config.json ; scripts/run_checks.sh ; src/pipeline/__init__.py ; src/pipeline/tr",
+    "[20] Read: /tmp/arena-ws.iiJws7/conftest.py  => 1\timport sys ; 2\tfrom pathlib import Path ; 3\t ; 4\tsys.path.insert(0, str(Path(__file__).parent / \"src\")) ; 5\t",
+    "[21] Read: /tmp/arena-ws.iiJws7/tests/test_transform.py  => 1\tfrom pipeline.transform import batch, normalize_record ; 2\t ; 3\t ; 4\tdef test_normalize_record(): ; 5\t    re",
+    "[22] Read: /tmp/arena-ws.iiJws7/src/pipeline/transform.py  => 1\tdef normalize_record(record): ; 2\t    \"\"\"Lowercase keys, strip string values, drop keys with None values.\"\"\"",
+    "[23] Bash: find . -maxdepth 3 -type f -not -path './.git/*' -print | sort  => ./conftest.py ; ./data/config.json ; ./Makefile ; ./scripts/run_checks.sh ; ./src/pipeline/__init__.py ; ./src",
+    "[24] Write: /tmp/arena-ws.iiJws7/scripts/run_checks.sh  => The file /tmp/arena-ws.iiJws7/scripts/run_checks.sh has been updated successfully. (file state is current in y",
+    "[25] Bash: make test  => Exit code 2 ; ./scripts/run_checks.sh ; Traceback (most recent call last): ;   File \"/tmp/arena-ws.iiJws7/tool",
+    "[26] Edit: /tmp/arena-ws.iiJws7/data/config.json  => The file /tmp/arena-ws.iiJws7/data/config.json has been updated successfully. (file state is current in your c",
+    "[27] Bash: make test  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[28] TaskGet: {\"taskId\": \"2\"}  => Task #2: Diagnose environment and config issues ; Status: in_progress ; Description: Inspect repository config",
+    "[29] TaskUpdate: {\"taskId\": \"2\", \"status\": \"completed\"}  => Updated task #2 status",
+    "[30] TaskUpdate: {\"taskId\": \"3\", \"status\": \"in_progress\"}  => Updated task #3 status",
+    "[31] Bash: git diff --check && git diff --summary && git status --short && git diff -- Makefile scripts/run_checks.sh dat  =>  mode change 100644 => 100755 scripts/run_checks.sh ;  M Makefile ;  M data/config.json ;  M scripts/run_check",
+    "[32] TaskGet: {\"taskId\": \"3\"}  => Task #3: Repair project configuration ; Status: in_progress ; Description: Apply minimal fixes outside tests a",
+    "[33] TaskUpdate: {\"taskId\": \"3\", \"status\": \"completed\"}  => Updated task #3 status",
+    "[34] TaskUpdate: {\"taskId\": \"4\", \"status\": \"in_progress\"}  => Updated task #4 status",
+    "[35] TaskGet: {\"taskId\": \"4\"}  => Task #4: Verify full test target ; Status: in_progress ; Description: Run make test unchanged until it exits z",
+    "[36] TaskUpdate: {\"taskId\": \"4\", \"status\": \"completed\"}  => Updated task #4 status",
+    "[37] TaskUpdate: {\"taskId\": \"5\", \"status\": \"in_progress\"}  => Updated task #5 status",
+    "[38] Write: /tmp/arena-ws.iiJws7/SOLUTION.md  => File created successfully at: /tmp/arena-ws.iiJws7/SOLUTION.md (file state is current in your context \u2014 no nee",
+    "[39] Bash: find __pycache__ src/pipeline/__pycache__ tests/__pycache__ -maxdepth 1 -type f -print  => __pycache__/conftest.cpython-312-pytest-9.0.3.pyc ; src/pipeline/__pycache__/__init__.cpython-312.pyc ; src/pi",
+    "[40] Bash: make test && rm -rf __pycache__ src/pipeline/__pycache__ tests/__pycache__ && git diff --check && git status -  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[41] TaskGet: {\"taskId\": \"5\"}  => Task #5: Document the solution ; Status: in_progress ; Description: After make test passes, write SOLUTION.md ",
+    "[42] TaskUpdate: {\"taskId\": \"5\", \"status\": \"completed\"}  => Updated task #5 status"
+   ],
+   "label": "Sol / Claude Code",
+   "wall_seconds": 152.0
+  },
+  {
+   "harness": "claude-code",
+   "config": "kimi-k3",
+   "run": "run-1",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/kimi-k3/run-1/transcript.jsonl",
+   "n_events": 16,
+   "counts": {
+    "Bash": 11,
+    "Edit": 2,
+    "Read": 2,
+    "Write": 1
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 1,
+     "cmd": "make test 2>&1 | head -50",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop."
+    },
+    {
+     "idx": 4,
+     "cmd": "make test 2>&1 | head -60",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 7,
+     "cmd": "chmod +x /tmp/arena-ws.TJYP5u/scripts/run_checks.sh && make test 2>&1 | head -60",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 9,
+     "cmd": "sed -i 's/\\r$//' /tmp/arena-ws.TJYP5u/scripts/run_checks.sh && cat -A /tmp/arena-ws.TJYP5u/scripts/run_checks.sh && make",
+     "surfaced": "F4-json-comma",
+     "result_head": "#!/bin/bash$\nset -e$\npython3 tools/validate_config.py data/config.json$\necho \"all checks passed\"$\n./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.TJYP5u/tools/validate"
+    },
+    {
+     "idx": 13,
+     "cmd": "make test 2>&1 | head -60",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    },
+    {
+     "idx": 14,
+     "cmd": "make test >/dev/null 2>&1; echo \"exit=$?\"; grep -rl $'\\r' /tmp/arena-ws.TJYP5u --exclude-dir=.git 2>/dev/null || echo \"n",
+     "surfaced": "other",
+     "result_head": "exit=0\nno CRLF files remain"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 0,
+      "kind": "scan",
+      "ev": "Bash: ls -la /tmp/arena-ws.TJYP5u && cat /tmp/arena-ws.TJYP5u/Makefile 2>/dev/null"
+     },
+     "error_seen_at": 1
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: cat -A /tmp/arena-ws.TJYP5u/Makefile"
+     },
+     "error_seen_at": 7
+    }
+   ],
+   "gap_seconds": 118.4,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la /tmp/arena-ws.TJYP5u && cat /tmp/arena-ws.TJYP5u/Makefile 2>/dev/null",
+   "opens_with_checker": false,
+   "solution_md": "# SOLUTION\n\n`make test` failed due to three environment/config problems left over from the\nbotched merge. No Python source or test files were changed.\n\n## 1. Makefile: recipe indented with spaces instead of a tab\n- **Symptom:** `Makefile:4: *** missing separator. Stop.`\n- **Cause:** The `test` target's recipe line was indented with 4 spaces.\n  Make requires recipe lines to begin with a tab character (the merge\n  apparently converted the leading tab to spaces).\n- **Fix:** Replaced the leading spaces on the `python3 -m pytest -q tests/`\n  line with a real tab.\n\n## 2. scripts/run_checks.sh: lost executable bit + CRLF line endings\n- **Symptoms:** first `Permission denied`; after `chmod +x`,\n  `No such file or directory` even though the file exists.\n- **Cause:** The file's execute permission was dropped during the merge, and\n  the file had Windows-style CRLF line endings, so the kernel tried to exec\n  the interpreter `/bin/bash\\r`, which does not exist.\n- **Fix:** `chmod +x scripts/run_checks.sh` and stripped the carriage returns\n  (`sed -i 's/\\r$//'`), restoring LF line endings. No script content changed.\n\n## 3. data/config.json: trailing comma made it invalid JSON\n- **Symptom:** `json.decoder.JSONDecodeError: Expecting property name\n  enclosed in double quotes: line 5 column 1` from\n  `tools/validate_config.py`.\n- **Cause:** A trailing comma after `\"batch_size\": 500,` before the closing\n  `}` \u2014 invalid in strict JSON.\n- **Fix:** Removed the trailing comma. All required keys and values are\n  unchanged.\n\nAfter these fixes, `make test` runs `scripts/run_checks.sh` (config\nvalidation passes) and the full pytest suite (3 passed), exiting 0.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la /tmp/arena-ws.TJYP5u && cat /tmp/arena-ws.TJYP5u/Makefile 2>/dev/null  => total 1124 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 13:12 . ; drwxrwxrwt 16118 root    root    111001",
+    "[1] Bash: make test 2>&1 | head -50  => Makefile:4: *** missing separator.  Stop.",
+    "[2] Bash: cat -A /tmp/arena-ws.TJYP5u/Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[3] Edit: /tmp/arena-ws.TJYP5u/Makefile  => The file /tmp/arena-ws.TJYP5u/Makefile has been updated successfully. (file state is current in your context \u2014",
+    "[4] Bash: make test 2>&1 | head -60  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[5] Bash: ls -la /tmp/arena-ws.TJYP5u/scripts/ /tmp/arena-ws.TJYP5u/tools/ /tmp/arena-ws.TJYP5u/tests/ /tmp/arena-ws.TJY  => /tmp/arena-ws.TJYP5u/data/: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:40 . ; drwxrwxr-x 8 mwool",
+    "[6] Read: /tmp/arena-ws.TJYP5u/scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\" ; ",
+    "[7] Bash: chmod +x /tmp/arena-ws.TJYP5u/scripts/run_checks.sh && make test 2>&1 | head -60  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[8] Bash: cat -A /tmp/arena-ws.TJYP5u/scripts/run_checks.sh; file /tmp/arena-ws.TJYP5u/scripts/run_checks.sh  => #!/bin/bash^M$ ; set -e^M$ ; python3 tools/validate_config.py data/config.json^M$ ; echo \"all checks passed\"^M",
+    "[9] Bash: sed -i 's/\\r$//' /tmp/arena-ws.TJYP5u/scripts/run_checks.sh && cat -A /tmp/arena-ws.TJYP5u/scripts/run_checks.  => #!/bin/bash$ ; set -e$ ; python3 tools/validate_config.py data/config.json$ ; echo \"all checks passed\"$ ; ./sc",
+    "[10] Bash: cat -A /tmp/arena-ws.TJYP5u/data/config.json; echo ---; cat /tmp/arena-ws.TJYP5u/tools/validate_config.py  => {$ ;   \"source\": \"s3://ingest/raw\",$ ;   \"destination\": \"s3://ingest/clean\",$ ;   \"batch_size\": 500,$ ; }$ ; -",
+    "[11] Read: /tmp/arena-ws.TJYP5u/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[12] Edit: /tmp/arena-ws.TJYP5u/data/config.json  => The file /tmp/arena-ws.TJYP5u/data/config.json has been updated successfully. (file state is current in your c",
+    "[13] Bash: make test 2>&1 | head -60  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[14] Bash: make test >/dev/null 2>&1; echo \"exit=$?\"; grep -rl $'\\r' /tmp/arena-ws.TJYP5u --exclude-dir=.git 2>/dev/null   => exit=0 ; no CRLF files remain",
+    "[15] Write: /tmp/arena-ws.TJYP5u/SOLUTION.md  => File created successfully at: /tmp/arena-ws.TJYP5u/SOLUTION.md (file state is current in your context \u2014 no nee"
+   ],
+   "label": "Kimi K3 / Claude Code",
+   "wall_seconds": 135.9
+  },
+  {
+   "harness": "claude-code",
+   "config": "kimi-k3",
+   "run": "run-2",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/kimi-k3/run-2/transcript.jsonl",
+   "n_events": 13,
+   "counts": {
+    "Bash": 12,
+    "Write": 1
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 1,
+     "cmd": "make test 2>&1 | head -50",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop."
+    },
+    {
+     "idx": 4,
+     "cmd": "make test 2>&1 | head -60",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 6,
+     "cmd": "chmod +x scripts/run_checks.sh && make test 2>&1 | head -60",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 8,
+     "cmd": "sed -i 's/\\r$//' scripts/run_checks.sh && make test 2>&1 | head -60",
+     "surfaced": "F4-json-comma",
+     "result_head": "./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.4etEFD/tools/validate_config.py\", line 18, in <module>\n    main(sys.argv[1])\n  File \"/tmp/arena-ws.4etEFD/tools/validat"
+    },
+    {
+     "idx": 10,
+     "cmd": "sed -i 's/\"batch_size\": 500,/\"batch_size\": 500/' data/config.json && cat data/config.json && make test 2>&1 | head -60",
+     "surfaced": "green",
+     "result_head": "{\n  \"source\": \"s3://ingest/raw\",\n  \"destination\": \"s3://ingest/clean\",\n  \"batch_size\": 500\n}\n./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0"
+    },
+    {
+     "idx": 11,
+     "cmd": "make test > /dev/null 2>&1; echo \"exit code: $?\"",
+     "surfaced": "other",
+     "result_head": "exit code: 0"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 0,
+      "kind": "scan",
+      "ev": "Bash: ls -la /tmp/arena-ws.4etEFD && cat /tmp/arena-ws.4etEFD/Makefile 2>/dev/null"
+     },
+     "error_seen_at": 1
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: cat -A /tmp/arena-ws.4etEFD/Makefile"
+     },
+     "error_seen_at": 6
+    }
+   ],
+   "gap_seconds": 96.6,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la /tmp/arena-ws.4etEFD && cat /tmp/arena-ws.4etEFD/Makefile 2>/dev/null",
+   "opens_with_checker": false,
+   "solution_md": "# SOLUTION\n\n`make test` failed for three environment/config reasons (all fallout from the\nbotched merge, none were Python logic bugs):\n\n1. **Makefile: recipe indented with spaces instead of a tab.**\n   The `test` target's recipe line (`python3 -m pytest -q tests/`) began with\n   4 spaces, so make aborted with `missing separator`. Fix: replaced the\n   leading spaces with a tab.\n\n2. **scripts/run_checks.sh: lost execute permission + CRLF line endings.**\n   The file was not executable (`Permission denied`), and after `chmod +x` it\n   still failed with `No such file or directory` because every line ended in\n   `\\r\\n`, making the shebang interpreter `/bin/bash\\r`, which does not exist.\n   Fix: `chmod +x scripts/run_checks.sh` and stripped the carriage returns\n   (`sed -i 's/\\r$//'`).\n\n3. **data/config.json: trailing comma made it invalid JSON.**\n   `\"batch_size\": 500,` before the closing brace caused\n   `tools/validate_config.py` to die with\n   `JSONDecodeError: Expecting property name enclosed in double quotes`.\n   Fix: removed the trailing comma.\n\nAfter these fixes `make test` exits 0: the config check passes and all\n3 pytest tests pass. Nothing under `tests/` was modified and no check was\nremoved or weakened.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la /tmp/arena-ws.4etEFD && cat /tmp/arena-ws.4etEFD/Makefile 2>/dev/null  => total 1124 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 13:16 . ; drwxrwxrwt 16118 root    root    111001",
+    "[1] Bash: make test 2>&1 | head -50  => Makefile:4: *** missing separator.  Stop.",
+    "[2] Bash: cat -A /tmp/arena-ws.4etEFD/Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[3] Bash: sed -i 's/^    python3 -m pytest/\\tpython3 -m pytest/' Makefile && cat -A Makefile  => .PHONY: test check$ ; $ ; test: check$ ; ^Ipython3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_checks",
+    "[4] Bash: make test 2>&1 | head -60  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[5] Bash: ls -la scripts/ tools/ && cat scripts/run_checks.sh  => scripts/: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul 17 13:16 . ; drwxrwxr-x 8 mwoolly mwoolly 4096 Ju",
+    "[6] Bash: chmod +x scripts/run_checks.sh && make test 2>&1 | head -60  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[7] Bash: cat -A scripts/run_checks.sh && file scripts/run_checks.sh && xxd scripts/run_checks.sh | head -5  => #!/bin/bash^M$ ; set -e^M$ ; python3 tools/validate_config.py data/config.json^M$ ; echo \"all checks passed\"^M",
+    "[8] Bash: sed -i 's/\\r$//' scripts/run_checks.sh && make test 2>&1 | head -60  => ./scripts/run_checks.sh ; Traceback (most recent call last): ;   File \"/tmp/arena-ws.4etEFD/tools/validate_con",
+    "[9] Bash: cat data/config.json && echo \"---\" && cat tools/validate_config.py  => { ;   \"source\": \"s3://ingest/raw\", ;   \"destination\": \"s3://ingest/clean\", ;   \"batch_size\": 500, ; } ; --- ; ",
+    "[10] Bash: sed -i 's/\"batch_size\": 500,/\"batch_size\": 500/' data/config.json && cat data/config.json && make test 2>&1 |   => { ;   \"source\": \"s3://ingest/raw\", ;   \"destination\": \"s3://ingest/clean\", ;   \"batch_size\": 500 ; } ; ./scrip",
+    "[11] Bash: make test > /dev/null 2>&1; echo \"exit code: $?\"  => exit code: 0",
+    "[12] Write: /tmp/arena-ws.4etEFD/SOLUTION.md  => File created successfully at: /tmp/arena-ws.4etEFD/SOLUTION.md (file state is current in your context \u2014 no nee"
+   ],
+   "label": "Kimi K3 / Claude Code",
+   "wall_seconds": 119.2
+  },
+  {
+   "harness": "claude-code",
+   "config": "kimi-k3",
+   "run": "run-3",
+   "path": "bouts/2026-07-17-fable-sol-kimi/04-terminal/kimi-k3/run-3/transcript.jsonl",
+   "n_events": 13,
+   "counts": {
+    "Bash": 10,
+    "Read": 1,
+    "Edit": 1,
+    "Write": 1
+   },
+   "checker_cycles": 5,
+   "checkers": [
+    {
+     "idx": 1,
+     "cmd": "make test 2>&1 | head -50",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop."
+    },
+    {
+     "idx": 3,
+     "cmd": "sed -i 's/^    python3/\\tpython3/' Makefile && cat -A Makefile && make test 2>&1 | head -60",
+     "surfaced": "F2-exec-bit",
+     "result_head": ".PHONY: test check$\n$\ntest: check$\n^Ipython3 -m pytest -q tests/$\n$\ncheck:$\n^I./scripts/run_checks.sh$\n./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: c"
+    },
+    {
+     "idx": 8,
+     "cmd": "make test 2>&1 | tail -30",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 10,
+     "cmd": "sed -i 's/\\r$//' scripts/run_checks.sh && make test 2>&1 | tail -30",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                   "
+    },
+    {
+     "idx": 11,
+     "cmd": "make test >/dev/null 2>&1; echo \"exit code: $?\"",
+     "surfaced": "other",
+     "result_head": "exit code: 0"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 0,
+      "kind": "scan",
+      "ev": "Bash: ls -la /tmp/arena-ws.PJnKlo && cat /tmp/arena-ws.PJnKlo/Makefile 2>/dev/null"
+     },
+     "error_seen_at": 1
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: cat -A /tmp/arena-ws.PJnKlo/Makefile"
+     },
+     "error_seen_at": 8
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 5,
+      "kind": "scan",
+      "ev": "Bash: chmod +x scripts/run_checks.sh && cat tools/validate_config.py data/config.json conftest.py tests/test_transform.py && l"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": 85.7,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la /tmp/arena-ws.PJnKlo && cat /tmp/arena-ws.PJnKlo/Makefile 2>/dev/null",
+   "opens_with_checker": false,
+   "solution_md": "# SOLUTION\n\n`make test` was failing due to four environment/config problems left over from a\nbotched merge. All fixes were outside `tests/` and no checks were removed or\nweakened.\n\n## 1. `Makefile` \u2014 spaces instead of a tab in the `test` recipe\n- **Symptom:** `Makefile:4: *** missing separator. Stop.`\n- **Cause:** The recipe line `python3 -m pytest -q tests/` was indented with 4\n  spaces; make requires recipe lines to start with a tab.\n- **Fix:** Replaced the leading spaces with a tab.\n\n## 2. `scripts/run_checks.sh` \u2014 lost executable permission\n- **Symptom:** `make: ./scripts/run_checks.sh: Permission denied`\n- **Cause:** The file's execute bit was lost (mode was `rw-rw-r--`), which\n  commonly happens when files are copied/merged across machines.\n- **Fix:** `chmod +x scripts/run_checks.sh`\n\n## 3. `scripts/run_checks.sh` \u2014 CRLF (Windows) line endings\n- **Symptom:** `make: ./scripts/run_checks.sh: No such file or directory`\n  even though the file exists and is executable.\n- **Cause:** Every line ended with `\\r\\n`, so the kernel tried to execute the\n  interpreter `#!/bin/bash\\r`, which does not exist.\n- **Fix:** Stripped carriage returns (`sed -i 's/\\r$//'`), restoring LF endings.\n\n## 4. `data/config.json` \u2014 invalid JSON (trailing comma)\n- **Symptom:** `tools/validate_config.py` would crash with\n  `json.decoder.JSONDecodeError` when parsing the config.\n- **Cause:** A trailing comma after `\"batch_size\": 500,` \u2014 valid in some\n  formats, but not in strict JSON.\n- **Fix:** Removed the trailing comma.\n\nAfter these fixes, `make test` runs the config validation and the full pytest\nsuite (3 passed) and exits 0.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la /tmp/arena-ws.PJnKlo && cat /tmp/arena-ws.PJnKlo/Makefile 2>/dev/null  => total 1124 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 13:19 . ; drwxrwxrwt 16118 root    root    111001",
+    "[1] Bash: make test 2>&1 | head -50  => Makefile:4: *** missing separator.  Stop.",
+    "[2] Bash: cat -A /tmp/arena-ws.PJnKlo/Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[3] Bash: sed -i 's/^    python3/\\tpython3/' Makefile && cat -A Makefile && make test 2>&1 | head -60  => .PHONY: test check$ ; $ ; test: check$ ; ^Ipython3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_checks",
+    "[4] Bash: ls -la scripts/ tools/ tests/ data/ src/ && cat scripts/run_checks.sh  => data/: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:40 . ; drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 1",
+    "[5] Bash: chmod +x scripts/run_checks.sh && cat tools/validate_config.py data/config.json conftest.py tests/test_transfo  => \"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; import json ; import sys ;  ;  ; def",
+    "[6] Read: /tmp/arena-ws.PJnKlo/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[7] Edit: /tmp/arena-ws.PJnKlo/data/config.json  => The file /tmp/arena-ws.PJnKlo/data/config.json has been updated successfully. (file state is current in your c",
+    "[8] Bash: make test 2>&1 | tail -30  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[9] Bash: cat -A scripts/run_checks.sh && file scripts/run_checks.sh  => #!/bin/bash^M$ ; set -e^M$ ; python3 tools/validate_config.py data/config.json^M$ ; echo \"all checks passed\"^M",
+    "[10] Bash: sed -i 's/\\r$//' scripts/run_checks.sh && make test 2>&1 | tail -30  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; \u001b[32",
+    "[11] Bash: make test >/dev/null 2>&1; echo \"exit code: $?\"  => exit code: 0",
+    "[12] Write: /tmp/arena-ws.PJnKlo/SOLUTION.md  => File created successfully at: /tmp/arena-ws.PJnKlo/SOLUTION.md (file state is current in your context \u2014 no nee"
+   ],
+   "label": "Kimi K3 / Claude Code",
+   "wall_seconds": 102.4
+  },
+  {
+   "harness": "codex",
+   "config": "gpt-5.6-sol-codex",
+   "run": "run-1",
+   "path": "bouts/2026-07-17-sol-codex-homegame/04-terminal/gpt-5.6-sol-codex/run-1/transcript.jsonl",
+   "n_events": 13,
+   "counts": {
+    "Bash": 9,
+    "file_change": 4
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 0,
+     "cmd": "/bin/bash -lc 'make test'",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\n"
+    },
+    {
+     "idx": 3,
+     "cmd": "/bin/bash -lc 'make test'",
+     "surfaced": "F2-exec-bit",
+     "result_head": "make: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127\n./scripts/run_checks.sh\n"
+    },
+    {
+     "idx": 5,
+     "cmd": "/bin/bash -lc 'chmod +x scripts/run_checks.sh && make test'",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127\n"
+    },
+    {
+     "idx": 7,
+     "cmd": "/bin/bash -lc 'chmod +x scripts/run_checks.sh && make test'",
+     "surfaced": "other",
+     "result_head": "make: *** [Makefile:7: check] Error 1\n"
+    },
+    {
+     "idx": 9,
+     "cmd": "/bin/bash -lc 'make test'",
+     "surfaced": "green",
+     "result_head": "...                                                                      [100%]\n3 passed in 0.01s\n"
+    },
+    {
+     "idx": 11,
+     "cmd": "/bin/bash -lc 'make test && git status --short && git diff --check && git diff --summary && git diff -- Makefile scripts",
+     "surfaced": "green",
+     "result_head": "...                                                                      [100%]\n3 passed in 0.01s\n M Makefile\n M data/config.json\n M scripts/run_checks.sh\n?? SOLUTION.md\n?? __pycache__/\n?? src/pipelin"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: /bin/bash -lc \"pwd && rg --files -g '\"'!tests/**'\"' -g '\"'!*__pycache__*'\"' && sed -n '1,160p' Makefile && git status --"
+     },
+     "error_seen_at": 5
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 4,
+      "kind": "scan",
+      "ev": "Bash: /bin/bash -lc \"ls -l scripts/run_checks.sh tools/validate_config.py; git ls-files -s Makefile scripts/run_checks.sh tool"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": null,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: /bin/bash -lc 'make test'",
+   "opens_with_checker": true,
+   "solution_md": "# Solution\n\n- Fixed the `Makefile` test recipe indentation by replacing spaces with the required tab.\n- Restored the executable permission on `scripts/run_checks.sh`.\n- Converted `scripts/run_checks.sh` from Windows CRLF line endings to Unix LF so its shebang works on Linux.\n- Removed the trailing comma from `data/config.json` so it is valid JSON.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: /bin/bash -lc 'make test'  => Makefile:4: *** missing separator.  Stop. ; ",
+    "[1] Bash: /bin/bash -lc \"pwd && rg --files -g '\"'!tests/**'\"' -g '\"'!*__pycache__*'\"' && sed -n '1,160p' Makefile && git  => /tmp/arena-ws.yaTeR9 ; Makefile ; src/pipeline/__init__.py ; src/pipeline/transform.py ; conftest.py ; scripts",
+    "[2] file_change: /tmp/arena-ws.yaTeR9/Makefile",
+    "[3] Bash: /bin/bash -lc 'make test'  => make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Error 127 ; ./scripts/run_che",
+    "[4] Bash: /bin/bash -lc \"ls -l scripts/run_checks.sh tools/validate_config.py; git ls-files -s Makefile scripts/run_chec  => -rw-rw-r-- 1 mwoolly mwoolly  98 Jul 17 17:47 scripts/run_checks.sh ; -rw-rw-r-- 1 mwoolly mwoolly 550 Jul  6 ",
+    "[5] Bash: /bin/bash -lc 'chmod +x scripts/run_checks.sh && make test'  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[6] file_change: /tmp/arena-ws.yaTeR9/scripts/run_checks.sh",
+    "[7] Bash: /bin/bash -lc 'chmod +x scripts/run_checks.sh && make test'  => make: *** [Makefile:7: check] Error 1 ; ",
+    "[8] file_change: /tmp/arena-ws.yaTeR9/data/config.json",
+    "[9] Bash: /bin/bash -lc 'make test'  => ...                                                                      [100%] ; 3 passed in 0.01s ; ",
+    "[10] file_change: /tmp/arena-ws.yaTeR9/SOLUTION.md",
+    "[11] Bash: /bin/bash -lc 'make test && git status --short && git diff --check && git diff --summary && git diff -- Makefi  => ...                                                                      [100%] ; 3 passed in 0.01s ;  M Makef",
+    "[12] Bash: /bin/bash -lc 'rm -rf __pycache__ src/pipeline/__pycache__ tests/__pycache__ && git status --short'  =>  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? SOLUTION.md ; "
+   ],
+   "label": "Sol / Codex",
+   "wall_seconds": 37.8
+  },
+  {
+   "harness": "codex",
+   "config": "gpt-5.6-sol-codex",
+   "run": "run-2",
+   "path": "bouts/2026-07-17-sol-codex-homegame/04-terminal/gpt-5.6-sol-codex/run-2/transcript.jsonl",
+   "n_events": 11,
+   "counts": {
+    "Bash": 8,
+    "file_change": 3
+   },
+   "checker_cycles": 5,
+   "checkers": [
+    {
+     "idx": 0,
+     "cmd": "/bin/bash -lc \"pwd && rg --files -g '\"'!*__pycache__*'\"' | sed -n '1,160p' && make test\"",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "/tmp/arena-ws.almH9F\nsrc/pipeline/__init__.py\ndata/config.json\nsrc/pipeline/transform.py\nconftest.py\nMakefile\ntests/test_transform.py\nscripts/run_checks.sh\ntools/validate_config.py\nMakefile:4: *** mis"
+    },
+    {
+     "idx": 3,
+     "cmd": "/bin/bash -lc 'make test'",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127\n"
+    },
+    {
+     "idx": 4,
+     "cmd": "/bin/bash -lc 'chmod +x scripts/run_checks.sh && make test'",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127\n"
+    },
+    {
+     "idx": 7,
+     "cmd": "/bin/bash -lc 'chmod +x scripts/run_checks.sh && make test'",
+     "surfaced": "green",
+     "result_head": "...                                                                      [100%]\n3 passed in 0.01s\n"
+    },
+    {
+     "idx": 9,
+     "cmd": "/bin/bash -lc 'make test && git status --short && git diff --check && git diff -- Makefile data/config.json scripts/run_",
+     "surfaced": "green",
+     "result_head": "...                                                                      [100%]\n3 passed in 0.01s\n M Makefile\n M data/config.json\n M scripts/run_checks.sh\n?? SOLUTION.md\n?? __pycache__/\n?? src/pipelin"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: /bin/bash -lc \"git status --short && sed -n '1,160l' Makefile && sed -n '1,240p' scripts/run_checks.sh && sed -n '1,240p"
+     },
+     "error_seen_at": 4
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: /bin/bash -lc \"git status --short && sed -n '1,160l' Makefile && sed -n '1,240p' scripts/run_checks.sh && sed -n '1,240p"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": null,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: /bin/bash -lc \"pwd && rg --files -g '\"'!*__pycache__*'\"' | sed -n '1,160p' && make test\"",
+   "opens_with_checker": true,
+   "solution_md": "# Solution\n\n- The `test` recipe in `Makefile` was indented with spaces, so Make could not parse it. Replaced the spaces with the required tab.\n- `data/config.json` had a trailing comma, making it invalid JSON. Removed the trailing comma.\n- `scripts/run_checks.sh` had lost its executable permission. Restored the executable bit.\n- `scripts/run_checks.sh` used CRLF line endings, causing Linux to interpret its shebang as `/bin/bash\\r`. Converted it to LF line endings.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: /bin/bash -lc \"pwd && rg --files -g '\"'!*__pycache__*'\"' | sed -n '1,160p' && make test\"  => /tmp/arena-ws.almH9F ; src/pipeline/__init__.py ; data/config.json ; src/pipeline/transform.py ; conftest.py ;",
+    "[1] Bash: /bin/bash -lc \"git status --short && sed -n '1,160l' Makefile && sed -n '1,240p' scripts/run_checks.sh && sed   => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; \\t./scripts/run_chec",
+    "[2] file_change: /tmp/arena-ws.almH9F/Makefile /tmp/arena-ws.almH9F/data/config.json",
+    "[3] Bash: /bin/bash -lc 'make test'  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[4] Bash: /bin/bash -lc 'chmod +x scripts/run_checks.sh && make test'  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[5] Bash: /bin/bash -lc 'file scripts/run_checks.sh && od -An -tx1 -N32 scripts/run_checks.sh'  => scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators ;  23 21 2",
+    "[6] file_change: /tmp/arena-ws.almH9F/scripts/run_checks.sh",
+    "[7] Bash: /bin/bash -lc 'chmod +x scripts/run_checks.sh && make test'  => ...                                                                      [100%] ; 3 passed in 0.01s ; ",
+    "[8] file_change: /tmp/arena-ws.almH9F/SOLUTION.md",
+    "[9] Bash: /bin/bash -lc 'make test && git status --short && git diff --check && git diff -- Makefile data/config.json sc  => ...                                                                      [100%] ; 3 passed in 0.01s ;  M Makef",
+    "[10] Bash: /bin/bash -lc 'rm -rf __pycache__ src/pipeline/__pycache__ tests/__pycache__ && git status --short'  =>  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? SOLUTION.md ; "
+   ],
+   "label": "Sol / Codex",
+   "wall_seconds": 39.7
+  },
+  {
+   "harness": "codex",
+   "config": "gpt-5.6-sol-codex",
+   "run": "run-3",
+   "path": "bouts/2026-07-17-sol-codex-homegame/04-terminal/gpt-5.6-sol-codex/run-3/transcript.jsonl",
+   "n_events": 12,
+   "counts": {
+    "Bash": 8,
+    "file_change": 4
+   },
+   "checker_cycles": 4,
+   "checkers": [
+    {
+     "idx": 0,
+     "cmd": "/bin/bash -lc 'make test'",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\n"
+    },
+    {
+     "idx": 3,
+     "cmd": "/bin/bash -lc 'make test'",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127\n"
+    },
+    {
+     "idx": 7,
+     "cmd": "/bin/bash -lc 'make test'",
+     "surfaced": "other",
+     "result_head": "make: *** [Makefile:7: check] Error 1\n"
+    },
+    {
+     "idx": 9,
+     "cmd": "/bin/bash -lc 'make test && git diff --check && git status --short && git diff --summary && git diff -- Makefile scripts",
+     "surfaced": "green",
+     "result_head": "...                                                                      [100%]\n3 passed in 0.02s\n M Makefile\n M data/config.json\n M scripts/run_checks.sh\n?? __pycache__/\n?? src/pipeline/__pycache__/\n"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: /bin/bash -lc \"pwd && rg --files -g '\"'!*__pycache__*'\"' -g '\"'!*.pyc'\"' && sed -n '1,160l' Makefile && git status --sho"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 4,
+      "kind": "scan",
+      "ev": "Bash: /bin/bash -lc \"ls -l Makefile scripts/run_checks.sh tools/validate_config.py data/config.json && sed -n '1,200p' scripts"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": null,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: /bin/bash -lc 'make test'",
+   "opens_with_checker": true,
+   "solution_md": "# Solution\n\n- Fixed the `Makefile` test recipe indentation by replacing spaces with the tab required by `make`.\n- Restored execute permission on `scripts/run_checks.sh` and converted its Windows CRLF line endings to Unix LF so its shebang works.\n- Removed the trailing comma from `data/config.json` so it is valid JSON and passes the existing configuration validator.\n\nVerified that `make test` runs the configuration checks and the unchanged pytest suite successfully (`3 passed`).\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: /bin/bash -lc 'make test'  => Makefile:4: *** missing separator.  Stop. ; ",
+    "[1] Bash: /bin/bash -lc \"pwd && rg --files -g '\"'!*__pycache__*'\"' -g '\"'!*.pyc'\"' && sed -n '1,160l' Makefile && git st  => /tmp/arena-ws.yRcaoJ ; src/pipeline/__init__.py ; data/config.json ; src/pipeline/transform.py ; conftest.py ;",
+    "[2] file_change: /tmp/arena-ws.yRcaoJ/Makefile",
+    "[3] Bash: /bin/bash -lc 'make test'  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[4] Bash: /bin/bash -lc \"ls -l Makefile scripts/run_checks.sh tools/validate_config.py data/config.json && sed -n '1,200  => -rw-rw-r-- 1 mwoolly mwoolly  94 Jul 17 17:49 Makefile ; -rw-rw-r-- 1 mwoolly mwoolly  94 Jul  6 19:40 data/co",
+    "[5] Bash: /bin/bash -lc 'chmod +x scripts/run_checks.sh'",
+    "[6] file_change: /tmp/arena-ws.yRcaoJ/scripts/run_checks.sh",
+    "[7] Bash: /bin/bash -lc 'make test'  => make: *** [Makefile:7: check] Error 1 ; ",
+    "[8] file_change: /tmp/arena-ws.yRcaoJ/data/config.json",
+    "[9] Bash: /bin/bash -lc 'make test && git diff --check && git status --short && git diff --summary && git diff -- Makefi  => ...                                                                      [100%] ; 3 passed in 0.02s ;  M Makef",
+    "[10] file_change: /tmp/arena-ws.yRcaoJ/SOLUTION.md",
+    "[11] Bash: /bin/bash -lc \"rm -rf __pycache__ src/pipeline/__pycache__ tests/__pycache__ && git status --short && git diff  =>  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? SOLUTION.md ; # Solution ;  ; - Fixed the `M"
+   ],
+   "label": "Sol / Codex",
+   "wall_seconds": 38.8
+  },
+  {
+   "harness": "kimi-code",
+   "config": "kimi-k3-kimicode",
+   "run": "run-1",
+   "path": "bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-1/transcript.jsonl",
+   "n_events": 31,
+   "counts": {
+    "Bash": 17,
+    "Read": 8,
+    "Edit": 3,
+    "Glob": 1,
+    "Write": 2
+   },
+   "checker_cycles": 7,
+   "checkers": [
+    {
+     "idx": 0,
+     "cmd": "make test",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\nCommand failed with exit code: 2."
+    },
+    {
+     "idx": 13,
+     "cmd": "make test",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127\nCommand failed with exit code: 2."
+    },
+    {
+     "idx": 15,
+     "cmd": "make test",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127\nCommand failed with exit code: 2."
+    },
+    {
+     "idx": 18,
+     "cmd": "ls -l scripts/run_checks.sh && make test",
+     "surfaced": "F5-env-pytest-unplanted",
+     "result_head": "-rwxrwxr-x 1 mwoolly mwoolly 94 Jul 17 19:34 scripts/run_checks.sh\n./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n/usr/bin/python3: No module named p"
+    },
+    {
+     "idx": 27,
+     "cmd": "make test",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\nPYTHONPATH=\"/home/mwoolly/.local/lib/python3.12/site-packages${PYTHONPATH:+:$PYTHONPATH}\" python3 -m pytest -q tests/\n...         "
+    },
+    {
+     "idx": 28,
+     "cmd": "make test >/dev/null 2>&1; echo \"exit: $?\"; HOME=/home/mwoolly make test 2>&1 | tail -2; HOME=/home/mwoolly make test >/",
+     "surfaced": "green",
+     "result_head": "exit: 0\n...                                                                      [100%]\n3 passed in 0.01s\nnormal-HOME exit: 0\n"
+    },
+    {
+     "idx": 30,
+     "cmd": "make test; echo \"FINAL EXIT: $?\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\nPYTHONPATH=\"/home/mwoolly/.local/lib/python3.12/site-packages${PYTHONPATH:+:$PYTHONPATH}\" python3 -m pytest -q tests/\n...         "
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F5-env-pytest-unplanted"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 3,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.tbq2Ew/scripts/run_checks.sh"
+     },
+     "error_seen_at": 15
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 7,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.tbq2Ew/data/config.json"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": null,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: make test",
+   "opens_with_checker": true,
+   "solution_md": "# SOLUTION\n\n`make test` failed for several independent environment/config reasons. Fixes, in the\norder they surfaced:\n\n1. **Makefile: spaces instead of a tab in the `test` recipe.**\n   `make` aborted with `Makefile:4: *** missing separator`. The recipe line\n   `python3 -m pytest -q tests/` was indented with 4 spaces; make requires a tab.\n   Fix: re-indented the recipe with a real tab.\n\n2. **`data/config.json`: invalid JSON (trailing comma).**\n   The config-check step (`tools/validate_config.py`) uses strict `json.load`, which\n   rejects the trailing comma after `\"batch_size\": 500,`.\n   Fix: removed the trailing comma.\n\n3. **`scripts/run_checks.sh`: executable bit lost.**\n   `make` failed with `Permission denied` running `./scripts/run_checks.sh` (mode was\n   `rw-rw-r--`, a classic casualty of copying files from another machine).\n   Fix: `chmod +x scripts/run_checks.sh`.\n\n4. **`scripts/run_checks.sh`: CRLF line endings.**\n   With the exec bit restored, the kernel reported `No such file or directory` because\n   the shebang line ended in `\\r\\n`, making the interpreter path literally\n   `/bin/bash\\r`. The file came from a Windows-style checkout/merge.\n   Fix: rewrote the script with LF line endings (content unchanged).\n\n5. **Environment: `python3 -m pytest` could not find pytest.**\n   pytest 9.0.3 is installed in the real user's site-packages\n   (`/home/mwoolly/.local/lib/python3.12/site-packages`), but this environment\n   redirects `$HOME`, so Python's user-site lookup pointed at a nonexistent directory\n   and the module was invisible.\n   Fix: in the Makefile, resolve the real user's site-packages via the passwd entry\n   (not `$HOME`) into `USER_SITE`, and prepend it to `PYTHONPATH` for the pytest\n   invocation. The command still runs the same `python3 -m pytest -q tests/` suite;\n   nothing was removed or weakened, and it also works under a normal `$HOME`.\n\nNo files under `tests/` were modified, and no Python source logic was changed.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: make test  => Makefile:4: *** missing separator.  Stop. ; Command failed with exit code: 2.",
+    "[1] Read: /tmp/arena-ws.tbq2Ew/Makefile  => 1\t.PHONY: test check ; 2\t ; 3\ttest: check ; 4\t    python3 -m pytest -q tests/ ; 5\t ; 6\tcheck: ; 7\t\t./scripts/r",
+    "[2] Read: /tmp/arena-ws.tbq2Ew/conftest.py  => 1\timport sys ; 2\tfrom pathlib import Path ; 3\t ; 4\tsys.path.insert(0, str(Path(__file__).parent / \"src\"))",
+    "[3] Read: /tmp/arena-ws.tbq2Ew/scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\"",
+    "[4] Bash: cat -A Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[5] Edit: /tmp/arena-ws.tbq2Ew/Makefile  => Replaced 1 occurrence in /tmp/arena-ws.tbq2Ew/Makefile",
+    "[6] Read: /tmp/arena-ws.tbq2Ew/tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[7] Read: /tmp/arena-ws.tbq2Ew/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[8] Read: /tmp/arena-ws.tbq2Ew/tests/test_transform.py  => 1\tfrom pipeline.transform import batch, normalize_record ; 2\t ; 3\t ; 4\tdef test_normalize_record(): ; 5\t    re",
+    "[9] Glob: /tmp/arena-ws.tbq2Ew/src  => pipeline/transform.py ; pipeline/__init__.py",
+    "[10] Read: /tmp/arena-ws.tbq2Ew/src/pipeline/transform.py  => 1\tdef normalize_record(record): ; 2\t    \"\"\"Lowercase keys, strip string values, drop keys with None values.\"\"\"",
+    "[11] Read: /tmp/arena-ws.tbq2Ew/src/pipeline/__init__.py  => Tool output is empty.",
+    "[12] Edit: /tmp/arena-ws.tbq2Ew/data/config.json  => Replaced 1 occurrence in /tmp/arena-ws.tbq2Ew/data/config.json",
+    "[13] Bash: make test  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[14] Bash: ls -l scripts/run_checks.sh && chmod +x scripts/run_checks.sh && ls -l scripts/run_checks.sh  => -rw-rw-r-- 1 mwoolly mwoolly 98 Jul 17 19:32 scripts/run_checks.sh ; -rwxrwxr-x 1 mwoolly mwoolly 98 Jul 17 19",
+    "[15] Bash: make test  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[16] Bash: file scripts/run_checks.sh; head -c 100 scripts/run_checks.sh | od -c | head -10  => scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators ; 0000000 ",
+    "[17] Write: /tmp/arena-ws.tbq2Ew/scripts/run_checks.sh  => Wrote 94 bytes to /tmp/arena-ws.tbq2Ew/scripts/run_checks.sh",
+    "[18] Bash: ls -l scripts/run_checks.sh && make test  => -rwxrwxr-x 1 mwoolly mwoolly 94 Jul 17 19:34 scripts/run_checks.sh ; ./scripts/run_checks.sh ; config ok: data",
+    "[19] Bash: ls -la; which pytest; python3 -m pip --version 2>&1 | head -2; ls /usr/bin/python* 2>/dev/null  => total 1132 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 17 19:32 . ; drwxrwxrwt 16237 root    root    111820",
+    "[20] Bash: head -1 /home/mwoolly/.local/bin/pytest; python3 -m site; ls ~/.local/lib/ 2>/dev/null  => #!/usr/bin/python3 ; sys.path = [ ;     '/tmp/arena-ws.tbq2Ew', ;     '/usr/lib/python312.zip', ;     '/usr/li",
+    "[21] Bash: env | grep -iE 'python|pip' ; echo ---; ls ~/.local/lib/python3.12/site-packages 2>/dev/null | head; echo ---;  => LESSCLOSE=/usr/bin/lesspipe %s %s ; LESSOPEN=| /usr/bin/lesspipe %s ; --- ; --- ; Command failed with exit cod",
+    "[22] Bash: echo \"HOME=$HOME\"; ls /home/mwoolly/.local/lib/python3.12/site-packages 2>/dev/null | grep -iE 'pytest|pluggy|  => HOME=/home/mwoolly/projects/agent-arena/.kimi-arena ; iniconfig ; iniconfig-2.3.0.dist-info ; pluggy ; pluggy-",
+    "[23] Bash: git log --oneline -20; echo ---; git status --short; echo ---; git log --all --oneline --graph | head -30  => 96c37da baseline ; --- ;  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; --- ; * 96c37da baseli",
+    "[24] Bash: git diff HEAD --stat; echo ---; git show HEAD:Makefile | cat -A; echo ---; git show HEAD:scripts/run_checks.sh  =>  Makefile              | 2 +- ;  data/config.json      | 2 +- ;  scripts/run_checks.sh | 8 ++++---- ;  3 files",
+    "[25] Bash: pytest --version 2>&1 | head -3; echo \"=== exit: $?\"; HOME=/home/mwoolly python3 -m pytest --version 2>&1 | he  => Traceback (most recent call last): ;   File \"/home/mwoolly/.local/bin/pytest\", line 5, in <module> ;     from ",
+    "[26] Edit: /tmp/arena-ws.tbq2Ew/Makefile  => Replaced 1 occurrence in /tmp/arena-ws.tbq2Ew/Makefile",
+    "[27] Bash: make test  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; PYTHONPATH=\"/home/mwoolly/.local/l",
+    "[28] Bash: make test >/dev/null 2>&1; echo \"exit: $?\"; HOME=/home/mwoolly make test 2>&1 | tail -2; HOME=/home/mwoolly ma  => exit: 0 ; ...                                                                      [100%] ; 3 passed in 0.01s ",
+    "[29] Write: /tmp/arena-ws.tbq2Ew/SOLUTION.md  => Wrote 1966 bytes to /tmp/arena-ws.tbq2Ew/SOLUTION.md",
+    "[30] Bash: make test; echo \"FINAL EXIT: $?\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; PYTHONPATH=\"/home/mwoolly/.local/l"
+   ],
+   "label": "Kimi K3 / Kimi Code",
+   "wall_seconds": 512.9
+  },
+  {
+   "harness": "kimi-code",
+   "config": "kimi-k3-kimicode",
+   "run": "run-2",
+   "path": "bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-2/transcript.jsonl",
+   "n_events": 30,
+   "counts": {
+    "Bash": 18,
+    "Read": 7,
+    "Edit": 3,
+    "Write": 2
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 0,
+     "cmd": "make test 2>&1 | head -80",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\n"
+    },
+    {
+     "idx": 13,
+     "cmd": "make test",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127\nCommand failed with exit code: 2."
+    },
+    {
+     "idx": 16,
+     "cmd": "make test",
+     "surfaced": "F5-env-pytest-unplanted",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n/usr/bin/python3: No module named pytest\nmake: *** [Makefile:4: test] Error 1\nCommand failed with exit"
+    },
+    {
+     "idx": 25,
+     "cmd": "PYTHONPATH=/home/mwoolly/.local/lib/python3.12/site-packages make test",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\n"
+    },
+    {
+     "idx": 27,
+     "cmd": "make test; echo \"exit=$?\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\nPYTHONPATH=/home/mwoolly/.local/lib/python3.12/site-packages python3 -m pytest -q tests/\n...                                      "
+    },
+    {
+     "idx": 29,
+     "cmd": "make test >/dev/null 2>&1; echo \"exit=$?\"",
+     "surfaced": "other",
+     "result_head": "exit=0\n"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F3-crlf",
+    "F5-env-pytest-unplanted"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: cat -A Makefile"
+     },
+     "error_seen_at": 13
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 7,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.ukG9CK/data/config.json"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 12,
+      "kind": "fix",
+      "ev": "Bash: chmod +x scripts/run_checks.sh"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": null,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: make test 2>&1 | head -80",
+   "opens_with_checker": true,
+   "solution_md": "# SOLUTION\n\n`make test` failed for four environment/config reasons. Fixes applied (no changes under `tests/`, no checks removed):\n\n1. **Makefile recipe indented with spaces** \u2014 `make` aborted with\n   `missing separator`. The `test` recipe line used 4 spaces; replaced with a\n   real tab (Makefile).\n\n2. **Invalid JSON in `data/config.json`** \u2014 trailing comma after\n   `\"batch_size\": 500` made `tools/validate_config.py` fail to parse it.\n   Removed the trailing comma.\n\n3. **`scripts/run_checks.sh` not executable and saved with CRLF line\n   endings** \u2014 `./scripts/run_checks.sh` failed (`Permission denied` /\n   `No such file or directory`, because the shebang was `#!/bin/bash\\r`).\n   Converted the file to LF line endings and set the executable bit\n   (`chmod +x`).\n\n4. **`python3 -m pytest` could not find pytest** \u2014 pytest 9.0.3 is installed\n   in the user site-packages (`/home/mwoolly/.local/lib/python3.12/site-packages`),\n   but the shell's `HOME` is redirected, so that directory is not on\n   `sys.path`. Prefixed the pytest command in the Makefile with\n   `PYTHONPATH=/home/mwoolly/.local/lib/python3.12/site-packages` so the same\n   test suite runs with the installed pytest.\n\nResult: `make test` exits 0 \u2014 config validation passes and all 3 tests pass.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: make test 2>&1 | head -80  => Makefile:4: *** missing separator.  Stop. ; ",
+    "[1] Read: /tmp/arena-ws.ukG9CK/Makefile  => 1\t.PHONY: test check ; 2\t ; 3\ttest: check ; 4\t    python3 -m pytest -q tests/ ; 5\t ; 6\tcheck: ; 7\t\t./scripts/r",
+    "[2] Bash: cat -A Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[3] Read: /tmp/arena-ws.ukG9CK/scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\"",
+    "[4] Read: /tmp/arena-ws.ukG9CK/conftest.py  => 1\timport sys ; 2\tfrom pathlib import Path ; 3\t ; 4\tsys.path.insert(0, str(Path(__file__).parent / \"src\"))",
+    "[5] Edit: /tmp/arena-ws.ukG9CK/Makefile  => Replaced 1 occurrence in /tmp/arena-ws.ukG9CK/Makefile",
+    "[6] Read: /tmp/arena-ws.ukG9CK/tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[7] Read: /tmp/arena-ws.ukG9CK/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[8] Bash: ls -la src/pipeline/ tests/ scripts/  => scripts/: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul 17 19:40 . ; drwxrwxr-x 8 mwoolly mwoolly 4096 Ju",
+    "[9] Read: /tmp/arena-ws.ukG9CK/tests/test_transform.py  => 1\tfrom pipeline.transform import batch, normalize_record ; 2\t ; 3\t ; 4\tdef test_normalize_record(): ; 5\t    re",
+    "[10] Read: /tmp/arena-ws.ukG9CK/src/pipeline/transform.py  => 1\tdef normalize_record(record): ; 2\t    \"\"\"Lowercase keys, strip string values, drop keys with None values.\"\"\"",
+    "[11] Edit: /tmp/arena-ws.ukG9CK/data/config.json  => Replaced 1 occurrence in /tmp/arena-ws.ukG9CK/data/config.json",
+    "[12] Bash: chmod +x scripts/run_checks.sh  => Command executed successfully.",
+    "[13] Bash: make test  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[14] Bash: cat -A scripts/run_checks.sh; file scripts/run_checks.sh  => #!/bin/bash^M$ ; set -e^M$ ; python3 tools/validate_config.py data/config.json^M$ ; echo \"all checks passed\"^M",
+    "[15] Write: /tmp/arena-ws.ukG9CK/scripts/run_checks.sh  => Wrote 94 bytes to /tmp/arena-ws.ukG9CK/scripts/run_checks.sh",
+    "[16] Bash: make test  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; /usr",
+    "[17] Bash: which -a python3 python pytest; ls /usr/bin/python* 2>/dev/null; python3 --version  => /usr/bin/python3 ; /bin/python3 ; /home/mwoolly/.local/bin/pytest ; /home/mwoolly/.local/bin/pytest ; /home/mw",
+    "[18] Bash: ls -d .venv venv env 2>/dev/null; python3 -m pip --version 2>&1 | head -2; pip list 2>/dev/null | grep -i pyte  => pip 24.0 from /usr/lib/python3/dist-packages/pip (python 3.12) ; Command failed with exit code: 1.",
+    "[19] Bash: head -1 /home/mwoolly/.local/bin/pytest; ls /home/mwoolly/.local/lib/ 2>/dev/null; ls /home/mwoolly/.local/lib  => #!/usr/bin/python3 ; python3.12 ; audio_auto_chop-0.1.0.dist-info ; cffi ; cffi-2.0.0.dist-info ; _cffi_backen",
+    "[20] Bash: python3 -c \"import site, sys; print(site.getusersitepackages()); print(site.ENABLE_USER_SITE); print([p for p   => /home/mwoolly/projects/agent-arena/.kimi-arena/.local/lib/python3.12/site-packages ; True ; ['/usr/local/lib/p",
+    "[21] Bash: echo \"HOME=$HOME\"; ls /home/mwoolly/.local/lib/python3.12/site-packages/ | grep -i -E \"pytest|pluggy\"  => HOME=/home/mwoolly/projects/agent-arena/.kimi-arena ; pluggy ; pluggy-1.6.0.dist-info ; _pytest ; pytest ; pyt",
+    "[22] Bash: HOME=/home/mwoolly python3 -m pytest --version 2>&1 | head -3; /home/mwoolly/.local/bin/pytest --version 2>&1   => pytest 9.0.3 ; Traceback (most recent call last): ;   File \"/home/mwoolly/.local/bin/pytest\", line 5, in <modu",
+    "[23] Bash: git status 2>&1 | head -20; git log --oneline -5 2>&1  => On branch master ; Changes not staged for commit: ;   (use \"git add <file>...\" to update what will be committe",
+    "[24] Bash: ls /usr/local/lib/python3.12/dist-packages/ 2>/dev/null | head; ls /usr/lib/python3/dist-packages/ 2>/dev/null  => error: externally-managed-environment ;  ; \u00d7 This environment is externally managed ; \u2570\u2500> To install Python pa",
+    "[25] Bash: PYTHONPATH=/home/mwoolly/.local/lib/python3.12/site-packages make test  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; ... ",
+    "[26] Edit: /tmp/arena-ws.ukG9CK/Makefile  => Replaced 1 occurrence in /tmp/arena-ws.ukG9CK/Makefile",
+    "[27] Bash: make test; echo \"exit=$?\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; PYTHONPATH=/home/mwoolly/.local/li",
+    "[28] Write: /tmp/arena-ws.ukG9CK/SOLUTION.md  => Wrote 1276 bytes to /tmp/arena-ws.ukG9CK/SOLUTION.md",
+    "[29] Bash: make test >/dev/null 2>&1; echo \"exit=$?\"  => exit=0 ; "
+   ],
+   "label": "Kimi K3 / Kimi Code",
+   "wall_seconds": 305.8
+  },
+  {
+   "harness": "kimi-code",
+   "config": "kimi-k3-kimicode",
+   "run": "run-3",
+   "path": "bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-3/transcript.jsonl",
+   "n_events": 23,
+   "counts": {
+    "Bash": 13,
+    "Read": 7,
+    "Edit": 2,
+    "Write": 1
+   },
+   "checker_cycles": 5,
+   "checkers": [
+    {
+     "idx": 0,
+     "cmd": "make test",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\nCommand failed with exit code: 2."
+    },
+    {
+     "idx": 13,
+     "cmd": "make test",
+     "surfaced": "F5-env-pytest-unplanted",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n/usr/bin/python3: No module named pytest\nmake: *** [Makefile:4: test] Error 1\nCommand failed with exit"
+    },
+    {
+     "idx": 19,
+     "cmd": "SP=/home/mwoolly/.local/lib/python3.12/site-packages; for p in pytest _pytest pluggy iniconfig; do ln -sfn \"$SP/$p\" \"$p\"",
+     "surfaced": "green",
+     "result_head": "lrwxrwxrwx     1 mwoolly mwoolly      59 Jul 17 19:50 iniconfig -> /home/mwoolly/.local/lib/python3.12/site-packages/iniconfig\nlrwxrwxrwx     1 mwoolly mwoolly      56 Jul 17 19:50 pluggy -> /home/mwo"
+    },
+    {
+     "idx": 20,
+     "cmd": "ls -d /home/mwoolly/.local/lib/python3.12/site-packages/py* 2>/dev/null; ln -sfn /home/mwoolly/.local/lib/python3.12/sit",
+     "surfaced": "green",
+     "result_head": "/home/mwoolly/.local/lib/python3.12/site-packages/py\n/home/mwoolly/.local/lib/python3.12/site-packages/py-1.11.0.dist-info\n/home/mwoolly/.local/lib/python3.12/site-packages/pycparser\n/home/mwoolly/.lo"
+    },
+    {
+     "idx": 21,
+     "cmd": "make test >/dev/null 2>&1; echo \"exit=$?\"; git status --short",
+     "surfaced": "other",
+     "result_head": "exit=0\n M Makefile\n M data/config.json\n M scripts/run_checks.sh\n?? __pycache__/\n?? _pytest\n?? iniconfig\n?? pluggy\n?? py\n?? pytest\n?? src/pipeline/__pycache__/\n?? tests/__pycache__/\n"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F5-env-pytest-unplanted"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 3,
+      "kind": "read",
+      "ev": "Read: scripts/run_checks.sh"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 5,
+      "kind": "read",
+      "ev": "Read: data/config.json"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 7,
+      "kind": "scan",
+      "ev": "Bash: ls -la scripts/ src/pipeline/ tools/ data/; file scripts/run_checks.sh"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": null,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: make test",
+   "opens_with_checker": true,
+   "solution_md": "# SOLUTION\n\n`make test` failed for four independent environment/config reasons (no Python\nlogic bugs). Fixes applied:\n\n1. **Makefile: recipe indented with spaces instead of a tab**\n   - Symptom: `Makefile:4: *** missing separator.  Stop.`\n   - Fix: replaced the leading spaces on the `python3 -m pytest -q tests/`\n     recipe line with a real tab character. (The `check` recipe already had a\n     tab.)\n\n2. **`scripts/run_checks.sh`: CRLF line endings and not executable**\n   - Symptom (after fix 1): the script could not be executed by\n     `./scripts/run_checks.sh` \u2014 wrong permissions, and the `#!/bin/bash\\r`\n     shebang would resolve to a nonexistent `bash\\r` interpreter.\n   - Fix: stripped carriage returns (`sed -i 's/\\r$//'`) converting the file\n     to LF endings, and `chmod +x scripts/run_checks.sh`.\n\n3. **`data/config.json`: trailing comma made it invalid JSON**\n   - Symptom (after fixes 1\u20132): `tools/validate_config.py` crashed in\n     `json.load` with a JSON decode error.\n   - Fix: removed the trailing comma after `\"batch_size\": 500`. The config\n     content itself (all required keys, positive integer `batch_size`) was\n     valid and unchanged.\n\n4. **`pytest` not importable by `python3`**\n   - Symptom (after fixes 1\u20133): `/usr/bin/python3: No module named pytest`.\n   - Cause: pytest 9.0.3 and its deps are installed in the user site-packages\n     of the real home (`/home/mwoolly/.local/lib/python3.12/site-packages`),\n     but `HOME` in this environment points elsewhere\n     (`/home/mwoolly/projects/agent-arena/.kimi-arena`), so Python computes a\n     nonexistent user-site path and never sees the installed packages.\n   - Fix: created symlinks inside the project root (which `python3 -m` puts\n     first on `sys.path`) pointing at the installed packages:\n     `pytest`, `_pytest`, `pluggy`, `iniconfig`, and `py`. No files outside\n     the working directory were created or modified, and nothing was\n     installed.\n\nResult: `make test` exits 0 \u2014 `run_checks.sh` validates the config and all\n3 tests in `tests/` pass. Nothing under `tests/` was modified and no check\nwas removed or weakened.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "_pytest",
+    "data/config.json",
+    "iniconfig",
+    "pluggy",
+    "py",
+    "pytest",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: make test  => Makefile:4: *** missing separator.  Stop. ; Command failed with exit code: 2.",
+    "[1] Read: Makefile  => 1\t.PHONY: test check ; 2\t ; 3\ttest: check ; 4\t    python3 -m pytest -q tests/ ; 5\t ; 6\tcheck: ; 7\t\t./scripts/r",
+    "[2] Read: conftest.py  => 1\timport sys ; 2\tfrom pathlib import Path ; 3\t ; 4\tsys.path.insert(0, str(Path(__file__).parent / \"src\"))",
+    "[3] Read: scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\"",
+    "[4] Read: tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[5] Read: data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[6] Read: tests/test_transform.py  => 1\tfrom pipeline.transform import batch, normalize_record ; 2\t ; 3\t ; 4\tdef test_normalize_record(): ; 5\t    re",
+    "[7] Bash: ls -la scripts/ src/pipeline/ tools/ data/; file scripts/run_checks.sh  => data/: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:40 . ; drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 1",
+    "[8] Bash: file Makefile conftest.py data/config.json tools/validate_config.py; cat -A Makefile  => Makefile:                 ASCII text ; conftest.py:              Python script, ASCII text executable ; data/c",
+    "[9] Read: src/pipeline/transform.py  => 1\tdef normalize_record(record): ; 2\t    \"\"\"Lowercase keys, strip string values, drop keys with None values.\"\"\"",
+    "[10] Edit: Makefile  => Replaced 1 occurrence in Makefile",
+    "[11] Edit: data/config.json  => Replaced 1 occurrence in data/config.json",
+    "[12] Bash: sed -i 's/\\r$//' scripts/run_checks.sh && chmod +x scripts/run_checks.sh && file scripts/run_checks.sh && ls -  => scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable ; -rwxrwxr-x 1 mwoolly mwoolly 94 Jul ",
+    "[13] Bash: make test  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; /usr",
+    "[14] Bash: which -a python3 python pytest pytest-3 2>/dev/null; ls /usr/bin/python* /usr/local/bin/python* 2>/dev/null; p  => /usr/bin/python3 ; /bin/python3 ; /home/mwoolly/.local/bin/pytest ; /home/mwoolly/.local/bin/pytest ; /home/mw",
+    "[15] Bash: python3 -c \"import pytest\" 2>&1; ls ~/.local/lib 2>/dev/null; pip3 list 2>/dev/null | head -20; ls /usr/lib/py  => Traceback (most recent call last): ;   File \"<string>\", line 1, in <module> ; ModuleNotFoundError: No module n",
+    "[16] Bash: head -3 ~/.local/bin/pytest; ls ~/.local/lib/ 2>&1; python3 -m site; echo \"PYTHONNOUSERSITE=$PYTHONNOUSERSITE\"  => head: cannot open '/home/mwoolly/projects/agent-arena/.kimi-arena/.local/bin/pytest' for reading: No such file",
+    "[17] Bash: ls /home/mwoolly/.local/lib/python3.12/site-packages/ 2>&1 | grep -i -E 'pytest|_pytest|pluggy|iniconfig|packa  => iniconfig ; iniconfig-2.3.0.dist-info ; pluggy ; pluggy-1.6.0.dist-info ; _pytest ; pytest ; pytest-9.0.3.dist",
+    "[18] Bash: for m in pytest _pytest pluggy iniconfig packaging; do python3 -c \"import $m\" 2>/dev/null && echo \"$m OK\" || e  => pytest MISSING ; _pytest MISSING ; pluggy MISSING ; iniconfig MISSING ; packaging OK ; ",
+    "[19] Bash: SP=/home/mwoolly/.local/lib/python3.12/site-packages; for p in pytest _pytest pluggy iniconfig; do ln -sfn \"$S  => lrwxrwxrwx     1 mwoolly mwoolly      59 Jul 17 19:50 iniconfig -> /home/mwoolly/.local/lib/python3.12/site-pa",
+    "[20] Bash: ls -d /home/mwoolly/.local/lib/python3.12/site-packages/py* 2>/dev/null; ln -sfn /home/mwoolly/.local/lib/pyth  => /home/mwoolly/.local/lib/python3.12/site-packages/py ; /home/mwoolly/.local/lib/python3.12/site-packages/py-1.",
+    "[21] Bash: make test >/dev/null 2>&1; echo \"exit=$?\"; git status --short  => exit=0 ;  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? __pycache__/ ; ?? _pytest ; ?? inic",
+    "[22] Write: SOLUTION.md  => Wrote 2128 bytes to SOLUTION.md"
+   ],
+   "label": "Kimi K3 / Kimi Code",
+   "wall_seconds": 340.3
+  },
+  {
+   "harness": "claude-code",
+   "config": "glm-5.2",
+   "run": "run-1",
+   "path": "bouts/2026-07-20-glm52/04-terminal/glm-5.2/run-1/transcript.jsonl",
+   "n_events": 16,
+   "counts": {
+    "Bash": 14,
+    "Edit": 1,
+    "Write": 1
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 4,
+     "cmd": "make test 2>&1; echo \"EXIT CODE: $?\"",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\nEXIT CODE: 2"
+    },
+    {
+     "idx": 7,
+     "cmd": "make test 2>&1; echo \"EXIT CODE: $?\"",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127\nEXIT CODE: 2"
+    },
+    {
+     "idx": 8,
+     "cmd": "chmod +x scripts/run_checks.sh && ls -l scripts/run_checks.sh && echo \"---RUN---\" && make test 2>&1; echo \"EXIT CODE: $?",
+     "surfaced": "F3-crlf",
+     "result_head": "-rwxrwxr-x 1 mwoolly mwoolly 98 Jul 22 06:24 scripts/run_checks.sh\n---RUN---\n./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127\nEX"
+    },
+    {
+     "idx": 9,
+     "cmd": "sed -i 's/\\r$//' scripts/run_checks.sh && cat -A scripts/run_checks.sh && echo \"---RUN---\" && make test 2>&1; echo \"EXIT",
+     "surfaced": "F4-json-comma",
+     "result_head": "#!/bin/bash$\nset -e$\npython3 tools/validate_config.py data/config.json$\necho \"all checks passed\"$\n---RUN---\n./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.OUa2Vz/tool"
+    },
+    {
+     "idx": 12,
+     "cmd": "make test 2>&1; echo \"EXIT CODE: $?\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\nEXIT"
+    },
+    {
+     "idx": 15,
+     "cmd": "make test; echo \"EXIT CODE: $?\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\nEXIT"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 0,
+      "kind": "scan",
+      "ev": "Bash: ls -la && echo \"---MAKEFILE---\" && cat Makefile 2>/dev/null | head -100"
+     },
+     "error_seen_at": 4
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: cat -A Makefile"
+     },
+     "error_seen_at": 8
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: echo \"---CONFTEST---\" && cat conftest.py && echo \"---SCRIPTS---\" && ls -la scripts/ && echo \"---TOOLS---\" && ls -la tool"
+     },
+     "error_seen_at": 7
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 3,
+      "kind": "scan",
+      "ev": "Bash: echo \"---RUN_CHECKS.SH---\" && cat -A scripts/run_checks.sh && echo \"\" && echo \"---VALIDATE_CONFIG.PY---\" && cat tools/va"
+     },
+     "error_seen_at": 9
+    }
+   ],
+   "gap_seconds": 111.5,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la && echo \"---MAKEFILE---\" && cat Makefile 2>/dev/null | head -100",
+   "opens_with_checker": false,
+   "solution_md": "# Solution\n\n`make test` was failing on four independent environment/config problems\nintroduced by the botched merge. None were logic bugs in the Python source;\nthe validator, the test suite, and all `make` targets are unchanged in behavior.\n\n## Problems found and fixes\n\n1. **`Makefile:4` \u2014 spaces instead of a tab.**\n   The `test` recipe line (`python3 -m pytest -q tests/`) was indented with\n   four spaces, so `make` aborted with `missing separator`. Recipe lines must\n   start with a tab. Re-indented with a tab. (The `check` recipe already used a\n   tab; only the `test` recipe was broken.)\n\n2. **`scripts/run_checks.sh` \u2014 not executable.**\n   The file mode was `0644`, so `./scripts/run_checks.sh` failed with\n   `Permission denied` (exit 127). Restored the executable bit (`chmod +x` \u2192\n   `0755`).\n\n3. **`scripts/run_checks.sh` \u2014 CRLF line endings.**\n   The file had Windows CRLF line endings, so the shebang read\n   `#!/bin/bash\\r` and the kernel failed to find `/bin/bash\\r` (`No such file\n   or directory` / bad interpreter). Converted to Unix LF line endings.\n\n4. **`data/config.json` \u2014 trailing comma (invalid JSON).**\n   `\"batch_size\": 500,` had a trailing comma, so `json.load` raised\n   `JSONDecodeError` and `validate_config.py` exited non-zero. Removed the\n   trailing comma. The validator itself was left intact \u2014 it still rejects any\n   missing key and any non-positive `batch_size`.\n\n## Result\n\n`make test` now runs `check` (config validation passes) followed by the full\npytest suite (`3 passed`) and exits 0.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la && echo \"---MAKEFILE---\" && cat Makefile 2>/dev/null | head -100  => total 1132 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 22 06:24 . ; drwxrwxrwt 16238 root    root    111820",
+    "[1] Bash: cat -A Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[2] Bash: echo \"---CONFTEST---\" && cat conftest.py && echo \"---SCRIPTS---\" && ls -la scripts/ && echo \"---TOOLS---\" && l  => ---CONFTEST--- ; import sys ; from pathlib import Path ;  ; sys.path.insert(0, str(Path(__file__).parent / \"sr",
+    "[3] Bash: echo \"---RUN_CHECKS.SH---\" && cat -A scripts/run_checks.sh && echo \"\" && echo \"---VALIDATE_CONFIG.PY---\" && ca  => ---RUN_CHECKS.SH--- ; #!/bin/bash^M$ ; set -e^M$ ; python3 tools/validate_config.py data/config.json^M$ ; echo",
+    "[4] Bash: make test 2>&1; echo \"EXIT CODE: $?\"  => Makefile:4: *** missing separator.  Stop. ; EXIT CODE: 2",
+    "[5] Bash: git log --oneline --all && echo \"---\" && git show HEAD:Makefile | cat -A  => f4bcedd baseline ; --- ; .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check",
+    "[6] Bash: printf '.PHONY: test check\\n\\ntest: check\\n\\tpython3 -m pytest -q tests/\\n\\ncheck:\\n\\t./scripts/run_checks.sh\\  => .PHONY: test check$ ; $ ; test: check$ ; ^Ipython3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_checks",
+    "[7] Bash: make test 2>&1; echo \"EXIT CODE: $?\"  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[8] Bash: chmod +x scripts/run_checks.sh && ls -l scripts/run_checks.sh && echo \"---RUN---\" && make test 2>&1; echo \"EXI  => -rwxrwxr-x 1 mwoolly mwoolly 98 Jul 22 06:24 scripts/run_checks.sh ; ---RUN--- ; ./scripts/run_checks.sh ; mak",
+    "[9] Bash: sed -i 's/\\r$//' scripts/run_checks.sh && cat -A scripts/run_checks.sh && echo \"---RUN---\" && make test 2>&1;   => #!/bin/bash$ ; set -e$ ; python3 tools/validate_config.py data/config.json$ ; echo \"all checks passed\"$ ; ---R",
+    "[10] Bash: cat -A data/config.json && echo \"---OD CHECK char 92---\" && wc -c data/config.json  => {$ ;   \"source\": \"s3://ingest/raw\",$ ;   \"destination\": \"s3://ingest/clean\",$ ;   \"batch_size\": 500,$ ; }$ ; -",
+    "[11] Edit: /tmp/arena-ws.OUa2Vz/data/config.json  => The file /tmp/arena-ws.OUa2Vz/data/config.json has been updated successfully. (file state is current in your c",
+    "[12] Bash: make test 2>&1; echo \"EXIT CODE: $?\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; ... ",
+    "[13] Bash: git status && echo \"---DIFF (tracked text)---\" && git diff  => On branch master ; Changes not staged for commit: ;   (use \"git add <file>...\" to update what will be committe",
+    "[14] Write: /tmp/arena-ws.OUa2Vz/SOLUTION.md  => File created successfully at: /tmp/arena-ws.OUa2Vz/SOLUTION.md (file state is current in your context \u2014 no nee",
+    "[15] Bash: make test; echo \"EXIT CODE: $?\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; ... "
+   ],
+   "label": "GLM-5.2 / Claude Code",
+   "wall_seconds": 128.3
+  },
+  {
+   "harness": "claude-code",
+   "config": "glm-5.2",
+   "run": "run-2",
+   "path": "bouts/2026-07-20-glm52/04-terminal/glm-5.2/run-2/transcript.jsonl",
+   "n_events": 18,
+   "counts": {
+    "Bash": 13,
+    "Read": 2,
+    "Edit": 2,
+    "Write": 1
+   },
+   "checker_cycles": 5,
+   "checkers": [
+    {
+     "idx": 2,
+     "cmd": "make test 2>&1; echo \"===EXIT: $?===\"",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\n===EXIT: 2==="
+    },
+    {
+     "idx": 6,
+     "cmd": "cat -A Makefile && echo \"---\" && make test 2>&1; echo \"===EXIT: $?===\"",
+     "surfaced": "F2-exec-bit",
+     "result_head": ".PHONY: test check$\n$\ntest: check$\n^Ipython3 -m pytest -q tests/$\n$\ncheck:$\n^I./scripts/run_checks.sh$\n---\n./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:"
+    },
+    {
+     "idx": 8,
+     "cmd": "chmod +x scripts/run_checks.sh && ls -l scripts/run_checks.sh && echo \"---\" && make test 2>&1; echo \"===EXIT: $?===\"",
+     "surfaced": "F3-crlf",
+     "result_head": "-rwxrwxr-x 1 mwoolly mwoolly 98 Jul 22 06:27 scripts/run_checks.sh\n---\n./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127\n===EXIT:"
+    },
+    {
+     "idx": 10,
+     "cmd": "tr -d '\\r' < scripts/run_checks.sh > scripts/run_checks.sh.tmp && mv scripts/run_checks.sh.tmp scripts/run_checks.sh && ",
+     "surfaced": "F4-json-comma",
+     "result_head": "scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable\n---\n./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.7GD8Hn/tools/validate_config.py\", line 18, "
+    },
+    {
+     "idx": 15,
+     "cmd": "make test 2>&1; echo \"===EXIT: $?===\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\n===E"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 0,
+      "kind": "scan",
+      "ev": "Bash: ls -la && echo \"---MAKEFILE---\" && cat Makefile 2>/dev/null"
+     },
+     "error_seen_at": 2
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: cat conftest.py && echo \"---SCRIPTS---\" && ls -la scripts/ && echo \"---RUN_CHECKS---\" && cat scripts/run_checks.sh && ec"
+     },
+     "error_seen_at": 6
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 3,
+      "kind": "scan",
+      "ev": "Bash: cat -A Makefile"
+     },
+     "error_seen_at": 8
+    }
+   ],
+   "gap_seconds": 127.6,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la && echo \"---MAKEFILE---\" && cat Makefile 2>/dev/null",
+   "opens_with_checker": false,
+   "solution_md": "# Solution \u2014 `make test` now exits 0\n\nAll three problems were environment/config issues (file metadata and a data\nfile), not Python source bugs. No test, check, target, or validation step was\nweakened or removed \u2014 `make test` runs exactly the same checks and the same\nsuite as before.\n\n## Problems found and fixed\n\n1. **Makefile recipe used spaces instead of a TAB** (`Makefile:4`)\n   The `test` target's recipe line was indented with 4 spaces, so `make`\n   aborted with `missing separator`. The `check` recipe correctly used a TAB.\n   Fixed by replacing the leading spaces with a TAB so the recipe executes.\n   The target still runs the same `python3 -m pytest -q tests/`.\n\n2. **`scripts/run_checks.sh` was not executable and had CRLF line endings**\n   The `check` target invokes the script directly (`./scripts/run_checks.sh`),\n   but the file had mode `644` (no execute bit) and Windows CRLF terminators.\n   The CRLF made the shebang read `#!/bin/bash\\r`, so even after restoring the\n   execute bit the kernel reported `No such file or directory`. Fixed by\n   `chmod +x` and converting line endings to LF. The script contents are\n   unchanged (still runs `validate_config.py` on `data/config.json`).\n\n3. **`data/config.json` had a trailing comma** (after `\"batch_size\": 500`)\n   This is invalid JSON; `json.load` failed with\n   `Expecting property name enclosed in double quotes: line 5 column 1`.\n   Removed the trailing comma. The validator still enforces the same required\n   keys (`source`, `destination`, `batch_size`) and that `batch_size` is a\n   positive integer.\n\n## Result\n\n```\n./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\n```\n\n`make test` exits 0.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la && echo \"---MAKEFILE---\" && cat Makefile 2>/dev/null  => total 1132 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 22 06:27 . ; drwxrwxrwt 16238 root    root    111820",
+    "[1] Bash: cat conftest.py && echo \"---SCRIPTS---\" && ls -la scripts/ && echo \"---RUN_CHECKS---\" && cat scripts/run_check  => import sys ; from pathlib import Path ;  ; sys.path.insert(0, str(Path(__file__).parent / \"src\")) ; ---SCRIPTS",
+    "[2] Bash: make test 2>&1; echo \"===EXIT: $?===\"  => Makefile:4: *** missing separator.  Stop. ; ===EXIT: 2===",
+    "[3] Bash: cat -A Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[4] Read: /tmp/arena-ws.7GD8Hn/Makefile  => 1\t.PHONY: test check ; 2\t ; 3\ttest: check ; 4\t    python3 -m pytest -q tests/ ; 5\t ; 6\tcheck: ; 7\t\t./scripts/r",
+    "[5] Edit: /tmp/arena-ws.7GD8Hn/Makefile  => The file /tmp/arena-ws.7GD8Hn/Makefile has been updated successfully. (file state is current in your context \u2014",
+    "[6] Bash: cat -A Makefile && echo \"---\" && make test 2>&1; echo \"===EXIT: $?===\"  => .PHONY: test check$ ; $ ; test: check$ ; ^Ipython3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_checks",
+    "[7] Bash: ls -l scripts/run_checks.sh && echo \"---git mode---\" && git ls-files -s scripts/run_checks.sh  => -rw-rw-r-- 1 mwoolly mwoolly 98 Jul 22 06:27 scripts/run_checks.sh ; ---git mode--- ; 100644 1db22701b3b89d432",
+    "[8] Bash: chmod +x scripts/run_checks.sh && ls -l scripts/run_checks.sh && echo \"---\" && make test 2>&1; echo \"===EXIT:   => -rwxrwxr-x 1 mwoolly mwoolly 98 Jul 22 06:27 scripts/run_checks.sh ; --- ; ./scripts/run_checks.sh ; make: ./s",
+    "[9] Bash: cat -A scripts/run_checks.sh && echo \"---file type---\" && file scripts/run_checks.sh && echo \"---head hexdump-  => #!/bin/bash^M$ ; set -e^M$ ; python3 tools/validate_config.py data/config.json^M$ ; echo \"all checks passed\"^M",
+    "[10] Bash: tr -d '\\r' < scripts/run_checks.sh > scripts/run_checks.sh.tmp && mv scripts/run_checks.sh.tmp scripts/run_che  => scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable ; --- ; ./scripts/run_checks.sh ; Trac",
+    "[11] Bash: echo \"===validate_config.py===\" && cat -A tools/validate_config.py && echo \"\" && echo \"===data/config.json===\"  => ===validate_config.py=== ; \"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\"$ ; import j",
+    "[12] Bash: xxd data/config.json && echo \"---byte count---\" && wc -c data/config.json  => 00000000: 7b0a 2020 2273 6f75 7263 6522 3a20 2273  {.  \"source\": \"s ; 00000010: 333a 2f2f 696e 6765 7374 2f72 ",
+    "[13] Read: /tmp/arena-ws.7GD8Hn/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[14] Edit: /tmp/arena-ws.7GD8Hn/data/config.json  => The file /tmp/arena-ws.7GD8Hn/data/config.json has been updated successfully. (file state is current in your c",
+    "[15] Bash: make test 2>&1; echo \"===EXIT: $?===\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; ... ",
+    "[16] Bash: ls scripts/ && echo \"---git status---\" && git status --short  => run_checks.sh ; ---git status--- ;  M Makefile ;  M data/config.json ;  M scripts/run_checks.sh ; ?? __pycache",
+    "[17] Write: /tmp/arena-ws.7GD8Hn/SOLUTION.md  => File created successfully at: /tmp/arena-ws.7GD8Hn/SOLUTION.md (file state is current in your context \u2014 no nee"
+   ],
+   "label": "GLM-5.2 / Claude Code",
+   "wall_seconds": 147.4
+  },
+  {
+   "harness": "claude-code",
+   "config": "glm-5.2",
+   "run": "run-3",
+   "path": "bouts/2026-07-20-glm52/04-terminal/glm-5.2/run-3/transcript.jsonl",
+   "n_events": 24,
+   "counts": {
+    "Bash": 14,
+    "Read": 7,
+    "Edit": 2,
+    "Write": 1
+   },
+   "checker_cycles": 6,
+   "checkers": [
+    {
+     "idx": 1,
+     "cmd": "make test 2>&1 | head -100",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop."
+    },
+    {
+     "idx": 13,
+     "cmd": "make test 2>&1 | head -60",
+     "surfaced": "F2-exec-bit",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: Permission denied\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 15,
+     "cmd": "chmod +x scripts/run_checks.sh && make test 2>&1 | head -60",
+     "surfaced": "F3-crlf",
+     "result_head": "./scripts/run_checks.sh\nmake: ./scripts/run_checks.sh: No such file or directory\nmake: *** [Makefile:7: check] Error 127"
+    },
+    {
+     "idx": 17,
+     "cmd": "sed -i 's/\\r$//' scripts/run_checks.sh && cat -A scripts/run_checks.sh && make test 2>&1 | head -60",
+     "surfaced": "F4-json-comma",
+     "result_head": "#!/bin/bash$\nset -e$\npython3 tools/validate_config.py data/config.json$\necho \"all checks passed\"$\n./scripts/run_checks.sh\nTraceback (most recent call last):\n  File \"/tmp/arena-ws.mfaKUn/tools/validate"
+    },
+    {
+     "idx": 20,
+     "cmd": "make test 2>&1 | head -60; echo \"=== EXIT: ${PIPESTATUS[0]} ===\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\n=== "
+    },
+    {
+     "idx": 22,
+     "cmd": "make test; echo \"=== EXIT: $? ===\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\n=== "
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator",
+    "F2-exec-bit",
+    "F3-crlf",
+    "F4-json-comma"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 4,
+      "kind": "scan",
+      "ev": "Bash: cat -A Makefile"
+     },
+     "error_seen_at": 15
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 5,
+      "kind": "scan",
+      "ev": "Bash: ls -la scripts/ tests/ tools/ data/ src/ src/*/ 2>&1"
+     },
+     "error_seen_at": 13
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 7,
+      "kind": "read",
+      "ev": "Read: /tmp/arena-ws.mfaKUn/data/config.json"
+     },
+     "error_seen_at": 17
+    }
+   ],
+   "gap_seconds": 124.0,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la",
+   "opens_with_checker": false,
+   "solution_md": "# Solution\n\n`make test` was failing due to four independent environment/config problems\nintroduced by the botched merge. None were logic bugs in the Python source, and\nnothing under `tests/` was modified. The same checks (`run_checks.sh` +\n`validate_config.py`) and the same pytest suite still run.\n\n## Problems found and fixed\n\n1. **Makefile: spaces instead of a tab** \u2014 the `pytest` recipe line used four\n   spaces where `make` requires a literal tab, producing\n   `Makefile:4: *** missing separator. Stop.`\n   Fix: replaced the leading spaces with a tab character.\n\n2. **`scripts/run_checks.sh` not executable** \u2014 mode `0644`, so\n   `make` reported `Permission denied`.\n   Fix: `chmod +x scripts/run_checks.sh` (now `0755`).\n\n3. **`scripts/run_checks.sh` had CRLF line endings** \u2014 the shebang read as\n   `#!/bin/bash\\r`, so the kernel looked for a nonexistent interpreter and\n   reported `No such file or directory` even though the file existed.\n   Fix: converted line endings to LF (`sed -i 's/\\r$//'`).\n\n4. **`data/config.json` had a trailing comma** \u2014\n   `\"batch_size\": 500,` before the closing brace is invalid JSON, so\n   `validate_config.py` raised `JSONDecodeError` before it could run any check.\n   Fix: removed the trailing comma.\n\n## Result\n\n`make test` now exits 0: the config validates, all checks pass, and the full\npytest suite runs (`3 passed`).\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la  => total 1132 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 22 06:29 . ; drwxrwxrwt 16238 root    root    111820",
+    "[1] Bash: make test 2>&1 | head -100  => Makefile:4: *** missing separator.  Stop.",
+    "[2] Read: /tmp/arena-ws.mfaKUn/Makefile  => 1\t.PHONY: test check ; 2\t ; 3\ttest: check ; 4\t    python3 -m pytest -q tests/ ; 5\t ; 6\tcheck: ; 7\t\t./scripts/r",
+    "[3] Read: /tmp/arena-ws.mfaKUn/conftest.py  => 1\timport sys ; 2\tfrom pathlib import Path ; 3\t ; 4\tsys.path.insert(0, str(Path(__file__).parent / \"src\")) ; 5\t",
+    "[4] Bash: cat -A Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[5] Bash: ls -la scripts/ tests/ tools/ data/ src/ src/*/ 2>&1  => data/: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:40 . ; drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 2",
+    "[6] Read: /tmp/arena-ws.mfaKUn/scripts/run_checks.sh  => 1\t#!/bin/bash ; 2\tset -e ; 3\tpython3 tools/validate_config.py data/config.json ; 4\techo \"all checks passed\" ; ",
+    "[7] Read: /tmp/arena-ws.mfaKUn/data/config.json  => 1\t{ ; 2\t  \"source\": \"s3://ingest/raw\", ; 3\t  \"destination\": \"s3://ingest/clean\", ; 4\t  \"batch_size\": 500, ; 5\t",
+    "[8] Read: /tmp/arena-ws.mfaKUn/tools/validate_config.py  => 1\t\"\"\"Validate the pipeline config file. Exits non-zero on any problem.\"\"\" ; 2\timport json ; 3\timport sys ; 4\t ",
+    "[9] Read: /tmp/arena-ws.mfaKUn/src/pipeline/transform.py  => 1\tdef normalize_record(record): ; 2\t    \"\"\"Lowercase keys, strip string values, drop keys with None values.\"\"\"",
+    "[10] Read: /tmp/arena-ws.mfaKUn/tests/test_transform.py  => 1\tfrom pipeline.transform import batch, normalize_record ; 2\t ; 3\t ; 4\tdef test_normalize_record(): ; 5\t    re",
+    "[11] Edit: /tmp/arena-ws.mfaKUn/Makefile  => <tool_use_error>String to replace not found in file. ; String: test: check$ ;     python3 -m pytest -q tests/<",
+    "[12] Bash: printf '.PHONY: test check\\n\\ntest: check\\n\\tpython3 -m pytest -q tests/\\n\\ncheck:\\n\\t./scripts/run_checks.sh\\  => .PHONY: test check$ ; $ ; test: check$ ; ^Ipython3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_checks",
+    "[13] Bash: make test 2>&1 | head -60  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: Permission denied ; make: *** [Makefile:7: check] Err",
+    "[14] Bash: ls -l scripts/run_checks.sh && ls -l scripts/  => -rw-rw-r-- 1 mwoolly mwoolly 98 Jul 22 06:29 scripts/run_checks.sh ; total 4 ; -rw-rw-r-- 1 mwoolly mwoolly 98",
+    "[15] Bash: chmod +x scripts/run_checks.sh && make test 2>&1 | head -60  => ./scripts/run_checks.sh ; make: ./scripts/run_checks.sh: No such file or directory ; make: *** [Makefile:7: ch",
+    "[16] Bash: cat -A scripts/run_checks.sh; echo \"---FILE---\"; file scripts/run_checks.sh  => #!/bin/bash^M$ ; set -e^M$ ; python3 tools/validate_config.py data/config.json^M$ ; echo \"all checks passed\"^M",
+    "[17] Bash: sed -i 's/\\r$//' scripts/run_checks.sh && cat -A scripts/run_checks.sh && make test 2>&1 | head -60  => #!/bin/bash$ ; set -e$ ; python3 tools/validate_config.py data/config.json$ ; echo \"all checks passed\"$ ; ./sc",
+    "[18] Bash: cat -A data/config.json; echo \"---\"; file data/config.json  => {$ ;   \"source\": \"s3://ingest/raw\",$ ;   \"destination\": \"s3://ingest/clean\",$ ;   \"batch_size\": 500,$ ; }$ ; -",
+    "[19] Edit: /tmp/arena-ws.mfaKUn/data/config.json  => The file /tmp/arena-ws.mfaKUn/data/config.json has been updated successfully. (file state is current in your c",
+    "[20] Bash: make test 2>&1 | head -60; echo \"=== EXIT: ${PIPESTATUS[0]} ===\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; ... ",
+    "[21] Bash: git status && echo \"=== DIFF (tracked text files) ===\" && git diff  => On branch master ; Changes not staged for commit: ;   (use \"git add <file>...\" to update what will be committe",
+    "[22] Bash: make test; echo \"=== EXIT: $? ===\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; ... ",
+    "[23] Write: /tmp/arena-ws.mfaKUn/SOLUTION.md  => File created successfully at: /tmp/arena-ws.mfaKUn/SOLUTION.md (file state is current in your context \u2014 no nee"
+   ],
+   "label": "GLM-5.2 / Claude Code",
+   "wall_seconds": 145.0
+  },
+  {
+   "harness": "claude-code",
+   "config": "claude-opus-4-8",
+   "run": "run-1",
+   "path": "bouts/2026-07-20-glm52/04-terminal/claude-opus-4-8/transcript.jsonl",
+   "n_events": 12,
+   "counts": {
+    "Bash": 10,
+    "Edit": 1,
+    "Write": 1
+   },
+   "checker_cycles": 2,
+   "checkers": [
+    {
+     "idx": 4,
+     "cmd": "make test 2>&1 | head -50; echo \"EXIT: ${PIPESTATUS[0]}\"",
+     "surfaced": "F1-makefile-separator",
+     "result_head": "Makefile:4: *** missing separator.  Stop.\nEXIT: 2"
+    },
+    {
+     "idx": 10,
+     "cmd": "make test 2>&1; echo \"EXIT: ${PIPESTATUS[0]}\"",
+     "surfaced": "green",
+     "result_head": "./scripts/run_checks.sh\nconfig ok: data/config.json\nall checks passed\npython3 -m pytest -q tests/\n...                                                                      [100%]\n3 passed in 0.01s\nEXIT"
+    }
+   ],
+   "fault_order": [
+    "F1-makefile-separator"
+   ],
+   "proactive_candidates": [
+    {
+     "fault": "F1-makefile-separator",
+     "first_target": {
+      "idx": 1,
+      "kind": "scan",
+      "ev": "Bash: cat Makefile 2>/dev/null"
+     },
+     "error_seen_at": 4
+    },
+    {
+     "fault": "F3-crlf",
+     "first_target": {
+      "idx": 2,
+      "kind": "scan",
+      "ev": "Bash: cat -A Makefile"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F2-exec-bit",
+     "first_target": {
+      "idx": 3,
+      "kind": "scan",
+      "ev": "Bash: ls -la scripts tools data src tests; echo \"---conftest---\"; cat conftest.py"
+     },
+     "error_seen_at": null
+    },
+    {
+     "fault": "F4-json-comma",
+     "first_target": {
+      "idx": 5,
+      "kind": "scan",
+      "ev": "Bash: echo \"=== run_checks.sh ===\"; cat -A scripts/run_checks.sh; echo; echo \"=== validate_config.py ===\"; cat tools/validate_"
+     },
+     "error_seen_at": null
+    }
+   ],
+   "gap_seconds": 59.1,
+   "n_task_mgmt": 0,
+   "first_repo_event": "Bash: ls -la",
+   "opens_with_checker": false,
+   "solution_md": "# Solution\n\n`make test` was broken by a botched cross-machine merge. Four environment/config\nproblems, all fixed without touching `tests/` or weakening any check. `make test`\nstill runs the same `check` target (`./scripts/run_checks.sh` \u2192 config validation)\nfollowed by the same `pytest` suite.\n\n## Problems found and fixes\n\n1. **Makefile recipe indented with spaces, not a tab**\n   Line 4 (`python3 -m pytest -q tests/`) began with 4 spaces. Make requires\n   recipe lines to start with a tab, so it aborted with\n   `Makefile:4: *** missing separator. Stop.`\n   *Fix:* replaced the leading spaces with a tab (the `check:` recipe already\n   used a tab).\n\n2. **`scripts/run_checks.sh` had CRLF (Windows) line endings**\n   The shebang was `#!/bin/bash\\r`, so the kernel tried to run the interpreter\n   `/bin/bash\\r`, which does not exist.\n   *Fix:* converted line endings from CRLF to LF.\n\n3. **`scripts/run_checks.sh` was not executable**\n   The Makefile invokes it as `./scripts/run_checks.sh`, but the file mode was\n   `rw-rw-r--`, so execution was denied.\n   *Fix:* `chmod +x scripts/run_checks.sh`.\n\n4. **`data/config.json` was invalid JSON (trailing comma)**\n   The `\"batch_size\": 500,` line had a trailing comma before `}`. Python's\n   `json.load` rejects trailing commas, so `tools/validate_config.py` failed in\n   the `check` step.\n   *Fix:* removed the trailing comma.\n\n## Verification\n\n`make test` now exits 0: `config ok` / `all checks passed`, then `3 passed`.\n",
+   "solution_automap": {
+    "F1-makefile-separator": true,
+    "F2-exec-bit": true,
+    "F3-crlf": true,
+    "F4-json-comma": true
+   },
+   "fix_file_set": [
+    "Makefile",
+    "data/config.json",
+    "scripts/run_checks.sh"
+   ],
+   "mode_changes": [
+    "new mode 100755",
+    "old mode 100644"
+   ],
+   "timeline": [
+    "[0] Bash: ls -la  => total 1132 ; drwxrwxr-x     8 mwoolly mwoolly    4096 Jul 22 07:08 . ; drwxrwxrwt 16238 root    root    111820",
+    "[1] Bash: cat Makefile 2>/dev/null  => .PHONY: test check ;  ; test: check ;     python3 -m pytest -q tests/ ;  ; check: ; \t./scripts/run_checks.sh",
+    "[2] Bash: cat -A Makefile  => .PHONY: test check$ ; $ ; test: check$ ;     python3 -m pytest -q tests/$ ; $ ; check:$ ; ^I./scripts/run_chec",
+    "[3] Bash: ls -la scripts tools data src tests; echo \"---conftest---\"; cat conftest.py  => data: ; total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:40 . ; drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 22",
+    "[4] Bash: make test 2>&1 | head -50; echo \"EXIT: ${PIPESTATUS[0]}\"  => Makefile:4: *** missing separator.  Stop. ; EXIT: 2",
+    "[5] Bash: echo \"=== run_checks.sh ===\"; cat -A scripts/run_checks.sh; echo; echo \"=== validate_config.py ===\"; cat tools  => === run_checks.sh === ; #!/bin/bash^M$ ; set -e^M$ ; python3 tools/validate_config.py data/config.json^M$ ; ec",
+    "[6] Bash: ls -la src/pipeline; echo \"=== files ===\"; for f in src/pipeline/*.py; do echo \"--- $f ---\"; cat \"$f\"; done  => total 12 ; drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:41 . ; drwxrwxr-x 3 mwoolly mwoolly 4096 Jul  6 19:40 .",
+    "[7] Bash: python3 -c \"import json; json.load(open('data/config.json'))\" 2>&1 | tail -3; echo \"---\"; file scripts/run_che  =>     obj, end = self.scan_once(s, idx) ;                ^^^^^^^^^^^^^^^^^^^^^^ ; json.decoder.JSONDecodeError: ",
+    "[8] Bash: \\ ; sed -i '4s/^    /\\t/' Makefile && \\ ; echo \"=== Makefile after ===\" && cat -A Makefile && \\ ; sed -i 's/\\r  => === Makefile after === ; .PHONY: test check$ ; $ ; test: check$ ; ^Ipython3 -m pytest -q tests/$ ; $ ; check:$",
+    "[9] Edit: /tmp/arena-ws.Rhctkg/data/config.json  => The file /tmp/arena-ws.Rhctkg/data/config.json has been updated successfully. (file state is current in your c",
+    "[10] Bash: make test 2>&1; echo \"EXIT: ${PIPESTATUS[0]}\"  => ./scripts/run_checks.sh ; config ok: data/config.json ; all checks passed ; python3 -m pytest -q tests/ ; ... ",
+    "[11] Write: /tmp/arena-ws.Rhctkg/SOLUTION.md  => File created successfully at: /tmp/arena-ws.Rhctkg/SOLUTION.md (file state is current in your context \u2014 no nee"
+   ],
+   "label": "Opus 4.8 / Claude Code",
+   "wall_seconds": 76.8
+  }
+ ],
+ "scorecard": {
+  "H1": {
+   "hit": true,
+   "detail": "15/19 runs ran the checker >=5 times (threshold 15); cycles: {'2026-07-17-fable-sol-kimi/claude-fable-5/run-1': 6, '2026-07-17-fable-sol-kimi/claude-fable-5/run-2': 3, '2026-07-17-fable-sol-kimi/claude-fable-5/run-3': 6, '2026-07-17-fable-sol-kimi/gpt-5.6-sol/run-1': 6, '2026-07-17-fable-sol-kimi/gpt-5.6-sol/run-2': 3, '2026-07-17-fable-sol-kimi/gpt-5.6-sol/run-3': 6, '2026-07-17-fable-sol-kimi/kimi-k3/run-1': 6, '2026-07-17-fable-sol-kimi/kimi-k3/run-2': 6, '2026-07-17-fable-sol-kimi/kimi-k3/run-3': 5, '2026-07-17-sol-codex-homegame/gpt-5.6-sol-codex/run-1': 6, '2026-07-17-sol-codex-homegame/gpt-5.6-sol-codex/run-2': 5, '2026-07-17-sol-codex-homegame/gpt-5.6-sol-codex/run-3': 4, '2026-07-18-kimi-homegame/kimi-k3-kimicode/run-1': 7, '2026-07-18-kimi-homegame/kimi-k3-kimicode/run-2': 6, '2026-07-18-kimi-homegame/kimi-k3-kimicode/run-3': 5, '2026-07-20-glm52/glm-5.2/run-1': 6, '2026-07-20-glm52/glm-5.2/run-2': 5, '2026-07-20-glm52/glm-5.2/run-3': 6, '2026-07-20-glm52/claude-opus-4-8/run-1': 2}"
+  },
+  "H2": {
+   "hit": false,
+   "detail": "proactive fix/scan in 10/19 runs (threshold <=3): ['claude-fable-5/run-2', 'gpt-5.6-sol/run-2', 'kimi-k3/run-3', 'gpt-5.6-sol-codex/run-1', 'gpt-5.6-sol-codex/run-2', 'gpt-5.6-sol-codex/run-3', 'kimi-k3-kimicode/run-1', 'kimi-k3-kimicode/run-2', 'kimi-k3-kimicode/run-3', 'claude-opus-4-8/run-1']"
+  },
+  "H3": {
+   "hit": true,
+   "detail": "Sol median wall: Codex 39s vs CC 107s (ratio 0.36, need <=0.5); Kimi: Kimi Code 340s vs CC 119s (ratio 2.85, need >=2.5)"
+  },
+  "H4": {
+   "hit": false,
+   "detail": "Kimi median checker cycles: Kimi Code 6 vs CC 6 (ratio 1.00, need >=1.5)"
+  },
+  "H5": {
+   "hit": true,
+   "detail": "19/19 SOLUTION.md accurate (threshold 16); not accurate: none"
+  },
+  "H6": {
+   "hit": false,
+   "detail": "9/19 first repo-touching call is the checker (threshold 17); exceptions: ['claude-fable-5/run-1: Bash: ls -la /tmp/arena-ws.CiEj7j', 'claude-fable-5/run-2: Bash: ls -la /tmp/arena-ws.p1AHud && cat /tmp/arena-ws.p1AHud/Makefile', 'claude-fable-5/run-3: Bash: ls -la /tmp/arena-ws.oG46ql && cat /tmp/arena-ws.oG46ql/Makefile', 'kimi-k3/run-1: Bash: ls -la /tmp/arena-ws.TJYP5u && cat /tmp/arena-ws.TJYP5u/Makefile 2>/dev/null', 'kimi-k3/run-2: Bash: ls -la /tmp/arena-ws.4etEFD && cat /tmp/arena-ws.4etEFD/Makefile 2>/dev/null', 'kimi-k3/run-3: Bash: ls -la /tmp/arena-ws.PJnKlo && cat /tmp/arena-ws.PJnKlo/Makefile 2>/dev/null', 'glm-5.2/run-1: Bash: ls -la && echo \"---MAKEFILE---\" && cat Makefile 2>/dev/null | head -100', 'glm-5.2/run-2: Bash: ls -la && echo \"---MAKEFILE---\" && cat Makefile 2>/dev/null', 'glm-5.2/run-3: Bash: ls -la', 'claude-opus-4-8/run-1: Bash: ls -la']"
+  },
+  "H7": {
+   "hit": false,
+   "detail": "fix-file set == ['Makefile', 'data/config.json', 'scripts/run_checks.sh'] in 18/19 runs; deviations: [\"kimi-k3-kimicode/run-3: ['Makefile', '_pytest', 'data/config.json', 'iniconfig', 'pluggy', 'py', 'pytest', 'scripts/run_checks.sh']\"]"
+  }
+ },
+ "adjudications_loaded": true
+}
