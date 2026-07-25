@@ -454,12 +454,42 @@ def main():
               "HOME (auth isolation, bouts/2026-07-18-kimi-homegame/DESIGN.md) "
               "drops ~/.local from python3's user site-packages, so `python3 "
               "-m pytest` fails with `No module named pytest` in that harness "
-              "only. Runs that hit it:", ""]
+              "only. Cost, from the driver's timestamped wire.jsonl (time "
+              "from the first pytest-missing error to the first green pytest "
+              "run; the four planted faults were already fixed when this "
+              "error can first appear, since pytest is last in the make "
+              "chain):", ""]
     for r in f5_runs:
-        lines.append(f"- {r['path']}: worked around it (see SOLUTION.md and "
-                     f"workspace.diff); this also explains the published "
-                     f"peek-check warning for this run (site-packages paths "
-                     f"contain /home/mwoolly).")
+        wire = os.path.join(ROOT, os.path.dirname(r["path"]), "wire.jsonl")
+        ts0 = ts_n = ts_f5 = ts_green = None
+        for line in open(wire):
+            d = json.loads(line)
+            t = d.get("time") or d.get("created_at")
+            if t is None:
+                continue
+            t = int(t)
+            ts0 = ts0 or t
+            ts_n = t
+            if ts_f5 is None and "No module named pytest" in line:
+                ts_f5 = t
+            elif ts_f5 is not None and ts_green is None and "3 passed" in line:
+                ts_green = t
+        seg = (ts_green - ts_f5) / 1000
+        pre = (ts_f5 - ts0) / 1000
+        wall = (ts_n - ts0) / 1000
+        r["f5_segment_s"] = round(seg, 1)
+        r["f5_first_error_at_s"] = round(pre, 1)
+        lines.append(
+            f"- {r['path']}: planted faults done by t+{pre:.0f}s; fifth-fault "
+            f"segment {seg:.0f}s of {wall:.0f}s wall ({seg/wall:.0%}); also "
+            f"explains this run's published peek-check warning "
+            f"(site-packages paths contain /home/mwoolly).")
+    if f5_runs:
+        lines += ["",
+                  "For comparison, the same model's full walls in Claude Code "
+                  "on this task (all four planted faults, no fifth): "
+                  + ", ".join(f"{r['wall_seconds']:.0f}s"
+                              for r in cell("Kimi K3 / Claude Code")) + "."]
     lines += ["", "## Fault discovery order (per run)", ""]
     for r in records:
         lines.append(f"- {r['label']} {r['run']}: cycles={r['checker_cycles']}, "

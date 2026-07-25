@@ -25,11 +25,13 @@ Scorecard: 3/7 hypotheses hit.
 
 ## The fifth fault nobody planted
 
-The task plants four faults. The Kimi Code driver's isolated HOME (auth isolation, bouts/2026-07-18-kimi-homegame/DESIGN.md) drops ~/.local from python3's user site-packages, so `python3 -m pytest` fails with `No module named pytest` in that harness only. Runs that hit it:
+The task plants four faults. The Kimi Code driver's isolated HOME (auth isolation, bouts/2026-07-18-kimi-homegame/DESIGN.md) drops ~/.local from python3's user site-packages, so `python3 -m pytest` fails with `No module named pytest` in that harness only. Cost, from the driver's timestamped wire.jsonl (time from the first pytest-missing error to the first green pytest run; the four planted faults were already fixed when this error can first appear, since pytest is last in the make chain):
 
-- bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-1/transcript.jsonl: worked around it (see SOLUTION.md and workspace.diff); this also explains the published peek-check warning for this run (site-packages paths contain /home/mwoolly).
-- bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-2/transcript.jsonl: worked around it (see SOLUTION.md and workspace.diff); this also explains the published peek-check warning for this run (site-packages paths contain /home/mwoolly).
-- bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-3/transcript.jsonl: worked around it (see SOLUTION.md and workspace.diff); this also explains the published peek-check warning for this run (site-packages paths contain /home/mwoolly).
+- bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-1/transcript.jsonl: planted faults done by t+122s; fifth-fault segment 335s of 511s wall (65%); also explains this run's published peek-check warning (site-packages paths contain /home/mwoolly).
+- bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-2/transcript.jsonl: planted faults done by t+82s; fifth-fault segment 154s of 304s wall (51%); also explains this run's published peek-check warning (site-packages paths contain /home/mwoolly).
+- bouts/2026-07-18-kimi-homegame/04-terminal/kimi-k3-kimicode/run-3/transcript.jsonl: planted faults done by t+68s; fifth-fault segment 201s of 338s wall (60%); also explains this run's published peek-check warning (site-packages paths contain /home/mwoolly).
+
+For comparison, the same model's full walls in Claude Code on this task (all four planted faults, no fifth): 136s, 119s, 102s.
 
 ## Fault discovery order (per run)
 
