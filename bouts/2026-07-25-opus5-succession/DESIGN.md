@@ -73,3 +73,20 @@ summarize.py rows merged against published baselines; effort ladder table
 judge medians vs the 4.8 and Fable columns; mechanism-trace fingerprint
 paragraph; article follows the pipeline's standard panel + peer-review
 path. Budget logged to pipeline state.json regardless of outcome.
+
+## Amendment 1: full low-effort battery (provenance imperfect, disclosed)
+
+Panel review of the completed grid objected that "low effort passes
+everything" was a 3-of-8-task claim and that the judged battery never ran
+at low. The amendment: run the full 8-task battery at effort=low, r=3,
+plus the standard judge pass, predicting grades hold on all 8 tasks and
+the low arm's judge total lands within 4 points of the core's 69/72.
+
+Provenance, stated plainly: this prediction was written in the operating
+session before the low arm ran, but the repo commit that should have
+carried it was blocked by a local git hook and the file change was lost
+without being noticed; commit 5152d26's message describes an amendment its
+tree does not contain. This section was committed only after the low arm
+completed. Unlike the main design above, it therefore cannot prove to a
+reader that it predates its data, and no published claim should lean on it
+as if it could. Results either way: 24/24 full scores, judge 66/72.
