@@ -1,0 +1,48 @@
+{
+  "rules": {
+    "proactive": "Per DESIGN.md, an inspection 'for unrelated reasons' does not count as targeting a fault's mechanism. We adjudicate behaviorally: a run counts as proactive iff at least one PLANTED fault was fixed before that fault's specific error message ever appeared in a checker output (fault absent from the run's surfaced-error order, or fix index < error index). Mechanism-revealing scans that the run did not act on ahead of the error are recorded but do not count; they are surveying, not finding. Borderline notes inline.",
+    "solution_accuracy": "Accurate = all four planted faults enumerated (exec bit + CRLF combinable as one script problem per DESIGN) and no false claims. The Kimi Code runs' extra pytest/site-packages item describes a real condition of that harness's sandbox (isolated HOME per bouts/2026-07-18-kimi-homegame/DESIGN.md), verified against their transcripts; a true extra is not an 'invented extra'."
+  },
+  "proactive": {
+    "claude-fable-5/run-1": {"proactive": false, "note": "All four fault errors surfaced (F1@12, F2@14, F3@15, F4@17). Ran 'cat -A /tmp/arena-ws.CiEj7j/Makefile' at event 2 before make, but still paid every error serially; scan not acted on ahead of any error."},
+    "claude-fable-5/run-2": {"proactive": true, "note": "F2 and F4 errors never surfaced. Events 1-2: 'cat -A Makefile; cat conftest.py...' then 'cat scripts/run_checks.sh; cat tools/validate_config.py; cat data/config.json' (raw CRLF and trailing comma visible in tool output), then batch-fixed; only F1 (@3, from an early make) and F3 (@7) errors ever appeared."},
+    "claude-fable-5/run-3": {"proactive": false, "note": "All four errors surfaced (F1@1, F2@4, F3@6, F4@8). cat -A Makefile at event 2 was F1 diagnosis after the F1 error."},
+    "gpt-5.6-sol/run-1": {"proactive": false, "note": "All four errors surfaced (F1@6, F2@19, F3@23, F4@25). Read run_checks.sh at event 11 (before F3's error) but still waited for each error before each fix."},
+    "gpt-5.6-sol/run-2": {"proactive": true, "note": "Only F1's error ever surfaced (@6). Diagnosis by inspection: Read run_checks.sh @11, 'git ls-files -s Makefile scripts/run_checks.sh data/config.json && stat -c %A %a %n scripts/*' @16 (git index shows 100644 mode), chmod @22 with no Permission denied ever seen; F2/F3/F4 all fixed sight-unseen-by-error."},
+    "gpt-5.6-sol/run-3": {"proactive": false, "note": "All four errors surfaced (F1@6, F2@12, F3@15, F4@25). git ls-files --stage scan @13 preceded F3's error but the fix still followed the error."},
+    "kimi-k3/run-1": {"proactive": false, "note": "All four errors surfaced (F1@1, F2@4, F3@7, F4@9)."},
+    "kimi-k3/run-2": {"proactive": false, "note": "All four errors surfaced (F1@1, F2@4, F3@6, F4@8)."},
+    "kimi-k3/run-3": {"proactive": true, "note": "F4's error never surfaced: event 5 'chmod +x scripts/run_checks.sh && cat tools/validate_config.py data/config.json conftest.py...' read the config (comma visible), fixed before the validator ever ran red. F1@1/F2@3/F3@8 errors were paid serially."},
+    "gpt-5.6-sol-codex/run-1": {"proactive": true, "note": "F4's JSON error never surfaced. Opening sweep dumped every non-test file ('rg --files ... && sed -n 1,160p ...' incl. data/config.json); after a generic 'make: *** [Makefile:7: check] Error 1' (no traceback in aggregated output) it fixed the comma it had already seen."},
+    "gpt-5.6-sol-codex/run-2": {"proactive": true, "note": "F4's error never surfaced; same opening file sweep pattern, comma fixed from inspection."},
+    "gpt-5.6-sol-codex/run-3": {"proactive": true, "note": "F3 and F4 errors never surfaced. Opening sweep used \"sed -n '1,160l'\" (sed's l command prints \\r escapes and $ line ends), the one command in the corpus that renders both whitespace faults for a human; fixed CRLF and the comma without seeing either error."},
+    "kimi-k3-kimicode/run-1": {"proactive": true, "note": "F4's error never surfaced. Read scripts/run_checks.sh @3, read config early; its SOLUTION.md lists the comma fix second 'in the order they surfaced', before the exec bit, consistent with fix-by-inspection."},
+    "kimi-k3-kimicode/run-2": {"proactive": true, "note": "F2 and F4 errors never surfaced: 'cat -A Makefile' @2, chmod @12 with no Permission denied ever seen, comma fixed before any validator error."},
+    "kimi-k3-kimicode/run-3": {"proactive": true, "note": "Strongest batcher after Opus: only F1's error (event 0) ever surfaced among planted faults. Events 3-8: Read run_checks.sh, 'ls -la scripts/ ...; file scripts/run_checks.sh' (file(1) prints 'CRLF line terminators'), 'file Makefile conftest.py data/config.json ...; cat -A Makefile'; all three remaining faults fixed before the next make at event 13."},
+    "glm-5.2/run-1": {"proactive": false, "note": "Catted every file upfront (events 0-3, including cat -A run_checks.sh) yet all four errors still surfaced (F1@4, F2@7, F3@8, F4@9): surveyed the evidence, then peeled serially anyway."},
+    "glm-5.2/run-2": {"proactive": false, "note": "Same pattern as run-1: full upfront survey, all four errors still paid."},
+    "glm-5.2/run-3": {"proactive": false, "note": "All four errors surfaced (F1@1, F2@13, F3@15, F4@17)."},
+    "claude-opus-4-8/run-1": {"proactive": true, "note": "Only F1's error surfaced (@4). Events 1-5: cat Makefile, cat -A Makefile, 'ls -la scripts tools data src tests', 'cat -A scripts/run_checks.sh ... validate_config.py ... config.json'; batch-fixed all four, second make was green. 2 checker cycles, the corpus minimum."}
+  },
+  "solutions": {
+    "claude-fable-5/run-1": {"accurate": true, "note": "Four numbered problems = F1..F4 exactly."},
+    "claude-fable-5/run-2": {"accurate": true, "note": "Four numbered problems = F1..F4 exactly, plus verbatim green output."},
+    "claude-fable-5/run-3": {"accurate": true, "note": "Four numbered problems = F1..F4 exactly."},
+    "gpt-5.6-sol/run-1": {"accurate": true, "note": "Three bullets; script bullet combines F2+F3 (allowed); all four faults covered."},
+    "gpt-5.6-sol/run-2": {"accurate": true, "note": "Three bullets, F2+F3 combined; all four covered."},
+    "gpt-5.6-sol/run-3": {"accurate": true, "note": "Three bullets, F2+F3 combined; all four covered."},
+    "kimi-k3/run-1": {"accurate": true, "note": "Says 'three problems' with F2+F3 combined into one script item (allowed); all four covered with symptoms quoted."},
+    "kimi-k3/run-2": {"accurate": true, "note": "'Three reasons', F2+F3 combined; all four covered."},
+    "kimi-k3/run-3": {"accurate": true, "note": "Four numbered problems = F1..F4 exactly."},
+    "gpt-5.6-sol-codex/run-1": {"accurate": true, "note": "Four bullets = F1..F4 exactly."},
+    "gpt-5.6-sol-codex/run-2": {"accurate": true, "note": "Four bullets = F1..F4 exactly."},
+    "gpt-5.6-sol-codex/run-3": {"accurate": true, "note": "Three bullets, F2+F3 combined; all four covered."},
+    "kimi-k3-kimicode/run-1": {"accurate": true, "note": "Four items: F1, F4, F2, F3 'in the order they surfaced', plus a separate documented Makefile PYTHONPATH workaround for the sandbox's pytest visibility (true in its environment; transcript-verified)."},
+    "kimi-k3-kimicode/run-2": {"accurate": true, "note": "Four items: F1, F4, F2+F3 combined, and the pytest/user-site-packages item — a true statement about the harness sandbox (HOME redirected), not an invented extra."},
+    "kimi-k3-kimicode/run-3": {"accurate": true, "note": "Four items: F1, F2+F3 combined, F4, and the pytest visibility item (fixed via in-workspace symlinks, disclosed as such)."},
+    "glm-5.2/run-1": {"accurate": true, "note": "Four numbered problems = F1..F4 exactly."},
+    "glm-5.2/run-2": {"accurate": true, "note": "'All three problems', F2+F3 combined; all four covered."},
+    "glm-5.2/run-3": {"accurate": true, "note": "Four numbered problems = F1..F4 exactly."},
+    "claude-opus-4-8/run-1": {"accurate": true, "note": "Four numbered problems = F1..F4 (order F1, F3, F2, F4)."}
+  }
+}
