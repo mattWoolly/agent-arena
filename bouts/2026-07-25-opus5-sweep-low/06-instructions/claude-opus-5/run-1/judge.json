@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. West is \"roughly 35% below North,\" the \"spread between best and worst region is $761.53,\" plus per-unit revenue and the $204.94 median."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region and figure, e.g. \"Push Gadget harder: $2,392.00 revenue from just 16 units\" and \"Target West with the North product mix, since West trails North by $761.53.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, including Sprocket's inverse volume/revenue outlier (\"238 units returned only $1,130.50, the lowest revenue despite the highest volume\") and that \"no single region dominates.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 West is \"roughly 35% below North,\" the region \"spread between best and worst\" is \"$761.53,\" and revenue-per-unit distinctions (Gadget's 16 units vs Sprocket's 238) are quantified throughout."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action \u2014 \"Push Gadget harder: $2,392.00 revenue from just 16 units,\" \"Review Sprocket pricing; 238 units returned only $1,130.50,\" and \"Target West with the North product mix, since West trails North by $761.53.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations surface \u2014 the Sprocket volume/revenue inversion (\"238 units... the largest volume and the lowest revenue\"), Gadget's price-driven lead \"from only 16 units,\" and the flat regional spread meaning \"no single region dominates.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 median $204.94, West 'roughly 35% below North', and 'spread between best and worst region is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures, e.g. 'Push Gadget harder: $2,392.00 revenue from just 16 units' and 'Target West with the North product mix... trails North by $761.53'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations like Sprocket being 'the largest volume and the lowest revenue' and Gadget's 'best revenue-per-unit,' plus 'no single region dominates.'"
+      }
+    }
+  ]
+}

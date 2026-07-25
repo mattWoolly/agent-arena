@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. Sprocket's $1,130.50 is 'under 16% of revenue' and West is 'about 35% behind North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product and cites figures, e.g. 'Investigate West: 7 orders yielded $1,414.82... with only $299.00 of Gadget revenue versus North's $747.50.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations such as mean/median proximity ruling out order distortion, Sprocket's high-volume low-revenue mismatch, and West's shortfall traced to Gadget product mix ($299.00 vs $747.50)."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., Sprocket returns 'just $1,130.50 \u2014 under 16% of revenue' and West is 'about 35% behind North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product, region, and figures, e.g., 'Investigate West: 7 orders yielded $1,414.82... with only $299.00 of Gadget revenue versus North's $747.50.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations like the mean/median proximity ('no single order distorts the total'), Sprocket's volume-vs-revenue inversion, and product mix (not order count) driving the regional gap."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. Sprocket returns 'just $1,130.50 \u2014 under 16% of revenue' and West is 'about 35% behind North'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product, region, and figures ('Investigate West: 7 orders yielded $1,414.82... with only $299.00 of Gadget revenue versus North's $747.50')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations like the median/average proximity meaning 'no single order distorts the total,' Gadget's revenue-per-unit efficiency, and West's gap tracing to product mix rather than order count."
+      }
+    }
+  ]
+}

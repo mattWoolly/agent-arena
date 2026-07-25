@@ -1,0 +1,5 @@
+make test: pass
+check chain intact: pass
+config valid and unchanged: pass
+SOLUTION.md: present
+SCORE: 4/4

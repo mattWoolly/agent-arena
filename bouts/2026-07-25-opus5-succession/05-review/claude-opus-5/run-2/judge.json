@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g., 'src/sync.py:14', 'src/report.py:5', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The :35 SQL f-string breaking on an apostrophe email is mechanistically tied to the :39 bare 'except Exception: pass' that swallows it\u2014'the apostrophe-email failure produced no output at all'\u2014a real compound silent-failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism (e.g., 'Integer division ... truncates the final partial page, so trailing users are silently never fetched' and 'Mutable default argument seen=[] is shared across all calls')."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The write-up mechanistically links the SQL f-string 'breaking on any legitimate email containing an apostrophe' (line 35) with the 'except Exception: pass' that discards 'every failed row update silently' so 'the apostrophe-email failure produced no output at all' (line 39)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. 'Integer division ... truncates the final partial page, so trailing users are silently never fetched' and 'Mutable default argument seen=[] is shared across all calls, so IDs accumulate process-wide.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line such as \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:35/39 pair is explained mechanistically: the SQL injection/apostrophe failure at line 35 is \"discarded silently\" by the `except Exception: pass` at line 39 so \"the apostrophe-email failure produced no output at all.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a mechanism, e.g. mutable default `seen=[]` is \"shared across all calls, so IDs accumulate process-wide\" and integer division \"truncates the final partial page.\""
+      }
+    }
+  ]
+}

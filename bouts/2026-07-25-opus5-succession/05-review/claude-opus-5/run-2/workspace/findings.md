@@ -1,0 +1,7 @@
+- src/sync.py:14 Integer division `total_count // PAGE_SIZE` truncates the final partial page, so trailing users are silently never fetched (150 users → only 100 returned; any count below PAGE_SIZE returns nothing at all).
+- src/sync.py:24 Mutable default argument `seen=[]` is shared across all calls, so IDs accumulate process-wide and every user synced in a prior call is skipped forever on subsequent calls (verified: second `sync_users` on the same input returns 0).
+- src/sync.py:35 Replacing the parameterized UPDATE with an f-string interpolates `email` and `id` directly into SQL, creating a SQL injection vector (a crafted email set `active = 0` on the row) and breaking on any legitimate email containing an apostrophe.
+- src/sync.py:39 `except Exception: pass` replaces `log.exception(...)`, so every failed row update is discarded silently with no record of the failure (the apostrophe-email failure produced no output at all).
+- src/report.py:5 `open(path, "w")` without a context manager leaks the file handle: the `if not users: return 0` path returns before `f.close()` (leaving a truncated empty report file behind), and any exception during the write loop also skips the close.
+- src/report.py:11 `user["email"].lower()` raises AttributeError when email is None, which the schema notes in src/db.py explicitly allow; the removed `user["email"] or "unverified"` fallback previously handled this.
+- src/report.py:11 `.split("@")[1]` raises IndexError for any staged email lacking an "@", aborting the whole report mid-write.

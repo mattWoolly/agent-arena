@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. \"src/sync.py:35\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains a compound failure \u2014 the bare `except Exception: pass` silently swallows the very SQL errors raised by the apostrophe-bearing emails from the line-35 interpolation defect, and report.py:11 ties empty emails written by sync.py:33 to a downstream IndexError."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the mechanism via a \"so...\" clause (e.g. \"`range(total_count // PAGE_SIZE)` truncates the final partial page, so the last `total_count % PAGE_SIZE` staged users are never fetched\") rather than only labeling the defect."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:38 finding mechanistically explains how the bare `except Exception: pass` swallows the SQL syntax errors 'raised by emails containing an apostrophe' from the :35 injection defect, and report.py:11 ties its IndexError to 'the empty-string emails that src/sync.py:33 writes into the users table.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism and triggering conditions rather than just labeling (e.g. 'range(total_count // PAGE_SIZE) truncates the final partial page, so the last total_count % PAGE_SIZE staged users are never fetched')."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "Finding 4 mechanistically ties the 'except Exception: pass' at :38 swallowing the SQL syntax errors 'raised by emails containing an apostrophe' from the injection at :35, and finding 8 explains the report IndexError crashing on 'the empty-string emails that src/sync.py:33 writes into the users table.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. the shared 'seen=[]' default 'is shared across all calls, so after the first invocation every already-synced id is permanently skipped.'"
+      }
+    }
+  ]
+}

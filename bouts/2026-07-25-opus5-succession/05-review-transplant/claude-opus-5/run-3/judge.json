@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings opens with a precise file:line reference (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:7 finding mechanistically explains a compound failure \u2014 `open(path, \"w\")` truncates the file, then the early return skips writing, so together they 'destroy any previously written report, leaving zero bytes on disk,' and :39 similarly ties the bare `pass` swallowing to the apostrophe-induced sync failure persisting undetected."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism rather than a bare label, e.g. the mutable default 'is shared across all calls, so a second call ... syncs 0 of 2 users' and the split 'crashes on the NULLABLE email ... (AttributeError on None) and on any value lacking an \"@\" (IndexError)'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings opens with a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The src/report.py:5 finding mechanistically combines two separate defects\u2014no context manager plus \"the early return on line 7\"\u2014to explain the leaked, unclosed file handle."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism rather than a label, e.g. \"Mutable default argument `seen=[]` is shared across all calls, so a second call ... syncs 0 of 2 users.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The src/report.py:5 finding mechanistically explains a compound failure \u2014 the missing context manager combined with the separate early-return defect (line 7) and the line-11 exception path both bypass `f.close()` on line 13, leaving the handle unclosed."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. \"Mutable default argument `seen=[]` is shared across all calls, so a second call... syncs 0 of 2 users\" rather than merely labeling the antipattern."
+      }
+    }
+  ]
+}

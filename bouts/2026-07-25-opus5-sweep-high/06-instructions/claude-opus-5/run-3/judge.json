@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. the '$761.53 spread between North and West,' Gadget as 'one third of total revenue,' and Sprocket's '$4.75 price is a small fraction of every other item.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names concrete products, regions, and figures\u2014'West bought only 2 Gadget units versus 5 in North,' 'Reprice or bundle Sprocket: 238 units returned only $1,130.50,' and 'Protect Gadget supply: 16 units generated $2,392.00.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations including the volume-vs-revenue inversion ('Sprocket sold the most volume by far, 238 units, yet returned the least money'), revenue concentration ('one third of total revenue'), and that regional spread 'comes from product mix rather than order volume.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure\u2014e.g. the '$761.53 spread between North and West', Sprocket's '238 units returned only $1,130.50', and Gadget as 'one third of total revenue'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures and is actionable as written, e.g. 'targeting West with Gadget' (2 vs 5 units) and 'Reprice or bundle Sprocket'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several non-obvious, actionable observations\u2014revenue concentration ('16 units generated $2,392.00, one third of total revenue'), the volume-vs-revenue Sprocket outlier, and that the regional spread 'comes from product mix rather than order volume'."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. the '$761.53 spread between North and West' and Gadget's '$149.50 each' versus Sprocket's '$4.75 price.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product, region, and figures, e.g. 'West bought only 2 Gadget units versus 5 in North' and 'Reprice or bundle Sprocket: 238 units returned only $1,130.50.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several actionable, non-obvious observations, including revenue concentration ('16 units generated $2,392.00, one third of total revenue') and that regional gaps stem from 'product mix rather than order volume.'"
+      }
+    }
+  ]
+}

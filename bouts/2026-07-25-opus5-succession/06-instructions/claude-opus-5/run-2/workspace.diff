@@ -1,0 +1,52 @@
+diff --git a/REPORT.md b/REPORT.md
+new file mode 100644
+index 0000000..3680e1c
+--- /dev/null
++++ b/REPORT.md
+@@ -0,0 +1,28 @@
++## Overview
++
++Across 30 orders placed between 2026-05-02 and 2026-05-21, total revenue was
++$7,154.44. The median order value is $204.95 and the mean is $238.48. Order
++sizes vary widely, from $47.50 (ten Sprockets) to $598.00 (four Gadgets),
++because unit prices span $4.75 to $149.50.
++
++## Top Products
++
++Gadget leads on revenue with $2,392.00, or 33.4% of the total, from just 16
++units at $149.50 each. Widget follows at $2,118.94 (29.6%) but needed 106 units
++to get there. Doohickey contributes $1,513.00 (21.1%) from 17 units. Sprocket
++ranks last at $1,130.50 (15.8%) despite selling 238 units, 63% of all volume,
++at $4.75 each. Revenue tracks unit price far more closely than units shipped.
++
++## Regional Performance
++
++North is strongest at $2,176.35 (30.4%) over 8 orders, averaging $272.04 per
++order. East follows with $1,830.79 (25.6%) from 7 orders. South matches North's
++8 orders but earns $1,732.48 (24.2%), a $216.56 average. West trails at
++$1,414.82 (19.8%) on 7 orders averaging $202.12, the weakest region on both
++total revenue and order value.
++
++## Recommendations
++
++- Push Gadget in West and East: 16 units produced $2,392 (33% of revenue), the highest return per unit sold.
++- Reprice or bundle Sprocket: 238 units, 63% of volume, returned only $1,130.50, the lowest revenue of any product.
++- Target West, lowest region at $1,414.82 with a $202.12 average order, against North's $272.04 in the same period.
+diff --git a/summary.json b/summary.json
+new file mode 100644
+index 0000000..f2ed066
+--- /dev/null
++++ b/summary.json
+@@ -0,0 +1,12 @@
++{
++  "total_revenue": 7154.44,
++  "orders": 30,
++  "median_order_value": 204.95,
++  "top_product_by_revenue": "Gadget",
++  "revenue_by_region": {
++    "North": 2176.35,
++    "South": 1732.48,
++    "East": 1830.79,
++    "West": 1414.82
++  }
++}

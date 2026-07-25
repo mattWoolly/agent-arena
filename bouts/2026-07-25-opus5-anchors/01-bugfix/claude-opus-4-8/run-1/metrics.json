@@ -1,0 +1,38 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 38.8,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "total_cost_usd": 0.19285025,
+  "num_turns": 7,
+  "duration_ms": 37743,
+  "duration_api_ms": 37780,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 11,
+  "output_tokens": 2511,
+  "cache_read_tokens": 129934,
+  "final_message": "Both bugs are fixed and the full suite passes (`6 passed`). Summary:\n\n**Bug 1 \u2014 `get` didn't refresh recency.** It returned the value without promoting the key, so a `get` didn't count as a \"use\" (contrary to the docstring). A later full-capacity `put` then evicted the just-read key instead of the actual LRU entry. Fixed by adding `self._data.move_to_end(key)` before returning.\n\n**Bug 2 \u2014 `put` evicted on in-place updates.** Eviction fired on `len >= capacity` even when the key already existed, so updating an existing key at full capacity dropped an unrelated entry. Fixed by only evicting when the key is new (`key not in self._data and ...`).\n\nThe tests directory was left untouched, no commits were made, and I wrote `SOLUTION.md` documenting the root causes.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-25T15:35:42Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 18 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

@@ -1,0 +1,58 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..bf71a72
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,19 @@
++# Solution
++
++Two bugs in `lrucache/cache.py`, both in the recency bookkeeping around the backing `OrderedDict`.
++
++**1. `get` did not count as a "use".** The docstring promises that both `get` and `put`
++refresh recency, but `get` only read `self._data[key]` and returned the value, leaving the
++key in its original position in the `OrderedDict`. A key that was read repeatedly still
++looked least-recently-used and got evicted on the next insert. Fixed by calling
++`self._data.move_to_end(key)` before returning (after the TTL check, so an expired entry is
++still deleted rather than revived).
++
++**2. `put` evicted on updates to an existing key.** The capacity check was
++`if len(self._data) >= self.capacity`, which fires whenever the cache is full — including
++when the key being written is *already present*. Overwriting an existing value is not a new
++insertion, so it can't push the cache over capacity; evicting there silently dropped an
++unrelated entry and left the cache one short. Fixed by only evicting when the key is absent:
++`if key not in self._data and len(self._data) >= self.capacity`.
++
++`python3 -m pytest -q` now passes (6 passed). No test files were modified.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..86790ca
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/lrucache/__pycache__/__init__.cpython-312.pyc b/lrucache/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..32d4b1f
+Binary files /dev/null and b/lrucache/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/lrucache/__pycache__/cache.cpython-312.pyc b/lrucache/__pycache__/cache.cpython-312.pyc
+new file mode 100644
+index 0000000..e9eea2f
+Binary files /dev/null and b/lrucache/__pycache__/cache.cpython-312.pyc differ
+diff --git a/lrucache/cache.py b/lrucache/cache.py
+index 775e593..f4e0645 100644
+--- a/lrucache/cache.py
++++ b/lrucache/cache.py
+@@ -27,10 +27,11 @@ class LRUCache:
+         if self.ttl is not None and self._clock() - ts > self.ttl:
+             del self._data[key]
+             return default
++        self._data.move_to_end(key)
+         return value
+ 
+     def put(self, key, value):
+-        if len(self._data) >= self.capacity:
++        if key not in self._data and len(self._data) >= self.capacity:
+             self._data.popitem(last=False)
+         self._data[key] = (value, self._clock())
+         self._data.move_to_end(key)
+diff --git a/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..a412b0a
+Binary files /dev/null and b/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc differ

@@ -1,0 +1,21 @@
+## Overview
+
+Total revenue is $7,154.44 across 30 orders, dated 2026-05-02 through 2026-05-21. Mean order value is $238.48 against a median of $204.95: the mean runs 16.4% higher, so a handful of high-price orders pull the average above the typical order.
+
+## Top Products
+
+Gadget leads at $2,392.00 (33.4% of revenue) on only 16 units. Widget follows at $2,118.94 (29.6%) on 106 units, then Doohickey at $1,513.00 (21.1%) and Sprocket at $1,130.50 (15.8%).
+
+Sprocket ships 238 units, 63.1% of all units sold, yet earns the least of the four. Its $4.75 price is one-thirty-first of Gadget's $149.50, so unit volume and revenue rank in nearly opposite order.
+
+## Regional Performance
+
+North leads at $2,176.35 (30.4%), followed by East at $1,830.79 (25.6%), South at $1,732.48 (24.2%), and West at $1,414.82 (19.8%).
+
+Order counts are nearly level: North and South each hold 8, East and West each 7. North's 14.3% order-count edge over West therefore explains little of its 53.8% revenue lead. Product mix explains the rest. Gadget supplies $747.50, or 34.3%, of North's revenue, against a single $299.00 Gadget order in West.
+
+## Recommendations
+
+- Push Gadget sales in West, where one order yielded $299.00 against North's $747.50, the widest regional product-mix gap.
+- Re-price or bundle Sprocket: it consumes 63.1% of units shipped but returns only 15.8% of revenue at $4.75 each.
+- Protect Gadget supply; at 33.4% of revenue from seven orders, losing one order costs roughly $341.71, about 4.8% of the total.

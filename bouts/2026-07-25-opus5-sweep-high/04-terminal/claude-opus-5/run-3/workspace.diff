@@ -1,0 +1,137 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..46d0a7e
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,76 @@
++# SOLUTION
++
++`make test` was failing due to four independent environment/config problems
++introduced by the botched merge. No Python source logic was changed; the
++failures masked each other, so they surfaced one at a time.
++
++## 1. `Makefile` — recipe indented with spaces instead of a tab
++
++**Symptom:** `Makefile:4: *** missing separator.  Stop.` (exit 2)
++
++The `test:` recipe line was indented with four spaces. Make requires a literal
++tab to distinguish a recipe from a continuation of the rule. The `check:`
++recipe below it still had its tab, which is the classic signature of an editor
++or merge tool re-indenting only part of a file.
++
++**Fix:** Replaced the leading four spaces on the `python3 -m pytest -q tests/`
++line with a tab.
++
++## 2. `scripts/run_checks.sh` — missing executable bit
++
++**Symptom:** `make: ./scripts/run_checks.sh: Permission denied` / `Error 127`
++
++The file was mode `644`. The Makefile invokes it directly as `./scripts/run_checks.sh`
++rather than via `bash script.sh`, so it must carry the execute permission. Git
++tracks this bit in the file mode, and the merge landed it as non-executable.
++
++**Fix:** `chmod +x scripts/run_checks.sh` (mode `100644` → `100755`).
++
++## 3. `scripts/run_checks.sh` — CRLF line endings
++
++**Symptom:** `make: ./scripts/run_checks.sh: No such file or directory` (exit 127)
++— confusing, because the file plainly existed and was now executable.
++
++The file had Windows CRLF terminators. The shebang was therefore read by the
++kernel as the interpreter path `/bin/bash\r`, which does not exist — hence the
++misleading "No such file or directory", which refers to the *interpreter*, not
++the script. This is consistent with the merge coming from another machine.
++
++**Fix:** Stripped the trailing `\r` from every line. Verified this was the only
++CRLF file in the repo (`grep -rlI $'\r' .` now returns nothing).
++
++## 4. `data/config.json` — trailing comma makes the JSON invalid
++
++**Symptom:** would have failed the `check` target with
++`json.decoder.JSONDecodeError: Expecting property name ... line 4`
++
++`"batch_size": 500,` had a trailing comma before the closing brace. Trailing
++commas are legal in JavaScript object literals but not in strict JSON, so
++`json.load` in `tools/validate_config.py` raised and the check script exited
++non-zero under `set -e`. This was hidden behind problems 1–3 until they were
++resolved.
++
++**Fix:** Removed the trailing comma.
++
++## Verification
++
++`make test` exits 0 and runs the same two stages it always did:
++
++```
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++3 passed
++```
++
++No check, target, or validation step was removed or weakened:
++
++- `tests/` is untouched (`git diff --quiet tests/` is clean).
++- `tools/validate_config.py` is unmodified, and its checks were confirmed still
++  live — a config with `batch_size: 0` and one missing `destination` each still
++  exit 1 with the expected message.
++- `Makefile` still declares `test: check`, so the checks remain a prerequisite
++  of the test suite.
++- The full diff is only whitespace, one file mode, and one JSON comma:
++  3 files changed, 6 insertions(+), 6 deletions(-).
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..15981c6
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"
+diff --git a/src/pipeline/__pycache__/__init__.cpython-312.pyc b/src/pipeline/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..cb659e4
+Binary files /dev/null and b/src/pipeline/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/pipeline/__pycache__/transform.cpython-312.pyc b/src/pipeline/__pycache__/transform.cpython-312.pyc
+new file mode 100644
+index 0000000..48be50c
+Binary files /dev/null and b/src/pipeline/__pycache__/transform.cpython-312.pyc differ
+diff --git a/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..8925ac3
+Binary files /dev/null and b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc differ

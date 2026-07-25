@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the nine findings carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:7')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically links two defects \u2014 the bare `pass` 'silently discards every per-user failure, so the apostrophe-email case above returned synced=0 with the database unchanged and produced zero log output', and report.py:11 IndexError is tied to sync.py:33 normalizing NULL emails to ''."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` 'floor-divides, so the final partial page is never fetched' and the `seen=[]` default 'is evaluated once at import and shared across every call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. \"src/sync.py:35\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically ties the swallowed exception to the apostrophe-email defect (\"the apostrophe-email case above returned `synced=0`... and produced zero log output\"), and report.py:11 explains the IndexError is reachable specifically because \"sync.py:33 normalizes NULL emails to `\"\"`\"."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a concrete failure mechanism rather than a label, e.g. \"`range(total_count // PAGE_SIZE)` floor-divides, so the final partial page is never fetched\" and the mutable-default \"evaluated once at import and shared across every call.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:35' and 'src/report.py:7', with no vague locations."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "It mechanistically links the bare-`pass` at sync.py:39 to the apostrophe-email SQL failure ('silently discards every per-user failure, so the apostrophe-email case above returned synced=0 ... zero log output') and shows report.py:11's IndexError is reachable 'because sync.py:33 normalizes NULL emails to \"\"'."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` 'floor-divides, so the final partial page is never fetched' and the `seen=[]` default is 'evaluated once at import and shared across every call.'"
+      }
+    }
+  ]
+}

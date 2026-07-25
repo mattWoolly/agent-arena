@@ -1,0 +1,5 @@
+ Makefile              |  2 +-
+ SOLUTION.md           | 94 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ data/config.json      |  2 +-
+ scripts/run_checks.sh |  8 ++---
+ 4 files changed, 100 insertions(+), 6 deletions(-)

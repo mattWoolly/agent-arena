@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g., 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The seen=[] finding gestures at the swallowed-failure interaction with its parenthetical '(or failed) in one invocation are permanently skipped,' but never spells out the mechanism linking the silent 'except Exception: pass' to the persistent dedupe skip."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. 'truncates the final partial page, so trailing users are silently never fetched' and 'mutable default evaluated once at import, so the dedupe list persists across every call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The sync.py:24 finding gestures at an interaction with the swallowed exception via '(or failed) ... permanently skipped by all later invocations,' but never states the mechanism that the `except Exception: pass` at :39 is what lets a failed id still be added to `seen`."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a concrete failure mechanism rather than a label, e.g. `range(total_count // PAGE_SIZE)` 'truncates the final partial page' and `seen=[]` 'is a mutable default evaluated once at import, so the dedupe list persists across every call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding opens with a usable file:line anchor (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The line 24 finding gestures that ids 'failed in one invocation are permanently skipped by all later invocations' \u2014 implying the swallowed exception at line 39 lets failed ids persist in `seen` \u2014 but never explicitly states that cross-defect mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism and breaking conditions, e.g. `range(total_count // PAGE_SIZE)` 'truncates the final partial page' and `seen=[]` 'is a mutable default evaluated once at import, so the dedupe list persists across every call.'"
+      }
+    }
+  ]
+}

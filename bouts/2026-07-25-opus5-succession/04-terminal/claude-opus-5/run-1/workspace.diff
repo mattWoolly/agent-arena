@@ -1,0 +1,139 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..e9e971e
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,94 @@
++# SOLUTION
++
++`make test` was failing due to four independent environment/config problems left
++behind by the botched merge. No Python source logic was changed, and no check was
++removed or weakened.
++
++Each problem masked the next, so they surfaced one at a time.
++
++## 1. `Makefile` — recipe indented with spaces instead of a tab
++
++**Symptom:** `Makefile:4: *** missing separator.  Stop.`
++
++Line 4 (the `python3 -m pytest -q tests/` recipe under `test:`) was indented with
++four spaces. Make requires a literal tab to introduce a recipe line. The `check:`
++recipe on line 7 still had its tab, so only the `test` recipe was affected —
++typical of a merge tool normalizing whitespace.
++
++**Fix:** Replaced the four leading spaces on line 4 with a tab.
++
++## 2. `scripts/run_checks.sh` — lost its executable bit
++
++**Symptom:** `make: ./scripts/run_checks.sh: Permission denied` → `Error 127`
++
++The file was mode `644`, but the `check` target invokes it directly as
++`./scripts/run_checks.sh`. Git had it recorded as `100644`, so the exec bit was
++lost in the merge rather than only locally.
++
++**Fix:** `chmod +x scripts/run_checks.sh` (now `100755`). Left the Makefile
++invoking the script exactly as before rather than working around it with
++`bash scripts/...`.
++
++## 3. `scripts/run_checks.sh` — CRLF line endings
++
++**Symptom:** `make: ./scripts/run_checks.sh: No such file or directory` — a
++misleading error, since the script plainly existed and was now executable.
++
++The file had Windows CRLF terminators, so the shebang read as `#!/bin/bash\r`.
++The kernel searched for an interpreter literally named `/bin/bash\r`, which does
++not exist, and reported the *interpreter* as missing. This file was the only one
++in the repo with CRLF endings.
++
++**Fix:** Rewrote the file with LF endings; contents are otherwise byte-identical
++(the diff shows all 4 lines changed purely because of the terminators).
++
++Note: there is no `.gitattributes` and `core.autocrlf` is unset, so the CRLF came
++in with the merge and will not be reintroduced on checkout.
++
++## 4. `data/config.json` — trailing comma made it invalid JSON
++
++**Symptom:** `json.decoder.JSONDecodeError: Expecting property name enclosed in
++double quotes: line 5 column 1` raised by `tools/validate_config.py`.
++
++`"batch_size": 500,` had a trailing comma before the closing brace. JSON does not
++permit trailing commas, so `json.load` failed before validation could run.
++
++**Fix:** Removed the trailing comma. All config *values* are unchanged; the
++validator itself was not touched.
++
++## Verification
++
++`make test` exits 0, running both the check step and the full test suite:
++
++```
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++...                                                                      [100%]
++3 passed in 0.01s
++```
++
++To confirm the config check is still genuinely gating the suite (i.e. that
++problem 4 was fixed rather than bypassed), `make test` was re-run against three
++deliberately broken configs. All three still fail the build:
++
++| Injected fault | `make test` exit |
++| --- | --- |
++| trailing comma / invalid JSON | non-zero |
++| missing required key `destination` | non-zero |
++| `batch_size: 0` | non-zero |
++
++The config was restored afterwards and the final run passes.
++
++## Files changed
++
++```
++ Makefile              | 2 +-   (spaces -> tab)
++ data/config.json      | 2 +-   (trailing comma removed)
++ scripts/run_checks.sh | 8 +-   (CRLF -> LF; contents identical)
++ mode change 100644 => 100755 scripts/run_checks.sh
++```
++
++Nothing under `tests/` was modified, and `tools/validate_config.py`,
++`src/pipeline/*`, and `conftest.py` are untouched. No git commits were created.
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"

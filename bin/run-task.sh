@@ -120,6 +120,7 @@ leak_scan() {
   fi
 }
 leak_scan "${ANTHROPIC_AUTH_TOKEN:-}" "auth token"
+leak_scan "${ANTHROPIC_API_KEY:-}" "api key"
 if [[ -f "$ROOT/env/$MODEL.leakscan" ]]; then
   while IFS= read -r _sec; do
     leak_scan "$_sec" "leakscan value"

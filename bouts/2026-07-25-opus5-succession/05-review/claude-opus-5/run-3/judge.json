@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:35\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation and no compound failure mode across separate defects is explained (the report.py:5 note about two trigger paths concerns a single defect, not an interaction between defects)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. floor division \"omits the final partial page, so any remainder of staged users is silently never synced\" and the mutable default \"persists across calls, so users synced in one call are permanently skipped.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:35\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation; no compound failure mode combining two defects (e.g. the swallowed exception at :39 causing another defect's bad state to persist) is explained."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"Floor division ... omits the final partial page, so any remainder of staged users is silently never synced.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:35\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is self-contained and no compound failure mode across two separate defects is explained\u2014e.g. it never links the bare \"except Exception: pass\" swallowing the SQL apostrophe break into a combined mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism or breaking condition, e.g. \"Floor division ... omits the final partial page, so any remainder of staged users is silently never synced\" and the mutable default \"persists across calls.\""
+      }
+    }
+  ]
+}

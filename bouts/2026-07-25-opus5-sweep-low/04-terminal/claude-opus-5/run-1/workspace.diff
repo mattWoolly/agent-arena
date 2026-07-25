@@ -1,0 +1,108 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..8ad93f3
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,63 @@
++# SOLUTION
++
++`make test` was broken by four independent environment/config problems introduced
++by the botched merge. No Python source under `src/` or `tests/` was changed, and
++no check was removed or weakened — `make test` still runs `check`
++(`scripts/run_checks.sh` → `tools/validate_config.py`) and the full pytest suite.
++
++## 1. `Makefile`: recipe indented with spaces instead of a tab
++
++**Symptom:** `Makefile:4: *** missing separator.  Stop.`
++
++The `test:` recipe line was indented with four spaces. Make requires a literal
++tab to mark a recipe line. (The `check:` recipe was correctly tabbed, which is
++what made this look like a merge artifact.)
++
++**Fix:** replaced the four leading spaces on the `python3 -m pytest -q tests/`
++line with a tab.
++
++## 2. `data/config.json`: trailing comma made the JSON invalid
++
++**Symptom:** `json.decoder.JSONDecodeError: Expecting property name enclosed in
++double quotes` from `tools/validate_config.py`.
++
++`"batch_size": 500,` had a trailing comma before the closing brace. JSON does
++not permit trailing commas.
++
++**Fix:** removed the trailing comma. The config's values were otherwise valid
++and were left as-is, so `validate_config.py` still performs every check.
++
++## 3. `scripts/run_checks.sh`: missing execute permission
++
++**Symptom:** the `check` target could not invoke `./scripts/run_checks.sh`.
++
++The file was mode `0644`; the Makefile executes it directly as `./scripts/...`,
++which requires the execute bit.
++
++**Fix:** `chmod +x scripts/run_checks.sh` (now `0755`).
++
++## 4. `scripts/run_checks.sh`: CRLF line endings broke the shebang
++
++**Symptom:** `make: ./scripts/run_checks.sh: No such file or directory` — even
++though the file existed and was executable.
++
++The file had Windows CRLF line terminators, so the shebang read as
++`#!/bin/bash\r`. The kernel treated the trailing carriage return as part of the
++interpreter path and failed to find `/bin/bash\r`. The misleading "No such file
++or directory" refers to the *interpreter*, not the script.
++
++**Fix:** converted the file's line endings from CRLF to LF.
++
++## Verification
++
++```
++$ make test
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++...                                                                      [100%]
++3 passed in 0.01s
++$ echo $?
++0
++```
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"

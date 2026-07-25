@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'roughly 63% of total revenue', 'about 35% behind North', and 'gap between the top and bottom region is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products/regions with figures, e.g. 'Investigate West's $1,414.82 result against North's $2,176.35' and 'Review Sprocket's $1,130.50 contribution'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations beyond the tables \u2014 mean-vs-median skew ('a few larger orders pulling the mean above the midpoint'), two-product concentration ('roughly 63%'), and dispersion across regions ('demand is spread across all four territories rather than concentrated in one')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'roughly 63% of total revenue', 'about 35% behind North', and 'gap between the top and bottom region is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures \u2014 e.g. 'Investigate West's $1,414.82 result against North's $2,176.35' and 'Review Sprocket's $1,130.50 contribution.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, including revenue concentration ('two products account for roughly 63%'), the mean-vs-median skew, and that 'demand is spread across all four territories rather than concentrated in one.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'roughly 63% of total revenue', 'about 35% behind North', and 'The gap... is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and exact figures ('Protect Gadget and Widget supply; at $4,510.94 combined', 'Investigate West's $1,414.82 result against North's $2,176.35')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces several non-obvious observations \u2014 mean-vs-median skew, two-product concentration at 63%, and that 'demand is spread across all four territories rather than concentrated in one.'"
+      }
+    }
+  ]
+}

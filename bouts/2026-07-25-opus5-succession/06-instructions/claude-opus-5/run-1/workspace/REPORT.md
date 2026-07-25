@@ -1,0 +1,26 @@
+## Overview
+
+Total revenue across the period was $7,154.44 from 30 orders, covering
+2026-05-02 through 2026-05-21. Four products sold into four regions. The median
+order value was $204.94, and individual orders ranged from $47.50 to $598.00 —
+a spread driven mainly by unit price rather than order size.
+
+## Top Products
+
+Gadget leads on revenue at $2,392.00 (33.4%) from only 16 units at $149.50 each.
+Widget follows at $2,118.94 (29.6%) on 106 units. Doohickey contributes
+$1,513.00 (21.1%) from 17 units. Sprocket ranks last at $1,130.50 (15.8%)
+despite moving 238 units, or 63% of all units sold, because it prices at $4.75.
+
+## Regional Performance
+
+North is the strongest region at $2,176.35 across 8 orders, averaging $272.04
+per order. East follows at $1,830.79 from 7 orders, then South at $1,732.48
+from 8 orders. West trails at $1,414.82 across 7 orders, averaging $202.12 per
+order. The gap between North and West is $761.53, near 11% of total revenue.
+
+## Recommendations
+
+- Prioritize Gadget and Doohickey placement in West, which trails North by $761.53 and has the lowest average order value.
+- Review Sprocket pricing: 238 units returned just $1,130.50, the weakest revenue per unit in the catalog.
+- Grow order counts in East and West, each at 7 orders versus 8 for North and South.

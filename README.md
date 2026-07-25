@@ -83,9 +83,10 @@ The base URL and env-file name (never its contents) are recorded in
 templates are tracked.
 
 Because the agent can read its own environment and transcripts/workspaces are
-published, every run also gets a secret-leak check: if the auth token appears
-in `transcript.jsonl` or the finished workspace, `peek_check` records
-`SECRET LEAK` and the run is flagged as unpublishable. A model may also ship
+published, every run also gets a secret-leak check: if the auth token or the
+`ANTHROPIC_API_KEY` (native-run auth) appears in `transcript.jsonl` or the
+finished workspace, `peek_check` records `SECRET LEAK` and the run is
+flagged as unpublishable. A model may also ship
 an `env/<model>.leakscan` script (tracked; contains no secrets) that prints
 extra secret values, one per line; run-task.sh executes it in a subshell
 after the agent finishes and scans published artifacts for each value, so
