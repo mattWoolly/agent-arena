@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget's '$2,392.00, or 33.4% of the total, from just 16 units' and West's '$202.12 average order, against North's $272.04'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name products, regions, and figures ('Reprice or bundle Sprocket: 238 units, 63% of volume, returned only $1,130.50')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable, non-obvious observations such as 'Revenue tracks unit price far more closely than units shipped' and Sprocket selling '238 units, 63% of all volume' yet ranking last in revenue."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget '$2,392.00, or 33.4% of the total, from just 16 units' and West's '$202.12 average order, against North's $272.04'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures, e.g. 'Reprice or bundle Sprocket: 238 units, 63% of volume, returned only $1,130.50'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations like 'Revenue tracks unit price far more closely than units shipped' and Sprocket selling '63% of all volume' yet ranking last in revenue."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. Gadget's '$2,392.00, or 33.4% of the total, from just 16 units' and West 'averaging $202.12' against 'North's $272.04'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures ('Reprice or bundle Sprocket: 238 units, 63% of volume, returned only $1,130.50') making them actionable as written."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations such as 'Revenue tracks unit price far more closely than units shipped' and Sprocket selling '63% of all volume' yet ranking last in revenue."
+      }
+    }
+  ]
+}

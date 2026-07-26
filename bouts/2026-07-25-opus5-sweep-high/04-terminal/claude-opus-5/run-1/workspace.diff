@@ -1,0 +1,98 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..232abf6
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,53 @@
++# SOLUTION
++
++`make test` was failing for four separate environment/config problems introduced
++by the botched merge. No Python source logic and nothing under `tests/` was
++changed, and no check was removed or weakened — `make test` still runs
++`scripts/run_checks.sh` followed by the full `pytest tests/` suite.
++
++## 1. `Makefile` — recipe indented with spaces instead of a tab
++
++`make` reported `Makefile:4: *** missing separator. Stop.` The `test` target's
++recipe line was indented with four spaces; the `check` target's used a real tab.
++Make requires a tab.
++
++**Fix:** re-indented `python3 -m pytest -q tests/` with a tab.
++
++## 2. `scripts/run_checks.sh` — CRLF line endings
++
++The file came back from the other machine with Windows line terminators. The
++shebang parsed as `/bin/bash\r`, so the kernel could not find the interpreter
++(`bad interpreter: No such file or directory`); the `\r` would also have been
++appended to the config path argument.
++
++**Fix:** converted the file to LF line endings.
++
++## 3. `scripts/run_checks.sh` — missing execute permission
++
++Mode was `100644`, but the `check` target invokes it directly as
++`./scripts/run_checks.sh`, which fails with `Permission denied`.
++
++**Fix:** `chmod +x scripts/run_checks.sh` (mode is now `100755`).
++
++## 4. `data/config.json` — trailing comma, invalid JSON
++
++`"batch_size": 500,` left a trailing comma before the closing brace. Python's
++`json.load` rejects this, so `tools/validate_config.py` crashed with a
++`JSONDecodeError` and the check step exited non-zero.
++
++**Fix:** removed the trailing comma. The validator itself was left untouched —
++it still enforces the required keys and the positive-integer `batch_size` rule.
++
++## Result
++
++```
++$ make test
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++...                                                                      [100%]
++3 passed in 0.01s
++$ echo $?
++0
++```
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"

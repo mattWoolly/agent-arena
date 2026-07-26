@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..947a03e
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:35 Email and id are interpolated directly into the UPDATE statement instead of being bound as parameters, allowing SQL injection via a staged email (and breaking on any email containing an apostrophe).
++- src/sync.py:14 Floor division `total_count // PAGE_SIZE` omits the final partial page, so any remainder of staged users is silently never synced (and with total_count < 100 the loop runs zero times and returns no users at all).
++- src/sync.py:24 The mutable default argument `seen=[]` persists across calls, so users synced in one call are permanently skipped by every later call to `sync_users` in the same process.
++- src/sync.py:39 The bare `except Exception: pass` replaced `log.exception(...)`, so every per-user sync failure is now swallowed with no record anywhere.
++- src/report.py:5 The file is opened without a context manager, so the `if not users: return 0` path and any exception raised inside the write loop skip `f.close()`, leaking the handle and leaving the freshly truncated report file empty/unflushed.
++- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError when email is NULL (explicitly documented as possible in db.py, and previously handled via `or "unverified"`) and IndexError for any email lacking an "@".

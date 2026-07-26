@@ -1,0 +1,38 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 142.5,
+  "agent_exit": 0,
+  "assistant_messages": 22,
+  "tool_calls": {
+    "Read": 1,
+    "Edit": 7,
+    "Write": 1,
+    "Bash": 4
+  },
+  "tool_calls_total": 13,
+  "total_cost_usd": 0.5567675,
+  "num_turns": 14,
+  "duration_ms": 141329,
+  "duration_api_ms": 142086,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 27,
+  "output_tokens": 10615,
+  "cache_read_tokens": 371679,
+  "final_message": "All five are implemented in `problems.py`. Verified against a throwaway suite (~500 assertions incl. a brute-force cross-check and a perf test), which I've since deleted; only `problems.py` is modified, no commits made.\n\n**`parse_duration`** \u2014 one anchored regex, `(?:([0-9]+)h)?(?:([0-9]+)m)?(?:([0-9]+)s)?` under `fullmatch`, plus an \"at least one component present\" check. The fixed order and plain-digit classes make every rejection case fall out of a single non-match: out-of-order (`30m1h`), duplicates (`1h2h`), bare units (`h`), signs, whitespace, trailing garbage. Non-string input raises `ValueError` (not `TypeError`), as specced. I used `[0-9]` rather than `\\d` deliberately \u2014 `\\d` matches Unicode digits like `\u0661`, which `int()` accepts, so `\\d` would have silently parsed `\u0661h` as 3600 instead of rejecting it.\n\n**`luhn_valid`** \u2014 strips spaces/hyphens, then rejects anything not in `\"0123456789\"`. I avoided `str.isdigit()` for the digit check: `\"\u00b2\".isdigit()` is `True` but `int(\"\u00b2\")` raises, so that route would have violated \"never raise\". Non-string input returns `False` for the same reason. `\"0\"` \u2192 sum 0 \u2192 valid.\n\n**`flatten`** \u2014 explicit stack pushed in reverse, giving the same depth-first key order recursion would, without a recursion limit (verified at 3000 levels deep). Empty dicts contribute nothing since only non-dict leaves are ever written. Input is never touched and leaf values are shared, not copied.\n\n**`top_k_frequent`** \u2014 `Counter` plus `sorted` on `(-count, word)`; `k <= 0` returns `[]` and slicing handles oversized `k` naturally.\n\n**`rolling_max`** \u2014 monotonic-decreasing deque of indices, so each index is pushed and popped at most once: O(n). `window <= 0` raises `ValueError`, `window > len(nums)` returns `[]` (which also covers empty input). 1M elements with a 50k window ran in 0.36s.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-25T14:31:25Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 64 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g. \"North outsells West by 1.54x and South by 25.62%\" and Sprocket's \"$4.75 price is 3.18% of Gadget's $149.50.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region and its figures, e.g. \"Reprice or bundle Sprocket: it ships 63.13% of units for 15.80% of revenue\" and \"Move West toward higher-priced items; its $202.12 order value trails North's $272.04 by 25.70%.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, including the volume/revenue inversion (\"Volume inverts that ranking\") and the diagnosis that West is \"a mix problem, not a traffic problem\" given 7 orders vs North's 8."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"1.13x runner-up Widget\", \"Sprocket moved 238 units, 63.13% of all 377 units\", and \"North outsells West by 1.54x and South by 25.62%\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures actionable as written, e.g. \"Reprice or bundle Sprocket: it ships 63.13% of units for 15.80% of revenue\" and \"Move West toward higher-priced items; its $202.12 order value trails North's $272.04 by 25.70%\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations such as \"Volume inverts that ranking\" (Sprocket's 63% of units yet least revenue) and West being \"a mix problem, not a traffic problem\" given similar order counts."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget is '33.43% of revenue and 1.13x runner-up Widget' and 'North outsells West by 1.54x and South by 25.62%'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a product/region with figures, e.g. 'Reprice or bundle Sprocket: it ships 63.13% of units for 15.80% of revenue' and 'Move West toward higher-priced items; its $202.12 order value trails North's $272.04 by 25.70%'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, e.g. 'Volume inverts that ranking' (Sprocket = 63.13% of units, least revenue) and West being 'a mix problem, not a traffic problem'."
+      }
+    }
+  ]
+}

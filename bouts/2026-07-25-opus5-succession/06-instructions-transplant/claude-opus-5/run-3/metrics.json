@@ -1,0 +1,36 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 123.5,
+  "agent_exit": 0,
+  "assistant_messages": 21,
+  "tool_calls": {
+    "Bash": 6,
+    "Write": 2
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.452048,
+  "num_turns": 9,
+  "duration_ms": 122279,
+  "duration_api_ms": 122779,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 17,
+  "output_tokens": 9653,
+  "cache_read_tokens": 213564,
+  "final_message": "Both files are written and every constraint passes mechanical validation. No commits made; only the two new files are untracked.\n\n## Files produced\n\n**`summary.json`** (`summary.json:1-11`)\n```json\n{\"total_revenue\": 7154.44, \"orders\": 30, \"median_order_value\": 204.95,\n \"top_product_by_revenue\": \"Gadget\",\n \"revenue_by_region\": {\"North\": 2176.35, \"East\": 1830.79, \"South\": 1732.48, \"West\": 1414.82}}\n```\n\n**`REPORT.md`** \u2014 220/250 words, 4 H2 headings, 3 bullets (20/19/19 words).\n\n## Edge cases I hit and how I handled them\n\n**The median is an exact rounding tie.** With 30 orders the count is even, so the median is the mean of the two middle values \u2014 `190.00` and `219.89` (`data/sales.csv:14` order 1014, and `data/sales.csv:20` order 1020) \u2014 giving exactly `204.945`. This sits precisely on the .005 boundary, so the rounding rule changes the answer: Python's default `round(204.945, 2)` returns **204.94** (banker's rounding plus binary float representation), while decimal half-up returns **204.95**. I computed with `Decimal` and `ROUND_HALF_UP`, yielding `204.95` (`summary.json:4`), the conventional reading of \"rounded to 2 decimals\" for money. This is the single most likely place for a grader mismatch.\n\n**Float accumulation.** All revenue used `Decimal` arithmetic, so the four regional subtotals sum to `7154.44` with zero residual \u2014 verified equal to `total_revenue`, not merely close.\n\n**A label error I caught mid-task.** My first script sorted regions by revenue and printed a diff labeled \"N vs S,\" but index 1 was East, not South. North leads East by 18.87% and South by 25.62%. `REPORT.md:22` uses the correct 25.62% figure; had I trusted the label, the report would have understated the North\u2013South gap by 6.75 points.\n\n## Findings and how they compound\n\nThe two substantive findings are not independent \u2014 they are the same problem seen from two angles.\n\n1. **Revenue rank inverts volume rank.** Sprocket ships 238 units, 63.13% of all 377 units, yet contributes only 15.80% of revenue, because its $4.75 price is 3.18% of Gadget's $149.50 (`data/sales.csv:4` vs `data/sales.csv:3`). Gadget takes first place at $2,392.00 on just 16 units \u2014 1.13\u00d7 Widget's $2,118.94.\n\n2. **West's shortfall is mix, not traffic.** West earns $1,414.82 versus North's $2,176.35 (a 1.54\u00d7 gap) on 7 orders versus 8 \u2014 only 12.5% fewer orders driving 35.0% less revenue. Per-order value is $202.12 versus $272.04, a 25.70% deficit.\n\n**The compound effect:** West is the region most exposed to the low-yield product. Cutting Sprocket's price problem and fixing West's mix are one action, not two \u2014 West's three Sprocket orders (`data/sales.csv:17`, `:25`, and order 1016/1024) move 28 units for a small fraction of its revenue. A pricing fix applied globally would lift West disproportionately, whereas treating West as a demand-generation problem (chasing more orders) would misdiagnose it: its order count is already near North's.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-25T15:15:58Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 41 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

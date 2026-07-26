@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Gadget led with $2,392.00, or 33.4% of revenue, on just 16 units' and West 'trails it by $415.97 in revenue'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures, e.g. 'Push Gadget offers in West, which matches East on order count yet trails it by $415.97 in revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious observations appear, including the mean-above-median skew ('a few large orders pull the average upward'), Gadget's revenue-per-unit concentration, and Sprocket's 238-units-for-15.8% volume/revenue outlier."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget's '33.4% of revenue, on just 16 units' and West trailing East 'by $415.97 in revenue'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and data, e.g. 'Push Gadget offers in West, which matches East on order count yet trails it by $415.97 in revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, e.g. mean-above-median skew ('a few large orders pull the average upward') and the Sprocket volume/revenue outlier ('238 units, yet returned the least revenue')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget's '33.4% of revenue, on just 16 units sold at $149.50 each' and West trailing East 'by $415.97 in revenue.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, a region, and figures, e.g. 'Push Gadget offers in West, which matches East on order count yet trails it by $415.97 in revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, including the mean-above-median skew ('a few large orders pull the average upward'), Gadget's revenue-per-unit concentration, and Sprocket's high-volume/low-revenue outlier (238 units for 15.8%)."
+      }
+    }
+  ]
+}

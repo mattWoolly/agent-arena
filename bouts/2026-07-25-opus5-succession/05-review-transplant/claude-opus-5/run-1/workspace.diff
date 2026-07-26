@@ -1,0 +1,15 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..a3abe3b
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,9 @@
++- src/sync.py:35 The parameterized UPDATE was replaced with an f-string that interpolates `email` and `id` directly into SQL, creating a SQL injection hole: a staged email of `evil@x.com', active = 0 WHERE id IN (1,2) -- ` rewrote and deactivated 2 rows from a single 1-row input, and a benign apostrophe address like `o'brien@ex.com` raises OperationalError so the row is never synced.
++- src/sync.py:24 The `seen=[]` mutable default is evaluated once at import and shared across every call, so the de-dupe list persists between independent invocations: a second `sync_users(users)` with the same 2 users synced 0 of 2 (100% skipped) and the leaked default retained `[1, 2]` after the first call.
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides, so the final partial page is never fetched and any total below PAGE_SIZE fetches nothing at all: `total_count=250` returned 200 of 250 rows (20% silently dropped) and `total_count=99` returned 0 of 99 (100% dropped).
++- src/report.py:11 `user["email"].lower()` dropped the old `or "unverified"` guard and raises AttributeError on `email=None`, which db.py:4-5 documents as a supported state for users invited by phone, aborting the whole report on the first such user.
++- src/report.py:11 `.split("@")[1]` assumes every address contains `@` and raises IndexError otherwise, which is reachable in practice because sync.py:33 normalizes NULL emails to `""` before writing them to the primary store.
++- src/sync.py:39 Replacing `log.exception(...)` with a bare `pass` silently discards every per-user failure, so the apostrophe-email case above returned `synced=0` with the database unchanged and produced zero log output for operators to act on.
++- src/report.py:5 `open(path, "w")` is no longer a `with` block and the only `f.close()` (line 13) is unreachable on the early return at line 7 and on the AttributeError/IndexError paths at line 11, leaking the file handle and leaving the report buffer unflushed in all three verified cases.
++- src/report.py:7 The `if not users: return 0` check runs after the file is already truncated by the `"w"` open on line 5, so a run with zero synced users but non-zero `failures` overwrites any prior report with a 0-byte file and loses the failure count that the old code wrote in the header.
++- src/sync.py:17 The new `LIMIT ? OFFSET ?` paging has no `ORDER BY`, and because each of the pages is a separate autocommit statement on the shared connection from db.py:25-31 rather than one snapshot, row order is unspecified and concurrent inserts or deletes in `staged_users` shift offsets so rows can be fetched twice or skipped entirely.

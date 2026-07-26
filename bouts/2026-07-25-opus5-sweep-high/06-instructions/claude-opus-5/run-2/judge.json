@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 per-unit prices ($149.50 vs $4.75), the regional gap ($761.53), unit breakdowns (40/95 vs 18/28), and AOV vs median."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures, e.g. \"Re-price or bundle Sprocket: 238 units...returned only $1,130.50, the lowest product revenue.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations \u2014 the mean-above-median skew, Gadget's high per-unit revenue vs Sprocket's low, and that near-even order counts mean the regional gap comes from order size, not volume."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 per-unit prices ($149.50 vs $4.75), the regional gap ($761.53), and unit breakdowns (40/95 vs 18/28) rather than bare rankings."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with figures, e.g. 'Grow West order sizes: West sold 18 Widget and 28 Sprocket units versus North's 40 and 95.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations: the mean/median skew from large orders, the inverse volume-revenue relationship (Sprocket 238 units yet lowest revenue), and that the regional gap stems from order size rather than order count."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 per-unit values ($149.50 vs $4.75), the regional gap ($761.53), and unit breakdowns (North's 40/95 vs West's 18/28)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name specific products/regions with data, e.g. 'Re-price or bundle Sprocket: 238 units...returned only $1,130.50, the lowest product revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations: the mean-above-median skew, inverted volume-vs-revenue economics (Gadget vs Sprocket per unit), and that the regional gap comes from order size rather than order count."
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 51.1,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "total_cost_usd": 0.3863955,
+  "num_turns": 8,
+  "duration_ms": 49938,
+  "duration_api_ms": 49986,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 14,
+  "output_tokens": 1802,
+  "cache_read_tokens": 159816,
+  "final_message": "Done \u2014 all 6 tests pass. There were two bugs in `lrucache/cache.py`:\n\n1. **`get` didn't refresh recency** (`cache.py:30`): a hit returned the value without moving the key to the most-recently-used end of the `OrderedDict`, so recently-read entries could still be evicted first. Fixed by calling `move_to_end(key)` on every valid hit.\n\n2. **`put` evicted on in-place updates** (`cache.py:33`): the eviction check only looked at size, so overwriting an existing key in a full cache wrongly evicted the LRU entry. Fixed by evicting only when the key isn't already present, since updating an existing key doesn't grow the cache.\n\nBoth fixes are explained in `SOLUTION.md`, and `python3 -m pytest -q` reports `6 passed`.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-25T15:37:42Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 18 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

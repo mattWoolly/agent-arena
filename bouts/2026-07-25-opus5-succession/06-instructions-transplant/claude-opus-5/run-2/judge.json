@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'North's 14.3% order-count edge over West therefore explains little of its 53.8% revenue lead' and 'one-thirty-first of Gadget's $149.50'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures, e.g. 'Push Gadget sales in West, where one order yielded $299.00 against North's $747.50' and 'Re-price or bundle Sprocket: it consumes 63.1% of units shipped but returns only 15.8% of revenue at $4.75 each.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations surface, including the inverted volume/revenue ranking ('unit volume and revenue rank in nearly opposite order'), level order counts masking product-mix-driven revenue divergence, and Gadget concentration risk ('losing one order costs roughly $341.71, about 4.8% of the total')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget's '$2,392.00 (33.4% of revenue) on only 16 units' and Sprocket's price being 'one-thirty-first of Gadget's $149.50'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures, e.g. 'Push Gadget sales in West, where one order yielded $299.00 against North's $747.50'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable observations surface non-obvious structure, e.g. 'North's 14.3% order-count edge over West therefore explains little of its 53.8% revenue lead. Product mix explains the rest.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. 'mean runs 16.4% higher', 'one-thirty-first of Gadget's $149.50', and 'North's 14.3% order-count edge... explains little of its 53.8% revenue lead'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures \u2014 e.g. 'Push Gadget sales in West, where one order yielded $299.00 against North's $747.50' and 're-price or bundle Sprocket... 63.1% of units... only 15.8% of revenue at $4.75 each'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations, e.g. 'unit volume and revenue rank in nearly opposite order' and concentration risk where 'losing one [Gadget] order costs roughly $341.71, about 4.8% of the total'."
+      }
+    }
+  ]
+}

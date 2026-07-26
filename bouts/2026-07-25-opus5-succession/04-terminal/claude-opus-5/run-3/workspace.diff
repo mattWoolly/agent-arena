@@ -1,0 +1,116 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..0c619c7
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,71 @@
++# SOLUTION
++
++`make test` failed for four separate environment/config problems introduced by the
++botched merge. No Python source and nothing under `tests/` was changed; `make test`
++still runs the same `check` step (config validation) and the same pytest suite.
++
++The Makefile parse error masked the other three — each one only surfaced after the
++previous was fixed, so they had to be found by inspection rather than by re-running.
++
++## 1. `Makefile:4` — recipe indented with spaces instead of a tab
++
++**Symptom:** `Makefile:4: *** missing separator.  Stop.` (make never ran anything)
++
++The `test:` recipe line was indented with four spaces. Make requires a literal tab
++to distinguish a recipe line from a variable assignment or continuation. The `check:`
++recipe on line 7 still had its tab, which is why only line 4 was reported.
++
++**Fix:** replaced the four leading spaces on line 4 with a tab.
++
++## 2. `scripts/run_checks.sh` — CRLF (Windows) line endings
++
++**Symptom:** would have failed with `bad interpreter: /bin/bash^M: No such file or directory`
++
++Every line ended `\r\n`. The trailing `\r` becomes part of the shebang, so the kernel
++looks for an interpreter literally named `/bin/bash\r`, which does not exist. This is
++the classic signature of a file committed from a Windows checkout.
++
++**Fix:** stripped the carriage returns (`tr -d '\r'`), converting the file to LF
++endings. Contents are otherwise byte-identical — both check commands are intact.
++
++## 3. `scripts/run_checks.sh` — executable bit lost
++
++**Symptom:** would have failed with `/bin/sh: ./scripts/run_checks.sh: Permission denied`
++
++The file was mode `100644` (confirmed in the git index via `git ls-files -s`), but the
++`check:` target invokes it directly as `./scripts/run_checks.sh`, which requires the
++execute permission.
++
++**Fix:** `chmod +x scripts/run_checks.sh` (now mode `100755`). Fixed by restoring the
++permission rather than by rewriting the target as `bash ./scripts/...`, so the
++Makefile keeps invoking the check exactly as before.
++
++## 4. `data/config.json` — trailing comma after the last key
++
++**Symptom:** would have failed the `check` step with
++`json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes`
++
++`"batch_size": 500,` had a trailing comma. JSON, unlike Python and JavaScript, does not
++permit one, so `json.load()` in `tools/validate_config.py` raised before any of the
++validation logic ran.
++
++**Fix:** removed the trailing comma. The validator itself was left untouched — it now
++passes on its own merits and still enforces the required keys and the positive-integer
++`batch_size`.
++
++## Verification
++
++```
++$ make test
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++...                                                                      [100%]
++3 passed in 0.01s
++$ echo $?
++0
++```
++
++Both the `check` step and all 3 tests run and pass; exit status is 0, and the result is
++repeatable across consecutive invocations.
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"

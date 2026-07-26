@@ -1,0 +1,38 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 62.3,
+  "agent_exit": 0,
+  "assistant_messages": 20,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 5,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 11,
+  "total_cost_usd": 0.279544,
+  "num_turns": 12,
+  "duration_ms": 61229,
+  "duration_api_ms": 61535,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 15,
+  "output_tokens": 4402,
+  "cache_read_tokens": 185444,
+  "final_message": "Done. `python3 -m pytest -q` passes \u2014 6 passed.\n\nBoth bugs were in `lrucache/cache.py`, and both were recency bookkeeping errors:\n\n1. **`get` didn't refresh recency** (`cache.py:23`) \u2014 it read and returned the value without repositioning the key in the `OrderedDict`, contradicting the docstring's \"Both `get` and `put` count as 'use'\". A key could be read over and over and still be evicted as least-recently-used. I added `move_to_end(key)` *after* the TTL check, so an expired entry gets deleted rather than promoted.\n\n2. **`put` evicted on every write once full** (`cache.py:32`) \u2014 the guard `len(self._data) >= self.capacity` didn't distinguish a new insert from an overwrite. Updating an existing key in a full cache killed an unrelated entry and left the cache one below capacity, since the following assignment reused an existing slot. Changed to only evict when the key is actually new.\n\nBoth bugs are invisible while the cache stays under capacity, which is why the basic put/get and eviction-order tests passed while the two recency tests failed.\n\nI also checked some invariants the suite doesn't cover: repeated in-place updates don't grow past capacity, length stays bounded under mixed put/get traffic, an expired entry isn't resurrected by the new recency refresh, and `None` values still round-trip through `__contains__`. One behavior worth flagging since the tests don't pin it down: an in-place update also rewrites the entry's timestamp, so overwriting a value restarts its TTL window. That falls out of `put` recording `self._clock()` on every write and is unchanged by my fix \u2014 I noted it in `SOLUTION.md` as the apparent intent rather than silently altering it.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-25T14:34:04Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 28 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 \"account for about 63% of total revenue\", West \"about 35% below North\", and \"The spread between best and worst region is $761.53\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures \u2014 e.g. \"Investigate West's $1,414.82 result against North's $2,176.35\" and \"Test raising attach rates for Sprocket, the weakest product at $1,130.50\"."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations including revenue concentration (\"these two products account for about 63%\"), the price-volume contrast (\"Widget sells in high unit counts at a low price, while Gadget reaches a similar total from far fewer, higher-priced orders\"), and that \"no single region dominates\"."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 'account for about 63% of total revenue', West 'about 35% below North', and 'spread between best and worst region is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products, regions, and figures (e.g. 'Investigate West's $1,414.82 result against North's $2,176.35' and 'Test raising attach rates for Sprocket, the weakest product at $1,130.50')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple non-obvious, actionable observations appear, including revenue concentration ('these two products account for about 63%'), the volume-vs-price contrast ('Widget sells in high unit counts at a low price, while Gadget reaches a similar total from far fewer, higher-priced orders'), and that 'no single region dominates'."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. two products \"account for about 63% of total revenue\" and West is \"about 35% below North\" with a \"$761.53\" spread."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names concrete products, regions, and figures\u2014e.g. \"Investigate West's $1,414.82 result against North's $2,176.35\" and \"Test raising attach rates for Sprocket, the weakest product at $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations\u2014revenue concentration (\"these two products account for about 63%\"), the unit/price contrast (\"Widget sells in high unit counts at a low price, while Gadget reaches a similar total from far fewer, higher-priced orders\"), and that \"no single region dominates.\""
+      }
+    }
+  ]
+}

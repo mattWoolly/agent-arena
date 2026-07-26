@@ -1,0 +1,6 @@
+- src/sync.py:14 `range(total_count // PAGE_SIZE)` truncates the final partial page, so trailing users are silently never fetched (total_count=150 fetches 100 rows, and any total below PAGE_SIZE fetches 0 rows).
+- src/sync.py:24 `seen=[]` is a mutable default evaluated once at import, so the dedupe list persists across every call — ids synced (or failed) in one invocation are permanently skipped by all later invocations, and the list grows without bound.
+- src/sync.py:35 the parameterized UPDATE was replaced with an f-string that interpolates `email` and `id` directly into SQL, allowing SQL injection from staged data and breaking on legitimate addresses containing an apostrophe.
+- src/sync.py:39 `except Exception: pass` replaces `log.exception`, silently swallowing every failed update so data-loss and SQL errors leave no trace and the caller cannot distinguish them.
+- src/report.py:5 `open(path, "w")` is no longer a context manager and is only closed on the success path, so the empty-users early return at line 7 truncates any existing report and returns without writing or closing it, as does any exception raised in the write loop.
+- src/report.py:11 `user["email"].lower()` raises AttributeError when email is NULL (db.py documents email as nullable; the old code used `or "unverified"`), and `.split("@")[1]` raises IndexError for any address lacking an '@'.

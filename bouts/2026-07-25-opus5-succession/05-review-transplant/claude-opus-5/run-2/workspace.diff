@@ -1,0 +1,14 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..052dbe0
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,8 @@
++- src/sync.py:35 User-controlled email is interpolated into the UPDATE statement instead of bound as a parameter, so an email ending in `', active = 0 --` comments out the WHERE clause and overwrites every row in `users`.
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` truncates the final partial page, so the last `total_count % PAGE_SIZE` staged users are never fetched or synced, and any `total_count` below 100 fetches nothing at all.
++- src/sync.py:24 The `seen=[]` default argument is shared across all calls, so after the first invocation every already-synced id is permanently skipped (a repeat call returns 0) and the list grows without bound for the process lifetime.
++- src/sync.py:38 `except Exception: pass` replaces the previous `log.exception(...)`, so every failed row update — including the SQL syntax errors raised by emails containing an apostrophe — is discarded with no log record and no change to the return value.
++- src/sync.py:17 The paginated `LIMIT ? OFFSET ?` query has no `ORDER BY` and each page runs as a separate implicit read, so row order is unspecified and any concurrent insert or delete in `staged_users` silently skips or duplicates rows across page boundaries.
++- src/report.py:5 `open(path, "w")` runs before the `if not users` early return, so an empty user list truncates a previously good report to 0 bytes and leaks the unclosed file handle; the same handle also leaks whenever the write loop raises.
++- src/report.py:11 `user["email"].lower()` raises AttributeError on the NULL emails that `src/db.py:4` documents as legal for phone-invited users, aborting the report after the header has been written but not flushed.
++- src/report.py:11 `.split("@")[1]` raises IndexError for any email lacking an `@`, including the empty-string emails that `src/sync.py:33` writes into the `users` table.
