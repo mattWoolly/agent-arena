@@ -1,0 +1,219 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..fa79f39
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,40 @@
++# Solution
++
++## Approach
++
++`sheet/engine.py` is built in three layers:
++
++1. **Tokenizer** (`_tokenize`) — scans a formula into `NUM` (float), `NAME`
++   (cell reference), single-character operator/paren tokens, skipping
++   whitespace. Unknown characters raise `ValueError`.
++
++2. **Recursive-descent parser** (`_Parser`) — builds an AST of tuples with the
++   precedence/associativity from the README:
++   - `expr` (`+ -`, left-assoc) → `term` (`* /`, left-assoc) → `unary` →
++     `power` (`^`) → `atom`.
++   - `power := atom ('^' unary)?` makes `^` **right-associative**
++     (`2^3^2` = 512) while allowing a signed exponent (`2^-3`).
++   - Unary minus sits *above* `power` (`unary := '-' unary | power`), so it
++     binds looser than `^`: `-2^2` = `-(2^2)` = -4, and `(-2)^2` = 4.
++   - Bare-number cells become `("num", value)` directly; anything starting
++     with `=` is tokenized and parsed.
++
++3. **Evaluator** (`evaluate`) — resolves cells via memoized depth-first
++   search. `values` caches computed floats; a `visiting` set tracks the
++   current resolution stack so any cell that reaches itself (directly or
++   transitively) raises `CycleError`. Forward references work because
++   resolution is demand-driven over the whole dict, not ordered.
++
++## Edge cases handled
++
++- Right-associative `^` and negative exponents (`2^3^2`, `2^-3`).
++- Unary minus binding looser than `^` (`-2^2` = -4) and parenthesized
++  negation (`-(A+1)`, `=-3`).
++- Forward and transitive reference chains (`A` → `B` → `C`).
++- Direct and indirect cycles (`A=A`, `A→B→C→A`) → `CycleError`.
++- Real division (`3/2` = 1.5); division by zero propagates Python's
++  `ZeroDivisionError` (floats raise rather than returning `inf`).
++- Insignificant whitespace between tokens; cell names with letters plus
++  digits (`A1`, `TOTAL`, `X12`).
++- References to undefined cells raise `KeyError`; malformed formulas
++  (trailing tokens, unbalanced parens) raise `ValueError`.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..180a5a0
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..1604177
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..27d45ae 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,154 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Spreadsheet formula engine: tokenizer, recursive-descent parser, evaluator."""
+ 
+ 
+ class CycleError(Exception):
+     pass
+ 
+ 
++def _tokenize(text):
++    tokens = []
++    i = 0
++    n = len(text)
++    while i < n:
++        c = text[i]
++        if c.isspace():
++            i += 1
++        elif c.isalpha() or c == "_":
++            j = i
++            while j < n and (text[j].isalnum() or text[j] == "_"):
++                j += 1
++            tokens.append(("NAME", text[i:j]))
++            i = j
++        elif c.isdigit() or c == ".":
++            j = i
++            while j < n and (text[j].isdigit() or text[j] == "."):
++                j += 1
++            tokens.append(("NUM", float(text[i:j])))
++            i = j
++        elif c in "+-*/^()":
++            tokens.append((c, c))
++            i += 1
++        else:
++            raise ValueError(f"unexpected character: {c!r}")
++    tokens.append(("EOF", None))
++    return tokens
++
++
++class _Parser:
++    """Grammar (precedence low -> high):
++    expr  := term  (('+'|'-') term)*
++    term  := unary (('*'|'/') unary)*
++    unary := '-' unary | power
++    power := atom  ('^' unary)?        # right-associative
++    atom  := NUM | NAME | '(' expr ')'
++    """
++
++    def __init__(self, tokens):
++        self.tokens = tokens
++        self.pos = 0
++
++    def _peek(self):
++        return self.tokens[self.pos][0]
++
++    def _next(self):
++        tok = self.tokens[self.pos]
++        self.pos += 1
++        return tok
++
++    def parse(self):
++        node = self._expr()
++        if self._peek() != "EOF":
++            raise ValueError("trailing tokens in formula")
++        return node
++
++    def _expr(self):
++        node = self._term()
++        while self._peek() in ("+", "-"):
++            op = self._next()[0]
++            node = (op, node, self._term())
++        return node
++
++    def _term(self):
++        node = self._unary()
++        while self._peek() in ("*", "/"):
++            op = self._next()[0]
++            node = (op, node, self._unary())
++        return node
++
++    def _unary(self):
++        if self._peek() == "-":
++            self._next()
++            return ("neg", self._unary())
++        if self._peek() == "+":
++            self._next()
++            return self._unary()
++        return self._power()
++
++    def _power(self):
++        base = self._atom()
++        if self._peek() == "^":
++            self._next()
++            return ("^", base, self._unary())
++        return base
++
++    def _atom(self):
++        kind, value = self._next()
++        if kind == "NUM":
++            return ("num", value)
++        if kind == "NAME":
++            return ("ref", value)
++        if kind == "(":
++            node = self._expr()
++            if self._peek() != ")":
++                raise ValueError("missing closing parenthesis")
++            self._next()
++            return node
++        raise ValueError(f"unexpected token: {kind}")
++
++
++_BINOPS = {
++    "+": lambda a, b: a + b,
++    "-": lambda a, b: a - b,
++    "*": lambda a, b: a * b,
++    "/": lambda a, b: a / b,
++    "^": lambda a, b: a ** b,
++}
++
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    asts = {}
++    for name, raw in cells.items():
++        text = raw.strip()
++        if text.startswith("="):
++            asts[name] = _Parser(_tokenize(text[1:])).parse()
++        else:
++            asts[name] = ("num", float(text))
++
++    values = {}
++    visiting = set()
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in visiting:
++            raise CycleError(f"cycle involving cell {name}")
++        if name not in asts:
++            raise KeyError(f"unknown cell: {name}")
++        visiting.add(name)
++        try:
++            values[name] = _eval(asts[name])
++        finally:
++            visiting.discard(name)
++        return values[name]
++
++    def _eval(node):
++        op = node[0]
++        if op == "num":
++            return node[1]
++        if op == "ref":
++            return resolve(node[1])
++        if op == "neg":
++            return -_eval(node[1])
++        return _BINOPS[op](_eval(node[1]), _eval(node[2]))
++
++    return {name: resolve(name) for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..c8555ee
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ
