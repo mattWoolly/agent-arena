@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:7')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "Line 39 mechanistically links two defects: the `except Exception: pass` swallows the error so 'combined with the injection at line 35, malformed or malicious email values corrupt or skip writes with no diagnostic trace at all.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the mechanism, e.g. floor division 'drops the final partial page, so any count not a multiple of 100 silently loses up to 99 users' and the mutable default 'is shared across all calls.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. \"src/sync.py:14\", \"src/report.py:11\", spanning all eight entries."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The line 39 finding explains a compound mode mechanistically: the `except Exception: pass` swallows failures so that \"combined with the injection at line 35, malformed or malicious email values corrupt or skip writes with no diagnostic trace at all.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. floor division \"drops the final partial page\" and mutable default `seen=[]` \"is shared across all calls, so a second ... invocation ... skips 100% of them.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. 'src/sync.py:35', 'src/report.py:11'), including a documentation cross-reference to 'src/db.py:4-5'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The src/sync.py:39 finding mechanistically explains the compound failure \u2014 'combined with the injection at line 35, malformed or malicious email values corrupt or skip writes with no diagnostic trace' because the swallowed exception hides the injection-induced failure."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states a mechanism, e.g. the mutable default 'seen=[]' being 'shared across all calls, so a second sync_users(users) invocation... skips 100% of them,' and floor division 'drops the final partial page.'"
+      }
+    }
+  ]
+}

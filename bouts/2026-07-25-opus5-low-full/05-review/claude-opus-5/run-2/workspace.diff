@@ -1,0 +1,14 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..94113fb
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,8 @@
++- src/sync.py:14 Integer division `total_count // PAGE_SIZE` drops the final partial page, so up to PAGE_SIZE-1 staged users are never fetched (and total_count < PAGE_SIZE fetches nothing).
++- src/sync.py:17 Paginated LIMIT/OFFSET query has no ORDER BY, so row order is unspecified and pages can duplicate or skip rows across queries.
++- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so users synced in one call are silently skipped as "duplicates" in every later call.
++- src/sync.py:35 Email and id are interpolated directly into the UPDATE statement, introducing SQL injection (a quote in an email breaks or alters the query).
++- src/sync.py:39 The exception handler now swallows errors silently, losing the previous log.exception and hiding sync failures.
++- src/report.py:5 File opened without a context manager and never closed on the early `return 0` path or if an exception is raised, leaking the file handle.
++- src/report.py:6 The empty-users early return happens after opening the file for writing, truncating any existing report to an empty file.
++- src/report.py:11 `user["email"].lower().split("@")[1]` raises AttributeError for NULL emails (schema allows email=None) and IndexError for emails without "@"; the previous "unverified" fallback was removed.

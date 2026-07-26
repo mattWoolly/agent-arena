@@ -1,0 +1,37 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 62.7,
+  "agent_exit": 0,
+  "assistant_messages": 14,
+  "tool_calls": {
+    "Bash": 5,
+    "Write": 1,
+    "Edit": 1
+  },
+  "tool_calls_total": 7,
+  "total_cost_usd": 0.2468805,
+  "num_turns": 8,
+  "duration_ms": 61572,
+  "duration_api_ms": 62329,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 16,
+  "output_tokens": 3840,
+  "cache_read_tokens": 172514,
+  "final_message": "Both files written and verified against `data/sales.csv` (30 data rows, `data/sales.csv:2-31`).\n\n**`summary.json`** \u2014 5 keys exactly: total_revenue `7154.44`, orders `30`, median_order_value `204.94`, top_product_by_revenue `\"Gadget\"`, revenue_by_region for all four regions (North 2176.35, South 1732.48, East 1830.79, West 1414.82).\n\n**`REPORT.md`** \u2014 246/250 words, exactly four H2 headings in order and no others, 3 bullets of 18/16/14 words (`REPORT.md:36-43`), none of the five banned words present.\n\n**Edge case: even order count.** 30 orders is even, so the median is the mean of the 15th and 16th sorted values, which is exactly `204.945` \u2014 a rounding tie. I checked both interpretations: as an exact `Decimal`, ROUND_HALF_EVEN yields `204.94`; as an IEEE-754 double, the literal is actually `204.94499999999999317879`, so `round(x, 2)` also yields `204.94`. Both paths agree, so `204.94` is not a coin flip.\n\n**Two claims I corrected during verification, and how they interact.** My first draft said \"West's eight orders\" (`REPORT.md:33`); West has 7 (North and South have 8 each). Left in, this would have compounded with the *correct* claim that West trails North by 35.0% in revenue: a reader would have concluded West's shortfall is purely per-order value at equal order count, when in fact West has 12.5% fewer orders (7 vs 8) *and* a weaker mix \u2014 two distinct causes, one of which the wrong number would have erased. The bullet recommending Gadget push in West (`REPORT.md:37-38`) survives either way, since West's Gadget revenue of $299.00 is 60.0% below North's $747.50 independent of order count.\n\n**Distribution note worth flagging:** the median ($204.94) sits 14.1% below the mean ($238.48), and Sprocket is the inverse outlier \u2014 238 units (46.6% of all 511 units sold) returning only 15.8% of revenue, while Gadget earns 2.12\u00d7 Sprocket's revenue from 6.7% as many units.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-25T22:25:46Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 45 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

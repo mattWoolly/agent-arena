@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'about 63% of revenue', 'about 35% below North', 'gap between best and worst region is $761.53', 'median order value is $204.94'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and computed impact, e.g. 'Grow West, the weakest region at $1,414.82; closing half its gap to North adds roughly $380 in revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like concentration ('top two products together account for about 63% of revenue'), Widget being 'driven by volume rather than price', and East/South clustering 'within roughly $100 of each other'."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'about 63% of revenue', 'about 35% below North', 'gap...is $761.53', and Gadget at 'roughly a third of all revenue'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and an action, e.g. 'Grow West, the weakest region at $1,414.82; closing half its gap to North adds roughly $380' and 'Push Gadget harder: at $149.50 per unit'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations \u2014 concentration ('top two products together account for about 63%'), the East/South cluster 'within roughly $100 of each other', and the $761.53 best-to-worst regional spread."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'about 63% of revenue', 'about 35% below North', 'gap between best and worst region is $761.53', 'roughly a third of all revenue'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with figures and a quantified action, e.g. 'Grow West, the weakest region at $1,414.82; closing half its gap to North adds roughly $380 in revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious points \u2014 concentration ('top two products together account for about 63% of revenue'), the near-tie between East and South 'within roughly $100', and the even spread 'rather than carried by a few large deals'."
+      }
+    }
+  ]
+}

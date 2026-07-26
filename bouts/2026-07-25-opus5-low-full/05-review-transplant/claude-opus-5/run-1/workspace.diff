@@ -1,0 +1,12 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..06bc773
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,6 @@
++- src/sync.py:14 `range(total_count // PAGE_SIZE)` floor-divides, so the final partial page is never fetched and up to 99 staged users are silently dropped (e.g. total_count=250 fetches only 200, a 20% data loss; total_count<100 fetches nothing at all).
++- src/sync.py:24 `seen=[]` is a mutable default argument shared across every call, so IDs from earlier invocations persist and cause the second and later syncs of the same user set to skip 100% of rows and return 0.
++- src/sync.py:35 the parameterized UPDATE was replaced by an f-string, introducing SQL injection: an email containing a single quote (e.g. `o'brien@x.com`) corrupts or truncates the statement, and attacker-controlled email/id text can execute arbitrary SQL.
++- src/sync.py:39 the `except` body was reduced to `pass`, so per-user failures are no longer logged and all diagnostic information about failed syncs is lost.
++- src/report.py:5 `open(path, "w")` is no longer a context manager and the `return 0` at line 7 (plus any exception from line 11) exits without closing the handle, leaking the file descriptor and leaving buffered writes unflushed.
++- src/report.py:11 `user["email"].lower()` dereferences a NULLABLE column (see the schema note in src/db.py:4), raising `AttributeError` for phone-invited users with `email=None`, and `.split("@")[1]` additionally raises `IndexError` for any non-empty email lacking an `@`.

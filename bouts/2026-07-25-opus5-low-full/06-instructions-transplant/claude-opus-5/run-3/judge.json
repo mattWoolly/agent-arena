@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure \u2014 e.g., 'Sprocket moved 238 units \u2014 14.9x Gadget's unit volume \u2014 yet earned 47.3% of Gadget's revenue, because its $4.75 price is 3.2% of Gadget's $149.50' and 'North's total is 1.54x West's.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions with figures, e.g., 'Investigate West, at $1,414.82 versus North's $2,176.35 \u2014 a 35.0% shortfall' and 'Prioritize Gadget inventory: it generates 33.4% of revenue from 4.2% of units sold.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations surface concentration and inversions, e.g., Sprocket returning '63.1% of all units' but 'only 15.8% of revenue' and Gadget's price being the highest revenue-per-unit at $149.50."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. 'Sprocket moved 238 units \u2014 14.9x Gadget's unit volume \u2014 yet earned 47.3% of Gadget's revenue, because its $4.75 price is 3.2% of Gadget's $149.50' and 'North's total is 1.54x West's.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a product/region with grounding figures, e.g. 'Investigate West, at $1,414.82 versus North's $2,176.35 \u2014 a 35.0% shortfall' and 'Re-evaluate Sprocket: 238 units, 63.1% of all units, return only 15.8% of revenue.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations surface, including revenue concentration ('33.4% of revenue from 4.2% of units'), the price-vs-volume mismatch for Sprocket, and the regional gap, going well beyond restating table totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Sprocket moved 238 units \u2014 14.9x Gadget's unit volume \u2014 yet earned 47.3% of Gadget's revenue\" and \"North's total is 1.54x West's.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region with grounding figures, e.g. \"Investigate West, at $1,414.82 versus North's $2,176.35 \u2014 a 35.0% shortfall.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations surface concentration and inefficiency, e.g. Sprocket returning \"only 15.8% of revenue\" from \"63.1% of all units\" and Gadget yielding \"33.4% of revenue from 4.2% of units.\""
+      }
+    }
+  ]
+}

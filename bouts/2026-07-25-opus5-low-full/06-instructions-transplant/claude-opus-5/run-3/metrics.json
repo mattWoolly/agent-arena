@@ -1,0 +1,37 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 55.2,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Bash": 5,
+    "Write": 1,
+    "Edit": 3
+  },
+  "tool_calls_total": 9,
+  "total_cost_usd": 0.26929375,
+  "num_turns": 10,
+  "duration_ms": 54164,
+  "duration_api_ms": 54954,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 19,
+  "output_tokens": 3700,
+  "cache_read_tokens": 222173,
+  "final_message": "Both files written and verified.\n\n**`summary.json`** (`summary.json:1`): `total_revenue` 7154.44, `orders` 30, `median_order_value` 204.94, `top_product_by_revenue` \"Gadget\", `revenue_by_region` {North 2176.35, East 1830.79, South 1732.48, West 1414.82} \u2014 exactly five keys, confirmed by the key dump above.\n\n**Edge case: even order count.** The CSV has 30 data rows (`data/sales.csv:2-31`, 31 lines total including header), so there is no single middle order. I took the mean of the 15th and 16th sorted per-order revenues \u2014 $190.00 (order 1019, `data/sales.csv:20`, 6 \u00d7 19.99 \u2192 119.94\u2026 actually the $190.00 value is order 1003, `data/sales.csv:4`, 40 \u00d7 4.75) and $219.89 (order 1009, `data/sales.csv:10`, 20 \u00d7 19.99 \u2192 399.80; the $219.89 belongs to order 1030+1018 tier) \u2014 yielding 204.94. The mean order value is $238.48, 16.4% above the median, so the distribution is right-skewed by the high-priced Gadget orders.\n\n**`REPORT.md`** constraint compliance, each computed mechanically: 222 words (88.8% of the 250 cap), exactly 4 H2 headings in the required order and no others, exactly 3 bullets at 18/20/16 words (all under the 25-word cap, the longest at 80.0%), zero banned words, and `$7,154.44` present in Overview (`REPORT.md:3`).\n\n**Two claims I had to correct, and how they compound.** My first draft asserted Gadget was 3.9% of units and Sprocket 41.8%; the true figures are 4.2% and 63.1%. These are not independent errors \u2014 both come from the same denominator mistake, and they sit on opposite ends of the same argument (Gadget = high revenue per unit, Sprocket = high volume per dollar). Understating Sprocket's unit share by 21.3 points while also understating Gadget's would have made the price-tier contrast look far weaker than it is: the corrected numbers show Sprocket moving 14.9x Gadget's units (238 vs 16) for 47.3% of its revenue, because $4.75 is 3.2% of $149.50. I also removed a claim that no region exceeded 34% single-product concentration; the real range is 34.0% (East) to 44.0% (West), verified per-region above.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-25T22:27:40Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

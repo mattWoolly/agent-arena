@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\", \"src/report.py:5\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:5 finding mechanistically links two separate defects\u2014the exceptions raised at line 11 (null/malformed email) combine with the removed `with` block so the \"unguarded\" `f.close()` is skipped, leaking the handle and leaving a truncated report."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. floor division means \"the final partial page is never fetched\" and the f-string \"interpolating attacker-controlled `email` directly into SQL\" enables injection."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g., \"src/sync.py:14\", \"src/report.py:11\", \"src/report.py:5\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:5 finding mechanistically ties the line-11 defects to the line-5 defect: \"the same leak occurs on the exceptions at line 11 since `f.close()` at line 13 is unguarded and the `with` block was removed,\" showing one defect's exception persisting the other's leaked handle."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a concrete failure mechanism, e.g. floor division means \"the final partial page is never fetched\" and the f-string \"interpolating attacker-controlled `email` directly into SQL\" enabling injection."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`, `src/report.py:5`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:5 finding mechanistically ties the removed `with` block to the separate line-11 exceptions: \"the same leak occurs on the exceptions at line 11 since `f.close()` at line 13 is unguarded and the `with` block was removed,\" so those defects compound into a persistent handle leak."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the mechanism, e.g. `range(total_count // PAGE_SIZE)` \"floor-divides, so the final partial page is never fetched\" and `seen=[]` \"is a mutable default argument shared across all calls, so IDs accumulate process-wide.\""
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget is \"12.9% ahead of Widget\", North \"earns 53.8% more than West, a 1.54x spread\", and mean \"runs 16.4% above the median\"."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures and is actionable, e.g. \"Grow West, the weakest region at $1,414.82; closing its 53.8% gap to North would add about $761\" and \"Review Sprocket, only 15.8% of revenue and 47.3% of Gadget's total.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like the mean/median skew from \"top order $598.00, 8.4% of all revenue,\" the 63.1% concentration in two products, and Sprocket being \"47.3% of Gadget's total.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. '12.9% ahead of Widget', 'North earns 53.8% more than West, a 1.54x spread', and 'within 5.7% of each other'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures, e.g. 'Grow West, the weakest region at $1,414.82; closing its 53.8% gap to North would add about $761' and 'Review Sprocket, only 15.8% of revenue and 47.3% of Gadget's total'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, including the mean-vs-median skew ('mean runs 16.4% above the median'), revenue concentration ('two of four products carry roughly two-thirds'), and the regional spread analysis."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. Gadget is \"12.9% ahead of Widget\" and North \"earns 53.8% more than West, a 1.54x spread.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products/regions with figures, e.g. \"Grow West... closing its 53.8% gap to North would add about $761\" and \"Review Sprocket, only 15.8% of revenue and 47.3% of Gadget's total.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable non-obvious observations appear, including mean-vs-median skew (\"mean runs 16.4% above the median\"), revenue concentration (\"two of four products carry roughly two-thirds\"), and the top-order outlier (\"8.4% of all revenue\")."
+      }
+    }
+  ]
+}
