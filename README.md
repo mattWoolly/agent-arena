@@ -149,11 +149,19 @@ turn counts.
 
 `bin/run-task-kimi.sh` does the same for Kimi Code (`kimi -p`, stream-json;
 prompt mode auto-approves), labeling cells `kimi-k3-kimicode`. It runs with
-`HOME` pointed at the isolated `.kimi-arena/` (gitignored), whose config
-uses the metered Moonshot platform API key rather than the user's
-device-code login. Per-turn usage is taken from the session's `wire.jsonl`
-(copied into the run dir) and priced by `bin/metrics_kimi.py` from
-`env/prices.json`.
+`HOME` pointed at the isolated `~/.kimi-arena/` (outside the repo tree;
+override with `ARENA_KIMI_HOME`), whose config uses the metered Moonshot
+platform API key rather than the user's device-code login. The driver
+refuses an in-repo home: the original `.kimi-arena/` inside the checkout
+made every transcript reference the repo path (peek-check false positives)
+and, because Python derives its user-site directory from `HOME`, hid
+`~/.local` packages; that planted an unplanted pytest fault in 9 of 24 runs
+of the 2026-07-18 home bout, costing those runs 51-65% of execution time
+(quantified in `analysis/2026-07-25-terminal-walkthrough/`). The driver now
+pins `PYTHONUSERBASE` to the real user's `~/.local` so the agent's python
+resolves the same packages as under the other drivers. Per-turn usage is
+taken from the session's `wire.jsonl` (copied into the run dir) and priced
+by `bin/metrics_kimi.py` from `env/prices.json`.
 
 ## Rubric judging (depth qualities)
 
