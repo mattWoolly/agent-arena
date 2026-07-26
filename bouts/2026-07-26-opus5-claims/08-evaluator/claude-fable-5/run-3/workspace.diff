@@ -1,0 +1,217 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..ee24083
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,52 @@
++# Solution
++
++## Approach
++
++`sheet/engine.py` is split into three small pieces:
++
++1. **Tokenizer** — a single regex splits a formula into numbers
++   (`2`, `3.5`, `.5`), cell names (letters followed by optional digits),
++   and the operators/parens `+ - * / ( )`, skipping whitespace. Anything
++   else raises `ValueError`.
++
++2. **Recursive-descent parser** — implements the grammar
++
++   ```
++   expr   := term (('+' | '-') term)*
++   term   := factor (('*' | '/') factor)*
++   factor := '-' factor | number | name | '(' expr ')'
++   ```
++
++   which gives `*`/`/` higher precedence than `+`/`-`, left associativity
++   (the `while` loops fold operands leftward), parenthesized grouping, and
++   unary minus (including nested, e.g. `--3`). The output is an AST of
++   nested tuples. Bare-number cells skip the parser and become a number
++   node directly via `float()`.
++
++3. **Evaluator** — all cells are parsed up front, then each is computed by
++   a memoized depth-first walk. A `values` dict caches finished cells so
++   shared dependencies are evaluated once; an `in_progress` set tracks the
++   current DFS path, and re-entering a cell already on the path raises
++   `CycleError`.
++
++## Edge cases handled
++
++- **Forward and transitive references** — evaluation is demand-driven, so
++  dict order never matters (`A → B → C` resolves regardless of definition
++  order).
++- **Cycles** — both direct (`A = =A`) and transitive (`A → B → A`) raise
++  `CycleError`. The `in_progress` cleanup runs in a `finally` so the set
++  stays consistent even when evaluation raises.
++- **Left associativity** — `=10-2-3` is `5.0` and `=8/4/2` is `1.0`, not
++  the right-associative alternatives.
++- **Unary minus** — `=-3` and `=-(A+1)` parse via the `factor` rule.
++- **Division** — real division (`=3/2` → `1.5`); dividing by zero
++  propagates Python's `ZeroDivisionError` untouched, per the spec.
++- **Whitespace** — insignificant between tokens, and leading/trailing
++  whitespace around a cell's whole value is stripped.
++- **All results are floats**, including bare integer inputs.
++- **Unknown references** raise `KeyError` with the missing cell name
++  (the spec doesn't define this case; failing loudly beats a silent 0).
++
++`python3 -m pytest -q` passes (3 tests), and the README semantics above
++were additionally exercised with a manual edge-case script.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..6fe338b
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..abd26d6
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..6c71781 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,140 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Spreadsheet formula engine: evaluate() and CycleError per README.md."""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+     pass
+ 
+ 
++_TOKEN_RE = re.compile(
++    r"\s*(?:(?P<number>\d+(?:\.\d+)?|\.\d+)"
++    r"|(?P<name>[A-Za-z]+\d*)"
++    r"|(?P<op>[+\-*/()]))"
++)
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            if text[pos:].strip() == "":
++                break
++            raise ValueError(f"invalid token at {text[pos:]!r}")
++        if match.lastgroup == "number":
++            tokens.append(("number", float(match.group("number"))))
++        elif match.lastgroup == "name":
++            tokens.append(("name", match.group("name")))
++        else:
++            tokens.append(("op", match.group("op")))
++        pos = match.end()
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser producing an AST of nested tuples.
++
++    expr   := term (('+' | '-') term)*
++    term   := factor (('*' | '/') factor)*
++    factor := '-' factor | number | name | '(' expr ')'
++    """
++
++    def __init__(self, tokens):
++        self.tokens = tokens
++        self.pos = 0
++
++    def peek(self):
++        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
++
++    def next(self):
++        token = self.peek()
++        if token is None:
++            raise ValueError("unexpected end of formula")
++        self.pos += 1
++        return token
++
++    def parse(self):
++        node = self.expr()
++        if self.peek() is not None:
++            raise ValueError(f"unexpected token {self.peek()!r}")
++        return node
++
++    def expr(self):
++        node = self.term()
++        while self.peek() in (("op", "+"), ("op", "-")):
++            op = self.next()[1]
++            node = (op, node, self.term())
++        return node
++
++    def term(self):
++        node = self.factor()
++        while self.peek() in (("op", "*"), ("op", "/")):
++            op = self.next()[1]
++            node = (op, node, self.factor())
++        return node
++
++    def factor(self):
++        kind, value = self.next()
++        if (kind, value) == ("op", "-"):
++            return ("neg", self.factor())
++        if kind == "number":
++            return ("number", value)
++        if kind == "name":
++            return ("ref", value)
++        if (kind, value) == ("op", "("):
++            node = self.expr()
++            if self.next() != ("op", ")"):
++                raise ValueError("expected ')'")
++            return node
++        raise ValueError(f"unexpected token {value!r}")
++
++
++def _parse_cell(text):
++    text = text.strip()
++    if text.startswith("="):
++        return _Parser(_tokenize(text[1:])).parse()
++    return ("number", float(text))
++
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    asts = {name: _parse_cell(text) for name, text in cells.items()}
++    values = {}
++    in_progress = set()
++
++    def cell_value(name):
++        if name in values:
++            return values[name]
++        if name in in_progress:
++            raise CycleError(f"cycle involving cell {name!r}")
++        if name not in asts:
++            raise KeyError(f"unknown cell {name!r}")
++        in_progress.add(name)
++        try:
++            values[name] = eval_node(asts[name])
++        finally:
++            in_progress.discard(name)
++        return values[name]
++
++    def eval_node(node):
++        kind = node[0]
++        if kind == "number":
++            return node[1]
++        if kind == "ref":
++            return cell_value(node[1])
++        if kind == "neg":
++            return -eval_node(node[1])
++        _, left, right = node
++        a, b = eval_node(left), eval_node(right)
++        if kind == "+":
++            return a + b
++        if kind == "-":
++            return a - b
++        if kind == "*":
++            return a * b
++        return a / b
++
++    for name in cells:
++        cell_value(name)
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..4e9a302
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

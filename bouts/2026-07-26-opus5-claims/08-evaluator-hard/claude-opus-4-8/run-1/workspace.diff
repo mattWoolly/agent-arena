@@ -1,0 +1,236 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..b4bd18d
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,54 @@
++# Solution
++
++## Approach
++
++`sheet/engine.py` implements the engine in three layers:
++
++1. **Tokenizer** (`_tokenize`) — a single master regex splits a formula body
++   (the text after the leading `=`) into `num`, `ref`, and `op` tokens. The
++   pattern's leading `\s*` makes inter-token whitespace insignificant. Any
++   character that isn't part of a valid token (and isn't trailing whitespace)
++   raises `ValueError`.
++
++2. **Parser/evaluator** (`_Parser`) — a recursive-descent parser that computes
++   the value as it parses. The grammar encodes the required precedence and
++   associativity:
++
++   ```
++   expr  := term (('+' | '-') term)*      # left-associative
++   term  := unary (('*' | '/') unary)*    # left-associative
++   unary := '-' unary | power             # binds looser than '^'
++   power := primary ('^' unary)?          # right-associative
++   primary := number | ref | '(' expr ')'
++   ```
++
++   Placing `unary` *above* `power` in the tree makes unary minus bind looser
++   than `^` (`-2^2 == -(2^2) == -4`, while `(-2)^2 == 4`). `power` recurses on
++   the right through `unary`, giving right-associativity (`2^3^2 == 2^(3^2) ==
++   512`) while also allowing a signed exponent (`2^-2 == 0.25`).
++
++3. **Driver** (`evaluate`) — resolves cells lazily via a `resolve(name)`
++   closure. Bare numbers parse with `float`; formulas are tokenized and parsed,
++   with cell references calling back into `resolve`. Results are memoized in a
++   `values` dict so shared/transitive dependencies are computed once. This
++   naturally supports forward references and transitive chains regardless of
++   dict order.
++
++## Edge cases handled
++
++- **Precedence & associativity**: `1+2*3 == 7`, `8/4/2 == 1`, `10-3-2 == 5`,
++  `2^3^2 == 512` (right-assoc), `-2^2 == -4`, `(-2)^2 == 4`.
++- **Unary minus** in any position: leading (`=-3`), grouped (`=-(A+1)`),
++  after an operator (`=3 - -2`), and as an exponent (`=2^-2`).
++- **Decimal literals** including the leading-dot form (`.5`), and insignificant
++  whitespace between tokens.
++- **Real division** (`3/2 == 1.5`); division by zero propagates the usual
++  Python `ZeroDivisionError`.
++- **Cycles**: a `resolve`-time `in_progress` set detects any cell reaching
++  itself directly (`A=A`) or transitively (`A→B→C→A`) and raises `CycleError`.
++- **Diamonds** (a cell depended on by two paths) are *not* cycles — memoization
++  ensures each cell evaluates exactly once.
++
++## Result
++
++`python3 -m pytest -q` → 3 passed.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..b857a8a
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..ef547d6
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..e06f152 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,156 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine.
++
++Implements ``evaluate(cells)`` and ``CycleError`` per README.md.
++"""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell reaches itself through references."""
++
++
++# One master token pattern. Leading ``\s*`` makes whitespace between tokens
++# insignificant. Numbers are integer or decimal; cell references are one or
++# more letters followed by zero or more digits.
++_TOKEN_RE = re.compile(
++    r"\s*(?:"
++    r"(?P<num>\d+\.?\d*|\.\d+)"
++    r"|(?P<ref>[A-Za-z]+\d*)"
++    r"|(?P<op>[+\-*/^()])"
++    r")"
++)
++
++
++def _tokenize(text):
++    """Turn a formula body (without the leading ``=``) into a token list."""
++    tokens = []
++    pos = 0
++    length = len(text)
++    while pos < length:
++        match = _TOKEN_RE.match(text, pos)
++        if match is None or match.end() == pos:
++            # No token matched. Only acceptable if the remainder is whitespace.
++            if text[pos:].strip() == "":
++                break
++            raise ValueError(f"invalid token in {text!r} at position {pos}")
++        pos = match.end()
++        if match.group("num") is not None:
++            tokens.append(("num", float(match.group("num"))))
++        elif match.group("ref") is not None:
++            tokens.append(("ref", match.group("ref")))
++        else:
++            tokens.append(("op", match.group("op")))
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser that evaluates as it parses.
++
++    Grammar (precedence low to high)::
++
++        expr  := term (('+' | '-') term)*      # left-associative
++        term  := unary (('*' | '/') unary)*    # left-associative
++        unary := '-' unary | power             # looser than '^'
++        power := primary ('^' unary)?          # right-associative
++        primary := number | ref | '(' expr ')'
++    """
++
++    def __init__(self, tokens, resolve):
++        self._tokens = tokens
++        self._pos = 0
++        self._resolve = resolve
++
++    def _peek(self):
++        if self._pos < len(self._tokens):
++            return self._tokens[self._pos]
++        return (None, None)
++
++    def _advance(self):
++        tok = self._tokens[self._pos]
++        self._pos += 1
++        return tok
++
++    def parse(self):
++        value = self._expr()
++        if self._pos != len(self._tokens):
++            raise ValueError("unexpected trailing tokens")
++        return value
++
++    def _expr(self):
++        value = self._term()
++        while self._peek() in (("op", "+"), ("op", "-")):
++            op = self._advance()[1]
++            rhs = self._term()
++            value = value + rhs if op == "+" else value - rhs
++        return value
++
++    def _term(self):
++        value = self._unary()
++        while self._peek() in (("op", "*"), ("op", "/")):
++            op = self._advance()[1]
++            rhs = self._unary()
++            value = value * rhs if op == "*" else value / rhs
++        return value
++
++    def _unary(self):
++        if self._peek() == ("op", "-"):
++            self._advance()
++            return -self._unary()
++        return self._power()
++
++    def _power(self):
++        base = self._primary()
++        if self._peek() == ("op", "^"):
++            self._advance()
++            # Right-associative, and the exponent is a unary expression so
++            # that ``2^-3`` and ``2^3^2`` parse as expected.
++            exponent = self._unary()
++            return base ** exponent
++        return base
++
++    def _primary(self):
++        kind, value = self._peek()
++        if kind == "num":
++            self._advance()
++            return value
++        if kind == "ref":
++            self._advance()
++            return self._resolve(value)
++        if (kind, value) == ("op", "("):
++            self._advance()
++            inner = self._expr()
++            if self._peek() != ("op", ")"):
++                raise ValueError("expected ')'")
++            self._advance()
++            return inner
++        raise ValueError("unexpected end of formula" if kind is None
++                         else f"unexpected token {value!r}")
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell's value, returning ``{name: float}``.
++
++    References resolve lazily (supporting forward and transitive chains) and
++    results are memoized. Any dependency cycle raises :class:`CycleError`.
++    """
++    values = {}
++    in_progress = set()
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in in_progress:
++            raise CycleError(name)
++        in_progress.add(name)
++        raw = cells[name].strip()
++        if raw.startswith("="):
++            tokens = _tokenize(raw[1:])
++            result = _Parser(tokens, resolve).parse()
++        else:
++            result = float(raw)
++        in_progress.discard(name)
++        values[name] = result
++        return result
++
++    return {name: resolve(name) for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..6756903
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

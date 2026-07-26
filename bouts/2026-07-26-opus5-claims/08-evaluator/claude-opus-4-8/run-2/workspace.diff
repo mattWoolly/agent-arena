@@ -1,0 +1,255 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..be7f062
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,53 @@
++# Solution
++
++`sheet/engine.py` implements the formula engine in three stages: **tokenize →
++parse → evaluate**.
++
++## Approach
++
++1. **Tokenizer** (`_tokenize`) scans a formula body (the text after `=`) into
++   operator tokens (`+ - * / ( )`) and `(kind, value)` tuples for numbers and
++   cell names. Whitespace is skipped, so spacing between tokens is
++   insignificant. Numbers accept an optional decimal point; cell names are one
++   or more letters followed by zero or more digits.
++
++2. **Recursive-descent parser** (`_Parser`) builds a small tuple AST following
++   the grammar:
++
++   ```
++   expr   := term   (('+' | '-') term)*
++   term   := factor (('*' | '/') factor)*
++   factor := '-' factor | '(' expr ')' | number | name
++   ```
++
++   This gives `*`/`/` higher precedence than `+`/`-`, left-associativity, and
++   unary minus. `_parse_cell` treats a bare (non-`=`) cell as a numeric
++   literal.
++
++3. **Evaluation** (`evaluate`) parses every cell up front, then computes values
++   **lazily** via a memoized DFS (`compute`). Memoization in `results` means
++   each cell is evaluated once; a `visiting` set tracks the current DFS stack so
++   that revisiting a cell already on the stack raises `CycleError`. Because
++   resolution is on-demand, forward references and transitive chains work
++   regardless of dict order.
++
++## Edge cases handled
++
++- **Cycles** — direct (`A = A`) and transitive (`A→B→C→A`) both raise
++  `CycleError`. The `visiting` set is cleaned up in a `finally` block so state
++  stays correct even when an error propagates.
++- **Shared references (diamonds)** are *not* cycles: `A = B + C`, `B = D`,
++  `C = D` evaluates fine thanks to memoization + stack-based (not
++  visited-set-based) cycle detection.
++- **Unary minus** in all positions: `=-3`, `=-(A+1)`. A tolerant unary `+` is
++  also accepted.
++- **Division** is real division (`=3/2 → 1.5`); division by zero lets Python's
++  `ZeroDivisionError` propagate as required.
++- **Whitespace** anywhere between tokens is ignored.
++- **Parentheses** group and override precedence; a missing `)` raises a parse
++  error.
++- Every returned value is a `float`, including bare numeric cells.
++
++## Tests
++
++`python3 -m pytest -q` → 3 passed.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..2ece4b6
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..8778e79
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..023c85a 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -2,8 +2,178 @@
+ 
+ 
+ class CycleError(Exception):
++    """Raised when a cell reaches itself through references, directly or
++    transitively."""
++
+     pass
+ 
+ 
++# --- Tokenizer -------------------------------------------------------------
++
++def _tokenize(text):
++    """Turn a formula body (the part after ``=``) into a list of tokens.
++
++    Tokens are either operator strings (``+ - * / ( )``) or ``(kind, value)``
++    tuples where ``kind`` is ``"num"`` (value: float) or ``"name"`` (value:
++    the cell name).
++    """
++    tokens = []
++    i = 0
++    n = len(text)
++    while i < n:
++        c = text[i]
++        if c.isspace():
++            i += 1
++            continue
++        if c in "+-*/()":
++            tokens.append(c)
++            i += 1
++            continue
++        if c.isdigit() or c == ".":
++            j = i
++            while j < n and (text[j].isdigit() or text[j] == "."):
++                j += 1
++            tokens.append(("num", float(text[i:j])))
++            i = j
++            continue
++        if c.isalpha():
++            j = i
++            while j < n and text[j].isalpha():
++                j += 1
++            while j < n and text[j].isdigit():
++                j += 1
++            tokens.append(("name", text[i:j]))
++            i = j
++            continue
++        raise ValueError("Unexpected character %r in formula" % c)
++    return tokens
++
++
++# --- Parser ----------------------------------------------------------------
++#
++# Grammar (usual precedence, left-associative):
++#   expr   := term   (('+' | '-') term)*
++#   term   := factor (('*' | '/') factor)*
++#   factor := '-' factor | '(' expr ')' | number | name
++#
++# The parser produces an AST of tuples:
++#   ('num', float)          literal
++#   ('ref', name)           cell reference
++#   ('neg', node)           unary minus
++#   ('bin', op, lhs, rhs)   binary operator
++
++class _Parser:
++    def __init__(self, tokens):
++        self._tokens = tokens
++        self._pos = 0
++
++    def _peek(self):
++        if self._pos < len(self._tokens):
++            return self._tokens[self._pos]
++        return None
++
++    def _advance(self):
++        tok = self._tokens[self._pos]
++        self._pos += 1
++        return tok
++
++    def parse(self):
++        node = self._expr()
++        if self._pos != len(self._tokens):
++            raise ValueError("Unexpected trailing tokens in formula")
++        return node
++
++    def _expr(self):
++        node = self._term()
++        while self._peek() in ("+", "-"):
++            op = self._advance()
++            node = ("bin", op, node, self._term())
++        return node
++
++    def _term(self):
++        node = self._factor()
++        while self._peek() in ("*", "/"):
++            op = self._advance()
++            node = ("bin", op, node, self._factor())
++        return node
++
++    def _factor(self):
++        tok = self._peek()
++        if tok == "-":
++            self._advance()
++            return ("neg", self._factor())
++        if tok == "+":  # tolerate a unary plus for symmetry
++            self._advance()
++            return self._factor()
++        if tok == "(":
++            self._advance()
++            node = self._expr()
++            if self._peek() != ")":
++                raise ValueError("Missing closing parenthesis")
++            self._advance()
++            return node
++        if isinstance(tok, tuple):
++            self._advance()
++            kind, value = tok
++            if kind == "num":
++                return ("num", value)
++            return ("ref", value)
++        raise ValueError("Unexpected token %r in formula" % (tok,))
++
++
++def _parse_cell(raw):
++    """Parse a raw cell string into an AST node."""
++    text = raw.strip()
++    if text.startswith("="):
++        return _Parser(_tokenize(text[1:])).parse()
++    return ("num", float(text))
++
++
++# --- Evaluation ------------------------------------------------------------
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell's ``float`` value.
++
++    References resolve lazily (supporting forward and transitive references)
++    with memoization; any dependency cycle raises :class:`CycleError`.
++    """
++    asts = {name: _parse_cell(raw) for name, raw in cells.items()}
++    results = {}
++    visiting = set()
++
++    def eval_node(node):
++        kind = node[0]
++        if kind == "num":
++            return node[1]
++        if kind == "ref":
++            return compute(node[1])
++        if kind == "neg":
++            return -eval_node(node[1])
++        # ('bin', op, lhs, rhs)
++        _, op, lhs, rhs = node
++        left = eval_node(lhs)
++        right = eval_node(rhs)
++        if op == "+":
++            return left + right
++        if op == "-":
++            return left - right
++        if op == "*":
++            return left * right
++        return left / right  # real division; ZeroDivisionError propagates
++
++    def compute(name):
++        if name in results:
++            return results[name]
++        if name in visiting:
++            raise CycleError(name)
++        visiting.add(name)
++        try:
++            value = eval_node(asts[name])
++        finally:
++            visiting.discard(name)
++        results[name] = value
++        return value
++
++    for name in cells:
++        compute(name)
++    return results
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..abbb3a3
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

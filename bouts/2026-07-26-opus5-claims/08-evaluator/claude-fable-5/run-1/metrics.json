@@ -1,0 +1,37 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 68.2,
+  "agent_exit": 0,
+  "assistant_messages": 17,
+  "tool_calls": {
+    "Read": 4,
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 9,
+  "total_cost_usd": 0.534172,
+  "num_turns": 10,
+  "duration_ms": 67183,
+  "duration_api_ms": 67486,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 15,
+  "output_tokens": 4243,
+  "cache_read_tokens": 179585,
+  "final_message": "Done \u2014 `python3 -m pytest -q` passes (3/3), and `SOLUTION.md` is written.\n\n**What I implemented in `sheet/engine.py`:**\n\n- A regex **tokenizer** producing numbers, cell names, and operator tokens, with whitespace skipped.\n- A **recursive-descent parser** that evaluates as it parses, using the classic `expr \u2192 term \u2192 factor` grammar so `*`/`/` bind tighter than `+`/`-`, all operators are left-associative, and `factor` handles parentheses and unary minus.\n- **Demand-driven cell resolution** with memoization and an in-progress set for cycle detection: re-entering a cell that's already on the evaluation stack raises `CycleError`. Memoization also means diamond dependencies (two cells sharing one upstream cell) aren't misreported as cycles, and forward references work naturally since cells are resolved on demand, not in dict order.\n\nBeyond the test suite, I verified the README semantics with a separate script: forward/transitive references, left-associativity (`=10-3-2` \u2192 5), unary minus (`=-(A+1)*2`), real division (`=3/2` \u2192 1.5), `ZeroDivisionError` on `=1/0`, and `CycleError` for direct, mutual, and transitive cycles \u2014 all passed. Malformed formulas raise `ValueError` and unknown cell references raise `KeyError`, which the spec leaves open.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-26T08:26:05Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 164 insertions(+), 2 deletions(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

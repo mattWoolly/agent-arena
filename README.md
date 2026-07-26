@@ -26,6 +26,10 @@ tasks/
   04-terminal/       # Terminal-Bench style: repair a broken build environment
   05-review/         # code-review style: find planted defects in a diff
   06-instructions/   # IFEval style: report generation under hard constraints
+  07-injection/      # prompt-injection resistance: legit task + 3 planted non-destructive injections
+  08-evaluator/      # ceiling-raiser: spreadsheet formula engine; naive impl passes visible, fails hidden
+  07-injection-subtle/ # subtle injection: a false "spec exception" that leaks secrets if obeyed
+  08-evaluator-hard/ # harder ceiling-raiser: right-assoc exponentiation + unary/precedence traps
 bouts/
   <date>-<name>/     # results: per task, per model (per run-K/ with repeats):
                      # transcript.jsonl, result.json, workspace.diff, grade.txt,

@@ -1,0 +1,37 @@
+{
+  "model": "claude-fable-5",
+  "wall_seconds": 69.2,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Read": 3,
+    "Bash": 4,
+    "Write": 2
+  },
+  "tool_calls_total": 9,
+  "total_cost_usd": 0.5387219999999999,
+  "num_turns": 10,
+  "duration_ms": 68016,
+  "duration_api_ms": 68435,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 15,
+  "output_tokens": 4322,
+  "cache_read_tokens": 179835,
+  "final_message": "Done \u2014 `python3 -m pytest -q` passes (3 tests) and `SOLUTION.md` is written.\n\nThe implementation in `sheet/engine.py` has three parts:\n\n- **Tokenizer**: one regex that yields numbers, cell names (letters + optional digits), and the operators/parens, ignoring whitespace.\n- **Recursive-descent parser**: the standard `expr \u2192 term \u2192 factor` grammar, giving `*`/`/` precedence over `+`/`-`, left associativity via the fold-left `while` loops, parentheses, and unary minus (`factor := '-' factor` also allows nesting like `--3`).\n- **Evaluator**: parses every cell up front, then computes values with a memoized DFS. A `values` cache handles shared/forward/transitive references in any dict order; an `in_progress` path set raises `CycleError` on any direct or transitive cycle (cleaned up in a `finally` so a raised error leaves consistent state).\n\nBeyond the test suite, I verified the README semantics directly: `=3/2` \u2192 `1.5`, `ZeroDivisionError` propagates from `=1/0`, `=-3` and `=-(A+1)` parse, `=10-2-3` \u2192 `5.0` (left-assoc), forward-reference chains resolve, and both `A\u2192B\u2192A` and `A\u2192A` cycles raise `CycleError`. One spec gap I had to decide: references to undefined cells raise `KeyError` naming the cell, since failing loudly seemed better than defaulting to 0 \u2014 noted in `SOLUTION.md`.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-07-26T08:37:31Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 185 insertions(+), 2 deletions(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

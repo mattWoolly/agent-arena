@@ -1,0 +1,217 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..4b0c8af
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,46 @@
++# Solution
++
++## Approach
++
++`evaluate(cells)` computes every cell's `float` value in three stages:
++
++1. **Tokenize** — a single regex (`_TOKEN_RE`) scans a formula into `NUMBER`,
++   `REF`, `OP`, `LPAREN`, and `RPAREN` tokens, skipping insignificant
++   whitespace between them.
++2. **Parse** — `_Parser` is a recursive-descent parser that builds a small AST
++   of nested tuples. The grammar encodes operator precedence and
++   left-associativity directly:
++   - `_expr` handles `+`/`-`,
++   - `_term` handles `*`/`/` (binds tighter),
++   - `_factor` handles unary minus, parentheses, numbers, and cell references.
++3. **Evaluate** — `resolve(name)` computes a cell's value with memoization
++   (`values` cache) so shared dependencies are evaluated once, and forward /
++   transitive references resolve on demand.
++
++Bare-number cells (no leading `=`) are treated as a single `num` node.
++
++## Edge cases handled
++
++- **Cycle detection** — a `visiting` set tracks cells currently on the
++  evaluation stack. Reaching a cell already in that set (directly,
++  indirectly, or transitively) raises `CycleError`. The set is unwound in a
++  `finally` block so it stays correct across exceptions.
++- **Forward & transitive references** — resolution is lazy and recursive, so a
++  cell may reference cells defined later in the dict or through a chain.
++- **Real division** — uses Python `/`, so `=3/2` is `1.5`; division by zero
++  propagates the usual `ZeroDivisionError`.
++- **Unary minus** — supported in any factor position, e.g. `=-3` and `=-(A+1)`.
++- **Precedence & associativity** — `*`/`/` bind tighter than `+`/`-`; all binary
++  operators are left-associative (`=10-2-3` → `5`, `=8/2/2` → `2`).
++- **Number formats** — integers and decimals, including forms like `.5` and `2.`.
++- **Multi-letter / digit-suffixed names** — `A`, `TOTAL`, `X12` all parse as
++  references, matching the cell-name grammar.
++- **Whitespace** — insignificant between tokens and around the leading `=`.
++
++## Running
++
++```
++python3 -m pytest -q
++```
++
++All tests pass.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..1eb7a26
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..3713528
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..77b3aeb 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,147 @@
+ """Implement evaluate() and CycleError per README.md."""
+ 
++import re
++
+ 
+ class CycleError(Exception):
+     pass
+ 
+ 
++# A token is (kind, text). Kinds: NUMBER, REF, OP, LPAREN, RPAREN.
++_TOKEN_RE = re.compile(
++    r"""
++    \s*(?:
++        (?P<NUMBER>\d+\.\d+|\d+\.|\.\d+|\d+)   # integer or decimal
++      | (?P<REF>[A-Za-z]+[0-9]*)               # cell reference / name
++      | (?P<OP>[+\-*/])                        # binary/unary operators
++      | (?P<LPAREN>\()
++      | (?P<RPAREN>\))
++    )
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        m = _TOKEN_RE.match(text, pos)
++        if not m or m.end() == pos:
++            # Skip trailing whitespace only; anything else is invalid.
++            if text[pos:].strip() == "":
++                break
++            raise ValueError(f"invalid token in formula: {text[pos:]!r}")
++        pos = m.end()
++        kind = m.lastgroup
++        tokens.append((kind, m.group(kind)))
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser producing an AST of nested tuples."""
++
++    def __init__(self, tokens):
++        self.tokens = tokens
++        self.i = 0
++
++    def _peek(self):
++        return self.tokens[self.i] if self.i < len(self.tokens) else (None, None)
++
++    def _advance(self):
++        tok = self.tokens[self.i]
++        self.i += 1
++        return tok
++
++    def parse(self):
++        node = self._expr()
++        if self.i != len(self.tokens):
++            raise ValueError("unexpected trailing tokens in formula")
++        return node
++
++    def _expr(self):
++        node = self._term()
++        while self._peek() == ("OP", "+") or self._peek() == ("OP", "-"):
++            op = self._advance()[1]
++            node = ("binop", op, node, self._term())
++        return node
++
++    def _term(self):
++        node = self._factor()
++        while self._peek() == ("OP", "*") or self._peek() == ("OP", "/"):
++            op = self._advance()[1]
++            node = ("binop", op, node, self._factor())
++        return node
++
++    def _factor(self):
++        kind, text = self._peek()
++        if (kind, text) == ("OP", "-"):
++            self._advance()
++            return ("neg", self._factor())
++        if kind == "LPAREN":
++            self._advance()
++            node = self._expr()
++            if self._peek()[0] != "RPAREN":
++                raise ValueError("missing closing parenthesis")
++            self._advance()
++            return node
++        if kind == "NUMBER":
++            self._advance()
++            return ("num", float(text))
++        if kind == "REF":
++            self._advance()
++            return ("ref", text)
++        raise ValueError("unexpected token in formula")
++
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    asts = {}       # name -> parsed AST (for formulas)
++    values = {}     # name -> computed float (memoization cache)
++    visiting = set()  # names currently on the evaluation stack (cycle detection)
++
++    def parse_cell(name):
++        raw = cells[name]
++        text = raw.strip()
++        if text.startswith("="):
++            return _Parser(_tokenize(text[1:])).parse()
++        # Bare number.
++        return ("num", float(text))
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in visiting:
++            raise CycleError(f"cycle detected involving {name!r}")
++        visiting.add(name)
++        try:
++            if name not in asts:
++                asts[name] = parse_cell(name)
++            result = eval_node(asts[name])
++        finally:
++            visiting.discard(name)
++        values[name] = result
++        return result
++
++    def eval_node(node):
++        kind = node[0]
++        if kind == "num":
++            return node[1]
++        if kind == "ref":
++            return resolve(node[1])
++        if kind == "neg":
++            return -eval_node(node[1])
++        if kind == "binop":
++            _, op, left, right = node
++            lv = eval_node(left)
++            rv = eval_node(right)
++            if op == "+":
++                return lv + rv
++            if op == "-":
++                return lv - rv
++            if op == "*":
++                return lv * rv
++            if op == "/":
++                return lv / rv
++        raise ValueError(f"invalid AST node: {node!r}")
++
++    return {name: resolve(name) for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..dff0d3d
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

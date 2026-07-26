@@ -1,0 +1,191 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..dde1450
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,42 @@
++# Solution
++
++Implemented `evaluate` and `CycleError` in `sheet/engine.py`.
++
++## Approach
++
++The engine has three parts:
++
++1. **Tokenizer** (`_tokenize`): a single regex walks the formula text, skipping
++   whitespace and emitting numbers (`2`, `3.5`, `.5`), cell names
++   (letters followed by optional digits), and the operator/paren tokens.
++
++2. **Parser/evaluator** (`_Parser`): a recursive-descent parser that evaluates
++   as it parses, encoding the spec's grammar directly:
++   - `_expr` handles `+`/`-`, `_term` handles `*`/`/` (tighter binding),
++     both looping left-to-right for left-associativity.
++   - `_factor` handles unary minus (and unary plus, harmlessly).
++   - `_primary` handles numbers, parenthesized sub-expressions, and cell
++     references, resolving references through a callback.
++
++3. **Dependency resolution** (`evaluate`): a DFS over cells with memoization.
++   `resolve(name)` computes a cell on demand — bare values go through
++   `float()`, formulas go through the parser — so forward references and
++   transitive chains work naturally. A `visiting` set holds cells on the
++   current DFS path; re-entering one raises `CycleError`. Results are cached
++   in `values` so each cell is computed once, and the final dict contains
++   every input cell.
++
++## Edge cases handled
++
++- **Cycles**: direct (`A = =A`) and indirect (`A→B→C→A`) both raise
++  `CycleError`. The `visiting` set is cleaned up in a `finally` so state is
++  consistent even when an exception propagates.
++- **Division by zero**: left to Python — `value / rhs` with a zero divisor
++  raises the usual `ZeroDivisionError` (real float division, so `=3/2` is
++  `1.5`).
++- **Bare-number cells**: parsed with `float()` after stripping, so negative
++  and whitespace-padded literals (`"-2"`, `" 7 "`) work.
++- **Syntax errors** (bad tokens, unbalanced parens, trailing garbage, empty
++  formulas) raise `ValueError`; references to undefined cells raise
++  `KeyError`. The spec doesn't define these, so the natural Python errors
++  are surfaced rather than swallowed.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..2c86229
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..4979249
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..61de635 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,125 @@
+ """Implement evaluate() and CycleError per README.md."""
++import re
++
++__all__ = ["evaluate", "CycleError"]
+ 
+ 
+ class CycleError(Exception):
+     pass
+ 
+ 
++_TOKEN_RE = re.compile(r"\d+(?:\.\d+)?|\.\d+|[A-Za-z]+[0-9]*|[+\-*/()]")
++_NUMBER_RE = re.compile(r"(?:\d+(?:\.\d+)?|\.\d+)")
++_NAME_RE = re.compile(r"[A-Za-z]+[0-9]*")
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        if text[pos].isspace():
++            pos += 1
++            continue
++        m = _TOKEN_RE.match(text, pos)
++        if m is None:
++            raise ValueError(f"bad token at offset {pos} in {text!r}")
++        tokens.append(m.group(0))
++        pos = m.end()
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser/evaluator for a single formula."""
++
++    def __init__(self, tokens, resolve):
++        self.tokens = tokens
++        self.pos = 0
++        self.resolve = resolve
++
++    def _peek(self):
++        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
++
++    def _next(self):
++        tok = self._peek()
++        self.pos += 1
++        return tok
++
++    def parse(self):
++        value = self._expr()
++        if self._peek() is not None:
++            raise ValueError(f"unexpected trailing token {self._peek()!r}")
++        return value
++
++    def _expr(self):
++        value = self._term()
++        while self._peek() in ("+", "-"):
++            op = self._next()
++            rhs = self._term()
++            value = value + rhs if op == "+" else value - rhs
++        return value
++
++    def _term(self):
++        value = self._factor()
++        while self._peek() in ("*", "/"):
++            op = self._next()
++            rhs = self._factor()
++            value = value * rhs if op == "*" else value / rhs
++        return value
++
++    def _factor(self):
++        tok = self._peek()
++        if tok == "-":
++            self._next()
++            return -self._factor()
++        if tok == "+":
++            self._next()
++            return self._factor()
++        return self._primary()
++
++    def _primary(self):
++        tok = self._next()
++        if tok is None:
++            raise ValueError("unexpected end of formula")
++        if tok == "(":
++            value = self._expr()
++            if self._next() != ")":
++                raise ValueError("missing closing parenthesis")
++            return value
++        if _NUMBER_RE.fullmatch(tok):
++            return float(tok)
++        if _NAME_RE.fullmatch(tok):
++            return self.resolve(tok)
++        raise ValueError(f"unexpected token {tok!r}")
++
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute the float value of every cell in `cells`.
++
++    Values are bare numbers or formulas beginning with "=". References may
++    point forward and form transitive chains. A dependency cycle raises
++    CycleError; division by zero raises ZeroDivisionError.
++    """
++    values = {}
++    visiting = set()
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in visiting:
++            raise CycleError(f"dependency cycle involving {name!r}")
++        raw = cells[name]  # KeyError for references to undefined cells
++        visiting.add(name)
++        try:
++            text = raw.strip()
++            if text.startswith("="):
++                value = _Parser(_tokenize(text[1:]), resolve).parse()
++            else:
++                value = float(text)
++            values[name] = value
++        finally:
++            visiting.discard(name)
++        return value
++
++    for name in cells:
++        resolve(name)
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..9e747f3
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

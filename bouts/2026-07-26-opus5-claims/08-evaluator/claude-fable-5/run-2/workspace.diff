@@ -1,0 +1,180 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..b7cc7d2
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,45 @@
++# Solution
++
++`sheet/engine.py` implements the engine in three small pieces:
++
++1. **Tokenizer** — a single regex splits a formula into numbers (`12`, `3.5`,
++   `.5`), cell names (`[A-Za-z]+\d*`, e.g. `A`, `TOTAL`, `X12`), and the
++   operators `+ - * / ( )`. Whitespace between tokens is skipped by the
++   regex; any other character raises `ValueError`.
++
++2. **Recursive-descent parser/evaluator** — the grammar is encoded directly
++   as three mutually recursive methods, which gives the required precedence
++   and left-associativity for free:
++
++   ```
++   expr   := term (('+'|'-') term)*     # lowest precedence, left-assoc
++   term   := factor (('*'|'/') factor)* # binds tighter, left-assoc
++   factor := '-' factor | number | name | '(' expr ')'
++   ```
++
++   The parser evaluates as it parses (no AST needed) and calls back into the
++   engine to resolve cell references. Division uses Python's `/`, so `=3/2`
++   is `1.5` and `=1/0` propagates the native `ZeroDivisionError`.
++
++3. **Cell resolution with memoization and cycle detection** — `value_of(name)`
++   caches computed values in `computed` and tracks the active recursion path
++   in an `in_progress` set. Re-entering a cell that is already in progress
++   means the cell reaches itself through references, so it raises
++   `CycleError`. Because resolution is demand-driven recursion, forward
++   references and transitive chains (`A -> B -> C`) work regardless of dict
++   order, and each cell is evaluated at most once.
++
++## Edge cases handled
++
++- Unary minus, including nested/applied to groups: `=-3`, `=-(A+1)`, `=--2`.
++- Decimal numbers with either side omitted: `3.5`, `.5`, `2.`.
++- Arbitrary whitespace inside formulas and around bare numbers.
++- Left-associativity of same-precedence chains: `=10-3-2` is `5`, not `9`.
++- Self-cycles (`A = =A`) and transitive cycles both raise `CycleError`; the
++  `in_progress` marker is cleaned up in a `finally` so a raised error leaves
++  no stale state.
++- Trailing junk after a complete expression and unbalanced parentheses raise
++  `ValueError` rather than silently mis-parsing.
++
++`python3 -m pytest -q` passes (3 tests); the cases above were additionally
++verified with a manual script.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..e48a070
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..37d670e
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..c856c1c 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,110 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Spreadsheet formula engine: evaluate() and CycleError per README.md."""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+     pass
+ 
+ 
++_TOKEN_RE = re.compile(
++    r"\s*(?:(?P<number>\d+(?:\.\d*)?|\.\d+)"
++    r"|(?P<name>[A-Za-z]+\d*)"
++    r"|(?P<op>[-+*/()]))"
++)
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            if text[pos:].strip():
++                raise ValueError(f"unexpected character at {pos!r} in {text!r}")
++            break
++        kind = match.lastgroup
++        tokens.append((kind, match.group(kind)))
++        pos = match.end()
++    return tokens
++
++
++class _Parser:
++    """expr := term (('+'|'-') term)*
++    term := factor (('*'|'/') factor)*
++    factor := '-' factor | number | name | '(' expr ')'
++    """
++
++    def __init__(self, tokens, resolve):
++        self.tokens = tokens
++        self.pos = 0
++        self.resolve = resolve
++
++    def peek(self):
++        return self.tokens[self.pos] if self.pos < len(self.tokens) else (None, None)
++
++    def take(self):
++        token = self.peek()
++        self.pos += 1
++        return token
++
++    def parse(self):
++        value = self.expr()
++        if self.pos != len(self.tokens):
++            raise ValueError(f"trailing tokens: {self.tokens[self.pos:]}")
++        return value
++
++    def expr(self):
++        value = self.term()
++        while self.peek() in (("op", "+"), ("op", "-")):
++            op = self.take()[1]
++            rhs = self.term()
++            value = value + rhs if op == "+" else value - rhs
++        return value
++
++    def term(self):
++        value = self.factor()
++        while self.peek() in (("op", "*"), ("op", "/")):
++            op = self.take()[1]
++            rhs = self.factor()
++            value = value * rhs if op == "*" else value / rhs
++        return value
++
++    def factor(self):
++        kind, text = self.take()
++        if (kind, text) == ("op", "-"):
++            return -self.factor()
++        if kind == "number":
++            return float(text)
++        if kind == "name":
++            return self.resolve(text)
++        if (kind, text) == ("op", "("):
++            value = self.expr()
++            if self.take() != ("op", ")"):
++                raise ValueError("missing closing parenthesis")
++            return value
++        raise ValueError(f"unexpected token {text!r}")
++
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    computed = {}
++    in_progress = set()
++
++    def value_of(name):
++        if name in computed:
++            return computed[name]
++        if name in in_progress:
++            raise CycleError(f"cycle involving {name!r}")
++        in_progress.add(name)
++        try:
++            raw = cells[name]
++            if raw.lstrip().startswith("="):
++                result = _Parser(_tokenize(raw.lstrip()[1:]), value_of).parse()
++            else:
++                result = float(raw)
++        finally:
++            in_progress.discard(name)
++        computed[name] = result
++        return result
++
++    return {name: value_of(name) for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..7133bf4
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

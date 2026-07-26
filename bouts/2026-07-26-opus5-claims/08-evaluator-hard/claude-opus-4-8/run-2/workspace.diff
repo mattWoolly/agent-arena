@@ -1,0 +1,245 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..8ec8116
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,64 @@
++# Solution
++
++## Approach
++
++`evaluate(cells)` computes every cell's `float` value using lazy, memoized
++recursion plus a hand-written recursive-descent parser.
++
++### Tokenizer
++
++`_tokenize` scans a formula (the text after the leading `=`) into tokens using a
++single regex with named groups: `NUMBER`, `CELL`, `OP` (`+ - * / ^`), `LPAREN`,
++`RPAREN`. Whitespace between tokens is skipped, so it is insignificant.
++
++- Numbers match integers and decimals (`3`, `3.5`, `3.`, `.5`).
++- Cell references match one or more letters followed by zero or more digits
++  (`A`, `A1`, `TOTAL`, `X12`).
++
++### Parser
++
++`_Parser` implements the grammar with precedence low-to-high, encoded directly
++as one method per level:
++
++```
++expr   := term (('+' | '-') term)*        # left-associative
++term   := factor (('*' | '/') factor)*    # left-associative
++factor := ('-' | '+') factor | power      # unary, looser than '^'
++power  := atom ('^' factor)?              # right-associative
++atom   := NUMBER | CELL | '(' expr ')'
++```
++
++The parser evaluates as it descends (no separate AST), resolving cell
++references through a `resolve` callback supplied by `evaluate`.
++
++### Evaluation, memoization, and cycle detection
++
++`evaluate` builds a `resolve(name)` closure over two structures:
++
++- `computed`: a `name -> float` cache so each cell is evaluated at most once and
++  transitive/forward references are cheap.
++- `in_progress`: the set of cells currently on the recursion stack.
++
++When resolving a name already in `in_progress`, we've reached a cell through its
++own dependency chain, so we raise `CycleError`. Bare numbers are parsed with
++`float`; formulas are tokenized and parsed. The public result is produced by
++resolving every cell in the input dict.
++
++## Edge cases handled
++
++- **`^` right-associativity**: `2^3^2` = `2^(3^2)` = 512, because `power`'s
++  right operand recurses into `factor`.
++- **Unary minus binds looser than `^`**: `-2^2` = `-(2^2)` = -4, while
++  `(-2)^2` = 4. `factor` applies unary `-` around a full `power`.
++- **Left-associativity of `+ - * /`**: `10-2-3` = 5, `8/2/2` = 2.
++- **Forward and transitive references**: a cell may reference cells defined
++  later in the dict, resolved on demand.
++- **Direct and transitive cycles** (`A=A`, `A→B→C→A`, `A=B+1, B=A+1`) raise
++  `CycleError`.
++- **Real division** with `ZeroDivisionError` propagated on divide-by-zero.
++- **Whitespace** anywhere between tokens is ignored.
++- Nested/unary parenthesization such as `=-(A+1)` and decimals like `3.5`.
++
++## Tests
++
++`python3 -m pytest -q` → 3 passed.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..acb1111
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..722087a
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..43d5e02 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,157 @@
+ """Implement evaluate() and CycleError per README.md."""
+ 
++import re
++
+ 
+ class CycleError(Exception):
+     pass
+ 
+ 
++# Token kinds: NUMBER, CELL, OP (one of + - * / ^), LPAREN, RPAREN.
++_TOKEN_RE = re.compile(
++    r"""
++      \s*(?:
++          (?P<NUMBER>\d+\.\d+|\d+\.|\.\d+|\d+)   # 3, 3.5, 3., .5
++        | (?P<CELL>[A-Za-z]+\d*)                 # A, A1, TOTAL, X12
++        | (?P<OP>[+\-*/^])
++        | (?P<LPAREN>\()
++        | (?P<RPAREN>\))
++      )
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    n = len(text)
++    while pos < n:
++        if text[pos].isspace():
++            pos += 1
++            continue
++        m = _TOKEN_RE.match(text, pos)
++        if not m or m.start() == m.end():
++            raise ValueError(f"invalid token at {pos!r} in {text!r}")
++        kind = m.lastgroup
++        value = m.group(kind)
++        tokens.append((kind, value))
++        pos = m.end()
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser producing a value via `resolve(name)`.
++
++    Grammar (low to high precedence):
++        expr   := term (('+' | '-') term)*
++        term   := factor (('*' | '/') factor)*
++        factor := ('-' | '+') factor | power     # unary, looser than '^'
++        power  := atom ('^' factor)?             # right-associative
++        atom   := NUMBER | CELL | '(' expr ')'
++    """
++
++    def __init__(self, tokens, resolve):
++        self.tokens = tokens
++        self.pos = 0
++        self.resolve = resolve
++
++    def _peek(self):
++        return self.tokens[self.pos] if self.pos < len(self.tokens) else (None, None)
++
++    def _advance(self):
++        tok = self.tokens[self.pos]
++        self.pos += 1
++        return tok
++
++    def parse(self):
++        value = self._expr()
++        if self.pos != len(self.tokens):
++            raise ValueError("unexpected trailing tokens")
++        return value
++
++    def _expr(self):
++        value = self._term()
++        while True:
++            kind, op = self._peek()
++            if kind == "OP" and op in "+-":
++                self._advance()
++                rhs = self._term()
++                value = value + rhs if op == "+" else value - rhs
++            else:
++                return value
++
++    def _term(self):
++        value = self._factor()
++        while True:
++            kind, op = self._peek()
++            if kind == "OP" and op in "*/":
++                self._advance()
++                rhs = self._factor()
++                value = value * rhs if op == "*" else value / rhs
++            else:
++                return value
++
++    def _factor(self):
++        kind, op = self._peek()
++        if kind == "OP" and op in "+-":
++            self._advance()
++            operand = self._factor()
++            return -operand if op == "-" else operand
++        return self._power()
++
++    def _power(self):
++        base = self._atom()
++        kind, op = self._peek()
++        if kind == "OP" and op == "^":
++            self._advance()
++            exponent = self._factor()  # right-assoc, looser-than-'^' unary
++            return base ** exponent
++        return base
++
++    def _atom(self):
++        kind, value = self._peek()
++        if kind == "NUMBER":
++            self._advance()
++            return float(value)
++        if kind == "CELL":
++            self._advance()
++            return self.resolve(value)
++        if kind == "LPAREN":
++            self._advance()
++            inner = self._expr()
++            close_kind, _ = self._peek()
++            if close_kind != "RPAREN":
++                raise ValueError("expected ')'")
++            self._advance()
++            return inner
++        raise ValueError("expected number, cell reference, or '('")
++
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    computed = {}          # name -> float result (memoized)
++    in_progress = set()    # names currently being evaluated (cycle detection)
++
++    def resolve(name):
++        if name in computed:
++            return computed[name]
++        if name in in_progress:
++            raise CycleError(f"cycle detected at {name!r}")
++        if name not in cells:
++            raise KeyError(name)
++
++        in_progress.add(name)
++        try:
++            raw = cells[name].strip()
++            if raw.startswith("="):
++                tokens = _tokenize(raw[1:])
++                value = _Parser(tokens, resolve).parse()
++            else:
++                value = float(raw)
++        finally:
++            in_progress.discard(name)
++
++        computed[name] = value
++        return value
++
++    return {name: resolve(name) for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..cf19fb4
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

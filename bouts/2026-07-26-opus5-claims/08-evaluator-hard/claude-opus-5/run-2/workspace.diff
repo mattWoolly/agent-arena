@@ -1,0 +1,322 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..5d36d46
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,73 @@
++# SOLUTION
++
++`sheet/engine.py` implements `evaluate(cells)` and `CycleError` in four stages:
++tokenize → parse to an AST → resolve cells in dependency order → evaluate.
++
++## Approach
++
++**Tokenizer.** A single regex alternation over numbers, cell names and
++operators, driven by an explicit position so unrecognised characters raise a
++`ValueError` pointing at the offending character instead of being silently
++skipped. Whitespace is dropped between tokens. Number literals accept
++`2`, `3.5`, `.5`, `2.` and exponent forms (`1e3`); since the grammar has no
++implicit multiplication, `2e5` can only be a number, so exponent support
++introduces no ambiguity with a cell named `e5`.
++
++**Parser.** Recursive descent, one method per precedence level, producing tuple
++nodes (`("num", v)`, `("ref", name)`, `("neg", x)`, `("bin", op, l, r)`):
++
++```
++expr  := term (('+' | '-') term)*        left-associative
++term  := unary (('*' | '/') unary)*      left-associative
++unary := ('+' | '-') unary | power       looser than '^'
++power := atom ('^' unary)?               right-associative
++atom  := number | name | '(' expr ')'
++```
++
++Placing `unary` *above* `power` and letting `^`'s right operand be a `unary` is
++what gives the two required behaviours at once: `-2^2` parses as `-(2^2) = -4`
++while `2^-2` is still legal (`0.25`), and `2^3^2 = 512`.
++
++**Cell resolution.** Each cell's AST is parsed once and its referenced names
++collected once (deduplicated, order preserved). `_resolve` then walks the
++dependency graph with an **explicit-stack DFS**, computing a cell only after all
++of its dependencies have values, memoizing into a shared `values` dict. Cells on
++the stack are "in progress"; reaching one again is a cycle, reported with the
++path (`CycleError: A -> B -> C -> A`).
++
++The explicit stack (rather than a recursive helper) is deliberate: a reference
++chain of 20 000 cells resolves fine, where recursion would hit Python's
++recursion limit. Expression evaluation itself is recursive, but only over the
++depth of a single formula.
++
++## Edge cases handled
++
++- **Forward and transitive references** — resolution is demand-driven, so
++  declaration order in the dict is irrelevant; the returned dict is
++  nevertheless keyed in the caller's input order.
++- **Diamond dependencies / repeated references** (`=B+B`, many cells sharing one
++  base) are memoized, so each cell is evaluated exactly once — no exponential
++  blowup.
++- **Unary minus** at every position: `=-3`, `=--3`, `=2--3`, `=-(A+1)`, `=2*-3`,
++  and the `-2^2` vs `(-2)^2` distinction. Unary `+` is also accepted.
++- **Cycles** of every shape: direct self-reference (`=A`, `=A+1`), mutual, longer
++  transitive loops, and a cycle that a cell merely *points at* (`{"A": "=B*0",
++  "B": "=B"}` raises rather than shortcutting the multiplication) — every cell is
++  computed because every cell appears in the result.
++- **Division by zero** propagates Python's own `ZeroDivisionError` (float
++  division raises in Python 3, so no special casing needed).
++- **Unknown references** raise `KeyError` naming both the missing cell and its
++  referrer; the spec leaves this open, so the closest built-in is used.
++- **Malformed input** (`=1+`, `=(1+2`, `=*3`, `=1 2`, `=`, `hello`) raises
++  `ValueError` with the offending formula — never a silent wrong answer and
++  never a misleading `CycleError`.
++- **Bare values** are stripped before parsing, so `" 7 "` and `"-3"` work;
++  `evaluate({})` returns `{}`; the input dict is never mutated; all returned
++  values are `float`.
++
++## Verification
++
++`python3 -m pytest -q` — 3 passed. Beyond the bundled tests, each numbered claim
++in `README.md` was exercised directly (precedence and associativity tables,
++whitespace insensitivity, forward/transitive/diamond references, cycle shapes,
++division by zero, float-valued output, deep chains, malformed input).
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..9684bc1 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,235 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine.
++
++Implements evaluate() and CycleError per README.md: a cell holds either a bare
++number or a formula (leading ``=``) built from numbers, references to other
++cells, the binary operators ``+ - * / ^``, unary minus and parentheses.
++"""
++
++import operator
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cells depend on each other in a cycle."""
++
++
++# --------------------------------------------------------------------------- #
++# Tokenizer
++# --------------------------------------------------------------------------- #
++
++_NUMBER, _NAME, _OP = "number", "name", "op"
++
++_TOKEN_RE = re.compile(
++    r"(?P<number>(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)"
++    r"|(?P<name>[A-Za-z]+[0-9]*)"
++    r"|(?P<op>[-+*/^()])"
++)
++
++
++def _tokenize(src):
++    """Split a formula body into ``(kind, value)`` tokens, ignoring whitespace."""
++    tokens = []
++    pos, end = 0, len(src)
++    while pos < end:
++        if src[pos].isspace():
++            pos += 1
++            continue
++        match = _TOKEN_RE.match(src, pos)
++        if match is None:
++            raise ValueError(f"unexpected character {src[pos]!r} in {src!r}")
++        kind, text = match.lastgroup, match.group()
++        tokens.append((kind, float(text) if kind == _NUMBER else text))
++        pos = match.end()
++    return tokens
++
++
++# --------------------------------------------------------------------------- #
++# Parser
++# --------------------------------------------------------------------------- #
++#
++# Nodes are tuples: ("num", value), ("ref", name), ("neg", operand) and
++# ("bin", op, left, right).
++#
++#   expr  := term (('+' | '-') term)*
++#   term  := unary (('*' | '/') unary)*
++#   unary := ('+' | '-') unary | power        # looser than '^': -2^2 == -(2^2)
++#   power := atom ('^' unary)?                # right-associative
++#   atom  := number | name | '(' expr ')'
++
++
++class _Parser:
++    def __init__(self, tokens, src):
++        self._tokens = tokens
++        self._src = src
++        self._pos = 0
++
++    def parse(self):
++        node = self._expr()
++        extra = self._peek()
++        if extra is not None:
++            raise ValueError(f"unexpected {extra[1]!r} in {self._src!r}")
++        return node
++
++    # -- token helpers ----------------------------------------------------- #
++
++    def _peek(self):
++        if self._pos < len(self._tokens):
++            return self._tokens[self._pos]
++        return None
++
++    def _next(self):
++        token = self._peek()
++        if token is None:
++            raise ValueError(f"unexpected end of formula in {self._src!r}")
++        self._pos += 1
++        return token
++
++    def _at_op(self, *ops):
++        token = self._peek()
++        return token is not None and token[0] == _OP and token[1] in ops
++
++    # -- grammar ----------------------------------------------------------- #
++
++    def _expr(self):
++        node = self._term()
++        while self._at_op("+", "-"):
++            op = self._next()[1]
++            node = ("bin", op, node, self._term())
++        return node
++
++    def _term(self):
++        node = self._unary()
++        while self._at_op("*", "/"):
++            op = self._next()[1]
++            node = ("bin", op, node, self._unary())
++        return node
++
++    def _unary(self):
++        if self._at_op("-"):
++            self._next()
++            return ("neg", self._unary())
++        if self._at_op("+"):
++            self._next()
++            return self._unary()
++        return self._power()
++
++    def _power(self):
++        node = self._atom()
++        if self._at_op("^"):
++            self._next()
++            return ("bin", "^", node, self._unary())
++        return node
++
++    def _atom(self):
++        kind, value = self._next()
++        if kind == _NUMBER:
++            return ("num", value)
++        if kind == _NAME:
++            return ("ref", value)
++        if value == "(":
++            node = self._expr()
++            if not self._at_op(")"):
++                raise ValueError(f"missing ')' in {self._src!r}")
++            self._next()
++            return node
++        raise ValueError(f"unexpected {value!r} in {self._src!r}")
++
++
++def _parse_cell(name, raw):
++    """Parse one cell's raw value into an AST."""
++    text = raw.strip() if isinstance(raw, str) else raw
++    if isinstance(text, str) and text.startswith("="):
++        return _Parser(_tokenize(text[1:]), text).parse()
++    try:
++        return ("num", float(text))
++    except (TypeError, ValueError):
++        raise ValueError(
++            f"cell {name!r} is neither a number nor a formula: {raw!r}"
++        ) from None
++
++
++def _collect_refs(node, found):
++    kind = node[0]
++    if kind == "ref":
++        found.append(node[1])
++    elif kind == "neg":
++        _collect_refs(node[1], found)
++    elif kind == "bin":
++        _collect_refs(node[2], found)
++        _collect_refs(node[3], found)
++    return found
++
++
++# --------------------------------------------------------------------------- #
++# Evaluation
++# --------------------------------------------------------------------------- #
++
++_BINARY_OPS = {
++    "+": operator.add,
++    "-": operator.sub,
++    "*": operator.mul,
++    "/": operator.truediv,
++    "^": operator.pow,
++}
++
++
++def _eval(node, values):
++    kind = node[0]
++    if kind == "num":
++        return node[1]
++    if kind == "ref":
++        return values[node[1]]
++    if kind == "neg":
++        return -_eval(node[1], values)
++    _, op, left, right = node
++    return _BINARY_OPS[op](_eval(left, values), _eval(right, values))
++
++
++def _resolve(start, asts, refs, values):
++    """Compute ``start`` and any cells it depends on, deepest dependency first.
++
++    The dependency walk is an explicit-stack DFS so that long reference chains
++    cannot exhaust the interpreter's recursion limit. Cells currently on the
++    stack are "in progress"; reaching one again means a cycle.
++    """
++    if start in values:
++        return
++    stack = [(start, iter(refs[start]))]
++    in_progress = {start}
++    while stack:
++        name, pending = stack[-1]
++        for dep in pending:
++            if dep in values:
++                continue
++            if dep in in_progress:
++                path = [frame[0] for frame in stack]
++                cycle = path[path.index(dep):] + [dep]
++                raise CycleError(" -> ".join(cycle))
++            if dep not in asts:
++                raise KeyError(f"unknown cell {dep!r} referenced by {name!r}")
++            in_progress.add(dep)
++            stack.append((dep, iter(refs[dep])))
++            break
++        else:
++            # Every dependency of `name` has a value, so `name` can be computed.
++            stack.pop()
++            in_progress.discard(name)
++            values[name] = _eval(asts[name], values)
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Return a dict mapping every cell name in ``cells`` to its float value.
++
++    Raises CycleError if any cell reaches itself through references.
++    """
++    asts = {name: _parse_cell(name, raw) for name, raw in cells.items()}
++    refs = {
++        name: tuple(dict.fromkeys(_collect_refs(ast, [])))
++        for name, ast in asts.items()
++    }
++
++    values = {}
++    for name in asts:
++        _resolve(name, asts, refs, values)
++    # `values` is filled in dependency order; report cells in their input order.
++    return {name: values[name] for name in cells}

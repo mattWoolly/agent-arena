@@ -1,0 +1,237 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..74bd1cd
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,63 @@
++# Solution
++
++## Approach
++
++`sheet/engine.py` has three pieces:
++
++1. **Tokenizer** — a single regex splits a formula into numbers
++   (`2`, `3.5`, `.5`), cell references (`[A-Za-z]+\d*`, matching the
++   letters-then-digits naming rule), and the operators `+ - * / ^ ( )`.
++   Whitespace is skipped between tokens; any other character raises
++   `ValueError`.
++
++2. **Recursive-descent parser/evaluator** — evaluates directly while
++   parsing (no separate AST), using a grammar that encodes the README's
++   precedence and associativity rules:
++
++   ```
++   expr  := term (('+' | '-') term)*      # left-associative
++   term  := unary (('*' | '/') unary)*    # left-associative
++   unary := '-' unary | power             # unary minus looser than ^
++   power := atom ('^' unary)?             # right-associative
++   atom  := NUMBER | REF | '(' expr ')'
++   ```
++
++   Placing `unary` above `power` makes `-2^2` parse as `-(2^2) = -4`,
++   while `(-2)^2 = 4` via parentheses. `power`'s right operand recursing
++   through `unary` gives both right-associativity (`2^3^2 = 512`) and
++   negative exponents (`2^-1 = 0.5`).
++
++3. **Lazy resolution with memoization and cycle detection** —
++   `evaluate` walks every cell; a `resolve(name)` callback computes a
++   cell on first use and caches it in the result dict, so forward and
++   transitive references work regardless of dict order and each cell is
++   evaluated exactly once. An `in_progress` set tracks the current
++   DFS path: re-entering a cell already on the path raises `CycleError`
++   (declared as a plain `Exception` subclass).
++
++## Edge cases handled
++
++- **`^` right-associative, unary minus looser than `^`**: `2^3^2 = 512`,
++  `-2^2 = -4`, `(-2)^2 = 4`, `2^-1 = 0.5`.
++- **Left-associativity of `- /`**: `8-3-2 = 3`, `8/4/2 = 1`.
++- **Real division and `ZeroDivisionError`**: `3/2 = 1.5`; dividing by a
++  zero-valued expression propagates Python's native `ZeroDivisionError`.
++- **Cycles of any length**: self-reference (`A=A`), mutual (`A↔B`), and
++  transitive (`A→B→C→A`) all raise `CycleError`; the `in_progress` set is
++  cleaned up in a `finally` so a raised error leaves no stale state.
++- **Forward/transitive references** independent of dict insertion order,
++  with memoization so shared dependencies are computed once.
++- **Multi-letter / letter+digit names** (`TOTAL`, `X12`), longest-match
++  tokenization.
++- **Whitespace anywhere between tokens**, including around the leading `=`
++  and in bare-number cells (both are `strip()`ped).
++- **All outputs are `float`**, including bare integer cells (`"2"` → `2.0`).
++- **Malformed input** (trailing tokens, unbalanced parens, unexpected
++  characters, empty formulas) raises `ValueError`; a reference to a
++  missing cell raises `KeyError`. The README leaves these unspecified, so
++  the natural Python exceptions are used.
++
++## Verification
++
++`python3 -m pytest -q` → 3 passed. Additionally exercised the edge cases
++above in a standalone script; all assertions hold.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..030f0d1
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..ad01051
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..2eecbf7 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,148 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Spreadsheet formula engine per README.md."""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell reaches itself through references."""
++
++
++_TOKEN = re.compile(
++    r"""
++    (?P<num>\d+(?:\.\d*)?|\.\d+)   # 2, 3.5, 4., .5
++  | (?P<ref>[A-Za-z]+\d*)          # A, A1, TOTAL, X12
++  | (?P<op>[-+*/^()])
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    n = len(text)
++    while pos < n:
++        if text[pos].isspace():
++            pos += 1
++            continue
++        m = _TOKEN.match(text, pos)
++        if m is None:
++            raise ValueError(f"unexpected character {text[pos]!r} in formula")
++        if m.lastgroup == "num":
++            tokens.append(("num", float(m.group())))
++        elif m.lastgroup == "ref":
++            tokens.append(("ref", m.group()))
++        else:
++            tokens.append(("op", m.group()))
++        pos = m.end()
++    return tokens
++
++
++class _Parser:
++    """Recursive descent over the grammar:
++
++    expr  := term (('+' | '-') term)*
++    term  := unary (('*' | '/') unary)*
++    unary := '-' unary | power          # unary minus binds looser than ^
++    power := atom ('^' unary)?          # right-associative
++    atom  := NUMBER | REF | '(' expr ')'
++    """
++
++    def __init__(self, tokens, resolve):
++        self.tokens = tokens
++        self.pos = 0
++        self.resolve = resolve
++
++    def peek_op(self, *ops):
++        if self.pos < len(self.tokens):
++            kind, value = self.tokens[self.pos]
++            if kind == "op" and value in ops:
++                return value
++        return None
++
++    def parse(self):
++        value = self.expr()
++        if self.pos != len(self.tokens):
++            raise ValueError(f"unexpected token {self.tokens[self.pos][1]!r}")
++        return value
++
++    def expr(self):
++        value = self.term()
++        while True:
++            op = self.peek_op("+", "-")
++            if op is None:
++                return value
++            self.pos += 1
++            rhs = self.term()
++            value = value + rhs if op == "+" else value - rhs
++
++    def term(self):
++        value = self.unary()
++        while True:
++            op = self.peek_op("*", "/")
++            if op is None:
++                return value
++            self.pos += 1
++            rhs = self.unary()
++            value = value * rhs if op == "*" else value / rhs
++
++    def unary(self):
++        if self.peek_op("-"):
++            self.pos += 1
++            return -self.unary()
++        return self.power()
++
++    def power(self):
++        value = self.atom()
++        if self.peek_op("^"):
++            self.pos += 1
++            return value ** self.unary()
++        return value
++
++    def atom(self):
++        if self.pos >= len(self.tokens):
++            raise ValueError("unexpected end of formula")
++        kind, value = self.tokens[self.pos]
++        if kind == "num":
++            self.pos += 1
++            return value
++        if kind == "ref":
++            self.pos += 1
++            return self.resolve(value)
++        if kind == "op" and value == "(":
++            self.pos += 1
++            inner = self.expr()
++            if not self.peek_op(")"):
++                raise ValueError("missing closing parenthesis")
++            self.pos += 1
++            return inner
++        raise ValueError(f"unexpected token {value!r}")
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell's float value; raise CycleError on reference cycles."""
++    values = {}
++    in_progress = set()
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in in_progress:
++            raise CycleError(f"cycle involving cell {name!r}")
++        if name not in cells:
++            raise KeyError(name)
++        in_progress.add(name)
++        try:
++            source = cells[name].strip()
++            if source.startswith("="):
++                value = _Parser(_tokenize(source[1:]), resolve).parse()
++            else:
++                value = float(source)
++        finally:
++            in_progress.discard(name)
++        values[name] = value
++        return value
++
++    for name in cells:
++        resolve(name)
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..71be9c5
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ
