@@ -5,11 +5,18 @@
 # Cross-driver counterpart of run-task.sh / run-task-codex.sh: same fixture
 # seeding, throwaway workspace outside the repo, same hidden graders,
 # byte-identical PROMPT.md. Cells are labeled "<alias>-kimicode". Kimi Code
-# runs with HOME pointed at the isolated .kimi-arena/ (gitignored), whose
-# config uses the metered Moonshot platform API key, never the user's
-# ~/.kimi-code device-code login. Prompt mode auto-approves (no --yolo
-# needed; the CLI rejects it alongside -p). Per-turn usage comes from the
-# session's wire.jsonl, which is copied into the run dir.
+# runs with HOME pointed at the isolated ~/.kimi-arena/ (OUTSIDE the repo
+# tree; override with ARENA_KIMI_HOME), whose config uses the metered
+# Moonshot platform API key, never the user's ~/.kimi-code device-code
+# login. An in-repo home is refused: it made every transcript reference
+# $ROOT (peek-check false positives) and, because Python derives user-site
+# from HOME, it hid ~/.local packages and planted an unplanted pytest fault
+# in 9/24 runs of the 2026-07-18 home bout (see analysis/
+# 2026-07-25-terminal-walkthrough). PYTHONUSERBASE is pinned to the real
+# user's ~/.local so the agent's python sees the same packages as the other
+# drivers. Prompt mode auto-approves (no --yolo needed; the CLI rejects it
+# alongside -p). Per-turn usage comes from the session's wire.jsonl, which
+# is copied into the run dir.
 set -u
 
 TASK_DIR=$(cd "$1" && pwd)
@@ -20,7 +27,18 @@ TASK_NAME=$(basename "$TASK_DIR")
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 LABEL_MODEL="kimi-k3-kimicode"
 KIMI_BIN="$HOME/.kimi-code/bin/kimi"
-ARENA_HOME="$ROOT/.kimi-arena"
+ARENA_HOME="${ARENA_KIMI_HOME:-$HOME/.kimi-arena}"
+USER_SITE_BASE="$HOME/.local"
+case "$ARENA_HOME" in
+  "$ROOT"/*|"$ROOT")
+    echo "refusing to run: ARENA_HOME ($ARENA_HOME) is inside the repo tree." >&2
+    echo "In-repo homes cause peek-check false positives and hide user-site python packages." >&2
+    exit 1;;
+esac
+if [[ ! -f "$ARENA_HOME/.kimi-code/config.toml" ]]; then
+  echo "missing $ARENA_HOME/.kimi-code/config.toml (isolated arena config with the platform key)" >&2
+  exit 1
+fi
 
 OUT_DIR="$BOUT_DIR/$TASK_NAME/$LABEL_MODEL"
 [[ -n "$RUN_IDX" ]] && OUT_DIR="$OUT_DIR/run-$RUN_IDX"
@@ -48,7 +66,7 @@ cat > "$OUT_DIR/run_env.json" <<EOF
   "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
   "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
   "proxy_upstream": "none",
-  "model_env": "none (isolated HOME=.kimi-arena)",
+  "model_env": "none (isolated HOME=$ARENA_HOME, outside repo; PYTHONUSERBASE=$USER_SITE_BASE)",
   "effort": "max (kimi-code default for k3)",
   "setting_sources": "arena config.toml only",
   "timeout_s": $TIMEOUT_S,
@@ -60,7 +78,8 @@ WIRE_MARK=$(mktemp)
 echo "[$LABEL] starting"
 START=$(date +%s.%N)
 (
-  cd "$WS" && HOME="$ARENA_HOME" timeout "$TIMEOUT_S" "$KIMI_BIN" \
+  cd "$WS" && HOME="$ARENA_HOME" PYTHONUSERBASE="$USER_SITE_BASE" \
+    timeout "$TIMEOUT_S" "$KIMI_BIN" \
     -p "$PROMPT" \
     -m "$ALIAS" \
     --output-format stream-json \
