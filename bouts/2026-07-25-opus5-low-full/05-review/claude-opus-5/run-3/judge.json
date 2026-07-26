@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode linking two defects mechanistically (e.g. the `pass` swallow on line 39 is not tied to any downstream bad state)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. `seen=[]` is 'a mutable default argument shared across calls, so IDs synced in one call are treated as duplicates and skipped in every later call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is described in isolation with no compound failure mode explained\u2014e.g. the error-swallowing `pass` at line 39 is never linked mechanistically to any other defect's persisting bad state."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the mechanism, e.g. \"`seen=[]` is a mutable default argument shared across calls, so IDs synced in one call are treated as duplicates and skipped in every later call.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Findings are listed independently with no compound failure mode explained\u2014e.g. the swallowed-exception finding (sync.py:39) is never linked mechanistically to any other defect's persisting bad state."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the mechanism, e.g. 'mutable default argument shared across calls, so IDs synced in one call are treated as duplicates and skipped in every later call.'"
+      }
+    }
+  ]
+}

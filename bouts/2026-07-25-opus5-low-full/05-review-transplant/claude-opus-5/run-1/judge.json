@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:5 finding explains a compound failure mode mechanistically: an exception from the line 11 email defect 'exits without closing the handle, leaking the file descriptor and leaving buffered writes unflushed' precisely because line 5 dropped the context manager."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the mechanism and breaking conditions, e.g. `range(total_count // PAGE_SIZE)` 'floor-divides, so the final partial page is never fetched' and `seen=[]` 'is a mutable default argument shared across every call.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line citation (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation and no compound failure mode combining two separate defects is explained (the report.py:5 note stays within a single finding's control flow)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism and triggering conditions, e.g. `seen=[]` being a shared mutable default causing later syncs to \"skip 100% of rows and return 0.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The report.py:5 finding explains a compound failure mode mechanistically\u2014\"any exception from line 11\" (the nullable-email defect) combines with the missing context manager to exit \"without closing the handle, leaking the file descriptor and leaving buffered writes unflushed.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism and triggering conditions, e.g. floor division means \"the final partial page is never fetched\" and the mutable default \"is shared across every call, so IDs from earlier invocations persist.\""
+      }
+    }
+  ]
+}

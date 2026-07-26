@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure, e.g. \"Gadget earns 2.12 times what Sprocket earns from 6.7% as many units\" and \"35.0% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures, e.g. \"Push Gadget in West, which books only $299.00 of Gadget revenue versus North's $747.50 \u2014 a 60.0% gap.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations like the Sprocket volume/revenue outlier (238 units, only 15.8%) and the median sitting \"14.1% below the mean\" driven by large Gadget orders."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure, e.g. \"Gadget earns 2.12 times what Sprocket earns from 6.7% as many units\" and \"West trails at $1,414.82... 35.0% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures, e.g. \"Push Gadget in West, which books only $299.00 of Gadget revenue versus North's $747.50 \u2014 a 60.0% gap.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear, including the median-vs-mean skew (\"a few large Gadget orders pull the average upward\") and the Sprocket volume/revenue mismatch (\"238 units... only $1,130.50 (15.8%) of revenue because it sells at $4.75\")."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. 'Gadget earns 2.12 times what Sprocket earns from 6.7% as many units' and 'West trails at $1,414.82, 19.8% of the total and 35.0% below North.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products, regions, and figures \u2014 e.g. 'Push Gadget in West, which books only $299.00 of Gadget revenue versus North's $747.50 \u2014 a 60.0% gap.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations like the mean/median skew from large Gadget orders and 'Sprocket is the volume outlier: 238 units... but only $1,130.50 (15.8%) of revenue because it sells at $4.75.'"
+      }
+    }
+  ]
+}

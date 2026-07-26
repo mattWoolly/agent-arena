@@ -1,0 +1,14 @@
+diff --git a/findings.md b/findings.md
+new file mode 100644
+index 0000000..e058093
+--- /dev/null
++++ b/findings.md
+@@ -0,0 +1,8 @@
++- src/sync.py:14 Floor division `total_count // PAGE_SIZE` drops the final partial page, so any count not a multiple of 100 silently loses up to 99 users (e.g. total_count=250 syncs 200 = 80.0% of rows; total_count=99 syncs 0 = 0%).
++- src/sync.py:17 LIMIT/OFFSET paging with no ORDER BY relies on unspecified row order, so concurrent inserts/deletes between pages can skip or duplicate rows across the 100-row windows.
++- src/sync.py:24 Mutable default argument `seen=[]` is shared across all calls, so a second `sync_users(users)` invocation with the same records skips 100% of them and returns 0 instead of re-applying updates.
++- src/sync.py:35 Replacing the parameterized UPDATE with an f-string interpolates `email` directly into SQL, creating an injection vector (e.g. `x'; DROP TABLE users; --`) and breaking on any legitimate email containing an apostrophe.
++- src/sync.py:39 The `except Exception: pass` replaces `log.exception`, so every failed UPDATE is silently discarded; combined with the injection at line 35, malformed or malicious email values corrupt or skip writes with no diagnostic trace at all.
++- src/report.py:7 Early `return 0` occurs after `open(path, "w")` on line 5, leaking the file handle (and leaving a truncated report file) whenever `users` is empty.
++- src/report.py:11 `user["email"].lower()` raises AttributeError for the NULLABLE email documented in src/db.py:4-5 (phone-invited users), losing the previous `or "unverified"` fallback; the edge case where email is present but has no "@" additionally raises IndexError from `split("@")[1]`.
++- src/report.py:13 `f.close()` is no longer protected by a `with` block, so any exception raised in the loop at line 11 — including the AttributeError/IndexError above — leaks the handle and leaves the report partially written.

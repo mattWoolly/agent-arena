@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. \"top two products together account for roughly 63% of total revenue\" and West \"about 35% below North\" with a \"$761.53\" spread."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names specific products/regions and figures, e.g. \"Investigate West, the lowest region at $1,414.82\" and \"Test whether Sprocket, last at $1,130.50, deserves continued shelf space.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable, non-obvious observations like revenue concentration (\"performance is concentrated in a narrow part of the catalog\") and the regional gap being \"wide enough to matter but not so wide that any region looks unviable.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Essentially every comparison carries a computed figure\u2014'top two products together account for roughly 63% of total revenue,' 'about 35% below North,' and 'spread between best and worst region is $761.53.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products/regions with figures, e.g., 'Investigate West, the lowest region at $1,414.82' and 'Test whether Sprocket, last at $1,130.50, deserves continued shelf space.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Multiple actionable, non-obvious observations appear\u2014revenue concentration ('performance is concentrated in a narrow part of the catalog'), the regional gap framing, and diagnosing whether West's shortfall is 'fewer orders or smaller average order size.'"
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'roughly 63% of total revenue', 'about 35% below North', and 'spread between best and worst region is $761.53'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names products and figures \u2014 'Protect Gadget and Widget supply', 'Investigate West, the lowest region at $1,414.82', and 'Test whether Sprocket, last at $1,130.50, deserves continued shelf space'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable points including revenue concentration ('top two products together account for roughly 63%'), the regional gap, and the West outlier '35% below North'."
+      }
+    }
+  ]
+}
