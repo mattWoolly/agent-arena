@@ -1,0 +1,6 @@
+ SOLUTION.md                                        |  33 +++++++++++++++
+ configloader/__pycache__/__init__.cpython-312.pyc  | Bin 0 -> 239 bytes
+ configloader/__pycache__/loader.cpython-312.pyc    | Bin 0 -> 2318 bytes
+ configloader/loader.py                             |  46 ++++++++++++++++++---
+ .../test_loader.cpython-312-pytest-9.0.3.pyc       | Bin 0 -> 7461 bytes
+ 5 files changed, 73 insertions(+), 6 deletions(-)

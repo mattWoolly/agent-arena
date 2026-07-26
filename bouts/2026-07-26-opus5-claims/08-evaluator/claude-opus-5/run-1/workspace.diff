@@ -1,0 +1,267 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..27a9f18
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,57 @@
++# Solution
++
++`sheet/engine.py` implements `evaluate(cells)` and `CycleError`. Tests: `python3 -m pytest -q` → 3 passed.
++
++## Approach
++
++Three passes over the book, which keeps cycle detection separate from arithmetic:
++
++1. **Scan.** Each value is stripped; if it starts with `=` the remainder is tokenized
++   (numbers, cell names, and the operators `+ - * / ( )`), otherwise it is a literal
++   parsed with `float()`. Whitespace is skipped by the scanner, so it is insignificant
++   between tokens. An unrecognized character is an error rather than silently ignored.
++2. **Order.** The grammar has no functions, so *every* name token in a formula is a
++   reference — the dependency graph falls straight out of the token lists without
++   parsing. An iterative DFS (`_dependency_order`) marks nodes grey on entry and black
++   on exit; reaching a grey node means a cycle, and `CycleError` carries the path
++   (`cycle: A -> B -> A`). Every cell is used as a DFS root, since `evaluate` must
++   return all of them.
++3. **Evaluate.** Cells are computed in dependency order, so a formula's references are
++   already in the results dict — forward references and transitive chains need no
++   special case. `_Parser` is a recursive-descent evaluator over one cell's tokens with
++   the standard `expression → term → factor → primary` layering, which gives `*` and `/`
++   tighter binding than `+` and `-`, left associativity, parenthesized grouping, and
++   unary minus at the `factor` level (so `=-2*3` is `-6`, not `-(2*3)` by accident —
++   same value here, but `=-2+3` distinguishes them).
++
++Detecting cycles before any arithmetic means a cyclic book reports `CycleError` rather
++than whatever error the half-evaluated cells happen to hit first.
++
++## Edge cases handled
++
++- **Left associativity** — `=10-3-2` is `5`, `=100/5/2` is `10`. A naive right-folding
++  parser gets both wrong.
++- **Unary minus** stacking and following an operator: `=--3`, `=2*-3`, `=-(A+1)`.
++- **Division** is real division (`=3/2` → `1.5`); `=1/0` propagates Python's
++  `ZeroDivisionError` untouched, per the spec.
++- **Repeated and diamond references** — `=A+A`, or two cells both reading `A`, are not
++  mistaken for cycles: only *grey* (on the current DFS path) is a cycle, black is a
++  finished node.
++- **Cycles that don't include the entry cell** — `A → B → C → B` is caught with the
++  cycle reported as `B -> C -> B`, not as involving `A`.
++- **Self reference** — `=A` and `=A+1` in cell `A`.
++- **Deep books don't overflow the stack.** Dependency traversal uses an explicit stack,
++  and binary operators are folded in a loop as they are read, so a 5000-cell reference
++  chain and a 5000-term `=1+1+...` both evaluate (recursion depth tracks only nesting
++  of parentheses/unary minus, not input length). Verified for chains and cycles of 5000
++  cells. The remaining bound is literal nesting depth: ~1000 nested parens in a single
++  formula still hits `RecursionError`.
++- **Malformed input fails loudly** rather than returning a wrong number: `=1+`,
++  `=(1+2`, `=1+2)`, `=`, `=1 2`, and `=1%2` raise `ValueError`; a non-numeric literal
++  like `hello` names the offending cell in the message.
++- **Unknown references** raise `KeyError` naming the cell and the missing reference.
++  The spec doesn't cover this case, so it follows the "usual Python" precedent it sets
++  for division by zero; unknown names are skipped during the DFS so they surface as
++  this error rather than a spurious cycle.
++- Cell names are letters followed by optional digits (`A`, `A1`, `TOTAL`, `X12`), the
++  input dict is never mutated, and `evaluate({})` returns `{}`.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..cffd100
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..fb22abf
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..d2088c7 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,184 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine (see README.md)."""
++
++import re
++
++__all__ = ["evaluate", "CycleError"]
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell reaches itself through references."""
++
++
++_NUMBER = r"\d+\.\d*|\.\d+|\d+"
++_NAME = r"[A-Za-z]+\d*"
++_TOKEN_RE = re.compile(r"(?P<number>%s)|(?P<name>%s)|(?P<op>[-+*/()])" % (_NUMBER, _NAME))
++
++_ADD_OPS = ("+", "-")
++_MUL_OPS = ("*", "/")
++
++_GREY, _BLACK = 1, 2
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell in ``cells``, returning a name -> float dict."""
++    tokens = {}
++    literals = {}
++    deps = {}
++    for cell, raw in cells.items():
++        text = raw.strip()
++        if text.startswith("="):
++            tokens[cell] = _tokenize(text[1:], cell)
++            deps[cell] = [tok for kind, tok in tokens[cell] if kind == "name"]
++        else:
++            literals[cell] = _literal(text, cell)
++            deps[cell] = ()
++
++    values = {}
++    for cell in _dependency_order(cells, deps):
++        if cell in literals:
++            values[cell] = literals[cell]
++        else:
++            values[cell] = _Parser(tokens[cell], values, cell).parse()
++    return values
++
++
++def _literal(text, cell):
++    try:
++        return float(text)
++    except ValueError:
++        raise ValueError("%s: %r is not a number or a formula" % (cell, text)) from None
++
++
++def _tokenize(text, cell):
++    tokens = []
++    pos, end = 0, len(text)
++    while pos < end:
++        if text[pos].isspace():
++            pos += 1
++            continue
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            raise ValueError("%s: unexpected character %r" % (cell, text[pos]))
++        tokens.append((match.lastgroup, match.group()))
++        pos = match.end()
++    return tokens
++
++
++def _dependency_order(cells, deps):
++    """Return cell names ordered so every cell follows the cells it reads.
++
++    Uses an explicit stack rather than recursion so that long reference
++    chains cannot exhaust the interpreter's stack.
++    """
++    state = {}
++    order = []
++    for root in cells:
++        if root in state:
++            continue
++        state[root] = _GREY
++        stack = [(root, iter(deps[root]))]
++        while stack:
++            cell, pending = stack[-1]
++            descended = False
++            for dep in pending:
++                if dep not in deps:
++                    continue  # unknown cell; reported when the formula is read
++                marker = state.get(dep)
++                if marker == _GREY:
++                    raise CycleError(_describe_cycle(stack, dep))
++                if marker is None:
++                    state[dep] = _GREY
++                    stack.append((dep, iter(deps[dep])))
++                    descended = True
++                    break
++            if descended:
++                continue
++            state[cell] = _BLACK
++            order.append(cell)
++            stack.pop()
++    return order
++
++
++def _describe_cycle(stack, dep):
++    path = [cell for cell, _ in stack]
++    return "cycle: " + " -> ".join(path[path.index(dep):] + [dep])
++
++
++class _Parser:
++    """Recursive-descent evaluator for a single formula's token list.
++
++    Binary operators are folded in a loop as they are read, so the recursion
++    depth tracks only how deeply parentheses and unary minus are nested.
++    """
++
++    def __init__(self, tokens, values, cell):
++        self._tokens = tokens
++        self._values = values
++        self._cell = cell
++        self._pos = 0
++
++    def parse(self):
++        value = self._expression()
++        token = self._peek()
++        if token is not None:
++            raise ValueError("%s: unexpected %r" % (self._cell, token[1]))
++        return value
++
++    def _peek(self):
++        if self._pos < len(self._tokens):
++            return self._tokens[self._pos]
++        return None
++
++    def _next_op(self, ops):
++        token = self._peek()
++        if token is not None and token[0] == "op" and token[1] in ops:
++            self._pos += 1
++            return token[1]
++        return None
++
++    def _expression(self):
++        value = self._term()
++        while True:
++            op = self._next_op(_ADD_OPS)
++            if op is None:
++                return value
++            right = self._term()
++            value = value + right if op == "+" else value - right
++
++    def _term(self):
++        value = self._factor()
++        while True:
++            op = self._next_op(_MUL_OPS)
++            if op is None:
++                return value
++            right = self._factor()
++            value = value * right if op == "*" else value / right
++
++    def _factor(self):
++        op = self._next_op(_ADD_OPS)
++        if op is None:
++            return self._primary()
++        value = self._factor()
++        return -value if op == "-" else value
++
++    def _primary(self):
++        token = self._peek()
++        if token is None:
++            raise ValueError("%s: unexpected end of formula" % self._cell)
++        kind, text = token
++        self._pos += 1
++        if kind == "number":
++            return float(text)
++        if kind == "name":
++            try:
++                return self._values[text]
++            except KeyError:
++                raise KeyError(
++                    "%s references unknown cell %r" % (self._cell, text)
++                ) from None
++        if text == "(":
++            value = self._expression()
++            if self._next_op((")",)) is None:
++                raise ValueError("%s: missing ')'" % self._cell)
++            return value
++        raise ValueError("%s: unexpected %r" % (self._cell, text))
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..fbb53c7
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ
