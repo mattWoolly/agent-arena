@@ -13,6 +13,7 @@ bin/
   arena-proxy.sh # start/stop a local translation proxy for models with no Anthropic-compatible endpoint
   run-task-codex.sh # run-task.sh's Codex-CLI counterpart: same fixtures/graders, codex exec driver, "<model>-codex" cells
   metrics_codex.py  # metrics for codex --json transcripts (same output keys; cost from per-turn usage + env/prices.json)
+  behavior.py    # behavioral fingerprint across runs: tool tempo, first moves, verification breadth, self-authored checks (compare only at matched CLI versions or with same-window anchors)
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
 env/

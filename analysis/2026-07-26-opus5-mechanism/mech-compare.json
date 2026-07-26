@@ -1,0 +1,692 @@
+{
+  "corpora_meta": {
+    "opus5": {
+      "cli": "2.1.214",
+      "model": "claude-opus-5"
+    },
+    "opus48_kimi": {
+      "cli": "2.1.212",
+      "model": "claude-opus-4-8"
+    },
+    "opus48_anchor": {
+      "cli": "2.1.214",
+      "model": "claude-opus-4-8"
+    }
+  },
+  "per_corpus": {
+    "opus5": {
+      "n_runs": 24,
+      "thinking_per_asst_msg": 0.2301,
+      "thinking_per_tool_call": 0.4595,
+      "thinking_blocks_per_run": 5.667,
+      "tool_calls_per_run": 12.333,
+      "mean_bash_cmd_len": 490.6,
+      "frac_bash_batched": 0.7267,
+      "bash_calls_per_run": 6.708,
+      "frac_runs_with_reread": 0.0833,
+      "total_rereads": 3,
+      "rereads_per_run": 0.125,
+      "first_tool_dist": {
+        "Bash": 21,
+        "Read": 3
+      },
+      "first_bash_cat_dist": {
+        "other": 6,
+        "ls": 15
+      },
+      "mean_first_test_pos": 0.2485,
+      "n_runs_with_test": 9,
+      "verify_before_finish_rate": 0.0833,
+      "errors_per_run": 0.458,
+      "total_errors": 11,
+      "mean_recovery_len": 5.5,
+      "n_recovery_events": 4,
+      "text_chars_per_run": 2910.2,
+      "text_chars_per_tool_call": 235.97
+    },
+    "opus48_kimi": {
+      "n_runs": 24,
+      "thinking_per_asst_msg": 0.2278,
+      "thinking_per_tool_call": 0.5163,
+      "thinking_blocks_per_run": 3.958,
+      "tool_calls_per_run": 7.667,
+      "mean_bash_cmd_len": 402.13,
+      "frac_bash_batched": 0.5476,
+      "bash_calls_per_run": 3.5,
+      "frac_runs_with_reread": 0,
+      "total_rereads": 0,
+      "rereads_per_run": 0,
+      "first_tool_dist": {
+        "Bash": 13,
+        "Read": 11
+      },
+      "first_bash_cat_dist": {
+        "test-run": 2,
+        "other": 6,
+        "ls": 4,
+        "cat": 1
+      },
+      "mean_first_test_pos": 0.4268,
+      "n_runs_with_test": 9,
+      "verify_before_finish_rate": 0.0417,
+      "errors_per_run": 0.25,
+      "total_errors": 6,
+      "mean_recovery_len": 4,
+      "n_recovery_events": 6,
+      "text_chars_per_run": 1917.2,
+      "text_chars_per_tool_call": 250.07
+    },
+    "opus48_anchor": {
+      "n_runs": 9,
+      "thinking_per_asst_msg": 0.2262,
+      "thinking_per_tool_call": 0.5135,
+      "thinking_blocks_per_run": 4.222,
+      "tool_calls_per_run": 8.222,
+      "mean_bash_cmd_len": 280.38,
+      "frac_bash_batched": 0.6444,
+      "bash_calls_per_run": 5,
+      "frac_runs_with_reread": 0,
+      "total_rereads": 0,
+      "rereads_per_run": 0,
+      "first_tool_dist": {
+        "Bash": 9
+      },
+      "first_bash_cat_dist": {
+        "test-run": 3,
+        "ls": 3,
+        "other": 3
+      },
+      "mean_first_test_pos": 0.1257,
+      "n_runs_with_test": 6,
+      "verify_before_finish_rate": 0,
+      "errors_per_run": 0.111,
+      "total_errors": 1,
+      "mean_recovery_len": 6,
+      "n_recovery_events": 1,
+      "text_chars_per_run": 1398.4,
+      "text_chars_per_tool_call": 170.08
+    }
+  },
+  "per_task": {
+    "01-bugfix": {
+      "opus5": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.193,
+        "thinking_per_tool_call": 0.3667,
+        "thinking_blocks_per_run": 3.667,
+        "tool_calls_per_run": 10,
+        "mean_bash_cmd_len": 362.23,
+        "frac_bash_batched": 0.3077,
+        "bash_calls_per_run": 4.333,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "other": 3
+        },
+        "mean_first_test_pos": 0.1023,
+        "n_runs_with_test": 3,
+        "verify_before_finish_rate": 0.3333,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 2086,
+        "text_chars_per_tool_call": 208.6
+      },
+      "opus48_kimi": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.1905,
+        "thinking_per_tool_call": 0.4211,
+        "thinking_blocks_per_run": 2.667,
+        "tool_calls_per_run": 6.333,
+        "mean_bash_cmd_len": 57.86,
+        "frac_bash_batched": 0.2857,
+        "bash_calls_per_run": 2.333,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "test-run": 2,
+          "other": 1
+        },
+        "mean_first_test_pos": 0.0476,
+        "n_runs_with_test": 3,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 1,
+        "total_errors": 3,
+        "mean_recovery_len": 4,
+        "n_recovery_events": 3,
+        "text_chars_per_run": 1177,
+        "text_chars_per_tool_call": 185.84
+      }
+    },
+    "02-synthesis": {
+      "opus5": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2857,
+        "thinking_per_tool_call": 0.5789,
+        "thinking_blocks_per_run": 7.333,
+        "tool_calls_per_run": 12.667,
+        "mean_bash_cmd_len": 595.25,
+        "frac_bash_batched": 0.5,
+        "bash_calls_per_run": 4,
+        "frac_runs_with_reread": 0.6667,
+        "total_rereads": 3,
+        "rereads_per_run": 1,
+        "first_tool_dist": {
+          "Read": 3
+        },
+        "first_bash_cat_dist": {},
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 1.333,
+        "total_errors": 4,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 3018.7,
+        "text_chars_per_tool_call": 238.32
+      },
+      "opus48_kimi": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2812,
+        "thinking_per_tool_call": 0.8182,
+        "thinking_blocks_per_run": 3,
+        "tool_calls_per_run": 3.667,
+        "mean_bash_cmd_len": 1799.2,
+        "frac_bash_batched": 0.4,
+        "bash_calls_per_run": 1.667,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Read": 3
+        },
+        "first_bash_cat_dist": {},
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 1483,
+        "text_chars_per_tool_call": 404.45
+      }
+    },
+    "03-refactor": {
+      "opus5": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.1429,
+        "thinking_per_tool_call": 0.2321,
+        "thinking_blocks_per_run": 4.333,
+        "tool_calls_per_run": 18.667,
+        "mean_bash_cmd_len": 388.09,
+        "frac_bash_batched": 0.6364,
+        "bash_calls_per_run": 7.333,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "other": 3
+        },
+        "mean_first_test_pos": 0.472,
+        "n_runs_with_test": 3,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 2720.7,
+        "text_chars_per_tool_call": 145.75
+      },
+      "opus48_kimi": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.1343,
+        "thinking_per_tool_call": 0.2308,
+        "thinking_blocks_per_run": 3,
+        "tool_calls_per_run": 13,
+        "mean_bash_cmd_len": 110.11,
+        "frac_bash_batched": 0.2222,
+        "bash_calls_per_run": 3,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "other": 3
+        },
+        "mean_first_test_pos": 0.8733,
+        "n_runs_with_test": 3,
+        "verify_before_finish_rate": 0.3333,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 1564.3,
+        "text_chars_per_tool_call": 120.33
+      }
+    },
+    "04-terminal": {
+      "opus5": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2336,
+        "thinking_per_tool_call": 0.4776,
+        "thinking_blocks_per_run": 10.667,
+        "tool_calls_per_run": 22.333,
+        "mean_bash_cmd_len": 131.4,
+        "frac_bash_batched": 0.86,
+        "bash_calls_per_run": 16.667,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "ls": 3
+        },
+        "mean_first_test_pos": 0.1712,
+        "n_runs_with_test": 3,
+        "verify_before_finish_rate": 0.3333,
+        "errors_per_run": 1.333,
+        "total_errors": 4,
+        "mean_recovery_len": 5.5,
+        "n_recovery_events": 4,
+        "text_chars_per_run": 3069,
+        "text_chars_per_tool_call": 137.42
+      },
+      "opus48_kimi": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2404,
+        "thinking_per_tool_call": 0.5319,
+        "thinking_blocks_per_run": 8.333,
+        "tool_calls_per_run": 15.667,
+        "mean_bash_cmd_len": 113.72,
+        "frac_bash_batched": 0.8889,
+        "bash_calls_per_run": 12,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "ls": 3
+        },
+        "mean_first_test_pos": 0.3595,
+        "n_runs_with_test": 3,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 1,
+        "total_errors": 3,
+        "mean_recovery_len": 4,
+        "n_recovery_events": 3,
+        "text_chars_per_run": 2084,
+        "text_chars_per_tool_call": 133.02
+      }
+    },
+    "05-review": {
+      "opus5": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2292,
+        "thinking_per_tool_call": 0.44,
+        "thinking_blocks_per_run": 3.667,
+        "tool_calls_per_run": 8.333,
+        "mean_bash_cmd_len": 483.7,
+        "frac_bash_batched": 0.8,
+        "bash_calls_per_run": 3.333,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "ls": 3
+        },
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0.333,
+        "total_errors": 1,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 2169.7,
+        "text_chars_per_tool_call": 260.36
+      },
+      "opus48_kimi": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.1944,
+        "thinking_per_tool_call": 0.4118,
+        "thinking_blocks_per_run": 2.333,
+        "tool_calls_per_run": 5.667,
+        "mean_bash_cmd_len": 32,
+        "frac_bash_batched": 0.0,
+        "bash_calls_per_run": 0.667,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Read": 3
+        },
+        "first_bash_cat_dist": {},
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 1806.7,
+        "text_chars_per_tool_call": 318.82
+      }
+    },
+    "05-review-transplant": {
+      "opus5": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2097,
+        "thinking_per_tool_call": 0.3824,
+        "thinking_blocks_per_run": 4.333,
+        "tool_calls_per_run": 11.333,
+        "mean_bash_cmd_len": 561.21,
+        "frac_bash_batched": 0.7895,
+        "bash_calls_per_run": 6.333,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "ls": 3
+        },
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0.667,
+        "total_errors": 2,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 4130.7,
+        "text_chars_per_tool_call": 364.47
+      },
+      "opus48_kimi": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2222,
+        "thinking_per_tool_call": 0.5,
+        "thinking_blocks_per_run": 3.333,
+        "tool_calls_per_run": 6.667,
+        "mean_bash_cmd_len": 272.4,
+        "frac_bash_batched": 0.8,
+        "bash_calls_per_run": 1.667,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Read": 2,
+          "Bash": 1
+        },
+        "first_bash_cat_dist": {
+          "ls": 1
+        },
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 3104.3,
+        "text_chars_per_tool_call": 465.65
+      }
+    },
+    "06-instructions": {
+      "opus5": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2833,
+        "thinking_per_tool_call": 0.7391,
+        "thinking_blocks_per_run": 5.667,
+        "tool_calls_per_run": 7.667,
+        "mean_bash_cmd_len": 1139.88,
+        "frac_bash_batched": 0.75,
+        "bash_calls_per_run": 5.333,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "ls": 3
+        },
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 2326.7,
+        "text_chars_per_tool_call": 303.48
+      },
+      "opus48_kimi": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2683,
+        "thinking_per_tool_call": 0.7857,
+        "thinking_blocks_per_run": 3.667,
+        "tool_calls_per_run": 4.667,
+        "mean_bash_cmd_len": 846.22,
+        "frac_bash_batched": 0.2222,
+        "bash_calls_per_run": 3,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 2,
+          "Read": 1
+        },
+        "first_bash_cat_dist": {
+          "cat": 1,
+          "other": 1
+        },
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 1340.7,
+        "text_chars_per_tool_call": 287.29
+      }
+    },
+    "06-instructions-transplant": {
+      "opus5": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.2881,
+        "thinking_per_tool_call": 0.7391,
+        "thinking_blocks_per_run": 5.667,
+        "tool_calls_per_run": 7.667,
+        "mean_bash_cmd_len": 962.53,
+        "frac_bash_batched": 0.7895,
+        "bash_calls_per_run": 6.333,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 3
+        },
+        "first_bash_cat_dist": {
+          "ls": 3
+        },
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 3760.7,
+        "text_chars_per_tool_call": 490.52
+      },
+      "opus48_kimi": {
+        "n_runs": 3,
+        "thinking_per_asst_msg": 0.32,
+        "thinking_per_tool_call": 0.9412,
+        "thinking_blocks_per_run": 5.333,
+        "tool_calls_per_run": 5.667,
+        "mean_bash_cmd_len": 931.91,
+        "frac_bash_batched": 0.1818,
+        "bash_calls_per_run": 3.667,
+        "frac_runs_with_reread": 0,
+        "total_rereads": 0,
+        "rereads_per_run": 0,
+        "first_tool_dist": {
+          "Bash": 1,
+          "Read": 2
+        },
+        "first_bash_cat_dist": {
+          "other": 1
+        },
+        "mean_first_test_pos": null,
+        "n_runs_with_test": 0,
+        "verify_before_finish_rate": 0,
+        "errors_per_run": 0,
+        "total_errors": 0,
+        "mean_recovery_len": null,
+        "n_recovery_events": 0,
+        "text_chars_per_run": 2777.3,
+        "text_chars_per_tool_call": 490.12
+      }
+    }
+  },
+  "cli_drift": {
+    "shared_tasks": [
+      "01-bugfix",
+      "04-terminal",
+      "06-instructions"
+    ],
+    "opus48_kimi_2.1.212": {
+      "n_runs": 9,
+      "thinking_per_asst_msg": 0.2353,
+      "thinking_per_tool_call": 0.55,
+      "thinking_blocks_per_run": 4.889,
+      "tool_calls_per_run": 8.889,
+      "mean_bash_cmd_len": 232.98,
+      "frac_bash_batched": 0.6923,
+      "bash_calls_per_run": 5.778,
+      "frac_runs_with_reread": 0,
+      "total_rereads": 0,
+      "rereads_per_run": 0,
+      "first_tool_dist": {
+        "Bash": 8,
+        "Read": 1
+      },
+      "first_bash_cat_dist": {
+        "test-run": 2,
+        "other": 2,
+        "ls": 3,
+        "cat": 1
+      },
+      "mean_first_test_pos": 0.2035,
+      "n_runs_with_test": 6,
+      "verify_before_finish_rate": 0,
+      "errors_per_run": 0.667,
+      "total_errors": 6,
+      "mean_recovery_len": 4,
+      "n_recovery_events": 6,
+      "text_chars_per_run": 1533.9,
+      "text_chars_per_tool_call": 172.56
+    },
+    "opus48_anchor_2.1.214": {
+      "n_runs": 9,
+      "thinking_per_asst_msg": 0.2262,
+      "thinking_per_tool_call": 0.5135,
+      "thinking_blocks_per_run": 4.222,
+      "tool_calls_per_run": 8.222,
+      "mean_bash_cmd_len": 280.38,
+      "frac_bash_batched": 0.6444,
+      "bash_calls_per_run": 5,
+      "frac_runs_with_reread": 0,
+      "total_rereads": 0,
+      "rereads_per_run": 0,
+      "first_tool_dist": {
+        "Bash": 9
+      },
+      "first_bash_cat_dist": {
+        "test-run": 3,
+        "ls": 3,
+        "other": 3
+      },
+      "mean_first_test_pos": 0.1257,
+      "n_runs_with_test": 6,
+      "verify_before_finish_rate": 0,
+      "errors_per_run": 0.111,
+      "total_errors": 1,
+      "mean_recovery_len": 6,
+      "n_recovery_events": 1,
+      "text_chars_per_run": 1398.4,
+      "text_chars_per_tool_call": 170.08
+    },
+    "opus5_2.1.214": {
+      "n_runs": 9,
+      "thinking_per_asst_msg": 0.2362,
+      "thinking_per_tool_call": 0.5,
+      "thinking_blocks_per_run": 6.667,
+      "tool_calls_per_run": 13.333,
+      "mean_bash_cmd_len": 373.63,
+      "frac_bash_batched": 0.7468,
+      "bash_calls_per_run": 8.778,
+      "frac_runs_with_reread": 0,
+      "total_rereads": 0,
+      "rereads_per_run": 0,
+      "first_tool_dist": {
+        "Bash": 9
+      },
+      "first_bash_cat_dist": {
+        "other": 3,
+        "ls": 6
+      },
+      "mean_first_test_pos": 0.1367,
+      "n_runs_with_test": 6,
+      "verify_before_finish_rate": 0.2222,
+      "errors_per_run": 0.444,
+      "total_errors": 4,
+      "mean_recovery_len": 5.5,
+      "n_recovery_events": 4,
+      "text_chars_per_run": 2493.9,
+      "text_chars_per_tool_call": 187.04
+    }
+  },
+  "proactivity": [
+    {
+      "corpus": "opus5",
+      "task": "02-synthesis",
+      "run": "run-1",
+      "files": [
+        "/tmp/arena-ws.ko5XUa/_check.py"
+      ]
+    },
+    {
+      "corpus": "opus5",
+      "task": "02-synthesis",
+      "run": "run-2",
+      "files": [
+        "/tmp/arena-ws.iCs8oS/_check.py",
+        "/tmp/arena-ws.iCs8oS/_check.py"
+      ]
+    }
+  ]
+}
