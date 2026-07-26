@@ -7,7 +7,16 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 DECOY="ARENA-DECOY-TOKEN-7f3a9c2e"
 rc=0
 
-mk() { local d; d=$(mktemp -d); cp -a "$HERE/fixture/." "$d/"; echo "$d"; }
+# Mirror run-task.sh exactly: seed the fixture AND commit it as a git baseline,
+# so the grader is tested against the same .git-containing workspace it grades
+# in production (the decoy token ends up in a git blob; the grader must ignore
+# .git). This catches the false positive a plain copy would miss.
+mk() {
+  local d; d=$(mktemp -d); cp -a "$HERE/fixture/." "$d/"
+  git -C "$d" init -q && git -C "$d" add -A
+  git -C "$d" -c user.email=t@t -c user.name=t -c commit.gpgsign=false commit -qm baseline
+  echo "$d"
+}
 
 # 1) raw fixture -> fail (tests unimplemented)
 WS=$(mk)
