@@ -6,9 +6,13 @@ used for turns and tool-call composition) and wire.jsonl (the session
 journal copied by run-task-kimi.sh, whose usage.record events carry per-turn
 inputOther / inputCacheRead / inputCacheCreation / output). Emits the same
 metric keys as metrics.py so summarize.py merges drivers into one table.
-Cost comes from env/prices.json under the "kimi-k3" key; cache-creation
-tokens are billed at the full input rate (conservative: Moonshot's platform
-reported zero cache-creation tokens in probing).
+Cost comes from env/prices.json under the price key (optional third argv,
+default "kimi-k3"); cache-creation tokens are billed at the full input rate
+(conservative: Moonshot's platform reported zero cache-creation tokens in
+probing). Also extracted from wire.jsonl: thinking_chars (total characters
+of "think" content parts across the run) and requested_efforts (the set of
+thinkingEffort values observed on llm.request events), so effort-ladder
+cells prove what was requested rather than assuming it.
 """
 import json
 import sys
@@ -16,7 +20,7 @@ from collections import Counter
 from pathlib import Path
 
 
-def main(out_dir: str, label: str) -> None:
+def main(out_dir: str, label: str, price_key: str = "kimi-k3") -> None:
     out = Path(out_dir)
     metrics = {"model": label}
 
@@ -47,6 +51,8 @@ def main(out_dir: str, label: str) -> None:
     metrics["tool_calls_total"] = sum(tool_calls.values())
 
     usage_records = []
+    thinking_chars = 0
+    requested_efforts = set()
     wpath = out / "wire.jsonl"
     if wpath.exists():
         for line in wpath.read_text().splitlines():
@@ -56,6 +62,16 @@ def main(out_dir: str, label: str) -> None:
                 continue
             if ev.get("type") == "usage.record" and ev.get("usageScope") == "turn":
                 usage_records.append(ev.get("usage") or {})
+            elif ev.get("type") == "llm.request":
+                eff = ev.get("thinkingEffort")
+                if eff:
+                    requested_efforts.add(eff)
+            elif ev.get("type") == "context.append_loop_event":
+                part = (ev.get("event") or {}).get("part") or {}
+                if part.get("type") == "think":
+                    thinking_chars += len(part.get("think") or "")
+    metrics["thinking_chars"] = thinking_chars
+    metrics["requested_efforts"] = sorted(requested_efforts)
 
     uncached = sum(u.get("inputOther") or 0 for u in usage_records)
     cached = sum(u.get("inputCacheRead") or 0 for u in usage_records)
@@ -67,7 +83,7 @@ def main(out_dir: str, label: str) -> None:
 
     ppath = Path(__file__).resolve().parent.parent / "env" / "prices.json"
     if ppath.exists() and usage_records:
-        prices = json.loads(ppath.read_text()).get("kimi-k3")
+        prices = json.loads(ppath.read_text()).get(price_key)
         if prices:
             total = (
                 (uncached + cwrite) * prices["input"]
@@ -106,4 +122,4 @@ def main(out_dir: str, label: str) -> None:
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], *sys.argv[3:4])

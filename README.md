@@ -161,7 +161,17 @@ of the 2026-07-18 home bout, costing those runs 51-65% of execution time
 pins `PYTHONUSERBASE` to the real user's `~/.local` so the agent's python
 resolves the same packages as under the other drivers. Per-turn usage is
 taken from the session's `wire.jsonl` (copied into the run dir) and priced
-by `bin/metrics_kimi.py` from `env/prices.json`.
+by `bin/metrics_kimi.py` from `env/prices.json` (price key defaults to
+`kimi-k3`; override with `ARENA_KIMI_PRICE_KEY` for arms priced
+differently). Per-arm cells (e.g. an effort ladder) relabel via
+`ARENA_KIMI_LABEL` — the leak scan falls back to the base
+`kimi-k3-kimicode.leakscan` — and record their requested effort via
+`ARENA_KIMI_EFFORT`; effort selection itself is per model alias
+(`default_effort` in the arena `config.toml`). Metrics prove the request
+rather than assuming it: `requested_efforts` collects the `thinkingEffort`
+value from every `llm.request` event in `wire.jsonl`, and
+`thinking_chars` totals the session's "think" content parts, giving a
+measured reasoning volume per run.
 
 ## Rubric judging (depth qualities)
 
