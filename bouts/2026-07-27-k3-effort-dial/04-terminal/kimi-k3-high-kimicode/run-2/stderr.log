@@ -1,0 +1,67 @@
+Makefile:4: *** missing separator.  Stop.
+.PHONY: test check$
+$
+test: check$
+    python3 -m pytest -q tests/$
+$
+check:$
+^I./scripts/run_checks.sh$
+src/pipeline:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:41 .
+drwxrwxr-x 3 mwoolly mwoolly 4096 Jul  6 19:40 ..
+-rw-rw-r-- 1 mwoolly mwoolly    0 Jul  6 19:40 __init__.py
+-rw-rw-r-- 1 mwoolly mwoolly  661 Jul  6 19:41 transform.py
+
+tests:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:41 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 27 07:17 ..
+-rw-rw-r-- 1 mwoolly mwoolly  516 Jul  6 19:41 test_transform.py
+from pipeline.transform import batch, normalize_record
+
+
+def test_normalize_record():
+    rec = {"Name": "  Ada ", "AGE": 36, "note": None}
+    assert normalize_record(rec) == {"name": "Ada", "age": 36}
+
+
+def test_batch():
+    records = list(range(5))
+    assert list(batch(records, 2)) == [[0, 1], [2, 3], [4]]
+    assert list(batch([], 3)) == []
+
+
+def test_batch_validates_size():
+    try:
+        list(batch([1], 0))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("size 0 must raise")
+scripts:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul 27 07:17 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 27 07:17 ..
+-rw-rw-r-- 1 mwoolly mwoolly   98 Jul 27 07:17 run_checks.sh
+
+tools:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:40 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 27 07:17 ..
+-rw-rw-r-- 1 mwoolly mwoolly  550 Jul  6 19:40 validate_config.py
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators
+./scripts/run_checks.sh
+make: ./scripts/run_checks.sh: Permission denied
+make: *** [Makefile:7: check] Error 127
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s

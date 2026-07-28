@@ -1,0 +1,40 @@
+{
+  "model": "kimi-k3-low-kimicode",
+  "wall_seconds": 47.5,
+  "agent_exit": 0,
+  "final_message": "All 6 tests pass. Two bugs fixed in `lrucache/cache.py`:\n\n- `get` now calls `move_to_end(key)` on a hit, so reads refresh recency (previously a just-read entry could be evicted as \"least recently used\").\n- `put` only evicts when inserting a **new** key at capacity (`key not in self._data`), so updating an existing key no longer evicts an innocent entry.\n\nRoot causes are documented in `SOLUTION.md`.",
+  "num_turns": 5,
+  "assistant_messages": 5,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 2,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "thinking_chars": 110,
+  "requested_efforts": [
+    "low"
+  ],
+  "input_tokens": 109804,
+  "cache_read_tokens": 98816,
+  "output_tokens": 831,
+  "total_cost_usd": 0.07507,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 5 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-low",
+    "effort": "low",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:39:45Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 15 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

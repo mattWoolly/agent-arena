@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation; no compound failure mode combining two defects is explained (e.g. the swallowed-exceptions defect at :39 is never linked to any second defect's persisting bad state)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states its failure mechanism, e.g. mutable default `seen=[]` \"persists across calls, so ids synced in one call are incorrectly skipped\" and the `.split(\"@\")[1]` \"crashes with AttributeError on NULL emails ... and IndexError on emails without '@'.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g., `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no compound failure mode connecting two defects mechanistically (e.g., the swallowed exceptions at :39 are never tied to any downstream bad state)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g., `seen=[]` \"persists across calls, so ids synced in one call are incorrectly skipped in every later call.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "The findings are all standalone; e.g. the swallowed `pass` at sync.py:39 and the crash at report.py:11 are never connected into a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. mutable default `seen=[]` \"persists across calls, so ids synced in one call are incorrectly skipped in every later call.\""
+      }
+    }
+  ]
+}

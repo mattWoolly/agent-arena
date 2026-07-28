@@ -1,0 +1,21 @@
+order_id,date,region,product,units,unit_price
+1001,2026-05-02,North,Widget,12,19.99
+1002,2026-05-02,South,Gadget,3,149.50
+1003,2026-05-03,East,Sprocket,40,4.75
+1004,2026-05-03,West,Widget,7,19.99
+31 data/sales.csv
+total: 7154.44
+orders: 30
+median: 204.94
+top product: Gadget 2392.0
+products: {'Widget': 2118.94, 'Gadget': 2392.0, 'Sprocket': 1130.5, 'Doohickey': 1513.0}
+regions: {'East': 1830.79, 'North': 2176.35, 'South': 1732.48, 'West': 1414.82}
+word count: 120 <=250: True
+headings: ['## Overview', '## Top Products', '## Regional Performance', '## Recommendations']
+only H2 & exact order: True
+bullets: 3 each <=25 words: True
+banned words found: []
+revenue format present: True
+json keys: ['total_revenue', 'orders', 'median_order_value', 'top_product_by_revenue', 'revenue_by_region']
+recomputed total: 7154.44 median raw: 204.945 -> 204.94
+json matches: True True True

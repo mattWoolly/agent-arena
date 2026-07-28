@@ -1,0 +1,7 @@
+30 7154.44 204.94 Gadget
+{'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}
+[('Gadget', 2392.0), ('Widget', 2118.94), ('Doohickey', 1513.0), ('Sprocket', 1130.5)]
+133 REPORT.md
+3
+4
+{'total_revenue': 7154.44, 'orders': 30, 'median_order_value': 204.94, 'top_product_by_revenue': 'Gadget', 'revenue_by_region': {'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}}

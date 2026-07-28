@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons are bare rankings with attached dollar values ('North is the strongest region at $2,176.35', 'West is the weakest'), with only one computed gap ('lags North by over $760') and no percentages or ratios."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products and regions grounded in the data (e.g. 'Push Gadget sales in South and West' and 'Keep Widget stock high in North and East, its two best-performing regions')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious observations, such as 'Gadget leads... despite low unit volume, thanks to its $149.50 price' and Widget being the most frequently ordered, beyond restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons mostly carry raw totals as rankings (\"North is the strongest region at $2,176.35\", \"West is the weakest\"), with only one computed gap (\"it lags North by over $760\") rather than percentages or ratios throughout."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and figures actionably (\"Push Gadget sales in South and West\", \"Keep Widget stock high in North and East\", \"lags North by over $760\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations such as \"Gadget leads... despite low unit volume, thanks to its $149.50 price\" and Widget being \"the most frequently ordered product\" rather than merely restating totals."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons are bare revenue totals with rankings (e.g., \"Gadget leads with $2,392.00... Widget follows at $2,118.94\"), with only one computed gap (\"lags North by over $760\") rather than percentages/ratios throughout."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names products, regions, and data (\"Push Gadget sales in South and West, where high-price orders are currently rare\" and \"it lags North by over $760\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious observations, e.g., \"Gadget leads... despite low unit volume, thanks to its $149.50 price\" and Widget being \"the most frequently ordered product,\" separating revenue drivers from volume."
+      }
+    }
+  ]
+}

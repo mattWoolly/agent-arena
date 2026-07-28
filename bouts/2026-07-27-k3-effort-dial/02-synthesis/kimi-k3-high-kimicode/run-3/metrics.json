@@ -1,0 +1,39 @@
+{
+  "model": "kimi-k3-high-kimicode",
+  "wall_seconds": 154.1,
+  "agent_exit": 0,
+  "final_message": "All five functions are implemented in `problems.py` and verified:\n\n- `parse_duration` \u2014 strict `re.fullmatch` on `(h)?(m)?(s)?` order with at least one component; rejects whitespace, out-of-order, duplicates, negatives, non-strings via `ValueError`.\n- `luhn_valid` \u2014 strips only spaces/hyphens, returns `False` on empty or non-digit input; standard Luhn sum naturally handles the `\"0\"` single-digit case.\n- `flatten` \u2014 recursive walk joining keys with `sep`, skips empty dicts, keeps lists by reference, doesn't mutate input.\n- `top_k_frequent` \u2014 `Counter` sorted by `(-count, word)`; `k <= 0` returns `[]`, oversized `k` returns all.\n- `rolling_max` \u2014 monotonic deque, O(n); `window <= 0` raises, `window > len` returns `[]`.\n\nVerification: all docstring examples plus edge cases (invalid durations, Luhn edge strings, mutation check, tie-breaks, window extremes) pass, and a 1M-element input with window 1000 runs in 0.37s, cross-checked against brute force on 200 random cases. No other files created, no git mutations.",
+  "num_turns": 12,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Read": 3,
+    "Edit": 7,
+    "Bash": 1
+  },
+  "tool_calls_total": 11,
+  "thinking_chars": 1404,
+  "requested_efforts": [
+    "high"
+  ],
+  "input_tokens": 272941,
+  "cache_read_tokens": 262144,
+  "output_tokens": 3332,
+  "total_cost_usd": 0.16101,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 12 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-high",
+    "effort": "high",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:59:07Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 58 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

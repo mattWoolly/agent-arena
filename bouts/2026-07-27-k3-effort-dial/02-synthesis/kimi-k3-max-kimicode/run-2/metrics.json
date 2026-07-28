@@ -1,0 +1,39 @@
+{
+  "model": "kimi-k3-max-kimicode",
+  "wall_seconds": 178.3,
+  "agent_exit": 0,
+  "final_message": "All five functions are implemented in `problems.py` and verified:\n\n- `parse_duration` \u2014 `re.fullmatch` with optional `h`/`m`/`s` groups in fixed order; rejects empty/non-string input, out-of-order, duplicates, signs, whitespace, and trailing garbage with `ValueError`.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` (never raises) for non-strings, empty results, or any non-ASCII-digit character; standard Luhn doubling from the right, so `\"0\"` passes and other single digits don't.\n- `flatten` \u2014 recursive join with `sep`, empty nested dicts dropped, lists/other values kept as-is, input untouched.\n- `top_k_frequent` \u2014 counts, sorts by `(-count, word)` for the alphabetical tie-break, returns `[]` for `k <= 0`, all distinct words when `k` is too large.\n- `rolling_max` \u2014 monotonic deque of indices, O(n); raises `ValueError` for `window <= 0`, returns `[]` when `window > len(nums)`.\n\nVerification: a throwaway script exercised every docstring example plus edge cases (bad inputs for `parse_duration`, `\"0\"`/single digits/non-strings for `luhn_valid`, empty dicts and custom separators for `flatten`, ties and `k` extremes for `top_k_frequent`, duplicate values and a brute-force cross-check for `rolling_max`). All passed, and `rolling_max` processed 2M elements in 0.75s.",
+  "num_turns": 4,
+  "assistant_messages": 4,
+  "tool_calls": {
+    "Read": 1,
+    "Write": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 3,
+  "thinking_chars": 7623,
+  "requested_efforts": [
+    "max"
+  ],
+  "input_tokens": 91847,
+  "cache_read_tokens": 83712,
+  "output_tokens": 4949,
+  "total_cost_usd": 0.12375,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 4 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-max",
+    "effort": "max",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:50:19Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 58 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

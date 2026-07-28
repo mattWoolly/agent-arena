@@ -1,0 +1,9 @@
+total 7154.44 $7,154.44
+orders 30
+median 204.94
+top product Gadget 2392.0
+products {'Widget': 2118.94, 'Gadget': 2392.0, 'Sprocket': 1130.5, 'Doohickey': 1513.0}
+regions {'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}
+avg order 238.48
+words: 142
+all checks passed

@@ -1,0 +1,41 @@
+diff --git a/REPORT.md b/REPORT.md
+new file mode 100644
+index 0000000..aa0cea1
+--- /dev/null
++++ b/REPORT.md
+@@ -0,0 +1,17 @@
++## Overview
++
++The data covers 30 orders placed between 2026-05-02 and 2026-05-21 across four regions. Total revenue is $7,154.44. The average order is worth $238.48, with a median order value of $204.94.
++
++## Top Products
++
++Gadget leads with $2,392.00 in revenue despite low unit volume, thanks to its $149.50 price. Widget follows at $2,118.94 and is the most frequently ordered product. Doohickey contributed $1,513.00, while Sprocket trails at $1,130.50.
++
++## Regional Performance
++
++North is the strongest region at $2,176.35. East follows with $1,830.79, then South at $1,732.48. West is the weakest region with only $1,414.82, well behind the others.
++
++## Recommendations
++
++- Push Gadget sales in South and West, where high-price orders are currently rare.
++- Investigate West's low revenue; it lags North by over $760 across the period.
++- Keep Widget stock high in North and East, its two best-performing regions.
+diff --git a/summary.json b/summary.json
+new file mode 100644
+index 0000000..4ee50aa
+--- /dev/null
++++ b/summary.json
+@@ -0,0 +1,12 @@
++{
++  "total_revenue": 7154.44,
++  "orders": 30,
++  "median_order_value": 204.94,
++  "top_product_by_revenue": "Gadget",
++  "revenue_by_region": {
++    "North": 2176.35,
++    "South": 1732.48,
++    "East": 1830.79,
++    "West": 1414.82
++  }
++}

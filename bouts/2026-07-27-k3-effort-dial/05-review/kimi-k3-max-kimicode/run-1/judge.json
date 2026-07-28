@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 2,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. 'src/sync.py:14', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically explains a compound failure: 'combined with seen.append before the try, those users are also never retried' \u2014 the swallowed exception plus the pre-try seen mutation together cause permanent silent skipping."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'range(total_count // PAGE_SIZE) drops the final partial page' and 'mutable default argument seen=[] is shared across all calls, so ... permanently skipped'."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically explains a compound mode: '`except Exception: pass` silently swallows sync failures... combined with seen.append before the try, those users are also never retried.'"
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. the mutable default 'seen=[]' is 'shared across all calls, so user IDs synced... in earlier calls are permanently skipped on later invocations.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 2,
+        "why": "The sync.py:39 finding mechanistically explains a compound failure: the bare \"except Exception: pass\" swallows the error while \"seen.append before the try\" means those failed users are \"never retried.\""
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states the failure mechanism, e.g. \"range(total_count // PAGE_SIZE) drops the final partial page ... so staged users are silently missed\" and the mutable default \"seen=[]\" being \"shared across all calls.\""
+      }
+    }
+  ]
+}

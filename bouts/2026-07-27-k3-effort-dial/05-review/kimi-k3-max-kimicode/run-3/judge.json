@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The line 31 finding gestures at a compound effect (\"silently never retried\") tied to the swallowed failure at line 39, but never explicitly connects the append-before-update defect to the bare-except defect as the mechanism producing the silent-permanent-skip."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. \"seen.append(user[\"id\"]) runs before the UPDATE, so a user whose sync fails is marked as seen and silently never retried.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a precise file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation; no compound failure mode is explained, e.g. it never connects the bare `except ... pass` (:39) with the append-before-UPDATE (:31) and persistent `seen` (:24) that together make failures invisible and permanent."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, such as \"`seen.append(user[\"id\"])` runs before the UPDATE, so a user whose sync fails is marked as seen and silently never retried.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The :31 finding ('a user whose sync fails is marked as seen and silently never retried') and the :39 bare-except finding imply a compound failure but the write-up never explicitly connects the swallowed error to the permanently-skipped user as one mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Each finding states a concrete failure mechanism (e.g. mutable default `seen=[]` 'shared across all calls, so user IDs from previous runs are permanently skipped'), not just a label."
+      }
+    }
+  ]
+}

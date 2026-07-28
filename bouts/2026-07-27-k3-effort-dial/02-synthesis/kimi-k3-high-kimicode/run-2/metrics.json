@@ -1,0 +1,39 @@
+{
+  "model": "kimi-k3-high-kimicode",
+  "wall_seconds": 116.8,
+  "agent_exit": 0,
+  "final_message": "All five functions are implemented in `problems.py` and verified:\n\n- `parse_duration` \u2014 regex full-match enforcing h\u2192m\u2192s order, at least one component; `ValueError` on non-strings, empty, out-of-order, duplicates, negatives, whitespace, trailing garbage.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` on empty or non-digit input, standard Luhn doubling from the right; `\"0\"` passes.\n- `flatten` \u2014 recursive walk, joins with `sep`, skips empty nested dicts, leaves non-dict values as-is, builds a new dict without mutating input.\n- `top_k_frequent` \u2014 sorts by `(-count, word)` for frequency-desc/alphabetical tie-break, returns `[]` for `k <= 0`.\n- `rolling_max` \u2014 monotonic deque, O(n); raises `ValueError` for `window <= 0`, returns `[]` when window exceeds length.\n\nChecks passed on all docstring examples plus edge cases, and the 200k-element rolling max ran in 0.076s with spot-verified results. No test files were left behind.",
+  "num_turns": 5,
+  "assistant_messages": 5,
+  "tool_calls": {
+    "Read": 1,
+    "Edit": 5,
+    "Bash": 2
+  },
+  "tool_calls_total": 8,
+  "thinking_chars": 844,
+  "requested_efforts": [
+    "high"
+  ],
+  "input_tokens": 111764,
+  "cache_read_tokens": 98816,
+  "output_tokens": 3228,
+  "total_cost_usd": 0.11691,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 5 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-high",
+    "effort": "high",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:48:21Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 55 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

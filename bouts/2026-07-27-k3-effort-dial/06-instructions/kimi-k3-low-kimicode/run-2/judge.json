@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure (e.g. West \"roughly 35% below North\" and all products/regions cited with dollar revenue), with only the softer \"well over half\" left unquantified."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names specific products/regions and figures, e.g. \"Increase promotional focus on Sprocket, the lowest-revenue product at $1,130.50\" and \"Investigate why West trails other regions.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations beyond the tables, including concentration (\"Gadget and Widget together account for well over half of total revenue\") and the West regional gap (\"roughly 35% below North\")."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons list raw dollar totals as bare rankings (\"Gadget leads... $2,392.00, followed by Widget at $2,118.94\") with only occasional computed figures like \"roughly 35% below North\" and the vague \"well over half.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with figures (\"promotional focus on Sprocket, the lowest-revenue product at $1,130.50\", \"Investigate why West trails\", \"Protect Gadget and Widget supply\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple actionable observations beyond raw totals \u2014 product concentration (\"Gadget and Widget together account for well over half of total revenue\") and the regional gap (\"West was the weakest region... roughly 35% below North\")."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries data figures and at least one computed gap/ratio (\"West was the weakest region at $1,414.82, roughly 35% below North\") plus a concentration note (\"account for well over half of total revenue\")."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product/region and figure, e.g. \"Increase promotional focus on Sprocket, the lowest-revenue product at $1,130.50.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple actionable observations beyond raw totals\u2014top-two product concentration (\"Gadget and Widget together account for well over half\") and the quantified West underperformance gap (\"roughly 35% below North\")."
+      }
+    }
+  ]
+}

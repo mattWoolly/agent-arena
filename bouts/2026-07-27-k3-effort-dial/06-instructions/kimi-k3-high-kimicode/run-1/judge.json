@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 1,
+    "specificity": 1
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Only \"about one third of the business\" is a computed comparison; the regional and other product comparisons rely on bare totals plus ranking words like \"strongest,\" \"weakest,\" and \"trails.\""
+      },
+      "specificity": {
+        "score": 1,
+        "why": "The first two recommendations name products/regions (\"Promote Gadget in West,\" \"Review Sprocket pricing\"), but the third (\"Investigate why West underperforms and test targeted campaigns\") is generic advice fitting any sales report."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The concentration point (\"Gadget leads... about one third of the business\") is a real observation, but the rest largely restates totals already in the tables."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Most comparisons list raw totals with bare rankings ('Widget follows at $2,118.94, Doohickey at $1,513.00, and Sprocket trails at $1,130.50') while only 'about one third of the business' is a genuinely computed ratio."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name products and regions ('Promote Gadget in West', 'Review Sprocket pricing') but the actions are generic templates loosely tied to the data rather than fully data-grounded."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "It surfaces one real non-obvious observation (Gadget is 'about one third of the business') plus a spread note, but the rest ('West is the weakest', regional totals) just restates figures the tables imply."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Only the 'about one third of the business' comparison is computed as a ratio, while regional and other product comparisons are bare rankings with raw dollar totals rather than percentages or gaps."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name products and regions ('Promote Gadget in West', 'Review Sprocket pricing') but omit figures and lean partly generic ('test targeted campaigns there')."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "It surfaces one non-obvious observation about concentration ('Gadget leads... about one third of the business') plus a spread note, but otherwise mostly restates totals already in the tables."
+      }
+    }
+  ]
+}

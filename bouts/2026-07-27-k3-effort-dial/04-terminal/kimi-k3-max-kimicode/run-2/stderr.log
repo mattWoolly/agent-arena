@@ -1,0 +1,79 @@
+Makefile:4: *** missing separator.  Stop.
+.PHONY: test check$
+$
+test: check$
+    python3 -m pytest -q tests/$
+$
+check:$
+^I./scripts/run_checks.sh$
+./scripts/run_checks.sh
+make: ./scripts/run_checks.sh: Permission denied
+make: *** [Makefile:7: check] Error 127
+-rw-rw-r-- 1 mwoolly mwoolly 98 Jul 27 07:19 scripts/run_checks.sh
+-rwxrwxr-x 1 mwoolly mwoolly 98 Jul 27 07:19 scripts/run_checks.sh
+./scripts/run_checks.sh
+make: ./scripts/run_checks.sh: No such file or directory
+make: *** [Makefile:7: check] Error 127
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators
+#!/bin/bash^M$
+set -e^M$
+python3 tools/validate_config.py data/config.json^M$
+echo "all checks passed"^M$
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable
+#!/bin/bash$
+set -e$
+python3 tools/validate_config.py data/config.json$
+echo "all checks passed"$
+./scripts/run_checks.sh
+Traceback (most recent call last):
+  File "/tmp/arena-ws.Sfd1xg/tools/validate_config.py", line 18, in <module>
+    main(sys.argv[1])
+  File "/tmp/arena-ws.Sfd1xg/tools/validate_config.py", line 8, in main
+    config = json.load(f)
+             ^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 5 column 1 (char 92)
+make: *** [Makefile:7: check] Error 1
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s
+exit=0
+ M Makefile
+ M data/config.json
+ M scripts/run_checks.sh
+?? __pycache__/
+?? src/pipeline/__pycache__/
+?? tests/__pycache__/
+ Makefile              | 2 +-
+ data/config.json      | 2 +-
+ scripts/run_checks.sh | 8 ++++----
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s
+exit=0

@@ -1,0 +1,41 @@
+{
+  "model": "kimi-k3-high-kimicode",
+  "wall_seconds": 84.1,
+  "agent_exit": 0,
+  "final_message": "Done. Summary of changes:\n\n- `reportgen/config.py` \u2014 replaced the `DEFAULTS` dict with a frozen `@dataclass Config` (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config(path)` now returns a `Config`, raises `ValueError(f\"Unknown config key: {key}\")` for any JSON key that isn't a known field, and otherwise lets file values override defaults.\n- `reportgen/loader.py:9` and `reportgen/formatter.py` \u2014 switched all `config[...]` subscripts to attribute access.\n- `reportgen/main.py` needed no change \u2014 it just passes the config object through.\n\nVerified: no `cfg[...]`/`config[...]` subscripting remains in `reportgen/`, unknown keys raise `ValueError` naming the key, and `python3 -m pytest -q` passes 4/4 with `tests/` untouched. No commits made.",
+  "num_turns": 6,
+  "assistant_messages": 6,
+  "tool_calls": {
+    "Read": 5,
+    "Write": 2,
+    "Edit": 1,
+    "Grep": 1,
+    "Bash": 2
+  },
+  "tool_calls_total": 11,
+  "thinking_chars": 437,
+  "requested_efforts": [
+    "high"
+  ],
+  "input_tokens": 132551,
+  "cache_read_tokens": 120832,
+  "output_tokens": 1360,
+  "total_cost_usd": 0.09181,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 6 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-high",
+    "effort": "high",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:02:44Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

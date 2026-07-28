@@ -1,0 +1,4 @@
+visible tests: pass
+hidden tests (Config dataclass contract): pass
+no config subscripting: pass
+SCORE: 4/4

@@ -1,0 +1,109 @@
+[01-bugfix/kimi-k3-low-kimicode run-1] starting
+[01-bugfix/kimi-k3-low-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=53.9s
+[01-bugfix/kimi-k3-high-kimicode run-1] starting
+[01-bugfix/kimi-k3-high-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=54.3s
+[01-bugfix/kimi-k3-max-kimicode run-1] starting
+[01-bugfix/kimi-k3-max-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=48.1s
+[01-bugfix/kimi-k3-high-kimicode run-2] starting
+[01-bugfix/kimi-k3-high-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=56.7s
+[01-bugfix/kimi-k3-max-kimicode run-2] starting
+[01-bugfix/kimi-k3-max-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=58.0s
+[01-bugfix/kimi-k3-low-kimicode run-2] starting
+[01-bugfix/kimi-k3-low-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=48.0s
+[01-bugfix/kimi-k3-max-kimicode run-3] starting
+[01-bugfix/kimi-k3-max-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=51.7s
+[01-bugfix/kimi-k3-low-kimicode run-3] starting
+[01-bugfix/kimi-k3-low-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=47.5s
+[01-bugfix/kimi-k3-high-kimicode run-3] starting
+[01-bugfix/kimi-k3-high-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=49.5s
+[02-synthesis/kimi-k3-low-kimicode run-1] starting
+[02-synthesis/kimi-k3-low-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=87.1s
+[02-synthesis/kimi-k3-high-kimicode run-1] starting
+[02-synthesis/kimi-k3-high-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=196.6s
+[02-synthesis/kimi-k3-max-kimicode run-1] starting
+[02-synthesis/kimi-k3-max-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=126.2s
+[02-synthesis/kimi-k3-high-kimicode run-2] starting
+[02-synthesis/kimi-k3-high-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=116.8s
+[02-synthesis/kimi-k3-max-kimicode run-2] starting
+[02-synthesis/kimi-k3-max-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=178.3s
+[02-synthesis/kimi-k3-low-kimicode run-2] starting
+[02-synthesis/kimi-k3-low-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=72.2s
+[02-synthesis/kimi-k3-max-kimicode run-3] starting
+[02-synthesis/kimi-k3-max-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=204.2s
+[02-synthesis/kimi-k3-low-kimicode run-3] starting
+[02-synthesis/kimi-k3-low-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=66.3s
+[02-synthesis/kimi-k3-high-kimicode run-3] starting
+[02-synthesis/kimi-k3-high-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=154.1s
+[03-refactor/kimi-k3-low-kimicode run-1] starting
+[03-refactor/kimi-k3-low-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=58.7s
+[03-refactor/kimi-k3-high-kimicode run-1] starting
+[03-refactor/kimi-k3-high-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=84.1s
+[03-refactor/kimi-k3-max-kimicode run-1] starting
+[03-refactor/kimi-k3-max-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=76.5s
+[03-refactor/kimi-k3-high-kimicode run-2] starting
+[03-refactor/kimi-k3-high-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=76.8s
+[03-refactor/kimi-k3-max-kimicode run-2] starting
+[03-refactor/kimi-k3-max-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=76.1s
+[03-refactor/kimi-k3-low-kimicode run-2] starting
+[03-refactor/kimi-k3-low-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=38.0s
+[03-refactor/kimi-k3-max-kimicode run-3] starting
+[03-refactor/kimi-k3-max-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=90.8s
+[03-refactor/kimi-k3-low-kimicode run-3] starting
+[03-refactor/kimi-k3-low-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=52.7s
+[03-refactor/kimi-k3-high-kimicode run-3] starting
+[03-refactor/kimi-k3-high-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=84.8s
+[04-terminal/kimi-k3-low-kimicode run-1] starting
+[04-terminal/kimi-k3-low-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=95.8s
+[04-terminal/kimi-k3-high-kimicode run-1] starting
+[04-terminal/kimi-k3-high-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=90.7s
+[04-terminal/kimi-k3-max-kimicode run-1] starting
+[04-terminal/kimi-k3-max-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=123.5s
+[04-terminal/kimi-k3-high-kimicode run-2] starting
+[04-terminal/kimi-k3-high-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=76.0s
+[04-terminal/kimi-k3-max-kimicode run-2] starting
+[04-terminal/kimi-k3-max-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=164.7s
+[04-terminal/kimi-k3-low-kimicode run-2] starting
+[04-terminal/kimi-k3-low-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=81.8s
+[04-terminal/kimi-k3-max-kimicode run-3] starting
+[04-terminal/kimi-k3-max-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=80.6s
+[04-terminal/kimi-k3-low-kimicode run-3] starting
+[04-terminal/kimi-k3-low-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=82.6s
+[04-terminal/kimi-k3-high-kimicode run-3] starting
+[04-terminal/kimi-k3-high-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=94.5s
+[05-review/kimi-k3-low-kimicode run-1] starting
+[05-review/kimi-k3-low-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=43.3s
+[05-review/kimi-k3-high-kimicode run-1] starting
+[05-review/kimi-k3-high-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=68.5s
+[05-review/kimi-k3-max-kimicode run-1] starting
+[05-review/kimi-k3-max-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=147.5s
+[05-review/kimi-k3-high-kimicode run-2] starting
+[05-review/kimi-k3-high-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=85.3s
+[05-review/kimi-k3-max-kimicode run-2] starting
+[05-review/kimi-k3-max-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=134.2s
+[05-review/kimi-k3-low-kimicode run-2] starting
+[05-review/kimi-k3-low-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=59.1s
+[05-review/kimi-k3-max-kimicode run-3] starting
+[05-review/kimi-k3-max-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=147.9s
+[05-review/kimi-k3-low-kimicode run-3] starting
+[05-review/kimi-k3-low-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=45.6s
+[05-review/kimi-k3-high-kimicode run-3] starting
+[05-review/kimi-k3-high-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=76.5s
+[06-instructions/kimi-k3-low-kimicode run-1] starting
+[06-instructions/kimi-k3-low-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=49.9s
+[06-instructions/kimi-k3-high-kimicode run-1] starting
+[06-instructions/kimi-k3-high-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=56.1s
+[06-instructions/kimi-k3-max-kimicode run-1] starting
+[06-instructions/kimi-k3-max-kimicode run-1] done: agent_exit=0 grade_exit=0 wall=101.2s
+[06-instructions/kimi-k3-high-kimicode run-2] starting
+[06-instructions/kimi-k3-high-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=54.0s
+[06-instructions/kimi-k3-max-kimicode run-2] starting
+[06-instructions/kimi-k3-max-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=155.8s
+[06-instructions/kimi-k3-low-kimicode run-2] starting
+[06-instructions/kimi-k3-low-kimicode run-2] done: agent_exit=0 grade_exit=0 wall=44.8s
+[06-instructions/kimi-k3-max-kimicode run-3] starting
+[06-instructions/kimi-k3-max-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=97.6s
+[06-instructions/kimi-k3-low-kimicode run-3] starting
+[06-instructions/kimi-k3-low-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=47.1s
+[06-instructions/kimi-k3-high-kimicode run-3] starting
+[06-instructions/kimi-k3-high-kimicode run-3] done: agent_exit=0 grade_exit=0 wall=60.4s
+GRID COMPLETE 2026-07-27T13:52:43Z

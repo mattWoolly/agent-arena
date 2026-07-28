@@ -1,0 +1,12 @@
+order_id,date,region,product,units,unit_price
+1001,2026-05-02,North,Widget,12,19.99
+1002,2026-05-02,South,Gadget,3,149.50
+31 data/sales.csv
+total 7154.44 orders 30 median 204.94 top Gadget
+{'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}
+[('Gadget', 2392.0), ('Widget', 2118.94), ('Doohickey', 1513.0), ('Sprocket', 1130.5)]
+125 REPORT.md
+4
+0
+3
+{'total_revenue': 7154.44, 'orders': 30, 'median_order_value': 204.94, 'top_product_by_revenue': 'Gadget', 'revenue_by_region': {'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}}

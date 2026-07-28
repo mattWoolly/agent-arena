@@ -1,0 +1,6 @@
+- src/sync.py:14 pagination loop `range(total_count // PAGE_SIZE)` drops the final partial page (and fetches nothing at all when total_count < PAGE_SIZE), so staged users are silently missed.
+- src/sync.py:24 mutable default argument `seen=[]` is shared across all calls, so user IDs synced (or attempted) in earlier calls are permanently skipped on later invocations.
+- src/sync.py:35 UPDATE statement is built via f-string interpolation instead of bound parameters, reintroducing SQL injection and breaking on emails containing single quotes (e.g. o'brien@example.com).
+- src/sync.py:39 `except Exception: pass` silently swallows sync failures (previously logged), so failed updates leave stale data with no trace; combined with seen.append before the try, those users are also never retried.
+- src/report.py:7 early `return 0` when users is empty returns without closing the file opened on line 5, leaking the file handle and leaving a truncated empty report file.
+- src/report.py:11 `user["email"].lower().split("@")[1]` crashes on NULL emails (db.py schema notes say email is nullable and must be handled) and raises IndexError for addresses without "@".

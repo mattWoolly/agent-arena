@@ -1,0 +1,6 @@
+- src/sync.py:14 Off-by-one: `range(total_count // PAGE_SIZE)` never fetches the final partial page, silently dropping up to PAGE_SIZE-1 staged users.
+- src/sync.py:24 Mutable default argument `seen=[]` persists across calls, so ids synced in one call are incorrectly skipped in every later call.
+- src/sync.py:35 SQL injection: email and id are interpolated directly into the query string instead of using bound parameters.
+- src/sync.py:39 Exceptions are swallowed with bare `pass`, silently dropping failed users with no logging or failure accounting.
+- src/report.py:7 Early return on empty `users` leaks the opened file handle and no longer writes any report at all.
+- src/report.py:11 `user["email"].lower().split("@")[1]` crashes with AttributeError on NULL emails (email is nullable per db schema notes) and IndexError on emails without "@".

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. 'src/sync.py:31', 'src/report.py:11')."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation; the bare-except swallow (line 39) and the append-before-UPDATE-then-never-retry (line 31) are never mechanistically connected into a single compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. 'appended to `seen` before the UPDATE runs, so a failed sync marks the id as seen and it is never retried.'"
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line citation (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is described in isolation; no finding explains a compound failure mode emerging from two separate defects combining (e.g. it never connects the line 39 bare-except to the line 31 seen-append to show doubly-hidden lost users)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, not just a label (e.g. \"appended to `seen` before the UPDATE runs, so a failed sync marks the id as seen and it is never retried\")."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. \"src/sync.py:31\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is listed as a standalone bullet with no cross-reference; the potential link between the swallowed error (line 39) and the id-marked-seen-before-UPDATE (line 31) is never stated as a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states its failure mechanism, e.g. \"appended to `seen` before the UPDATE runs, so a failed sync marks the id as seen and it is never retried\" and \"mutable default argument `seen=[]` is shared across calls.\""
+      }
+    }
+  ]
+}

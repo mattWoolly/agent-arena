@@ -1,0 +1,38 @@
+{
+  "model": "kimi-k3-low-kimicode",
+  "wall_seconds": 44.8,
+  "agent_exit": 0,
+  "final_message": "Both files are done and verified:\n\n- `REPORT.md` \u2014 exactly 4 H2 headings in the required order, 133 words, 3 bullets in Recommendations (each \u226425 words), no banned words, total revenue `$7,154.44` and 30 orders stated in Overview.\n- `summary.json` \u2014 exactly the five required keys, computed from the CSV: total revenue 7154.44, 30 orders, median order value 204.94, top product Gadget, revenue by region (North 2176.35, East 1830.79, South 1732.48, West 1414.82).",
+  "num_turns": 4,
+  "assistant_messages": 4,
+  "tool_calls": {
+    "Bash": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 3,
+  "thinking_chars": 142,
+  "requested_efforts": [
+    "low"
+  ],
+  "input_tokens": 84389,
+  "cache_read_tokens": 78080,
+  "output_tokens": 867,
+  "total_cost_usd": 0.05536,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 4 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-low",
+    "effort": "low",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:48:29Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

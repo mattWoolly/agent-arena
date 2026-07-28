@@ -1,0 +1,52 @@
+Makefile:4: *** missing separator.  Stop.
+.PHONY: test check$
+$
+test: check$
+^Ipython3 -m pytest -q tests/$
+$
+check:$
+^I./scripts/run_checks.sh$
+scripts/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul 27 07:23 .
+drwxrwxr-x 8 mwoolly mwoolly 4096 Jul 27 07:23 ..
+-rw-rw-r-- 1 mwoolly mwoolly   98 Jul 27 07:23 run_checks.sh
+
+src/pipeline/:
+total 12
+drwxrwxr-x 2 mwoolly mwoolly 4096 Jul  6 19:41 .
+drwxrwxr-x 3 mwoolly mwoolly 4096 Jul  6 19:40 ..
+-rw-rw-r-- 1 mwoolly mwoolly    0 Jul  6 19:40 __init__.py
+-rw-rw-r-- 1 mwoolly mwoolly  661 Jul  6 19:41 transform.py
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators
+conftest.py:           Python script, ASCII text executable
+Makefile:              ASCII text
+data/config.json:      JSON text data
+0000000   #   !   /   b   i   n   /   b   a   s   h  \r  \n   s   e   t
+0000020       -   e  \r  \n   p   y   t   h   o   n   3       t   o   o
+0000040   l   s   /   v   a   l   i   d   a   t   e   _   c   o   n   f
+0000060   i   g   .   p   y       d   a   t   a   /   c   o   n   f   i
+0000100   g   .   j   s   o   n  \r  \n   e   c   h   o       "   a   l
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable
+-rwxrwxr-x 1 mwoolly mwoolly 94 Jul 27 07:24 scripts/run_checks.sh
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.01s
+EXIT: 0

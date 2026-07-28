@@ -1,0 +1,12 @@
+=== hard prompt reasoning_effort=low ===
+http 000
+unparsed: 
+
+=== factorial probe reasoning_effort=low ===
+http 200
+reasoning_tokens: 70 completion: 86
+answer: '505'
+=== factorial probe reasoning_effort=max ===
+http 200
+reasoning_tokens: 260 completion: 278
+answer: '**505**'
