@@ -33,8 +33,10 @@ a correction openly: the 7/25 amendment-provenance disclosure.
   costs money.
 - **H4 MISS, inverted (the verbosity claim):** prediction was K3-max
   >= 1.5x Opus 5's published default-effort output tokens; measured is
-  ~0.37x (7.3k vs 19.7k on the three ladder-comparable tasks, per-task
-  medians vs the published Opus 5 ladder row). K3 at max effort is the
+  ~0.35x (6.6k vs 19.0k on the three ladder tasks 01-bugfix, 04-terminal,
+  06-instructions; sums of per-task run medians computed identically for
+  both models from the on-disk bout metrics; the published Opus 5 ladder
+  row reports 19.7k from the same runs summed as means). K3 at max effort is the
   TERSER model on this battery. Artificial Analysis's suite-level ~2x
   token-burn figure does not transfer to agentic coding work, where
   completion tokens are a small fraction of traffic. K3 is heavy in
