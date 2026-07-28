@@ -1,0 +1,9 @@
+.
+.
+.
+.
+                                                                     [100%]
+
+4 passed in 0.02s
+ValueError: Unknown config key: bogus
+{} Config(title='Report', output_format='text', max_rows=10, include_summary=True)

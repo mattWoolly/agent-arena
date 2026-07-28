@@ -1,0 +1,12 @@
+{
+  "cli_version": "kimi-code 0.27.0",
+  "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+  "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+  "proxy_upstream": "none",
+  "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+  "model_alias": "arena/k3-high",
+  "effort": "high",
+  "setting_sources": "arena config.toml only",
+  "timeout_s": 1500,
+  "started_at": "2026-07-27T12:36:03Z"
+}

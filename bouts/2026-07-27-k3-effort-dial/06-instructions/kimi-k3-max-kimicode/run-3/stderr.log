@@ -1,0 +1,17 @@
+total: 7154.44
+orders: 30
+median: 204.95
+top: ('Gadget', Decimal('2392.00'))
+regions: {'North': '2176.35', 'South': '1732.48', 'East': '1830.79', 'West': '1414.82'}
+products: {'Widget': '2118.94', 'Gadget': '2392.00', 'Sprocket': '1130.50', 'Doohickey': '1513.00'}
+formatted total: $7,154.44
+units: {'Widget': 106, 'Gadget': 16, 'Sprocket': 238, 'Doohickey': 17}
+sorted revs: ['47.50', '79.96', '85.50', '89.00', '118.75', '119.94', '139.93', '149.50', '149.50', '159.92', '166.25', '178.00', '178.00', '179.91', '190.00', '219.89', '237.50', '239.88', '267.00', '279.86', '285.00', '299.00', '299.00', '299.85', '356.00', '399.80', '445.00', '448.50', '448.50', '598.00']
+words: 134
+headings: ['## Overview', '## Top Products', '## Regional Performance', '## Recommendations']
+bullets: 3 | words each: [13, 13, 14]
+banned words found: []
+h2 count: 4
+json keys: ['total_revenue', 'orders', 'median_order_value', 'top_product_by_revenue', 'revenue_by_region']
+types: {'total_revenue': 'float', 'orders': 'int', 'median_order_value': 'float', 'top_product_by_revenue': 'str', 'revenue_by_region': 'dict'}
+regions sum: 7154.44 vs total: 7154.44

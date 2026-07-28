@@ -25,7 +25,8 @@ BOUT_DIR=$(mkdir -p "$3" && cd "$3" && pwd)
 RUN_IDX="${4:-}"
 TASK_NAME=$(basename "$TASK_DIR")
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-LABEL_MODEL="kimi-k3-kimicode"
+LABEL_MODEL="${ARENA_KIMI_LABEL:-kimi-k3-kimicode}"   # per-arm cells (e.g. effort ladder) override this
+EFFORT_NOTE="${ARENA_KIMI_EFFORT:-max (kimi-code default for k3)}"
 KIMI_BIN="$HOME/.kimi-code/bin/kimi"
 ARENA_HOME="${ARENA_KIMI_HOME:-$HOME/.kimi-arena}"
 USER_SITE_BASE="$HOME/.local"
@@ -67,7 +68,8 @@ cat > "$OUT_DIR/run_env.json" <<EOF
   "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
   "proxy_upstream": "none",
   "model_env": "none (isolated HOME=$ARENA_HOME, outside repo; PYTHONUSERBASE=$USER_SITE_BASE)",
-  "effort": "max (kimi-code default for k3)",
+  "model_alias": "$ALIAS",
+  "effort": "$EFFORT_NOTE",
   "setting_sources": "arena config.toml only",
   "timeout_s": $TIMEOUT_S,
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -107,7 +109,10 @@ fi
 
 # Secret-leak check: the platform key sits in the arena config the agent's
 # shell can read (its HOME points there), so scan everything we publish.
-if [[ -f "$ROOT/env/$LABEL_MODEL.leakscan" ]]; then
+# Per-arm labels fall back to the base kimi-k3-kimicode scan (same key).
+LEAKSCAN="$ROOT/env/$LABEL_MODEL.leakscan"
+[[ -f "$LEAKSCAN" ]] || LEAKSCAN="$ROOT/env/kimi-k3-kimicode.leakscan"
+if [[ -f "$LEAKSCAN" ]]; then
   while IFS= read -r _sec; do
     [[ -z "$_sec" ]] && continue
     if grep -qF "$_sec" "$OUT_DIR/transcript.jsonl" "$OUT_DIR/wire.jsonl" 2>/dev/null || \
@@ -115,7 +120,7 @@ if [[ -f "$ROOT/env/$LABEL_MODEL.leakscan" ]]; then
       echo "SECRET LEAK: leakscan value appears in published artifacts" >> "$OUT_DIR/peek_check"
       echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
     fi
-  done < <(bash "$ROOT/env/$LABEL_MODEL.leakscan" 2>/dev/null)
+  done < <(bash "$LEAKSCAN" 2>/dev/null)
 fi
 
 git -C "$WS" add -A
@@ -132,6 +137,6 @@ mkdir -p "$OUT_DIR/workspace"
 cp -a "$WS/." "$OUT_DIR/workspace/"
 rm -rf "$OUT_DIR/workspace/.git"
 
-python3 "$ROOT/bin/metrics_kimi.py" "$OUT_DIR" "$LABEL_MODEL" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"
+python3 "$ROOT/bin/metrics_kimi.py" "$OUT_DIR" "$LABEL_MODEL" "${ARENA_KIMI_PRICE_KEY:-kimi-k3}" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"
 
 echo "[$LABEL] done: agent_exit=$AGENT_EXIT grade_exit=$(cat "$OUT_DIR/grade_exit" 2>/dev/null || echo n/a) wall=$(cat "$OUT_DIR/wall_seconds")s"

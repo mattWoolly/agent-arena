@@ -1,0 +1,38 @@
+{
+  "model": "kimi-k3-high-kimicode",
+  "wall_seconds": 56.1,
+  "agent_exit": 0,
+  "final_message": "Both files are written and verified against the constraints.\n\n**`REPORT.md`** \u2014 112 words, exactly four `##` headings in the required order, no banned words, and exactly three bullets in Recommendations (each \u226425 words). Figures computed from the CSV:\n\n- Total revenue: **$7,154.44** across **30** orders; median order value $204.94\n- Top product: Gadget ($2,392.00)\n- Regions: North $2,176.35 > East $1,830.79 > South $1,732.48 > West $1,414.82\n\n**`summary.json`** \u2014 exactly the five required keys with the same computed values.\n\nOne note: the median is the mean of the two middle values, 190.00 and 219.89 = 204.945, which rounds to 204.94 under standard float rounding (204.945 is stored slightly below the half-cent).",
+  "num_turns": 5,
+  "assistant_messages": 5,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "thinking_chars": 369,
+  "requested_efforts": [
+    "high"
+  ],
+  "input_tokens": 106645,
+  "cache_read_tokens": 96256,
+  "output_tokens": 1253,
+  "total_cost_usd": 0.07884,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 5 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-high",
+    "effort": "high",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:42:17Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

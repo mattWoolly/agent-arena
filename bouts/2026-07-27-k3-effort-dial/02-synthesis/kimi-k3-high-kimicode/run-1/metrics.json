@@ -1,0 +1,39 @@
+{
+  "model": "kimi-k3-high-kimicode",
+  "wall_seconds": 196.6,
+  "agent_exit": 0,
+  "final_message": "The earlier assertion failure was a bug in my throwaway check (comparing a 2M-element result against a 2000-element brute-force slice), not in the code. Everything passes:\n\n- `parse_duration` \u2014 regex full-match `h`/`m`/`s` in order, at least one component required; `ValueError` on bad order, duplicates, non-strings, whitespace, trailing garbage.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` on empty or non-digit input, standard Luhn doubling from the right; `\"0\"` valid.\n- `flatten` \u2014 recursive join with `sep`, empty dicts contribute nothing, non-dict values kept as-is, input untouched.\n- `top_k_frequent` \u2014 sorted by `(-count, word)`, `k <= 0` \u2192 `[]`, oversized `k` returns all distinct words.\n- `rolling_max` \u2014 monotonic deque, `ValueError` for `window <= 0`, `[]` for oversized window; 2M items with window 1000 ran in ~0.74s and matched the brute-force check.\n\nAll five are implemented in place in `problems.py` with names, signatures, and docstrings unchanged, stdlib only.",
+  "num_turns": 11,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Read": 2,
+    "Edit": 7,
+    "Bash": 5
+  },
+  "tool_calls_total": 14,
+  "thinking_chars": 2677,
+  "requested_efforts": [
+    "high"
+  ],
+  "input_tokens": 263002,
+  "cache_read_tokens": 246784,
+  "output_tokens": 4735,
+  "total_cost_usd": 0.19371,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 11 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-high",
+    "effort": "high",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:42:55Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 57 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

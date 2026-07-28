@@ -1,0 +1,19 @@
+judged run-1: {"causal_clarity":2,"interaction_synthesis":0,"location_precision":2}
+judged run-2: {"causal_clarity":2,"interaction_synthesis":0,"location_precision":2}
+judged run-3: {"causal_clarity":2,"interaction_synthesis":1,"location_precision":2}
+judged run-1: {"causal_clarity":2,"interaction_synthesis":0,"location_precision":2}
+judged run-2: {"causal_clarity":2,"interaction_synthesis":0,"location_precision":2}
+judge sample 3 unparseable after retry
+judged run-1: {"causal_clarity":2,"interaction_synthesis":2,"location_precision":2}
+judged run-2: {"causal_clarity":2,"interaction_synthesis":0,"location_precision":2}
+judged run-3: {"causal_clarity":2,"interaction_synthesis":1,"location_precision":2}
+judged run-1: {"insight_density":1,"quantification":1,"specificity":1}
+judged run-2: {"insight_density":2,"quantification":2,"specificity":2}
+judged run-3: {"insight_density":2,"quantification":1,"specificity":2}
+judged run-1: {"insight_density":1,"quantification":1,"specificity":1}
+judged run-2: {"insight_density":1,"quantification":1,"specificity":2}
+judged run-3: {"insight_density":2,"quantification":1,"specificity":2}
+judged run-1: {"insight_density":1,"quantification":1,"specificity":2}
+judged run-2: {"insight_density":2,"quantification":2,"specificity":2}
+judged run-3: {"insight_density":2,"quantification":1,"specificity":2}
+JUDGE COMPLETE 2026-07-28T12:25:05Z

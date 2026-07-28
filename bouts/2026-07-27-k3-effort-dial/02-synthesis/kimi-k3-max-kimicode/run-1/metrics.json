@@ -1,0 +1,39 @@
+{
+  "model": "kimi-k3-max-kimicode",
+  "wall_seconds": 126.2,
+  "agent_exit": 0,
+  "final_message": "All five are implemented in `problems.py` and verified:\n\n- `parse_duration` \u2014 `re.fullmatch` with optional `h`/`m`/`s` groups in order; raises `ValueError` on non-strings, empty matches, bad order, duplicates, negatives, whitespace, or trailing garbage.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` on empty or non-digit input, then standard Luhn doubling from the right; never raises.\n- `flatten` \u2014 recursive walk building joined keys; empty nested dicts vanish, non-dict values (lists included) pass through, input untouched.\n- `top_k_frequent` \u2014 `Counter` + sort by `(-count, word)`; returns `[]` for `k <= 0` and all distinct words when `k` overshoots.\n- `rolling_max` \u2014 monotonic deque of indices, O(n); `ValueError` for `window <= 0`, `[]` when `window > len(nums)`.\n\nThrowaway checks covered every docstring example plus edge cases (invalid inputs, tie-breaks, empty inputs, duplicates) and a 300k-element timing run at 0.11s. No test files left behind, no commits.",
+  "num_turns": 9,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Read": 1,
+    "Edit": 6,
+    "Bash": 1
+  },
+  "tool_calls_total": 8,
+  "thinking_chars": 2134,
+  "requested_efforts": [
+    "max"
+  ],
+  "input_tokens": 200532,
+  "cache_read_tokens": 193792,
+  "output_tokens": 3051,
+  "total_cost_usd": 0.12412,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 9 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-max",
+    "effort": "max",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:46:13Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 52 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons attach raw totals ('Gadget leads with $2,392.00', 'West trailed at $1,414.82') but never compute percentages, ratios, or gaps between them, so only the median ($204.95) is a genuinely derived comparison figure."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product or region grounded in the data\u2014'Prioritize Gadget inventory,' 'Investigate West's weaker sales,' and 'Push higher-margin items, as Sprocket sells many units but earns least.'"
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "Most prose restates table totals, but the note that 'Sprocket sells many units but earns least' is one non-obvious, decision-relevant observation about volume-versus-revenue mismatch."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Absolute dollar figures accompany each item, but every comparison is a bare ranking (\"Gadget leads\", \"West trailed\") with no computed percentages, ratios, or gaps."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "The Gadget and West recommendations name products/regions and figures, but \"Push higher-margin items, as Sprocket sells many units but earns least\" cites unit/margin data absent from the report and edges into generic advice."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "Most prose restates table totals, with only the Sprocket \"sells many units but earns least\" line offering a non-obvious outlier observation (though unsupported by shown figures)."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every product and region carries a raw dollar figure but comparisons are expressed as bare rankings (\"Gadget leads\", \"West trailed\") with no computed percentages, ratios, or gaps."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product or region tied to the data (\"Prioritize Gadget inventory\", \"Investigate West's weaker sales\", \"Sprocket sells many units but earns least\")."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "Most prose restates table totals, but the observation that \"Sprocket sells many units but earns least\" surfaces one non-obvious volume-vs-revenue gap a reader could act on."
+      }
+    }
+  ]
+}

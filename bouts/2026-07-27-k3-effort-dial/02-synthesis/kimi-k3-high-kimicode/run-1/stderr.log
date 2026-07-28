@@ -1,0 +1,41 @@
+        raise ValueError("duration must be a string")$
+    m = re.fullmatch(r"(?:([0-9]+)h)?(?:([0-9]+)m)?(?:([0-9]+)s)?", s)$
+    if m is None or all(g is None for g in m.groups()):$
+        raise ValueError("invalid duration: %r" % s)$
+    hours, minutes, seconds = (int(g) if g is not None else 0 for g in m.groups())$
+    return hours * 3600 + minutes * 60 + seconds$
+$
+$
+def luhn_valid(number):$
+    """Return True if `number` passes the Luhn checksum.$
+$
+    `number` is a string; spaces and hyphens are ignored, so$
+    "4539 1488 0343 6467" and "4539-1488-0343-6467" are both checked as$
+    "4539148803436467". Return False (never raise) if, after removing$
+    spaces and hyphens, the string is empty or contains any non-digit$
+    character. A single digit "0" is valid; any other single digit is not.$
+    """$
+    raise NotImplementedError$
+$
+$
+def flatten(d, sep="."):$
+  File "<stdin>", line 11
+    for bad in ["", "h", "30m1h", "1h2h", "-1h", "1h ", " 1h", "1h!", "1h30", "1x", "1h30m15", None, 5, "1.5h", "1m60s"x if False else "0h"]:
+                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+parse_duration ok
+luhn ok
+flatten ok
+top_k ok
+Traceback (most recent call last):
+  File "<stdin>", line 59, in <module>
+AssertionError
+[]
+[5]
+([1, 3, 2, 5, 4], 3) [3, 5, 5] True
+([2, 1], 1) [2, 1] True
+([1, 2, 3], 5) [] True
+([], 1) [] True
+([5], 1) [5] True
+2M items in 0.74s
+True

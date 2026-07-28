@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Revenue and unit figures are cited from the data but comparisons rely on ranking language ('leads', 'follows', 'trails', 'weakest') with no computed percentages, ratios, or gaps."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region and ties to the data ('Promote Gadget... earns the most revenue from the fewest units', 'Investigate West's weak sales', 'Keep Widget inventory high since it sells the most units')."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The one non-obvious observation is Gadget earning the most revenue from the fewest units (16), while the rest largely restate table totals like regional revenue rankings."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons carry raw figures like \"$2,392.00 from just 16 units\" but none are expressed as computed percentages, ratios, or gaps (e.g., West \"trails at $1,414.82\" states the value without quantifying the gap to North)."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region grounded in the data\u2014\"Promote Gadget harder; it earns the most revenue from the fewest units,\" \"Investigate West's weak sales,\" and \"Keep Widget inventory high since it sells the most units.\""
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple non-obvious, actionable observations, notably Gadget's revenue efficiency (\"the most revenue from the fewest units\") and Widget's volume-versus-price dynamic (\"106 units\" but lower per-unit price)."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Figures accompany each item (e.g., \"Gadget leads with $2,392.00 in revenue from just 16 units\") but comparisons stay as rankings \u2014 \"West trails at $1,414.82\" \u2014 without computed gaps, ratios, or percentages between them."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name specific products/regions and cite data (\"earns the most revenue from the fewest units\"), but the actions themselves are generic (\"Promote Gadget harder\", \"Investigate West's weak sales and test targeted promotions\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces multiple non-obvious, actionable observations \u2014 Gadget's revenue-per-unit efficiency (\"the most revenue from the fewest units sold\") versus Widget's volume-driven sales at \"106 units\" \u2014 beyond restating totals."
+      }
+    }
+  ]
+}

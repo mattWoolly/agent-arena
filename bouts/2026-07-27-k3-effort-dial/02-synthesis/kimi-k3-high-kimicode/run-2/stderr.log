@@ -1,0 +1,3 @@
+/bin/bash: line 1: python: command not found
+elapsed for 200k: 0.076 s
+all checks passed

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 \"top two products account for roughly 63% of total revenue\" and West is \"about 35% below North.\""
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names a specific product or region grounded in the data (\"Focus promotion budget on West, the weakest region,\" \"Bundle Sprocket with top sellers to lift its below-average sales\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "It surfaces concentration (\"top two products account for roughly 63%\"), a regional gap (West \"about 35% below North\"), and distribution shape (\"Median order value is $204.94, indicating many smaller orders alongside a few large ones\")."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Some comparisons carry computed figures ('top two products account for roughly 63%', West 'about 35% below North'), but most product and regional comparisons list raw dollar amounts without computed gaps or ratios."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product or region tied to the data ('Focus promotion budget on West', 'Expand Gadget marketing', 'Bundle Sprocket with top sellers')."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple actionable, non-obvious observations\u2014revenue concentration ('top two products account for roughly 63%'), the regional gap ('West trails... about 35% below North'), and distribution shape ('Median order value is $204.94, indicating many smaller orders alongside a few large ones')."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Some comparisons are computed (top two account for \"roughly 63%\", West \"about 35% below North\") but the product and regional rankings otherwise just list bare dollar figures without computed gaps between adjacent items."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific entity and rationale from the data\u2014West (\"the weakest region, to close the gap with North\"), Gadget (\"drives the largest revenue share\"), and Sprocket (\"Bundle...to lift its below-average sales\")."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "The prose surfaces multiple actionable observations beyond the tables\u2014concentration (\"top two products account for roughly 63%\"), the regional gap (\"about 35% below North\"), and distribution shape (\"median...indicating many smaller orders alongside a few large ones\")."
+      }
+    }
+  ]
+}

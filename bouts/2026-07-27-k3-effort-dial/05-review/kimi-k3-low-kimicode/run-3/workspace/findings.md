@@ -1,0 +1,7 @@
+- src/sync.py:14 pagination loop uses total_count // PAGE_SIZE, silently dropping the final partial page (e.g. 150 rows fetches only 100).
+- src/sync.py:24 mutable default argument seen=[] persists across calls, so users synced once are skipped as "duplicates" in every later sync.
+- src/sync.py:35 SQL is built via f-string interpolation of email and id instead of bound parameters, enabling SQL injection and breaking on emails containing a quote.
+- src/sync.py:39 bare except with pass silently swallows all sync errors (previously logged), hiding failures entirely.
+- src/sync.py:31 the user id is appended to seen before the UPDATE is attempted, so a failed sync is permanently skipped on retry as if already processed.
+- src/report.py:7 early return on empty users leaves the opened file handle unclosed (resource leak) and produces an empty report file instead of the header (regression).
+- src/report.py:11 user["email"] is dereferenced without a None check, crashing with AttributeError for the nullable emails the schema notes guarantee (and IndexError for emails without "@").

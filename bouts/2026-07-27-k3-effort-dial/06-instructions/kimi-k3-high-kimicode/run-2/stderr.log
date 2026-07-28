@@ -1,0 +1,12 @@
+total: 7154.44
+orders: 30
+median: 204.945
+top: Gadget 2392.00
+products: {'Widget': Decimal('2118.94'), 'Gadget': Decimal('2392.00'), 'Sprocket': Decimal('1130.50'), 'Doohickey': Decimal('1513.00')}
+regions: {'North': Decimal('2176.35'), 'South': Decimal('1732.48'), 'East': Decimal('1830.79'), 'West': Decimal('1414.82')}
+headings: ['## Overview', '## Top Products', '## Regional Performance', '## Recommendations']
+words: 103
+bullets: 3 [11, 9, 11]
+banned: []
+json keys: ['total_revenue', 'orders', 'median_order_value', 'top_product_by_revenue', 'revenue_by_region']
+sum regions: 7154.44 vs 7154.44

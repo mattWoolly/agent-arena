@@ -1,0 +1,40 @@
+{
+  "model": "kimi-k3-low-kimicode",
+  "wall_seconds": 63.5,
+  "agent_exit": 0,
+  "final_message": "Done. `python3 -m pytest -q` passes: 6 passed.\n\nTwo bugs fixed in `lrucache/cache.py`:\n\n- `get` never called `move_to_end`, so reads didn't count as \"use\" and recently-read entries could be evicted \u2014 added `self._data.move_to_end(key)` on a hit (`cache.py:31`).\n- `put` ran the capacity check even when the key already existed, so updating a key in a full cache wrongly evicted the LRU entry \u2014 the eviction now only happens for new keys (`cache.py:34`).\n\n`SOLUTION.md` documents both root causes.",
+  "num_turns": 6,
+  "assistant_messages": 6,
+  "tool_calls": {
+    "Read": 2,
+    "Bash": 2,
+    "Edit": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "thinking_chars": 638,
+  "requested_efforts": [
+    "max"
+  ],
+  "input_tokens": 132830,
+  "cache_read_tokens": 121344,
+  "output_tokens": 1140,
+  "total_cost_usd": 0.08796,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 6 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-low",
+    "effort": "low",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:29:59Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 19 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

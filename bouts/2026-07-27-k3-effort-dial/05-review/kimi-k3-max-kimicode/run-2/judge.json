@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g., \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no mechanism connecting two defects into a compound failure mode (e.g., the swallowed exception at :39 and the dropped users at :14 are never linked)."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, such as \"`total_count // PAGE_SIZE` truncates, so the final partial page is never fetched\" and \"Mutable default argument `seen=[]` is shared across all calls.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each bullet is standalone and no compound failure mode is explained, e.g. the swallowed exception at :39 is never connected to the SQL error it would hide at :35."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states a mechanism, e.g. \"Mutable default argument seen=[] is shared across all calls, so user ids...are permanently skipped\" and \"early return...leaks the file handle...(f.close() is never reached)\"."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each defect is described in isolation with no compound failure mode explained across two separate findings\u2014e.g. the swallowed-exception finding at sync.py:39 is never linked mechanistically to another defect's persisting bad state."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. \"total_count // PAGE_SIZE truncates, so the final partial page is never fetched\" and \"Mutable default argument seen=[] is shared across all calls, so user ids ... are permanently skipped.\""
+      }
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line such as \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "The findings at :24 (shared mutable default) and :31 (append-before-success) are listed independently with no statement connecting them into a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states a mechanism, e.g. \"appended to `seen` before the sync succeeds, so a user whose UPDATE fails is permanently skipped on retry.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:35\", \"src/report.py:7\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Findings are listed independently with no mechanism describing how two defects combine\u2014even the two `seen`-related bugs (:24 and :31) are treated separately without explaining a compound failure."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"appended to `seen` before the sync succeeds, so a user whose UPDATE fails is permanently skipped on retry.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the six findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation; no compound failure mode emerging from a combination of separate defects is identified or mechanistically explained."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"IDs are appended to `seen` before the sync succeeds, so a user whose UPDATE fails is permanently skipped on retry.\""
+      }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "model": "kimi-k3-high-kimicode",
+  "wall_seconds": 84.8,
+  "agent_exit": 0,
+  "final_message": "Done. The refactor:\n\n- `reportgen/config.py` \u2014 new frozen dataclass `Config` with typed fields (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config(path)` now returns a `Config`; JSON values override defaults via `Config(**raw)`, and any unknown key raises `ValueError` naming that key.\n- `reportgen/loader.py` \u2014 `config[\"max_rows\"]` \u2192 `config.max_rows`.\n- `reportgen/formatter.py` \u2014 all subscripts replaced with attribute access.\n- `reportgen/main.py` \u2014 unchanged (it only passes the config through).\n\nVerified: no `cfg[...]`/`config[...]` remains in `reportgen/`, all 4 existing tests pass unmodified, the unknown-key `ValueError` fires (`unknown config setting: bogus`), and the dataclass is indeed frozen. Tests under `tests/` untouched, no git commits made.",
+  "num_turns": 5,
+  "assistant_messages": 5,
+  "tool_calls": {
+    "Read": 6,
+    "Write": 2,
+    "Edit": 1,
+    "Grep": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 11,
+  "thinking_chars": 253,
+  "requested_efforts": [
+    "high"
+  ],
+  "input_tokens": 110281,
+  "cache_read_tokens": 98560,
+  "output_tokens": 1420,
+  "total_cost_usd": 0.08603,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 5 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-high",
+    "effort": "high",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:11:13Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 23 insertions(+), 16 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

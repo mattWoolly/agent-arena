@@ -1,0 +1,40 @@
+{
+  "model": "kimi-k3-low-kimicode",
+  "wall_seconds": 52.7,
+  "agent_exit": 0,
+  "final_message": "Done. All 4 tests pass, and unknown keys now raise `ValueError`.\n\n- `reportgen/config.py`: frozen `Config` dataclass with the same four fields and defaults; `load_config` validates keys against the dataclass fields and returns a `Config`.\n- `reportgen/loader.py` and `reportgen/formatter.py`: switched to attribute access (`config.max_rows`, `config.title`, etc.). No subscripting of the config remains anywhere in `reportgen/`.",
+  "num_turns": 5,
+  "assistant_messages": 5,
+  "tool_calls": {
+    "Read": 5,
+    "Write": 2,
+    "Edit": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 9,
+  "thinking_chars": 15,
+  "requested_efforts": [
+    "low"
+  ],
+  "input_tokens": 109485,
+  "cache_read_tokens": 97536,
+  "output_tokens": 978,
+  "total_cost_usd": 0.07978,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 5 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-low",
+    "effort": "low",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:10:18Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 18 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

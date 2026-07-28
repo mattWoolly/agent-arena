@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 1,
+    "specificity": 1
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Rankings carry raw dollar totals (e.g., \"Gadget leads with $2,392.00... Widget at $2,118.94\"), but no computed gaps, ratios, or percentages appear, and \"West lags the others noticeably\" is unquantified."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name specific products and regions (\"Prioritize Gadget inventory,\" \"Investigate why West underperforms,\" \"Review Sprocket pricing\") but the rationales are generic and cite no figures."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "The prose largely restates ranked totals the tables imply, with \"West lags the others noticeably\" being the only mild observation and no concentration, gap, or outlier analysis surfaced."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons attach raw dollar figures (e.g., \"Gadget leads with $2,392.00... Widget at $2,118.94\") but no computed gaps, percentages, or ratios, and \"West lags the others noticeably\" carries no number."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name specific products/regions (Gadget, West, Sprocket) but the actions are generic (\"Prioritize Gadget inventory,\" \"Investigate why West underperforms\") and carry no figures."
+      },
+      "insight_density": {
+        "score": 0,
+        "why": "The prose restates table totals and rankings already implied (\"Gadget leads,\" \"West lags\") without surfacing any non-obvious concentration, gap, or outlier a reader could act on."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Revenue figures accompany each ranking (e.g., \"Gadget leads with $2,392.00... Widget at $2,118.94\") but no comparison is expressed as a computed gap, ratio, or percentage \u2014 \"West lags the others noticeably\" carries no number."
+      },
+      "specificity": {
+        "score": 1,
+        "why": "Recommendations name products and regions (Gadget, Sprocket, West) but remain generic in action (\"Prioritize Gadget inventory,\" \"Investigate why West underperforms\") without citing figures or specific mechanisms."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "Most prose restates table totals, with only one mild observation beyond the numbers \u2014 \"West lags the others noticeably\" \u2014 and no analysis of concentration, gaps, or outliers."
+      }
+    }
+  ]
+}

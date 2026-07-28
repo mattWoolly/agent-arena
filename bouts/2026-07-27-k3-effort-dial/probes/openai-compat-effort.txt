@@ -1,0 +1,12 @@
+=== openai-compat reasoning_effort=low ===
+http 200
+usage: {"prompt_tokens": 93, "completion_tokens": 54, "total_tokens": 147, "completion_tokens_details": {"reasoning_tokens": 38}}
+reasoning len: 179 content: 'ok'
+=== openai-compat reasoning_effort=high ===
+http 200
+usage: {"prompt_tokens": 93, "completion_tokens": 49, "total_tokens": 142, "completion_tokens_details": {"reasoning_tokens": 33}}
+reasoning len: 139 content: 'ok'
+=== openai-compat reasoning_effort=max ===
+http 200
+usage: {"prompt_tokens": 92, "completion_tokens": 51, "total_tokens": 143, "completion_tokens_details": {"reasoning_tokens": 35}}
+reasoning len: 146 content: 'ok'

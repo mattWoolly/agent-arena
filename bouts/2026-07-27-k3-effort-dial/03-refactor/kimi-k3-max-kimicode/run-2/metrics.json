@@ -1,0 +1,41 @@
+{
+  "model": "kimi-k3-max-kimicode",
+  "wall_seconds": 76.1,
+  "agent_exit": 0,
+  "final_message": "Done. The refactor is complete:\n\n- `reportgen/config.py` now defines `@dataclass(frozen=True) class Config` with the same four fields and defaults (`title=\"Report\"`, `output_format=\"text\"`, `max_rows=10`, `include_summary=True`). `load_config(path)` returns a `Config`, file values override defaults, and an unknown JSON key raises `ValueError` naming that key.\n- `reportgen/loader.py` and `reportgen/formatter.py` switched from `config[...]` subscripting to attribute access; `main.py` only passes the config through, so it needed no change. A grep confirms no `config[`/`cfg[` remains in `reportgen/`.\n- `tests/` untouched, no commits made.\n\nVerification: `python3 -m pytest -q` \u2192 4 passed, and a manual check confirmed defaults, overrides, the `ValueError` on unknown keys, and frozenness.",
+  "num_turns": 7,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Read": 7,
+    "Write": 2,
+    "Edit": 1,
+    "Grep": 1,
+    "Bash": 2
+  },
+  "tool_calls_total": 13,
+  "thinking_chars": 2130,
+  "requested_efforts": [
+    "max"
+  ],
+  "input_tokens": 157981,
+  "cache_read_tokens": 145152,
+  "output_tokens": 2053,
+  "total_cost_usd": 0.11283,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 7 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-max",
+    "effort": "max",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:06:47Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

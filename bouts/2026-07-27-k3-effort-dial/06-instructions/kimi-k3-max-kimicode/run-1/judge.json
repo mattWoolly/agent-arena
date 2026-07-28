@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 1,
+    "quantification": 1,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Comparisons attach raw dollar values (\"Gadget leads... $2,392.00, followed by Widget at $2,118.94\") but never compute gaps, ratios, or percentages between them."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names a specific product/region with its figure (\"Review Sprocket pricing... only $1,130.50\", \"Investigate West's... lowest region at $1,414.82\")."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "Most lines restate table totals, but one genuine non-obvious observation appears: Sprocket \"contributes only $1,130.50 despite high unit volume.\""
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every item carries a raw dollar total but comparisons are expressed as bare rankings ('leads', 'followed by', 'trailed', 'ahead of') without computed gaps, percentages, or ratios between them."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name a specific product or region with its figure and an actionable move, e.g. 'Review Sprocket pricing or bundling, since it contributes only $1,130.50.'"
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "Most of the prose restates totals the tables imply, but the Sprocket recommendation surfaces one non-obvious observation\u2014low revenue 'despite high unit volume'\u2014implying a pricing problem."
+      }
+    },
+    {
+      "quantification": {
+        "score": 1,
+        "why": "Every comparison carries a raw dollar figure (e.g., \"Gadget leads all products with $2,392.00\") but none are expressed as computed gaps, ratios, or percentages between items."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "All three recommendations name specific products/regions with figures (\"Investigate West's weaker sales, the lowest region at $1,414.82\"; \"Review Sprocket pricing... only $1,130.50\")."
+      },
+      "insight_density": {
+        "score": 1,
+        "why": "Most prose restates table totals, but the Sprocket recommendation surfaces one non-obvious observation\u2014low revenue \"despite high unit volume\"\u2014implying a price/volume mismatch worth acting on."
+      }
+    }
+  ]
+}

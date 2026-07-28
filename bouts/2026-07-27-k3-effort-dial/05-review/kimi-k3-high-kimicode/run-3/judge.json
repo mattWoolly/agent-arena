@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 0,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding stands alone; the write-up never connects two separate defects (e.g. the bare except at line 39 swallowing the error that lets the premature `seen.append` at line 31 persist), so no compound failure mode is explained."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. line 14 \"drops the final partial page, so ... some staged users are never fetched\" and line 24 \"shared across calls, causing users synced in one call to be silently skipped.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line, e.g. \"src/sync.py:14\" and \"src/report.py:11\"."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation with no defect-to-defect combination explained\u2014e.g. the bare-except at :39 and the premature `seen.append` at :31 are never linked into a compound failure mode."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \"mutable default argument `seen=[]` is shared across calls, causing users synced in one call to be silently skipped\" rather than merely labeling it."
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the eight findings carries a usable file:line (e.g. `src/sync.py:14`, `src/report.py:11`)."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "It gestures at an interaction \u2014 the bare except \"silently swallows all sync errors ... while the transaction still commits\" and the separate note that a failed user \"is still marked as seen\" \u2014 but never combines these two defects into one explicitly stated compound failure mechanism."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states the failure mechanism, e.g. `range(total_count // PAGE_SIZE)` \"drops the final partial page, so when total_count is not an exact multiple of PAGE_SIZE ... some staged users are never fetched.\""
+      }
+    }
+  ]
+}

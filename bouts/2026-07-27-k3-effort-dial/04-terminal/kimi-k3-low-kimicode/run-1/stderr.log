@@ -1,0 +1,44 @@
+Makefile:4: *** missing separator.  Stop.
+./scripts/run_checks.sh
+make: ./scripts/run_checks.sh: Permission denied
+make: *** [Makefile:7: check] Error 127
+./scripts/run_checks.sh
+make: ./scripts/run_checks.sh: No such file or directory
+make: *** [Makefile:7: check] Error 127
+scripts/run_checks.sh: Bourne-Again shell script, ASCII text executable, with CRLF line terminators
+0000000   #   !   /   b   i   n   /   b   a   s   h  \r  \n   s   e   t
+0000020       -   e  \r  \n   p   y   t   h   o   n   3       t   o   o
+0000040   l   s   /   v   a   l   i   d   a   t   e   _   c   o   n   f
+0000060   i   g   .   p   y       d   a   t   a   /   c   o   n   f   i
+0000100   g   .   j   s   o   n  \r  \n   e   c   h   o       "   a   l
+./scripts/run_checks.sh
+Traceback (most recent call last):
+  File "/tmp/arena-ws.ycMb0j/tools/validate_config.py", line 18, in <module>
+    main(sys.argv[1])
+  File "/tmp/arena-ws.ycMb0j/tools/validate_config.py", line 8, in main
+    config = json.load(f)
+             ^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 5 column 1 (char 92)
+make: *** [Makefile:7: check] Error 1
+./scripts/run_checks.sh
+config ok: data/config.json
+all checks passed
+python3 -m pytest -q tests/
+.
+.
+.
+                                                                      [100%]
+
+3 passed in 0.02s

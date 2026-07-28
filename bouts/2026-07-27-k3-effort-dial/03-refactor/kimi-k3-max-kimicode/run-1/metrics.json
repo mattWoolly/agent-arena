@@ -1,0 +1,41 @@
+{
+  "model": "kimi-k3-max-kimicode",
+  "wall_seconds": 76.5,
+  "agent_exit": 0,
+  "final_message": "Done. The refactor is complete and verified:\n\n- `reportgen/config.py` \u2014 added `@dataclass(frozen=True)` `Config` with typed fields (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config()` returns a `Config`, lets JSON values override defaults, and raises `ValueError(\"Unknown config key: 'bogus'\")` for any key that isn't a known setting.\n- `reportgen/formatter.py` and `reportgen/loader.py` \u2014 switched to attribute access (`config.title`, `config.max_rows`, etc.). `main.py` never subscripted, so it's unchanged. Grep confirms no `cfg[...]`/`config[...]` remains in `reportgen/`.\n- `python3 -m pytest -q`: 4 passed, tests untouched. Also spot-checked that defaults are identical, the dataclass is frozen (`FrozenInstanceError` on assignment), and the error message names the offending key.",
+  "num_turns": 7,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Read": 8,
+    "Write": 1,
+    "Edit": 3,
+    "Grep": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 14,
+  "thinking_chars": 446,
+  "requested_efforts": [
+    "max"
+  ],
+  "input_tokens": 157108,
+  "cache_read_tokens": 151040,
+  "output_tokens": 1677,
+  "total_cost_usd": 0.08867,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 7 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-max",
+    "effort": "max",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:04:10Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 23 insertions(+), 16 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

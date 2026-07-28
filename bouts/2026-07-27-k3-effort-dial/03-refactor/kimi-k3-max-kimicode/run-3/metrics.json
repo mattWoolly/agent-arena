@@ -1,0 +1,41 @@
+{
+  "model": "kimi-k3-max-kimicode",
+  "wall_seconds": 90.8,
+  "agent_exit": 0,
+  "final_message": "Done. The refactor is complete:\n\n- `reportgen/config.py` \u2014 now defines `@dataclass(frozen=True) class Config` with the same four settings and defaults (`title=\"Report\"`, `output_format=\"text\"`, `max_rows=10`, `include_summary=True`). `load_config(path)` returns a `Config`, file values override defaults, and an unknown JSON key raises `ValueError(\"Unknown config setting: <key>\")`. The old `DEFAULTS` dict is gone.\n- `reportgen/loader.py` and `reportgen/formatter.py` \u2014 switched from `config[\"...\"]` to attribute access (`config.max_rows`, `config.title`, etc.). `main.py` needed no change.\n- No `cfg[...]`/`config[...]` subscripting remains in `reportgen/` (verified by grep), `tests/` untouched, no commits made.\n\n`python3 -m pytest -q`: 4 passed.",
+  "num_turns": 7,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Read": 6,
+    "Write": 2,
+    "Edit": 1,
+    "Grep": 1,
+    "Bash": 2
+  },
+  "tool_calls_total": 12,
+  "thinking_chars": 550,
+  "requested_efforts": [
+    "max"
+  ],
+  "input_tokens": 155887,
+  "cache_read_tokens": 142848,
+  "output_tokens": 1504,
+  "total_cost_usd": 0.10453,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 7 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-max",
+    "effort": "max",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:08:45Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 23 insertions(+), 16 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

@@ -1,0 +1,39 @@
+{
+  "model": "kimi-k3-low-kimicode",
+  "wall_seconds": 87.1,
+  "agent_exit": 0,
+  "final_message": "All five functions implemented and verified:\n\n- `parse_duration` \u2014 regex `fullmatch` enforcing order/units; `ValueError` on empty, non-string, out-of-order, duplicates, negatives, whitespace, garbage.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` on empty/non-digit; classic Luhn with doubled digits at odd positions from the right.\n- `flatten` \u2014 recursive walk, empty nested dicts contribute nothing, lists kept as-is, input untouched.\n- `top_k_frequent` \u2014 counts, sorts by `(-count, word)`, handles `k <= 0` and oversized `k`.\n- `rolling_max` \u2014 monotonic deque, O(n); 2M-element input runs in ~0.74s.\n\nEdge cases from the docstrings all pass in my throwaway checks.",
+  "num_turns": 4,
+  "assistant_messages": 4,
+  "tool_calls": {
+    "Read": 1,
+    "Edit": 5,
+    "Bash": 1
+  },
+  "tool_calls_total": 7,
+  "thinking_chars": 629,
+  "requested_efforts": [
+    "low"
+  ],
+  "input_tokens": 87197,
+  "cache_read_tokens": 75520,
+  "output_tokens": 2009,
+  "total_cost_usd": 0.08782,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 4 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-low",
+    "effort": "low",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:41:26Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 57 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

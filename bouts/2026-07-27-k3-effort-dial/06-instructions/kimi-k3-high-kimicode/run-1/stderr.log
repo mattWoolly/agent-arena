@@ -1,0 +1,13 @@
+order_id,date,region,product,units,unit_price
+1001,2026-05-02,North,Widget,12,19.99
+1002,2026-05-02,South,Gadget,3,149.50
+1003,2026-05-03,East,Sprocket,40,4.75
+1004,2026-05-03,West,Widget,7,19.99
+31 data/sales.csv
+total 7154.44 orders 30 median 204.94
+top Gadget {'Widget': 2118.94, 'Gadget': 2392.0, 'Sprocket': 1130.5, 'Doohickey': 1513.0}
+regions {'North': 2176.35, 'South': 1732.48, 'East': 1830.79, 'West': 1414.82}
+order values sorted: [47.5, 79.96, 85.5, 89.0, 118.75, 119.94, 139.93, 149.5, 149.5, 159.92, 166.25, 178.0, 178.0, 179.91, 190.0, 219.89, 237.5, 239.88, 267.0, 279.86, 285.0, 299.0, 299.0, 299.85, 356.0, 399.8, 445.0, 448.5, 448.5, 598.0]
+words: 112 | headings: ['## Overview', '## Top Products', '## Regional Performance', '## Recommendations']
+banned: [] | bullets: 3 | bullet words: [11, 13, 10]
+keys: ['total_revenue', 'orders', 'median_order_value', 'top_product_by_revenue', 'revenue_by_region']

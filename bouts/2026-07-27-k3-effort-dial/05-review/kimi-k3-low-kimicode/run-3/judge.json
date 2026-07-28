@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "causal_clarity": 2,
+    "interaction_synthesis": 1,
+    "location_precision": 2
+  },
+  "samples": [
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every finding carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The :31 finding gestures at a failed sync persisting on retry but never mechanistically ties it to the bare-except at :39 that swallows the error making the failure silent, so the compound mode is only implied."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states a failure mechanism, e.g. mutable default \"persists across calls, so users synced once are skipped as duplicates\" and email \"dereferenced without a None check, crashing with AttributeError.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line (e.g. \"src/sync.py:14\", \"src/report.py:11\")."
+      },
+      "interaction_synthesis": {
+        "score": 0,
+        "why": "Each finding is described in isolation\u2014the bare-except swallow (:39) and the seen-append-before-UPDATE (:31) are never connected into a compound failure mode where the swallowed error leaves the skipped-user bad state permanently unretried."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Every finding states the failure mechanism, e.g. \":31 the user id is appended to seen before the UPDATE is attempted, so a failed sync is permanently skipped on retry.\""
+      }
+    },
+    {
+      "location_precision": {
+        "score": 2,
+        "why": "Every one of the seven findings carries a usable file:line, e.g. 'src/sync.py:14' and 'src/report.py:11'."
+      },
+      "interaction_synthesis": {
+        "score": 1,
+        "why": "The line 31 finding ('a failed sync is permanently skipped on retry') and the line 39 bare-except finding together imply a compound failure, but the write-up never connects them\u2014it gestures at the interaction without stating that the swallowed error is what lets the 'seen' bad state persist."
+      },
+      "causal_clarity": {
+        "score": 2,
+        "why": "Essentially every finding states a mechanism, e.g. 'silently dropping the final partial page (e.g. 150 rows fetches only 100)' and 'appended to seen before the UPDATE is attempted, so a failed sync is permanently skipped on retry.'"
+      }
+    }
+  ]
+}

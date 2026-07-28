@@ -1,0 +1,40 @@
+{
+  "model": "kimi-k3-low-kimicode",
+  "wall_seconds": 58.7,
+  "agent_exit": 0,
+  "final_message": "Done. Changes:\n\n- `reportgen/config.py`: added frozen `Config` dataclass with the four typed fields and same defaults; `load_config` now returns a `Config`, raising `ValueError(\"Unknown config key: <key>\")` for unrecognized JSON keys.\n- `reportgen/loader.py` and `reportgen/formatter.py`: switched to attribute access (`config.max_rows`, `config.title`, etc.). No subscripting remains in `reportgen/`.\n- `main.py` needed no changes.\n\nAll 4 existing tests pass unmodified. Quick sanity check of the new error:\n\n```\nValueError: Unknown config key: bogus\n```",
+  "num_turns": 7,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Read": 5,
+    "Write": 1,
+    "Edit": 4,
+    "Bash": 1
+  },
+  "tool_calls_total": 11,
+  "thinking_chars": 11,
+  "requested_efforts": [
+    "low"
+  ],
+  "input_tokens": 154514,
+  "cache_read_tokens": 146688,
+  "output_tokens": 1041,
+  "total_cost_usd": 0.0831,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 7 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-low",
+    "effort": "low",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T13:01:43Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

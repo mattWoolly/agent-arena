@@ -1,0 +1,38 @@
+{
+  "model": "kimi-k3-low-kimicode",
+  "wall_seconds": 72.2,
+  "agent_exit": 0,
+  "final_message": "All five functions implemented in `problems.py` and verified with throwaway checks covering every docstring example plus edge cases:\n\n- `parse_duration` \u2014 regex-validated tokenizer enforcing unit order, no duplicates, no stray chars/whitespace/negatives.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` on empty or non-digit input, never raises.\n- `flatten` \u2014 recursive flattening, empty nested dicts dropped, input untouched.\n- `top_k_frequent` \u2014 sorted by `(-count, word)`, handles `k <= 0` and oversized `k`.\n- `rolling_max` \u2014 O(n) monotonic deque; `ValueError` for `window <= 0`, `[]` when window exceeds length.\n\nAll checks pass.",
+  "num_turns": 3,
+  "assistant_messages": 3,
+  "tool_calls": {
+    "Read": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 2,
+  "thinking_chars": 22,
+  "requested_efforts": [
+    "low"
+  ],
+  "input_tokens": 64478,
+  "cache_read_tokens": 53248,
+  "output_tokens": 1933,
+  "total_cost_usd": 0.07866,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 3 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-low",
+    "effort": "low",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:53:19Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 64 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}

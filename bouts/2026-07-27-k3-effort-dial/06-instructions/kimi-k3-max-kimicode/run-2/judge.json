@@ -1,0 +1,53 @@
+{
+  "judge_model": "claude-opus-4-8",
+  "n_samples": 3,
+  "median": {
+    "insight_density": 2,
+    "quantification": 2,
+    "specificity": 2
+  },
+  "samples": [
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g., Gadget is 'roughly a third of the total', the regional 'gap of about $761.53 between best and worst', and each product/region cited with exact dollar amounts."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Every recommendation names concrete products, regions, and data-grounded rationale, e.g., 'Focus Gadget promotions in West, where premium-product sales lag' and 'prioritize Widget cross-sells'."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces several non-obvious, actionable observations, notably that 'Sprocket is lowest at $1,130.50 despite the highest unit volume' and that West lags specifically in premium-product sales."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 e.g. 'Gadget leads all products with $2,392.00 in total revenue, roughly a third of the total' and 'a gap of about $761.53 between best and worst.'"
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products and regions with data context, e.g. 'Focus Gadget promotions in West, where premium-product sales lag other regions, to close the regional revenue gap.'"
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable observations such as 'Sprocket is lowest at $1,130.50 despite the highest unit volume' and West lagging specifically in premium-product mix versus North."
+      }
+    },
+    {
+      "quantification": {
+        "score": 2,
+        "why": "Nearly every comparison carries a computed figure \u2014 'roughly a third of the total', product revenues, regional totals, and 'a gap of about $761.53 between best and worst'."
+      },
+      "specificity": {
+        "score": 2,
+        "why": "Each recommendation names concrete products/regions and data patterns, e.g. 'Focus Gadget promotions in West' and 'prioritize Widget cross-sells' over low-price Sprocket."
+      },
+      "insight_density": {
+        "score": 2,
+        "why": "Surfaces multiple non-obvious, actionable points like Gadget concentration at 'roughly a third', Sprocket being 'lowest... despite the highest unit volume', and the West revenue gap."
+      }
+    }
+  ]
+}

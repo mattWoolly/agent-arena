@@ -1,0 +1,39 @@
+{
+  "model": "kimi-k3-low-kimicode",
+  "wall_seconds": 66.3,
+  "agent_exit": 0,
+  "final_message": "All five functions implemented in `problems.py` and verified:\n\n- `parse_duration` \u2014 anchored regex with optional `h`/`m`/`s` groups in order; enforces at least one component, rejects duplicates, out-of-order units, non-digit/negative/whitespace input, and non-strings via `ValueError`.\n- `luhn_valid` \u2014 strips spaces/hyphens, returns `False` on empty or non-digit input, standard Luhn doubling from the right; handles the `\"0\"` case naturally.\n- `flatten` \u2014 iterative stack-based walk; joins keys with `sep`, skips empty nested dicts, keeps non-dict values as-is, no mutation.\n- `top_k_frequent` \u2014 `Counter` + sort by `(-count, word)`; returns `[]` for `k <= 0`, caps at distinct words.\n- `rolling_max` \u2014 monotonic deque of indices, O(n); `ValueError` for `window <= 0`, `[]` when window exceeds length. Verified on 2M elements in well under the time budget.",
+  "num_turns": 4,
+  "assistant_messages": 4,
+  "tool_calls": {
+    "Read": 1,
+    "Write": 1,
+    "Bash": 1
+  },
+  "tool_calls_total": 3,
+  "thinking_chars": 467,
+  "requested_efforts": [
+    "low"
+  ],
+  "input_tokens": 87195,
+  "cache_read_tokens": 74752,
+  "output_tokens": 2173,
+  "total_cost_usd": 0.09235,
+  "cost_source": "computed:env/prices.json (wire.jsonl usage, 4 turn records)",
+  "run_env": {
+    "cli_version": "kimi-code 0.27.0",
+    "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+    "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+    "proxy_upstream": "none",
+    "model_env": "none (isolated HOME=/home/mwoolly/.kimi-arena, outside repo; PYTHONUSERBASE=/home/mwoolly/.local)",
+    "model_alias": "arena/k3-low",
+    "effort": "low",
+    "setting_sources": "arena config.toml only",
+    "timeout_s": 1500,
+    "started_at": "2026-07-27T12:57:59Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 56 insertions(+), 5 deletions(-)",
+  "grade_pass": true,
+  "score": "6/6"
+}
