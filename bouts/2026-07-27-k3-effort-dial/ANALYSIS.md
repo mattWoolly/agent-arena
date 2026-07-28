@@ -80,11 +80,15 @@ worked: the silent failure mode is real and we hit it on the first try.
 
 | Arm | Thinking chars | Output tokens | Tool calls | Cost | Execution time |
 | --- | --- | --- | --- | --- | --- |
-| low | 6.6k | 6.1k | 40 | $0.50 | 358s |
-| high | 20.8k | 10.2k | 53 | $0.59 | 512s |
-| max | 80.0k | 16.9k | 56 | $0.69 | 688s |
+| low | 2.2k | 6.9k | 40 | $0.50 | 358s |
+| high | 6.9k | 10.5k | 53 | $0.59 | 512s |
+| max | 26.7k | 16.2k | 56 | $0.69 | 688s |
 
-Lever hierarchy low→max: thinking 12.1x, output tokens 2.8x, execution
+(Thinking = arm total across 18 runs divided by 3 passes; output = sums
+of per-cell means from results.md; an earlier revision of this table
+mislabeled arm totals as per-pass figures.)
+
+Lever hierarchy low→max: thinking 12.1x, output tokens 2.3x, execution
 time 1.9x, tool calls 1.4x, cost 1.4x, grades 1.0x. The published Opus 5
 dial on the same battery: cost 2.2x (full battery $1.48→$3.33), execution
 time 3.1x, grades 1.0x. Two dials, same grades, opposite economics: the
@@ -119,7 +123,7 @@ of judge noise, not of a depth dividend. Per-run medians:
 The only dimension with any effort signal, interaction_synthesis on
 05-review (0/0/0-1 at low/high vs 2/0/1 at max), is the same dimension
 the transplant experiment showed responds to four lines of prompt, and
-it moves within-arm as much as between arms. 80k characters of max-arm
+it moves within-arm as much as between arms. 27k characters per pass of max-arm
 thinking bought nothing this judge could price.
 
 Judge-pass provenance: 17/18 runs judged in one pass 2026-07-28
@@ -139,7 +143,7 @@ data: n_samples=3 for all 18 runs.
 - AA ~2x verbosity: INVERTED on agentic work (H4). Suite construction,
   not model character, appears to carry that number.
 - vLLM day-0 "K3 thinks a lot before it answers": true in thinking volume
-  (80k chars/pass at max), NOT in completion tokens or bill on this
+  (26.7k chars per pass at max, 12.1x the low arm), NOT in completion tokens or bill on this
   battery; and the dial is the mitigation the discourse mostly ignores.
 - Cross-vendor serving variance (same weights, 8 providers by 7/28):
   out of reach without third-party keys; named future work.
