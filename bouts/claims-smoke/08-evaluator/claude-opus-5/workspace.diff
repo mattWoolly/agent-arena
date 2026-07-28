@@ -1,0 +1,292 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..059f15f
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,70 @@
++# Solution notes
++
++`sheet/engine.py` implements `evaluate(cells)` and `CycleError` in four small
++stages: tokenize → parse → order → compute.
++
++## Approach
++
++1. **Parse once, per cell** (`_parse`). A value not starting with `=` must be a
++   bare number, so it becomes a `("number", ...)` node directly. A formula is
++   tokenized by a single regex (`_TOKEN_RE`: number | cell name | operator,
++   with whitespace skipped between tokens) and then parsed into an expression
++   tree.
++
++2. **Recursive-descent parser** (`_Parser`) mirroring the grammar's precedence
++   levels: `_expression` handles `+ -`, `_term` handles `* /` (both looping
++   rather than recursing, which gives left-associativity), `_factor` handles
++   unary signs, and `_primary` handles numbers, references, and parentheses.
++   Leftover tokens after a complete parse are an error, so `=1 2` is rejected
++   rather than silently truncated.
++
++3. **Topological order, not recursive resolution** (`_resolution_order`).
++   Rather than evaluating cells recursively and memoizing, references are
++   collected per cell and Kahn's algorithm produces an order in which every
++   cell follows the cells it depends on. This makes cycle detection fall out
++   for free — any cell that never reaches in-degree zero is part of, or
++   downstream of, a cycle — and it keeps recursion depth proportional to a
++   single formula's nesting rather than to the length of a reference chain
++   (verified: a 2000-cell chain evaluates fine, where naive recursion would hit
++   Python's recursion limit).
++
++4. **Compute** (`_compute`) walks each tree once, reading dependency values
++   from the results dict. All values are `float`, so `/` is real division and
++   `=3/2` is `1.5`.
++
++`evaluate` never mutates its argument and returns a fresh dict containing every
++input cell name.
++
++## Edge cases handled
++
++- **Forward and transitive references** — order comes from the dependency
++  graph, so dict insertion order is irrelevant.
++- **Shared dependencies** — a diamond (`D=B+C`, `B=A*2`, `C=A*3`) evaluates `A`
++  once; each cell is computed exactly once.
++- **Cycles**: direct self-reference (`A=A`), mutual (`A=B`, `B=A`), longer
++  chains, and cycles buried inside a larger expression (`A=1+(2*B)`, `B=A/2`)
++  all raise `CycleError`. The message names the cells involved. Cycle detection
++  runs before any arithmetic, so a sheet containing both a cycle and a
++  divide-by-zero reports the cycle.
++- **Unary minus** in the positions the spec calls out plus the ones it implies:
++  `=-3`, `=-(A+1)`, after an operator (`=2*-3`), and stacked (`=--4`). A
++  leading unary `+` is accepted symmetrically.
++- **Whitespace** is insignificant between tokens and is also stripped from bare
++  numbers (`" 2 "`).
++- **Division by zero** propagates Python's `ZeroDivisionError`, whether the
++  zero is a literal or arrives through a reference.
++- **Empty sheet** returns `{}`.
++- **Number forms**: integers, decimals, and trailing/leading-dot forms
++  (`2.`, `.5`) are accepted.
++
++## Choices the spec leaves open
++
++- A reference to a cell that isn't in `cells` raises `KeyError` naming both
++  cells. Defaulting absent cells to `0.0` was the alternative; an error was
++  chosen because it surfaces typos instead of silently producing a plausible
++  wrong number, and because such a cell has no entry in the returned dict.
++- Malformed input raises `ValueError` with the offending text: a bare value
++  that isn't a number, an unknown character, an unbalanced `(`, a dangling
++  operator, or an empty formula (`"="`).
++- Values that are already `int`/`float` rather than strings are accepted and
++  coerced, since the coercion is unambiguous.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..87c1798
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..bd9ae58
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..bf67621 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,196 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine; see README.md for the semantics."""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cells reference each other in a cycle."""
++
++
++_TOKEN_RE = re.compile(
++    r"""
++    (?P<number> \d+ (?: \. \d* )? | \. \d+ )
++  | (?P<name>   [A-Za-z]+ \d* )
++  | (?P<op>     [-+*/()] )
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(text):
++    """Split a formula body into ('number'|'name'|'op', text) pairs."""
++    tokens = []
++    pos = 0
++    end = len(text)
++    while pos < end:
++        if text[pos].isspace():
++            pos += 1
++            continue
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            raise ValueError(f"unexpected character {text[pos]!r} in {text!r}")
++        tokens.append((match.lastgroup, match.group()))
++        pos = match.end()
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser for the formula grammar."""
++
++    def __init__(self, tokens, source):
++        self._tokens = tokens
++        self._source = source
++        self._pos = 0
++
++    def parse(self):
++        node = self._expression()
++        if self._peek() is not None:
++            raise ValueError(
++                f"unexpected {self._peek()[1]!r} in {self._source!r}"
++            )
++        return node
++
++    def _peek(self):
++        if self._pos < len(self._tokens):
++            return self._tokens[self._pos]
++        return None
++
++    def _take(self):
++        token = self._peek()
++        if token is None:
++            raise ValueError(f"unexpected end of {self._source!r}")
++        self._pos += 1
++        return token
++
++    def _take_op(self, *ops):
++        """Consume and return the next operator if it is one of ``ops``."""
++        token = self._peek()
++        if token is not None and token[0] == "op" and token[1] in ops:
++            self._pos += 1
++            return token[1]
++        return None
++
++    def _expression(self):
++        node = self._term()
++        while True:
++            op = self._take_op("+", "-")
++            if op is None:
++                return node
++            node = ("binary", op, node, self._term())
++
++    def _term(self):
++        node = self._factor()
++        while True:
++            op = self._take_op("*", "/")
++            if op is None:
++                return node
++            node = ("binary", op, node, self._factor())
++
++    def _factor(self):
++        if self._take_op("-") is not None:
++            return ("negate", self._factor())
++        if self._take_op("+") is not None:
++            return self._factor()
++        return self._primary()
++
++    def _primary(self):
++        kind, text = self._take()
++        if kind == "number":
++            return ("number", float(text))
++        if kind == "name":
++            return ("reference", text)
++        if text == "(":
++            node = self._expression()
++            if self._take_op(")") is None:
++                raise ValueError(f"missing ')' in {self._source!r}")
++            return node
++        raise ValueError(f"unexpected {text!r} in {self._source!r}")
++
++
++def _parse(value, name):
++    """Turn a cell's raw value into an expression tree."""
++    if isinstance(value, (int, float)):
++        return ("number", float(value))
++    text = value.strip()
++    if not text.startswith("="):
++        try:
++            return ("number", float(text))
++        except ValueError:
++            raise ValueError(f"cell {name!r} is not a number: {value!r}") from None
++    body = text[1:]
++    tokens = _tokenize(body)
++    if not tokens:
++        raise ValueError(f"cell {name!r} has an empty formula")
++    return _Parser(tokens, body).parse()
++
++
++def _references(node, found):
++    kind = node[0]
++    if kind == "reference":
++        found.add(node[1])
++    elif kind == "binary":
++        _references(node[2], found)
++        _references(node[3], found)
++    elif kind == "negate":
++        _references(node[1], found)
++    return found
++
++
++def _resolution_order(trees):
++    """Order cells so every cell comes after the cells it references.
++
++    Raises CycleError if the dependency graph has a cycle, and KeyError if a
++    formula references a cell that does not exist.
++    """
++    dependents = {name: [] for name in trees}
++    pending = {}
++    for name, tree in trees.items():
++        deps = _references(tree, set())
++        for dep in deps:
++            if dep not in trees:
++                raise KeyError(
++                    f"cell {name!r} references unknown cell {dep!r}"
++                )
++            dependents[dep].append(name)
++        pending[name] = len(deps)
++
++    order = [name for name in trees if pending[name] == 0]
++    for name in order:
++        for dependent in dependents[name]:
++            pending[dependent] -= 1
++            if pending[dependent] == 0:
++                order.append(dependent)
++
++    if len(order) < len(trees):
++        stuck = sorted(name for name in trees if pending[name] > 0)
++        raise CycleError(f"cyclic references among cells: {', '.join(stuck)}")
++    return order
++
++
++def _compute(node, values):
++    kind = node[0]
++    if kind == "number":
++        return node[1]
++    if kind == "reference":
++        return values[node[1]]
++    if kind == "negate":
++        return -_compute(node[1], values)
++    _, op, left, right = node
++    left = _compute(left, values)
++    right = _compute(right, values)
++    if op == "+":
++        return left + right
++    if op == "-":
++        return left - right
++    if op == "*":
++        return left * right
++    return left / right
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell in ``cells``, returning {name: float}."""
++    trees = {name: _parse(value, name) for name, value in cells.items()}
++    values = {}
++    for name in _resolution_order(trees):
++        values[name] = _compute(trees[name], values)
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..badc44b
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ
