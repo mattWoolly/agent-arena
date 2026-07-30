@@ -123,7 +123,11 @@ slice as `proxy_usage.jsonl` in the run dir, and `metrics.py` sums it
 count. Fallback: for models listed in `env/prices.json` (list prices per 1M
 tokens with cache tiers and long-context multipliers), `metrics.py`
 recomputes from transcript or envelope usage; without cache visibility that
-figure is an upper bound at full input rates. The CLI's figure is always
+figure is an upper bound at full input rates. The per-request transcript walk
+is trusted only when the streamed usage saw output tokens: some endpoints
+(MiniMax `/anthropic`, observed 2026-07-30) zero input/output in per-message
+usage while keeping partial cache reads, so `metrics.py` falls back to the
+result envelope's aggregate usage when the stream is degenerate. The CLI's figure is always
 preserved as `total_cost_usd_cli` and `cost_source` records which path
 priced the run.
 
@@ -197,7 +201,10 @@ prompting experiments where the intervention is the variable under test.
 
 - **Correctness** — each task's `grade.sh`, run against hidden tests/checkers
 - **Cost & speed** — `total_cost_usd`, wall-clock, API duration from the result envelope
-- **Effort shape** — turns, tool calls by type, output tokens, diff size
+- **Effort shape** — turns, tool calls by type, output tokens, diff size;
+  `thinking_blocks`/`thinking_chars` count thinking content in Claude-format
+  transcripts (parity with the Kimi driver's `thinking_chars`), so
+  thinking-mode arms are proven at the wire per run, not assumed from config
 - **Ergonomics** — from transcripts: did it follow output contracts, over-ask,
   over-build, produce a readable final summary (human-scored rubric)
 

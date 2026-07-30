@@ -53,16 +53,23 @@ def computed_cost(out: Path, model: str) -> tuple[float, str] | None:
         ) / 1e6
 
     total = sum(price_one(u, per_request=True) for u in usage_by_id.values())
-    if total > 0:
+    # Degenerate stream usage: some endpoints (MiniMax /anthropic, observed
+    # 2026-07-30) zero input/output in per-message usage while reporting a
+    # partial cache_read, so a nonzero per-request total can still be
+    # fiction. Trust the per-request walk only when it saw output tokens.
+    stream_output = sum(u.get("output_tokens") or 0 for u in usage_by_id.values())
+    if total > 0 and stream_output > 0:
         return round(total, 5), "computed:env/prices.json (per-request)"
-    # Some proxies zero out per-message usage; fall back to the envelope's
-    # aggregate usage (no long-context surcharge judgeable at this precision).
+    # Otherwise fall back to the envelope's aggregate usage (no long-context
+    # surcharge judgeable at this precision).
     rpath = out / "result.json"
     if rpath.exists() and rpath.read_text().strip():
         agg = json.loads(rpath.read_text()).get("usage") or {}
-        total = price_one(agg, per_request=False)
-        if total > 0:
-            return round(total, 5), "computed:env/prices.json (aggregate)"
+        agg_total = price_one(agg, per_request=False)
+        if agg_total > 0:
+            return round(agg_total, 5), "computed:env/prices.json (aggregate)"
+    if total > 0:
+        return round(total, 5), "computed:env/prices.json (per-request)"
     return None
 
 
@@ -111,6 +118,8 @@ def main(out_dir: str, model: str) -> None:
 
     tool_calls = Counter()
     assistant_msgs = 0
+    thinking_blocks = 0
+    thinking_chars = 0
     tpath = out / "transcript.jsonl"
     if tpath.exists():
         for line in tpath.read_text().splitlines():
@@ -123,9 +132,14 @@ def main(out_dir: str, model: str) -> None:
                 for block in ev.get("message", {}).get("content", []):
                     if isinstance(block, dict) and block.get("type") == "tool_use":
                         tool_calls[block.get("name", "?")] += 1
+                    elif isinstance(block, dict) and block.get("type") == "thinking":
+                        thinking_blocks += 1
+                        thinking_chars += len(block.get("thinking") or "")
     metrics["assistant_messages"] = assistant_msgs
     metrics["tool_calls"] = dict(tool_calls)
     metrics["tool_calls_total"] = sum(tool_calls.values())
+    metrics["thinking_blocks"] = thinking_blocks
+    metrics["thinking_chars"] = thinking_chars
 
     rpath = out / "result.json"
     if rpath.exists() and rpath.read_text().strip():
