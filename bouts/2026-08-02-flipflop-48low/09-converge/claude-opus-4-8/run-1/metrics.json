@@ -1,0 +1,37 @@
+{
+  "model": "claude-opus-4-8",
+  "wall_seconds": 41.0,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 4,
+    "Write": 3,
+    "Read": 1
+  },
+  "tool_calls_total": 8,
+  "total_cost_usd": 0.21098850000000002,
+  "num_turns": 9,
+  "duration_ms": 39809,
+  "duration_api_ms": 40028,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 17,
+  "output_tokens": 2530,
+  "cache_read_tokens": 188075,
+  "final_message": "Done. All 11 tests pass and `SOLUTION.md` is written.\n\n**Implementation** (`money/money.py`): the key decision was routing through `Decimal(str(amount))` + `quantize(..., ROUND_HALF_UP)`. This handles the two tricky requirements together:\n\n- **Half-away-from-zero** rounding without float representation error \u2014 `str()` recovers the intended decimal (so `0.005` and `0.995` land on the right side of the boundary), and `ROUND_HALF_UP` on a `Decimal` rounds away from zero for both signs.\n- **Sign is checked after rounding**, so `-0.004` and `-0.0` correctly format as `$0.00` with no parentheses.\n\nGrouping uses `f\"{n:,}\"` (dropped when `group=False`); negatives get parens by default or a leading `-` when `parens_for_negative=False`.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-02T15:25:15Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 47 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "2/2"
+}

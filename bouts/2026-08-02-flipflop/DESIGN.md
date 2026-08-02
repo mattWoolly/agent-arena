@@ -85,3 +85,16 @@ New hypothesis, and the grid's real job:
 Amended grid: claude-opus-5 at low AND xhigh, claude-opus-4-8 at xhigh, on
 04-terminal (volume-rich) and 09-converge (clean control), r=4, serial, same
 window. Deterministic grader; loopmetrics analysis.
+
+## Amendment 2 (2026-08-02, post-hoc, disclosed): Opus 4.8 low-effort cell
+
+Run AFTER the main grid and its analysis, so it is NOT pre-registered: peer
+review noted the grid ran three of the four model-by-effort cells (no Opus
+4.8 at low effort), leaving the "effort, not model" attribution
+under-secured. The cell was added to complete the 2x2. Result complicates
+rather than confirms the clean story: Opus 4.8 at low effort ran 4.50
+verification commands per attempt on 04-terminal (raw [5,2,6,5]) vs 2.25 at
+xhigh, i.e. non-monotone and noisy at n=4. Opus 5's own dial stays clean
+(xhigh 5.25 -> low 2.00, the latter [2,2,2,2]). What holds across all four
+cells: zero genuine regressions. The article reports the 2x2 as-is,
+including the noise, and does not claim low-effort Opus 5 equals 4.8.
