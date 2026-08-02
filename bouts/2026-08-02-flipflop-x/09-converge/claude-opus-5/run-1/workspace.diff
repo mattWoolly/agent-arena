@@ -1,0 +1,95 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..06750cd
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,49 @@
++# Solution
++
++`format_amount` is implemented in three steps that mirror the spec: round to
++cents, format the magnitude, then apply the sign.
++
++```python
++value  = Decimal(str(amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
++digits = format(abs(value), ",.2f" if group else ".2f")
++```
++
++`Decimal` does the whole job: `ROUND_HALF_UP` is Decimal's "ties away from
++zero", which is exactly the required rule in both directions, and `format()`
++with `,.2f` handles thousands grouping and the two-digit cents padding, so
++there is no manual string surgery on the whole part.
++
++## Edge cases, and how they interacted
++
++**Binary floats vs. the written literal.** The rounding rule has to be applied
++to the decimal number the caller wrote, not to the binary double that actually
++arrives. Those disagree, and the suite pins down both directions at once:
++
++| literal  | true stored value      | vs. the tie | naive result | required |
++|----------|------------------------|-------------|--------------|----------|
++| `0.995`  | `0.994999999999999995` | *below*     | `$0.99`      | `$1.00`  |
++| `0.005`  | `0.005000000000000000104` | *above*  | `$0.01`      | `$0.01`  |
++
++So `Decimal(amount)` (exact binary expansion) fails `0.995`, and plain
++`round()` fails as well — it is half-to-even *and* sees the same skewed value.
++Going through `Decimal(str(amount))` re-reads the shortest repr, recovering the
++literal, after which `ROUND_HALF_UP` is correct for both rows.
++
++**Rounding can manufacture a negative zero, and the sign step runs after
++rounding.** `-0.004` quantizes to `Decimal("-0.00")`, and `-0.0` arrives already
++signed. Both are *signed* but neither is *negative*, and the spec says a value
++that rounds to zero takes no sign decoration. Testing `value.is_signed()` or
++`str(value).startswith("-")` would wrongly emit `($0.00)`; testing `value < 0`
++treats negative zero as non-negative and gives `$0.00`. This is why the two
++edge cases interact: the sign has to be decided from the *rounded* value, not
++the input, or `-0.004` keeps a sign it no longer deserves.
++
++The same `abs()` that feeds the formatter also prevents a stray `-` leaking
++into `digits` for negative zero, so the sign is applied in exactly one place.
++
++**Sign placement.** The minus sits outside the currency symbol (`-$5.00`), and
++parentheses wrap the entire body including the symbol (`($1,234.50)`), so both
++are applied to the assembled `currency + digits` string rather than to the
++number.
++
++`python3 -m pytest -q` → 11 passed.
+diff --git a/money/__pycache__/__init__.cpython-312.pyc b/money/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..5fc0e3d
+Binary files /dev/null and b/money/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/money/__pycache__/money.cpython-312.pyc b/money/__pycache__/money.cpython-312.pyc
+new file mode 100644
+index 0000000..304b458
+Binary files /dev/null and b/money/__pycache__/money.cpython-312.pyc differ
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..17a1af7 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,22 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP
++
++_CENTS = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    # str() first: Decimal(0.995) is 0.99499...  and would round down, but the
++    # spec treats the literal the user wrote as the value to round.
++    value = Decimal(str(amount)).quantize(_CENTS, rounding=ROUND_HALF_UP)
++
++    # `< 0` rather than a sign check: -0.004 quantizes to Decimal("-0.00"),
++    # which is signed but not negative, and must format as "$0.00".
++    negative = value < 0
++
++    digits = format(abs(value), ",.2f" if group else ".2f")
++    body = f"{currency}{digits}"
++
++    if not negative:
++        return body
++    return f"({body})" if parens_for_negative else f"-{body}"
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..8e7d72d
+Binary files /dev/null and b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc differ

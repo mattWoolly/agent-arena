@@ -1,0 +1,102 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..f3be043
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,53 @@
++# Solution
++
++`format_amount` in `money/money.py`, implemented in four steps: parse to
++`Decimal`, round the magnitude, decide the sign, then render.
++
++```python
++value     = Decimal(str(amount))
++magnitude = abs(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
++negative  = value < 0 and magnitude != 0
++```
++
++Rounding the *magnitude* and deriving the sign separately is what makes the
++edge cases fall out cleanly, rather than needing to be special-cased.
++
++## Edge cases, and how they interact
++
++**`Decimal(str(amount))`, not `Decimal(amount)`.** The test
++`f(0.995) == "$1.00"` cannot be satisfied by rounding the float. The nearest
++double to `0.995` is `0.99499999999999999556`, strictly *below* the tie, so
++every rounding mode — including `Decimal(0.995).quantize(ROUND_HALF_UP)` —
++correctly yields `0.99`. Going through `str()` recovers the decimal literal the
++caller wrote (`repr` of a float is the shortest string that round-trips), so the
++tie is a real tie and rounds up. This generalizes past the tested value:
++`2.675` likewise renders `$2.68` rather than the naive `$2.67`.
++
++**Sign is read from the rounded value, not the input.** `f(-0.004)` is
++`"$0.00"`, not `"($0.00)"` — the magnitude rounds away to zero, and the spec
++says a value that rounds to zero is not negative. The `magnitude != 0` guard
++covers this. It also subsumes `f(-0.0) == "$0.00"` for free, since negative zero
++is not `< 0` in the first place. These two pull in opposite directions: `-0.005`
++must *keep* its parens while `-0.004` must lose them, so the sign decision has
++to happen after rounding, not before.
++
++**`ROUND_HALF_UP` is decimal's "ties away from zero"**, not "ties toward
++positive infinity" — the name is misleading. Applied to `abs(value)` it is half
++away from zero for both signs by construction, so `-0.005 → ($0.01)` needs no
++separate handling.
++
++**Grouping is applied after rounding**, via `format(magnitude, ",f")`. This
++matters when a carry crosses a grouping boundary: `999.999 → $1,000.00`.
++Rounding first means the separator lands on the final digits. `group=False`
++drops the `,` from the format spec; the two-decimal width comes from the
++`quantize` step, so the format spec doesn't need to re-round.
++
++## Verification
++
++`python3 -m pytest -q` → 11 passed. Spot-checked additional cases not in the
++suite (`2.675`, `999.999`, `-1e9`, non-`$` currency, integer inputs, the
++`parens_for_negative`/`group` cross-product) to confirm the behavior is general
++rather than fitted to the tests.
++
++Non-finite inputs (`nan`, `inf`) are neither specified nor tested; `quantize`
++raises `InvalidOperation` on them, and no handling was added for them.
+diff --git a/money/__pycache__/__init__.cpython-312.pyc b/money/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..e23e599
+Binary files /dev/null and b/money/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/money/__pycache__/money.cpython-312.pyc b/money/__pycache__/money.cpython-312.pyc
+new file mode 100644
+index 0000000..42802fe
+Binary files /dev/null and b/money/__pycache__/money.cpython-312.pyc differ
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..cd7e629 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,25 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP
++
++_CENTS = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    # Go through str() so we round the decimal number the caller wrote rather
++    # than its binary double: the nearest double to 0.995 is 0.99499999...,
++    # which would round down to 0.99 instead of the specified 1.00.
++    value = Decimal(str(amount))
++
++    # ROUND_HALF_UP is decimal's "ties away from zero", so this is half away
++    # from zero for both signs.
++    magnitude = abs(value).quantize(_CENTS, rounding=ROUND_HALF_UP)
++
++    # Sign comes from the rounded value, not the input: -0.004 rounds to 0.00,
++    # and a zero result is never negative (nor is -0.0).
++    negative = value < 0 and magnitude != 0
++
++    body = currency + format(magnitude, ",f" if group else "f")
++    if not negative:
++        return body
++    return f"({body})" if parens_for_negative else f"-{body}"
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..804d878
+Binary files /dev/null and b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc differ

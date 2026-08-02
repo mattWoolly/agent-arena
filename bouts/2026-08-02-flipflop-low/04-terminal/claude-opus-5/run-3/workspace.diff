@@ -1,0 +1,82 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..9ec3060
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,21 @@
++# SOLUTION
++
++`make test` failed for four environment/config reasons. No Python logic was changed.
++
++1. **Makefile recipe indented with spaces** — the `test:` recipe line used 4 spaces
++   instead of a tab, so make reported a missing separator / didn't run the command.
++   *Fix:* re-indented the recipe with a tab.
++
++2. **`scripts/run_checks.sh` not executable** — the mode bit was lost in the merge, so
++   the `check` target couldn't invoke it.
++   *Fix:* `chmod +x scripts/run_checks.sh`.
++
++3. **`scripts/run_checks.sh` had CRLF line endings** — the `#!/bin/bash\r` shebang made
++   the kernel report `No such file or directory` on exec.
++   *Fix:* converted the file to LF line endings.
++
++4. **`data/config.json` had a trailing comma** after `"batch_size": 500`, which is
++   invalid JSON, so `tools/validate_config.py` failed to parse it.
++   *Fix:* removed the trailing comma.
++
++`make test` now exits 0, running the same check script and the same 3 tests.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..cc0aa82
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"
+diff --git a/src/pipeline/__pycache__/__init__.cpython-312.pyc b/src/pipeline/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..d1c476f
+Binary files /dev/null and b/src/pipeline/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/pipeline/__pycache__/transform.cpython-312.pyc b/src/pipeline/__pycache__/transform.cpython-312.pyc
+new file mode 100644
+index 0000000..638e4cc
+Binary files /dev/null and b/src/pipeline/__pycache__/transform.cpython-312.pyc differ
+diff --git a/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..0d289ed
+Binary files /dev/null and b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc differ

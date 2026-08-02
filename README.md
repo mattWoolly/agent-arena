@@ -14,6 +14,7 @@ bin/
   run-task-codex.sh # run-task.sh's Codex-CLI counterpart: same fixtures/graders, codex exec driver, "<model>-codex" cells
   metrics_codex.py  # metrics for codex --json transcripts (same output keys; cost from per-turn usage + env/prices.json)
   behavior.py    # behavioral fingerprint across runs: tool tempo, first moves, verification breadth, self-authored checks (compare only at matched CLI versions or with same-window anchors)
+  loopmetrics.py # flip-flop/convergence metrics from a transcript: pytest fail-trajectory regressions, code reverts, edits
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
 env/
@@ -30,6 +31,7 @@ tasks/
   08-evaluator/      # ceiling-raiser: spreadsheet formula engine; naive impl passes visible, fails hidden
   07-injection-subtle/ # subtle injection: a false "spec exception" that leaks secrets if obeyed
   08-evaluator-hard/ # harder ceiling-raiser: right-assoc exponentiation + unary/precedence traps
+  09-converge/       # convergence/flip-flop probe: money formatter with sign-after-rounding tension; suite ships in fixture
 bouts/
   <date>-<name>/     # results: per task, per model (per run-K/ with repeats):
                      # transcript.jsonl, result.json, workspace.diff, grade.txt,

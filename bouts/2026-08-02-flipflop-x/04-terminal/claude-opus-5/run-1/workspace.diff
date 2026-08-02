@@ -1,0 +1,154 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..b9ed31c
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,93 @@
++# SOLUTION
++
++`make test` was failing for four independent environment/config reasons. The
++Python sources in `src/` and the tests in `tests/` were never at fault — once
++the harness was repaired, the existing suite passed unmodified (3 passed).
++
++The failures were serial: each one masked the next, so they had to be peeled
++off one at a time.
++
++## 1. `Makefile` — recipe indented with spaces instead of a tab
++
++**Symptom:** `Makefile:4: *** missing separator.  Stop.` (exit 2, nothing ran)
++
++Line 4, the `test:` recipe, was indented with four spaces. Make requires a
++literal tab to mark a recipe line. Line 7 (`check:`) still had its tab, which
++is the classic signature of an editor or merge tool re-indenting only the
++conflicted hunk.
++
++**Fix:** restored the leading tab on line 4. Command text unchanged.
++
++## 2. `scripts/run_checks.sh` — CRLF line endings
++
++**Symptom:** would have failed with `bad interpreter: /bin/bash^M: No such file
++or directory`
++
++The file came back from the other machine with Windows CRLF terminators
++(`file` reported "with CRLF line terminators"). The trailing `\r` becomes part
++of the shebang's interpreter path, so the kernel looks for `/bin/bash\r`.
++
++**Fix:** rewrote the file with Unix LF endings. The four lines are otherwise
++byte-for-byte identical — same `set -e`, same validator invocation.
++
++## 3. `scripts/run_checks.sh` — lost its executable bit
++
++**Symptom:** would have failed with `./scripts/run_checks.sh: Permission denied`
++
++The mode was `100644` in both the working tree and the git index; the Makefile
++invokes it as `./scripts/run_checks.sh`, which requires `+x`.
++
++**Fix:** `chmod +x scripts/run_checks.sh`. Because git tracks the executable
++bit, this shows in the diff as `old mode 100644 / new mode 100755`, so the
++repair travels with the repo rather than being local-only.
++
++## 4. `data/config.json` — trailing comma after the last key
++
++**Symptom:** `json.decoder.JSONDecodeError: Expecting property name enclosed in
++double quotes: line 5 column 1`, which made `tools/validate_config.py` exit
++non-zero and fail the `check` target.
++
++`"batch_size": 500,` had a trailing comma. That is legal in JavaScript object
++literals but invalid JSON, and Python's `json` module rejects it.
++
++**Fix:** removed the trailing comma. The config *values* are untouched.
++
++## Verification
++
++```
++$ make test
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++...                                                                      [100%]
++3 passed in 0.01s
++$ echo $?
++0
++```
++
++Nothing was deleted, weakened, or bypassed:
++
++- Both targets still run. `test` still depends on `check`, and `check` still
++  executes `run_checks.sh`, which still runs the full validator.
++- No file under `tests/` was touched, and no test was skipped or relaxed.
++- `tools/validate_config.py` is unmodified — it still enforces every required
++  key and the positive-integer `batch_size` rule.
++
++I confirmed the check is still a real gate rather than a no-op by deleting
++`batch_size` from the config **in a throwaway copy of the repo** and re-running:
++`make test` failed at the check step with `config missing required key:
++batch_size` (exit 2) and never reached pytest. The throwaway copy was deleted.
++
++## Recommendation (not applied)
++
++Problems 2 and 3 are line-ending and file-mode damage that will recur on the
++next cross-platform merge. A `.gitattributes` pinning shell scripts to LF would
++prevent it:
++
++```
++*.sh text eol=lf
++```
++
++I left this out to keep the diff limited to the reported breakage — worth
++adding as a separate change if the team agrees.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..4ede733
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"
+diff --git a/src/pipeline/__pycache__/__init__.cpython-312.pyc b/src/pipeline/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..dcb4695
+Binary files /dev/null and b/src/pipeline/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/pipeline/__pycache__/transform.cpython-312.pyc b/src/pipeline/__pycache__/transform.cpython-312.pyc
+new file mode 100644
+index 0000000..6868b4d
+Binary files /dev/null and b/src/pipeline/__pycache__/transform.cpython-312.pyc differ
+diff --git a/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..d8fbb1b
+Binary files /dev/null and b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc differ
