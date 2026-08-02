@@ -54,3 +54,34 @@ THIS TASK, not universally; single-run internal loop, not the multi-agent
 outer review loop some reports describe (a follow-up if the signal needs it);
 home-field and Fable-co-authorship as always; complaints are anecdotal and
 we are testing them, not endorsing them.
+
+## Amendment 1 (2026-08-02, after smoke + existing-corpus sweep, before the grid)
+
+Two findings redirected the grid, pre-registered here before it ran:
+
+1. **09-converge saturates.** Every Opus 5 smoke run converged in ONE edit
+   (fail trajectory like [11, 0]): the task is within one-shot reach, so it
+   cannot exhibit flip-flopping by construction. It stays in the grid as a
+   clean same-window zero-regression control, not the main event.
+2. **The existing corpus already answers H1, and it is a null.** loopmetrics
+   (upgraded to capture make/script verification, not just pytest) over ~50
+   existing runs shows zero regressions and zero reverts for BOTH Opus 5 and
+   Opus 4.8, including on 04-terminal, the messiest task. The flip-flop
+   signature is absent. What differs is VOLUME: on 04-terminal Opus 5 ran 15
+   verification commands to 4.8's 8, with longer verdict sequences
+   ([1,1,1,1,0,0,0,0] vs [1,0,0,0]) that are monotone (all-fail then
+   all-pass), never a fail-after-pass.
+
+New hypothesis, and the grid's real job:
+- **A1-H1 (volume, not oscillation):** across a fresh same-window grid,
+  Opus 5 shows more verification runs and more edits than 4.8 while showing
+  no more regressions/reverts. "Flip-flopping" as users describe it is volume
+  misread as oscillation.
+- **A1-H2 (effort is the lever):** Opus 5 at low effort shows materially
+  fewer verification runs and edits than at xhigh, on the volume-rich task,
+  approaching 4.8's volume. If so, the churn users dislike has a one-setting
+  fix.
+
+Amended grid: claude-opus-5 at low AND xhigh, claude-opus-4-8 at xhigh, on
+04-terminal (volume-rich) and 09-converge (clean control), r=4, serial, same
+window. Deterministic grader; loopmetrics analysis.

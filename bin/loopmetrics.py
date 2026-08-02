@@ -22,21 +22,27 @@ import re
 import sys
 from pathlib import Path
 
-SUMMARY = re.compile(r'(\d+)\s+passed(?:,\s*(\d+)\s+failed)?|(\d+)\s+failed')
-TARGET_HINT = ("money.py", "loader.py", "engine.py", "redactor.py", ".py")
+# A verification command: the agent checking its own work (tests, build,
+# type/lint, or a self-authored check script). Covers pytest, make targets,
+# python check scripts, npm test, ruff, mypy.
+VERIFY_CMD = re.compile(
+    r'\b(pytest|make(\s+\w+)?|npm\s+(run\s+)?test|ruff|mypy|python3?\s+\S*(check|test|verify)\S*\.py|\./\S*(check|test)\S*\.sh)\b',
+    re.IGNORECASE)
+FAIL_TOKENS = re.compile(
+    r'\bfailed\b|\bFAILED\b|Traceback|\berror:|\bError\b|AssertionError|'
+    r'\bFAIL\b|non-zero exit|Exception|make:\s.*Error|\*\*\*', re.IGNORECASE)
+PASS_TOKENS = re.compile(r'\bpassed\b|\bOK\b|\ball tests? pass|SCORE:|Build succeeded|\b0 failed\b', re.IGNORECASE)
 
 
 def parse_pytest(text):
-    """Return failing count from a pytest summary blob, or None if not a summary."""
+    """Failing count from a pytest summary, or None if not a pytest summary."""
     if "passed" not in text and "failed" not in text and "error" not in text:
         return None
-    passed = failed = None
+    failed = None
     m = re.search(r'(\d+)\s+failed', text)
     if m:
         failed = int(m.group(1))
-    m = re.search(r'(\d+)\s+passed', text)
-    if m:
-        passed = int(m.group(1))
+    passed = re.search(r'(\d+)\s+passed', text)
     if "error" in text and failed is None:
         me = re.search(r'(\d+)\s+error', text)
         if me:
@@ -46,12 +52,31 @@ def parse_pytest(text):
     return failed or 0
 
 
+def verdict(text):
+    """Coarse pass/fail for any verification command's output: 1 fail, 0 pass.
+
+    Prefer a pytest failing-count when present (0 -> pass, >0 -> fail); else a
+    token heuristic. Returns None if the output carries no verification signal.
+    """
+    fc = parse_pytest(text)
+    if fc is not None:
+        return 1 if fc > 0 else 0
+    has_fail = bool(FAIL_TOKENS.search(text))
+    has_pass = bool(PASS_TOKENS.search(text))
+    if has_fail:
+        return 1
+    if has_pass:
+        return 0
+    return None
+
+
 def analyze_run(tpath):
-    fails = []          # failing count per pytest run, in order
+    verds = []          # pass(0)/fail(1) per verification command, in order
+    fails = []          # pytest failing count when available (finer signal)
     edits = 0
     removed = []        # substrings removed by prior edits (for revert detection)
     reverts = 0
-    tool_ran_pytest = {}  # tool_use id -> True if this was a pytest invocation
+    verify_ids = {}     # tool_use id -> True if a verification command
     for line in tpath.read_text().splitlines():
         try:
             ev = json.loads(line)
@@ -63,36 +88,43 @@ def analyze_run(tpath):
                 if not isinstance(b, dict) or b.get("type") != "tool_use":
                     continue
                 name = b.get("name"); inp = b.get("input") or {}
-                if name == "Bash" and "pytest" in (inp.get("command") or ""):
-                    tool_ran_pytest[b.get("id")] = True
-                if name in ("Edit", "Write") and str(inp.get("file_path", "")).endswith(".py") \
-                        and "test" not in str(inp.get("file_path", "")):
+                if name == "Bash" and VERIFY_CMD.search(inp.get("command") or ""):
+                    verify_ids[b.get("id")] = True
+                if name in ("Edit", "Write") and "test" not in str(inp.get("file_path", "")).lower() \
+                        and str(inp.get("file_path", "")).endswith((".py", ".sh", ".mk", ".cfg", ".toml", ".txt", ".ini", "Makefile")):
                     edits += 1
-                    old = inp.get("old_string") or ""
-                    new = inp.get("new_string") or inp.get("content") or ""
-                    # revert = this edit re-introduces something a prior edit removed
+                    old = (inp.get("old_string") or "").strip()
+                    new = (inp.get("new_string") or inp.get("content") or "")
                     for r in removed:
                         if r and len(r) > 12 and r in new:
                             reverts += 1
                             break
                     if old and len(old) > 12:
-                        removed.append(old.strip())
+                        removed.append(old)
         elif t == "user":
             for b in ev.get("message", {}).get("content", []):
                 if not isinstance(b, dict) or b.get("type") != "tool_result":
                     continue
-                if b.get("tool_use_id") in tool_ran_pytest:
+                if b.get("tool_use_id") in verify_ids:
                     content = b.get("content")
                     text = content if isinstance(content, str) else json.dumps(content)
+                    v = verdict(text)
+                    if v is not None:
+                        verds.append(v)
                     fc = parse_pytest(text)
                     if fc is not None:
                         fails.append(fc)
-    # regressions: failing count increases between successive pytest runs
-    regressions = sum(1 for i in range(1, len(fails)) if fails[i] > fails[i - 1])
+    # regression via coarse verdicts: a fail after a pass (broke something green)
+    regressions_v = sum(1 for i in range(1, len(verds)) if verds[i] == 1 and verds[i - 1] == 0)
+    # regression via pytest counts: failing count rose between runs
+    regressions_p = sum(1 for i in range(1, len(fails)) if fails[i] > fails[i - 1])
     return {
-        "test_runs": len(fails),
+        "verify_runs": len(verds),
+        "verdicts": verds,
         "fail_trajectory": fails,
-        "regressions": regressions,
+        "regressions": max(regressions_v, regressions_p),
+        "regressions_verdict": regressions_v,
+        "regressions_pytest": regressions_p,
         "edits": edits,
         "reverts": reverts,
     }
@@ -115,7 +147,7 @@ def corpus(bout, model):
         "corpus": f"{bout.name}/{model}",
         "runs": len(rows),
         "converged": sum(r["converged"] for r in rows),
-        "mean_test_runs": round(sum(r["test_runs"] for r in rows) / n, 2),
+        "mean_verify_runs": round(sum(r["verify_runs"] for r in rows) / n, 2),
         "mean_regressions": round(sum(r["regressions"] for r in rows) / n, 2),
         "runs_with_regression": sum(1 for r in rows if r["regressions"] > 0),
         "mean_edits": round(sum(r["edits"] for r in rows) / n, 2),
