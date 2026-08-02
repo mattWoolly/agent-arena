@@ -32,6 +32,14 @@ FAIL_TOKENS = re.compile(
     r'\bfailed\b|\bFAILED\b|Traceback|\berror:|\bError\b|AssertionError|'
     r'\bFAIL\b|non-zero exit|Exception|make:\s.*Error|\*\*\*', re.IGNORECASE)
 PASS_TOKENS = re.compile(r'\bpassed\b|\bOK\b|\ball tests? pass|SCORE:|Build succeeded|\b0 failed\b', re.IGNORECASE)
+# An INTENTIONAL failure: the agent deliberately breaks something to confirm
+# the check catches it (adversarial self-verification), then restores. This is
+# rigorous verification, the OPPOSITE of a regression, and must not be counted
+# as one. Detected from the command text or the echoed output around it.
+INTENTIONAL_FAIL = re.compile(
+    r'should\s+fail|must\s+fail|deliberately|intentional|expect(ed)?\s+(to\s+)?fail|'
+    r'broken\s+config|bad\s+(config|batch|value|input)|negative\s+test|to\s+confirm|revert\s+(the\s+)?\w*\s*(bit|change)|sanity[- ]?check',
+    re.IGNORECASE)
 
 
 def parse_pytest(text):
@@ -89,7 +97,7 @@ def analyze_run(tpath):
                     continue
                 name = b.get("name"); inp = b.get("input") or {}
                 if name == "Bash" and VERIFY_CMD.search(inp.get("command") or ""):
-                    verify_ids[b.get("id")] = True
+                    verify_ids[b.get("id")] = inp.get("command") or ""
                 if name in ("Edit", "Write") and "test" not in str(inp.get("file_path", "")).lower() \
                         and str(inp.get("file_path", "")).endswith((".py", ".sh", ".mk", ".cfg", ".toml", ".txt", ".ini", "Makefile")):
                     edits += 1
@@ -110,7 +118,11 @@ def analyze_run(tpath):
                     text = content if isinstance(content, str) else json.dumps(content)
                     v = verdict(text)
                     if v is not None:
-                        verds.append(v)
+                        # A failure the agent induced on purpose (negative test)
+                        # is not a regression; tag it so it can't create one.
+                        cmd = verify_ids[b.get("tool_use_id")]
+                        intentional = bool(INTENTIONAL_FAIL.search(cmd) or INTENTIONAL_FAIL.search(text[:400]))
+                        verds.append(0 if (v == 1 and intentional) else v)
                     fc = parse_pytest(text)
                     if fc is not None:
                         fails.append(fc)

@@ -1,0 +1,67 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..591147f
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,22 @@
++# SOLUTION
++
++`format_amount` converts the input to `Decimal(str(amount))`, quantizes to two
++places with `ROUND_HALF_UP`, then formats sign and magnitude separately.
++
++## Why `str(amount)` first
++
++`Decimal(0.995)` is `0.99499999...` (the binary float is just below the
++literal), so half-up rounding would give `$0.99` instead of the required
++`$1.00`. Going through `str()` uses Python's shortest-repr, which yields the
++decimal the user wrote.
++
++## Edge cases that interacted
++
++- **Half away from zero, both signs.** `ROUND_HALF_UP` in `decimal` means
++  "away from zero", not "toward +inf", so `-0.005 → -0.01` falls out for free.
++- **Sign decided after rounding.** `-0.004` rounds to `0.00`, which must render
++  as `$0.00`, not `($0.00)`. Testing `value < 0` on the *quantized* value
++  handles this; `Decimal("-0.00") < 0` is false, which also covers `-0.0`.
++- **Grouping applies to the whole part only.** Split with `divmod(mag, 1)` and
++  format the integer part with `,` (or not, when `group=False`); cents are
++  always two digits via `:02d`.
+diff --git a/money/__pycache__/__init__.cpython-312.pyc b/money/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..70718d9
+Binary files /dev/null and b/money/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/money/__pycache__/money.cpython-312.pyc b/money/__pycache__/money.cpython-312.pyc
+new file mode 100644
+index 0000000..aecc5c2
+Binary files /dev/null and b/money/__pycache__/money.cpython-312.pyc differ
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..8284141 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,21 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP
++
++_CENTS = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    # str() first so 0.995 means the decimal literal, not its binary neighbour.
++    value = Decimal(str(amount)).quantize(_CENTS, rounding=ROUND_HALF_UP)
++
++    negative = value < 0
++    magnitude = -value if negative else value
++
++    whole, cents = divmod(magnitude, 1)
++    whole_str = f"{int(whole):,}" if group else f"{int(whole)}"
++    body = f"{currency}{whole_str}.{int(cents * 100):02d}"
++
++    if not negative:
++        return body
++    return f"({body})" if parens_for_negative else f"-{body}"
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..08bc57c
+Binary files /dev/null and b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc differ

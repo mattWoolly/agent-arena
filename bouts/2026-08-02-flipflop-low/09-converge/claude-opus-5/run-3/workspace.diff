@@ -1,0 +1,74 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..db952d3
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,30 @@
++# Solution
++
++`format_amount` rounds with `Decimal`, then formats the magnitude and applies
++the sign separately.
++
++## Approach
++
++1. `Decimal(str(amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)`.
++   `ROUND_HALF_UP` in Python's `decimal` means *half away from zero*, so it
++   handles negatives correctly without a special case.
++2. Split the magnitude into whole and cents with `divmod(x, 1)`, format the
++   whole part with `f"{n:,}"` (or plain `str` when `group=False`), and the
++   cents as two digits.
++3. Wrap in parens or prefix a minus only if the *rounded* value is negative.
++
++## Edge cases that interacted
++
++- **Binary float vs. decimal literal.** Constructing the `Decimal` from the
++  float directly would give `0.995 -> 0.99`, because the nearest double to
++  `0.995` is `0.99499999...`. Going through `str(amount)` preserves the
++  literal the caller wrote, which is what the tests specify. Meanwhile `0.005`
++  happens to sit *above* the tie, so it would round up either way — only the
++  `str()` route gets both right.
++- **Sign is decided after rounding.** `-0.004` rounds to `0.00`, and a value
++  that rounds to zero must not print as `($0.00)`. Checking `value < 0` on the
++  quantized result handles this; `Decimal` comparison also treats `-0.0` as
++  equal to zero, so `f(-0.0)` falls out correctly too.
++- **Taking the magnitude before formatting** keeps the currency symbol inside
++  the parens (`($1,234.50)`) and after the minus (`-$5.00`), and means the
++  grouping code never sees a sign character.
+diff --git a/money/__pycache__/__init__.cpython-312.pyc b/money/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..15a0142
+Binary files /dev/null and b/money/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/money/__pycache__/money.cpython-312.pyc b/money/__pycache__/money.cpython-312.pyc
+new file mode 100644
+index 0000000..d91cad1
+Binary files /dev/null and b/money/__pycache__/money.cpython-312.pyc differ
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..76fe87d 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,20 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    # Go through str() so decimal literals like 0.995 round the way a reader
++    # expects, rather than by their binary float neighbour (0.994999...).
++    value = Decimal(str(amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
++
++    negative = value < 0
++    magnitude = -value if negative else value
++
++    whole, cents = divmod(magnitude, 1)
++    whole_str = f"{int(whole):,}" if group else str(int(whole))
++    body = f"{currency}{whole_str}.{int(cents * 100):02d}"
++
++    if not negative:
++        return body
++    return f"({body})" if parens_for_negative else f"-{body}"
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..8f1413b
+Binary files /dev/null and b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc differ

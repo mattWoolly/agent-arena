@@ -1,0 +1,3 @@
+suite: pass (converged)
+SOLUTION.md: present
+SCORE: 2/2

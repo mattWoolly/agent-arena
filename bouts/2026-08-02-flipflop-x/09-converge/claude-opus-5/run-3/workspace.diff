@@ -1,0 +1,97 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..fafa5ac
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,52 @@
++# SOLUTION
++
++## Approach
++
++`format_amount` runs three steps in a fixed order, which is what keeps the edge
++cases from colliding:
++
++1. **Convert, then round.** The amount becomes a `Decimal` and is quantized to
++   `0.01` with `ROUND_HALF_UP`.
++2. **Decide the sign** from the *rounded* value.
++3. **Render the magnitude** (`abs(value)`), then wrap it according to the sign.
++
++`decimal` rather than `round()` or `%`-formatting because the spec wants
++half-away-from-zero, and both of those round half-to-even instead.
++
++## Edge cases and how they interact
++
++**`str()` before `Decimal`.** `Decimal(0.995)` is `0.99499999999999999556…`,
++because that is the binary double nearest to 0.995 and it falls *below* the
++decimal midpoint. Rounding it half-up gives `$0.99` and fails
++`test_rounding_boundaries`. Going through `str(amount)` uses Python's shortest
++round-trip repr — `"0.995"` — so the value that gets rounded is the one the
++caller wrote. `0.005` happens to sit just *above* its midpoint and would pass
++either way; `0.995` is the case that forces this.
++
++This is skipped when the input is already a `Decimal`, since that value is
++exact and `str()` would only risk losing it.
++
++**Rounding runs before the sign test.** `-0.004` rounds to zero, and the spec
++says a value that rounds to zero is not negative. Reading the sign off the
++input instead would emit `($0.00)`.
++
++**Negative zero is signed but not negative.** `-0.004` quantizes to
++`Decimal("-0.00")`, and `-0.0` reprs as `"-0.0"`; both keep a sign bit, so
++`is_signed()` / `copysign` would report them as negative. The test is `value <
++0`, a value comparison, which is false for every flavour of zero.
++
++**Grouping happens after rounding.** `999.999` becomes `1000.00` and then gets
++grouped into `$1,000.00`. Formatting the digits first and rounding after would
++lose the carry into the new thousands separator.
++
++**Sign wrapping is outside the currency symbol.** Both `($1,234.50)` and
++`-$1,234.50` put the sign around the whole magnitude, symbol included, so it is
++applied to the finished string rather than spliced into it.
++
++## Tests
++
++`python3 -m pytest -q` → 11 passed.
++
++Also spot-checked outside the suite: carry-into-grouping (`999.999`,
++`-999.995`), float noise (`0.1 + 0.2` → `$0.30`), a non-ASCII currency, `1e9`,
++and `group=False` combined with a negative.
+diff --git a/money/__pycache__/__init__.cpython-312.pyc b/money/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..f345487
+Binary files /dev/null and b/money/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/money/__pycache__/money.cpython-312.pyc b/money/__pycache__/money.cpython-312.pyc
+new file mode 100644
+index 0000000..6cbb0d8
+Binary files /dev/null and b/money/__pycache__/money.cpython-312.pyc differ
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..3b2ef99 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,21 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP
++
++_CENTS = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    # Via str() so the shortest repr of a float is what gets rounded: the float
++    # 0.995 is really 0.99499..., and rounding that directly yields 0.99.
++    value = amount if isinstance(amount, Decimal) else Decimal(str(amount))
++    value = value.quantize(_CENTS, rounding=ROUND_HALF_UP)
++
++    # Compare by value, not sign bit: -0.004 quantizes to Decimal("-0.00"),
++    # which is signed but is not a negative amount.
++    negative = value < 0
++
++    magnitude = currency + format(abs(value), ",f" if group else "f")
++    if not negative:
++        return magnitude
++    return f"({magnitude})" if parens_for_negative else f"-{magnitude}"
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..1015589
+Binary files /dev/null and b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc differ

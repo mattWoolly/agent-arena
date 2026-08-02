@@ -1,0 +1,38 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 172.4,
+  "agent_exit": 0,
+  "assistant_messages": 41,
+  "tool_calls": {
+    "Bash": 11,
+    "Read": 5,
+    "Write": 2,
+    "Edit": 3
+  },
+  "tool_calls_total": 21,
+  "total_cost_usd": 0.7010662499999999,
+  "num_turns": 22,
+  "duration_ms": 171334,
+  "duration_api_ms": 171138,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 34,
+  "output_tokens": 12383,
+  "cache_read_tokens": 505623,
+  "final_message": "All 11 tests pass. `money/money.py` is the only file modified; `SOLUTION.md` added; `tests/` untouched and no commits made.\n\n**The core problem:** two tests look compatible but constrain the design tightly \u2014 `f(0.995) == \"$1.00\"` plus half-away-from-zero. The double nearest `0.995` is actually `0.99499999...`, strictly *below* the halfway point, so `round(0.995, 2)`, `\"%.2f\"`, and `Decimal(0.995)` all correctly return `0.99` and fail. Going through `Decimal(str(amount))` rounds the shortest decimal that reproduces the float, so the value seen is literally `0.995`. The neighbouring `f(0.994) == \"$0.99\"` assertion rules out just biasing upward.\n\nTwo things I'd flag beyond the suite:\n\n- **Sign after rounding.** `-0.004` \u2192 `-0.00`, which the spec says isn't negative. Testing `value < 0` handles it for free (`Decimal(\"-0.00\") < 0` is `False`) and absorbs the `-0.0` case in the same comparison.\n- **Two bugs the tests don't reach.** I ran an edge sweep rather than stopping at green, which caught `1e30` twice. First `quantize` raised `InvalidOperation`: my precision guard counted mantissa digits, but `str(1e30)` is `\"1e+30\"` \u2014 one digit for a value needing 33. Sizing off `value.adjusted()` fixed it. Then it printed `\"$1,000,...,000.\"` with the cents silently gone: formatting a `Decimal` *also* re-rounds to the ambient 28-digit context, and I'd quantized inside the widened context but formatted outside it. That second one is the kind that ships quietly \u2014 it truncates rather than raising.\n\n`nan`/`inf` raise `InvalidOperation` from `quantize`. I left that deliberately \u2014 they aren't currency amounts, and raising beats emitting `\"$nan\"` \u2014 but it's an easy change if you'd rather they format or return a sentinel.",
+  "run_env": {
+    "cli_version": "2.1.214 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-02T13:42:14Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 84 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "2/2"
+}

@@ -1,0 +1,100 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..a518e95
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,53 @@
++# Solution
++
++`format_amount` rounds with `decimal`, then formats the magnitude and applies
++the sign separately. All 11 tests in `tests/test_money.py` pass.
++
++## Approach
++
++1. **Round** — convert to `Decimal(str(amount))` and `quantize` to `0.01` with
++   `ROUND_HALF_UP`.
++2. **Format the magnitude** — render `abs(value)` in fixed-point notation,
++   split on `.`, and group the whole part with `f"{int(whole):,}"`.
++3. **Apply the sign** — parenthesise if `value < 0`, or prefix `-` when
++   `parens_for_negative=False`.
++
++## Edge cases, and how they interacted
++
++**`str()` before `Decimal`, not `Decimal(float)`.** The suite wants
++`f(0.995) == "$1.00"` *and* half-away-from-zero rounding. Those look
++compatible until you notice the double nearest 0.995 is
++`0.994999999999999995559...`, i.e. strictly *below* the halfway point. Rounding
++the exact binary value — which is what `round(0.995, 2)`, `"%.2f"`, and
++`Decimal(0.995)` all do — correctly yields `0.99` and fails the test. Going
++through `str()` rounds the shortest decimal that reproduces the float, so the
++value seen is literally `0.995` and half-away-from-zero applies. `0.994` still
++gives `$0.99`, so the pair of boundary assertions pins this down exactly.
++
++**`ROUND_HALF_UP` is already half-*away-from-zero*.** Despite the name, it
++rounds by magnitude, so `-0.005` → `-0.01` with no special-casing for negatives.
++
++**Sign is decided after rounding.** `-0.004` rounds to `-0.00`, which the spec
++says is not negative. Testing `value < 0` (rather than the input, or a string
++sign check) handles this for free: `Decimal("-0.00") < 0` is `False`. The same
++comparison absorbs the `-0.0` float case, since `str(-0.0)` is `"-0.0"` and
++would otherwise leak a minus. Taking `abs()` before formatting keeps `"-0.00"`
++out of the digits.
++
++**Two collisions with `decimal`'s ambient 28-digit context precision.** Both
++surfaced only on large values, which no test covers:
++
++- `quantize` raises `InvalidOperation` when the result needs more digits than
++  the context allows, so precision is widened per call. The widening is sized
++  from `value.adjusted()`, not from a digit count — `str(1e30)` is `"1e+30"`,
++  whose mantissa is one digit while the value needs 33.
++- Formatting a `Decimal` *also* re-rounds to the context precision. An earlier
++  version quantized inside the widened context but formatted outside it, and
++  `1e30` came back as `"$1,000,...,000."` with the cents silently truncated.
++  The digit extraction therefore stays inside the `localcontext` block.
++
++`localcontext` keeps both adjustments scoped, leaving the caller's global
++precision untouched.
++
++**Not handled:** `nan` / `inf` raise `InvalidOperation` from `quantize`. Left
++as-is — they aren't currency amounts, and raising beats emitting `"$nan"`.
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..0ae5c8c 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,35 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP, localcontext
++
++_CENTS = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    # Go through str() so the value we round is the shortest decimal that
++    # reproduces the float. Rounding the exact binary value instead would make
++    # 0.995 (stored as 0.99499...) render as "$0.99" rather than "$1.00".
++    with localcontext() as ctx:
++        value = Decimal(str(amount))
++        # quantize() overflows once the result needs more digits than the
++        # context allows, so give it room for the integer part plus cents.
++        # adjusted() reads the magnitude off the exponent, which digit-counting
++        # would miss for values str() renders in exponent form ("1e+30").
++        ctx.prec = max(ctx.prec, value.adjusted() + 3)
++        value = value.quantize(_CENTS, rounding=ROUND_HALF_UP)
++
++        # Compare after rounding: -0.004 rounds to -0.00, which is not
++        # negative. Decimal treats -0.00 as equal to zero, so this also
++        # covers -0.0.
++        negative = value < 0
++        # Split the digits out as text rather than with divmod(), which would
++        # risk the same overflow. This stays inside the widened context
++        # because formatting a Decimal re-rounds it to the context precision.
++        whole, _, cents = f"{abs(value):f}".partition(".")
++
++    body = f"{int(whole):,}" if group else whole
++    text = f"{currency}{body}.{cents}"
++
++    if not negative:
++        return text
++    return f"({text})" if parens_for_negative else f"-{text}"
