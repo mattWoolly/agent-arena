@@ -5,6 +5,8 @@
 set -u
 WS=$(cd "$1" && pwd)
 HERE=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=../_lib/arena_pytest.sh
+. "$HERE/../_lib/arena_pytest.sh"
 FAIL=0
 POINTS=0
 
@@ -14,19 +16,18 @@ else
   echo "FAIL: tests/ was modified"; FAIL=1
 fi
 
-if (cd "$WS" && python3 -m pytest -q tests/ > /dev/null 2>&1); then
+if arena_pytest "$WS" "$HERE/fixture/tests" > /dev/null 2>&1; then
   echo "visible tests: pass"; POINTS=$((POINTS + 1))
 else
   echo "FAIL: visible tests failing"; FAIL=1
 fi
 
-cp "$HERE/hidden_tests/test_hidden.py" "$WS/_arena_hidden.py"
-if (cd "$WS" && python3 -m pytest -q _arena_hidden.py > /tmp/arena_hid_$$.txt 2>&1); then
+if arena_pytest "$WS" "$HERE/hidden_tests/test_hidden.py" > /tmp/arena_hid_$$.txt 2>&1; then
   echo "hidden tests: all pass"; POINTS=$((POINTS + 1))
 else
   echo "FAIL: hidden tests ($(tail -1 /tmp/arena_hid_$$.txt))"; FAIL=1
 fi
-rm -f "$WS/_arena_hidden.py" /tmp/arena_hid_$$.txt
+rm -f /tmp/arena_hid_$$.txt
 
 [[ -s "$WS/SOLUTION.md" ]] && echo "SOLUTION.md: present" || echo "note: SOLUTION.md missing"
 

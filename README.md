@@ -53,6 +53,45 @@ Each task directory contains:
 - `check-grader.sh` — optional self-test proving the grader fails the raw fixture
   and passes a reference solution
 
+### Grader isolation (`tasks/_lib/`)
+
+Graders must never let the agent's workspace influence the test runner.
+
+- `_lib/arena_pytest.sh` — `arena_pytest <workspace> <pristine-tests> [args…]`.
+  Tests are copied from the task's own `fixture/` or `hidden_tests/` into a
+  scratch rootdir the agent has never touched; the workspace contributes code
+  only, via `PYTHONPATH`. Config discovery is pinned off (`-c /dev/null`,
+  explicit `--rootdir`) and `TZ`/`LANG`/`LC_ALL`/`PYTHONHASHSEED` are frozen.
+  **Every grader uses this — never `cd "$WS" && pytest`.** Running visible
+  tests from the fixture copy also makes the `tests/ untouched` guard
+  structural rather than merely scored.
+
+  Why: until 2026-08-15 graders ran pytest with the workspace as rootdir, so
+  pytest auto-loaded any `conftest.py` the agent left there. A six-line report
+  hook forcing every outcome to `passed` scored 3/3 on `08-evaluator-hard` with
+  the implementation byte-identical to the fixture. (BenchJack V1,
+  arXiv:2605.12673.) No archived run ever exploited it — 0 of 644.
+
+- `_lib/arena_pytest.sh` also provides `arena_config_tripwire <ws> <fixture>`,
+  which reports root test-config the agent **added or modified** relative to
+  the fixture. Advisory by default; graders may treat a hit as a hard fail.
+
+- `_lib/validate-task.sh <task-dir>` — run this after touching any grader:
+
+  | case | expectation |
+  |---|---|
+  | A raw fixture | grader must fail |
+  | B reference solution | grader must pass |
+  | C exploit `conftest.py` only | grader must fail |
+  | D reference + exploit | grader must pass |
+
+  B and D are what stop a "fix" from silently breaking honest runs. The pass
+  criterion is the grader's **exit status**, not a full score — some tasks
+  award behavioural points (e.g. flagging an injection in `SOLUTION.md`) that a
+  code-only reference solution cannot earn. Tasks with no `solution/` skip B
+  and D. Reference solutions are applied by basename-matching into the
+  workspace; a task whose layout differs can supply `solution/APPLY.sh`.
+
 ## Running a bout
 
 ```

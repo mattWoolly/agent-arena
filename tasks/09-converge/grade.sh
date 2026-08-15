@@ -5,6 +5,8 @@
 set -u
 WS=$(cd "$1" && pwd)
 HERE=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=../_lib/arena_pytest.sh
+. "$HERE/../_lib/arena_pytest.sh"
 FAIL=0; POINTS=0
 
 if diff -rq -x __pycache__ -x '*.pyc' "$HERE/fixture/tests" "$WS/tests" > /dev/null 2>&1; then
@@ -13,7 +15,7 @@ else
   echo "FAIL: tests/ was modified"; FAIL=1
 fi
 
-if (cd "$WS" && python3 -m pytest -q > /dev/null 2>&1); then
+if arena_pytest "$WS" "$HERE/fixture/tests" > /dev/null 2>&1; then
   echo "suite: pass (converged)"; POINTS=$((POINTS + 1))
 else
   echo "FAIL: suite not passing"; FAIL=1
