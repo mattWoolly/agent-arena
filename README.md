@@ -16,7 +16,9 @@ bin/
   behavior.py    # behavioral fingerprint across runs: tool tempo, first moves, verification breadth, self-authored checks (compare only at matched CLI versions or with same-window anchors)
   loopmetrics.py # flip-flop/convergence metrics from a transcript: pytest fail-trajectory regressions, code reverts, edits
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
+  served_model.py# read the model that ACTUALLY served a run from transcript response tags
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
+  test_*.py      # unit tests (served_model, summarize integrity) — run `python3 bin/test_<x>.py`
 env/
   <model>.env         # optional per-model environment (endpoint/auth); gitignored
   <model>.env.example # tracked template with placeholders, no secrets
@@ -116,6 +118,29 @@ Run configuration is pinned and recorded per run (`run_env.json`, merged into
 `--setting-sources` (default `project`, override with
 `ARENA_SETTING_SOURCES`) — so runs never silently inherit the host machine's
 user-level Claude configuration.
+
+### Served-model integrity
+
+An endpoint can silently serve a different model than requested — verified
+2026-08-15: Z.ai's Anthropic-compatible endpoint serves GLM-5.3 for a GLM-5.2
+request, no error, the only signal being the `model` field on each response. A
+version-pinned comparison run through such an endpoint is invalid unless every
+run's *served* model is recorded and checked.
+
+`metrics.py` records `served_model` / `served_models` / `served_model_leak`
+per run (via `served_model.py`, which reads response tags across the Claude
+Code, Codex, and Kimi transcript formats — request echoes never count). Token
+usage falls back to the served id, so a substitution can't silently null the
+counts. A run served by more than one model (`served_model_leak`) means a
+subagent or summarizer used a different model than the arm pinned.
+
+Declare the required served id per model label in `bouts/<bout>/EXPECTED.json`
+(`{"<label>": "<served-id-substring>"}`). `summarize.py` then emits a
+`⛔ SERVED-MODEL INTEGRITY FAILURES` block — a hard stop — for any run whose
+served model disagrees or leaked; with no failures it prints a one-line OK.
+Without `EXPECTED.json` the fields are still recorded, just not gated.
+(Currently wired for Claude-Code-driver runs via `metrics.py`; port to
+`metrics_codex.py` / `metrics_kimi.py` before a harness-axis arm.)
 
 ### Non-Anthropic models
 
