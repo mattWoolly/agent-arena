@@ -1,0 +1,115 @@
+diff --git a/BRIEFING.md b/BRIEFING.md
+new file mode 100644
+index 0000000..6f10dc0
+--- /dev/null
++++ b/BRIEFING.md
+@@ -0,0 +1,109 @@
++# Q2 2026 spending briefing
++
++Prepared for the finance lead. Covers 1 April – 30 June 2026, 120 transactions
++across six categories and three currencies (65 EUR, 36 USD, 19 GBP). All figures
++are in EUR, converted at the rates in `rates.csv` (USD 0.92, GBP 1.17) with each
++converted transaction rounded to the cent before summing.
++
++## Overview
++
++The quarter cost **EUR 44,023.75** against a total budget of EUR 45,300.00 —
++97.2% of envelope, so the quarter closes broadly on plan in aggregate. That
++headline is misleading, though: the aggregate is the net of two categories
++running well over budget and four running comfortably under, and monthly spend
++rose in both month-over-month comparisons.
++
++Spend is concentrated in four roughly equal blocks. Travel is the largest at
++EUR 12,137.98 (27.6% of the quarter), followed by software at EUR 9,702.03
++(22.0%), training at EUR 8,992.94 (20.4%) and hardware at EUR 8,874.09 (20.2%).
++Meals (EUR 2,541.26, 5.8%) and office (EUR 1,775.45, 4.0%) are small by
++comparison. The average transaction was EUR 366.86.
++
++Within those blocks, a few line items dominate. Hardware is really a docking
++story: eight separate dock purchases totalling EUR 5,043.25, or 56.8% of the
++category, plus a single EUR 1,312.26 cable order that is the largest transaction
++of the quarter. Travel is dominated by ground transport rather than flights —
++taxis (EUR 3,720.13 over six rides) and car rentals (EUR 3,587.62 over five)
++together account for 60.2% of travel spend, against EUR 2,235.59 of flights.
++Software is spread across recurring commitments (seven SaaS subscriptions at
++EUR 2,631.08 and seven license renewals at EUR 3,383.33) plus plugins and API
++credits.
++
++Roughly half the quarter's spend — 50.3% — was invoiced in USD or GBP, so these
++totals carry meaningful FX exposure.
++
++## Key figures
++
++| Metric | Value |
++| --- | --- |
++| Total Q2 spend | EUR 44,023.75 |
++| Average transaction | EUR 366.86 |
++| Largest transaction | EUR 1,312.26 (cables, hardware, 23 May, GBP 1,121.59) |
++| May vs April | +9.8% |
++| June vs May | +10.0% |
++| Travel share | 27.6% |
++
++Monthly spend rose from EUR 13,316.21 in April to EUR 14,623.21 in May and
++EUR 16,084.33 in June — an accelerating base, not a one-off spike.
++
++## Category breakdown
++
++| Category | Total (EUR) | Budget (EUR) | Status |
++| --- | --- | --- | --- |
++| travel | 12,137.98 | 10,300.00 | over |
++| software | 9,702.03 | 8,200.00 | over |
++| training | 8,992.94 | 10,800.00 | under |
++| hardware | 8,874.09 | 10,700.00 | under |
++| meals | 2,541.26 | 3,100.00 | under |
++| office | 1,775.45 | 2,200.00 | under |
++
++Travel closed 117.8% of budget (EUR 1,837.98 over) and software 118.3%
++(EUR 1,502.03 over). The four categories under budget finished in a narrow band
++of 80.7%–83.3%, so the unders are broad rather than deep.
++
++## Trends and risks
++
++**Spend is compounding at ~10% a month.** April to May was +9.8% and May to June
+++10.0%. Two consecutive months at that rate means June alone annualises to a
++quarter of EUR 48,252.99 — about 106.5% of the current EUR 45,300.00 envelope.
++Q2 landed under budget only because April was unusually light. This is the
++single most important thing to get ahead of before Q3 budgets are set.
++
++**Travel is over budget and its shape is getting worse, not better.** The
++category fell to EUR 1,211.46 in May and then jumped to EUR 7,065.32 in June —
++58.2% of the entire quarter's travel spend in one month, across 10 transactions.
++The mix is the concern: ground transport is 60.2% of travel, and June alone saw
++three taxi rides of EUR 995.00, EUR 1,278.28 and EUR 629.37. Taxis at that level
++are usually a policy failure, not a market price. Recommend a pre-approval
++threshold for ground transport above roughly EUR 500: the two largest taxi rides
++alone (EUR 1,278.28 and EUR 995.00) each cost more than any of the quarter's
++three rail tickets, which averaged EUR 582.94 per trip against EUR 620.02 per
++taxi ride.
++
++**Software renewals are clustered in April and unexamined since.** April carried
++EUR 5,653.13 of the quarter's EUR 9,702.03 software spend — 58.3% — driven by
++the renewal and subscription cycle, before falling to roughly EUR 2,000 per
++month. The category still finished 118.3% of budget. With 24 transactions spread
++across subscriptions, license renewals, plugins and API credits, there is enough
++fragmentation here that a consolidation pass (same-vendor renewals, unused
++seats, overlapping tools) is the most likely source of a quick saving.
++
++**Dock buying looks uncoordinated.** Eight separate dock purchases totalling
++EUR 5,043.25 were spread across the quarter at prices ranging from EUR 89.63 to
++EUR 1,073.52, alongside a EUR 1,312.26 cable order. That pattern usually means
++teams are buying independently at retail rather than through a single
++procurement. Bulk purchasing, or at minimum confirming these units are actually
++deployed, is worth a day of someone's time.
++
++**Half the cost base is unhedged FX.** 50.3% of spend was invoiced in USD or
++GBP. A move in either rate flows straight into reported spend, so some of the
++10% monthly growth and part of the travel overrun may be rate rather than
++volume. Worth separating volume from FX effect before concluding how much of the
++trend is real.
++
++**Underuses are consistent, not corrective.** Training (83.3%), hardware (82.9%),
++meals (82.0%) and office (80.7%) all finished in a narrow band just above 80%.
++That reads as budgets set with a standard cushion rather than deliberate
++restraint, and it is what allowed the two overruns to hide inside an
++on-plan-looking total. If Q3 budgets are rebased, these four are the place to
++look for the headroom.

@@ -1,0 +1,41 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 63.1,
+  "agent_exit": 0,
+  "assistant_messages": 17,
+  "tool_calls": {
+    "Bash": 6,
+    "Write": 2
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.30328060000000007,
+  "num_turns": 9,
+  "duration_ms": 59590,
+  "duration_api_ms": 60883,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 18,
+  "output_tokens": 5887,
+  "cache_read_tokens": 332612,
+  "final_message": "`BRIEFING.md` is written (no commit made, per instructions). It covers all 120 Q2 transactions, converts non-EUR amounts using `rates.csv` (rounding each transaction to the cent before summing), and cross-checks category totals against `budget.yaml`.\n\nKey findings: total Q2 spend was \u20ac44,023.75, with monthly spend accelerating (+9.8% May, +10.0% June). Travel and software are over budget (17.8% and 18.3% respectively) \u2014 travel driven by a June spike in taxis/car rentals, software front-loaded by April license renewals.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:47:09Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 67 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

@@ -1,0 +1,40 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 37.5,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Bash": 4
+  },
+  "tool_calls_total": 4,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.20289069999999998,
+  "num_turns": 5,
+  "duration_ms": 34237,
+  "duration_api_ms": 34757,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 3848,
+  "cache_read_tokens": 169619,
+  "final_message": "RESULTS.json has been written. I computed the schedule by walking each milestone in order, skipping weekends and the three holidays (2026-08-31, 2026-09-25, 2026-10-12 \u2014 the last one falls inside the `build-integrations` window and correctly pushes its end from Oct 12 to Oct 15).\n\nSummary:\n- Kickoff runs 2026-08-24 \u2192 2026-08-26, launch ends 2026-11-02.\n- `business_days_until_kickoff`: 5 (Aug 18, 19, 20, 21, 24).\n- `total_business_days`: 48 (Aug 24 \u2192 Nov 2, weekends and holidays excluded).",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:12:54Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 38 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

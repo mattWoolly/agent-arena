@@ -1,0 +1,40 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 32.1,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 5
+  },
+  "tool_calls_total": 5,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.19450219999999996,
+  "num_turns": 6,
+  "duration_ms": 28566,
+  "duration_api_ms": 28909,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 2935,
+  "cache_read_tokens": 205404,
+  "final_message": "RESULTS.json is written with the computed schedule: 8 milestones from kickoff (2026-08-24) through launch (ending 2026-11-02), 5 business days until kickoff, and 48 total business days for the project.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:18:24Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 38 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

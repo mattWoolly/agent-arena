@@ -1,0 +1,31 @@
+diff --git a/PLAN.md b/PLAN.md
+new file mode 100644
+index 0000000..d4e9bd5
+--- /dev/null
++++ b/PLAN.md
+@@ -0,0 +1,25 @@
++# Engineering Delivery Plan
++
++## Timeline
++
++| Milestone | Start | End |
++|---|---|---|
++| kickoff | 2026-08-24 | 2026-08-26 |
++| requirements | 2026-08-27 | 2026-09-07 |
++| architecture | 2026-09-08 | 2026-09-14 |
++| build-core | 2026-09-15 | 2026-10-01 |
++| build-integrations | 2026-10-02 | 2026-10-15 |
++| hardening | 2026-10-16 | 2026-10-23 |
++| acceptance | 2026-10-26 | 2026-10-29 |
++| launch | 2026-10-30 | 2026-11-02 |
++
++## Countdown
++
++| Measure | Business days |
++|---|---:|
++| Business days until kickoff | 5 |
++| Total business days | 48 |
++
++## Notes
++
++The plan runs eight milestones sequentially over 48 business days, from kickoff on 2026-08-24 through launch completion on 2026-11-02. Company holidays on 2026-08-31, 2026-09-25, and 2026-10-12 are excluded; weekends and these holidays account for the calendar gaps in the timeline.

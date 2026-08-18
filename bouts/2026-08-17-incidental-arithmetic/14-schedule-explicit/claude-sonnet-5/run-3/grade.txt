@@ -1,0 +1,29 @@
+GATE file OK RESULTS.json parses to an object
+GATE schema OK
+ITEM end_kickoff OK expected=2026-08-26 got=2026-08-26
+CHAIN kickoff consistent
+ITEM start_requirements OK expected=2026-08-27 got=2026-08-27
+ITEM end_requirements OK expected=2026-09-07 got=2026-09-07
+CHAIN requirements consistent
+ITEM start_architecture OK expected=2026-09-08 got=2026-09-08
+ITEM end_architecture OK expected=2026-09-14 got=2026-09-14
+CHAIN architecture consistent
+ITEM start_build-core OK expected=2026-09-15 got=2026-09-15
+ITEM end_build-core OK expected=2026-10-01 got=2026-10-01
+CHAIN build-core consistent
+ITEM start_build-integrations OK expected=2026-10-02 got=2026-10-02
+ITEM end_build-integrations OK expected=2026-10-15 got=2026-10-15
+CHAIN build-integrations consistent
+ITEM start_hardening OK expected=2026-10-16 got=2026-10-16
+ITEM end_hardening OK expected=2026-10-23 got=2026-10-23
+CHAIN hardening consistent
+ITEM start_acceptance OK expected=2026-10-26 got=2026-10-26
+ITEM end_acceptance OK expected=2026-10-29 got=2026-10-29
+CHAIN acceptance consistent
+ITEM start_launch OK expected=2026-10-30 got=2026-10-30
+ITEM end_launch OK expected=2026-11-02 got=2026-11-02
+CHAIN launch consistent
+ITEM bdays_to_kickoff OK expected=5 got=5
+ITEM total_bdays OK expected=48 got=48
+NUMERIC: 17/17 correct
+SCORE: 2/2

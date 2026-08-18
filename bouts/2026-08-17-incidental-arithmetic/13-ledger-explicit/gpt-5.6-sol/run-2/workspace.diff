@@ -1,0 +1,23 @@
+diff --git a/RESULTS.json b/RESULTS.json
+new file mode 100644
+index 0000000..886c954
+--- /dev/null
++++ b/RESULTS.json
+@@ -0,0 +1,17 @@
++{
++  "category_totals_eur": {
++    "hardware": 8874.09,
++    "meals": 2541.26,
++    "office": 1775.45,
++    "software": 9702.03,
++    "training": 8992.94,
++    "travel": 12137.98
++  },
++  "q2_total_eur": 44023.75,
++  "mom_may_pct": 9.8,
++  "mom_jun_pct": 10.0,
++  "largest_txn_eur": 1312.26,
++  "mean_txn_eur": 366.86,
++  "travel_share_pct": 27.6,
++  "over_budget": ["travel", "software"]
++}

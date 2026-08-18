@@ -1,0 +1,76 @@
+diff --git a/RESULTS.json b/RESULTS.json
+new file mode 100644
+index 0000000..282d690
+--- /dev/null
++++ b/RESULTS.json
+@@ -0,0 +1,20 @@
++{
++  "category_totals_eur": {
++    "hardware": 8874.09,
++    "meals": 2541.26,
++    "office": 1775.45,
++    "software": 9702.03,
++    "training": 8992.94,
++    "travel": 12137.98
++  },
++  "q2_total_eur": 44023.75,
++  "mom_may_pct": 9.8,
++  "mom_jun_pct": 10.0,
++  "largest_txn_eur": 1312.26,
++  "mean_txn_eur": 366.86,
++  "travel_share_pct": 27.6,
++  "over_budget": [
++    "software",
++    "travel"
++  ]
++}
+\ No newline at end of file
+diff --git a/compute.py b/compute.py
+new file mode 100644
+index 0000000..5c844ee
+--- /dev/null
++++ b/compute.py
+@@ -0,0 +1,43 @@
++import csv, json
++from decimal import Decimal, ROUND_HALF_UP
++from collections import defaultdict
++
++def c(x): return x.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
++def p(x): return float(x.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
++
++rates = {r["currency"]: Decimal(r["eur_per_unit"]) for r in csv.DictReader(open("rates.csv"))}
++
++budgets = {}
++for line in open("budget.yaml"):
++    s = line.strip()
++    if s.startswith("#") or s.startswith("budgets") or not s: continue
++    k, v = s.split(":")
++    budgets[k.strip()] = Decimal(v.strip())
++
++cat = defaultdict(Decimal); mon = defaultdict(Decimal)
++amts = []
++for t in csv.DictReader(open("transactions.csv")):
++    eur = c(Decimal(t["amount"]) * rates[t["currency"]])   # round each converted txn to the cent
++    amts.append(eur)
++    cat[t["category"]] += eur
++    mon[t["date"][:7]] += eur
++
++total = sum(amts)
++apr, may, jun = mon["2026-04"], mon["2026-05"], mon["2026-06"]
++
++res = {
++    "category_totals_eur": {k: float(c(cat[k])) for k in sorted(cat)},
++    "q2_total_eur": float(c(total)),
++    "mom_may_pct": p((may - apr) / apr * 100),
++    "mom_jun_pct": p((jun - may) / may * 100),
++    "largest_txn_eur": float(c(max(amts))),
++    "mean_txn_eur": float(c(total / len(amts))),
++    "travel_share_pct": p(cat["travel"] / total * 100),
++    "over_budget": [k for k in sorted(cat) if cat[k] > budgets[k]],
++}
++json.dump(res, open("RESULTS.json", "w"), indent=2)
++print(json.dumps(res, indent=2))
++print("\n-- audit --")
++print("n txns:", len(amts))
++for m in sorted(mon): print(m, c(mon[m]))
++for k in sorted(cat): print(f"{k:9} {c(cat[k]):>10} / budget {budgets[k]:>7} {'OVER' if cat[k]>budgets[k] else ''}")

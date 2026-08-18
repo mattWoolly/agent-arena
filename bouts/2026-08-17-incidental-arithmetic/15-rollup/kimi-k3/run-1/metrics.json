@@ -1,0 +1,44 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 40.1,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Bash": 1,
+    "Read": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 5,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.08019,
+  "num_turns": 6,
+  "duration_ms": 39047,
+  "duration_api_ms": 41852,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 19263,
+  "output_tokens": 1392,
+  "cache_read_tokens": 81920,
+  "final_message": "Created `Q-REPORT.md` with the quarterly rollup:\n\n- **Revenue** \u20ac1,233,225 \u00b7 **Costs** \u20ac467,640 \u00b7 **Net** \u20ac765,585 \u00b7 **Margin** 62.1%\n- **Net customer adds** 153 (69 + 52 + 32 by month)\n- **Ticket close rate** 95.5% (956 of 1,001)\n- **June growth** 4.6% \u00b7 **July growth** -9.6%\n\nThe Notes section flags the trends leadership should see: declining sign-ups, rising churn, July's revenue reversal, stable costs, and support's strong July close rate.",
+  "total_cost_usd_cli": 0.17207500000000003,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:21:44Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 34 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

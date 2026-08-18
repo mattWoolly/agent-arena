@@ -1,0 +1,45 @@
+diff --git a/RESULTS.json b/RESULTS.json
+new file mode 100644
+index 0000000..ad378c3
+--- /dev/null
++++ b/RESULTS.json
+@@ -0,0 +1,38 @@
++{
++  "milestones": {
++    "kickoff": {
++      "start": "2026-08-24",
++      "end": "2026-08-26"
++    },
++    "requirements": {
++      "start": "2026-08-27",
++      "end": "2026-09-07"
++    },
++    "architecture": {
++      "start": "2026-09-08",
++      "end": "2026-09-14"
++    },
++    "build-core": {
++      "start": "2026-09-15",
++      "end": "2026-10-01"
++    },
++    "build-integrations": {
++      "start": "2026-10-02",
++      "end": "2026-10-15"
++    },
++    "hardening": {
++      "start": "2026-10-16",
++      "end": "2026-10-23"
++    },
++    "acceptance": {
++      "start": "2026-10-26",
++      "end": "2026-10-29"
++    },
++    "launch": {
++      "start": "2026-10-30",
++      "end": "2026-11-02"
++    }
++  },
++  "business_days_until_kickoff": 5,
++  "total_business_days": 48
++}
+\ No newline at end of file

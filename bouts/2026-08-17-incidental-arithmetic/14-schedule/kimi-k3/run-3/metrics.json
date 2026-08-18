@@ -1,0 +1,44 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 42.9,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Read": 2,
+    "Bash": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.08002,
+  "num_turns": 5,
+  "duration_ms": 41914,
+  "duration_api_ms": 46070,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 19217,
+  "output_tokens": 1529,
+  "cache_read_tokens": 82176,
+  "final_message": "`PLAN.md` is written. Key results:\n\n- **Timeline**: kickoff 2026-08-24 \u2192 launch ends 2026-11-02, 8 milestones with no gaps.\n- **Countdown**: 5 business days until kickoff (from 2026-08-17); 48 total business days \u2014 matching the sum of all milestone durations (3+7+5+12+9+6+4+2), which confirms each holiday only stretched a milestone's calendar span without adding days.\n- All three holidays (08-31, 09-25, 10-12) fall inside the plan window and were excluded as working days.",
+  "total_cost_usd_cli": 0.175398,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:06:44Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

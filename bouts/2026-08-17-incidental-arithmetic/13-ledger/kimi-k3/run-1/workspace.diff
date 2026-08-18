@@ -1,0 +1,64 @@
+diff --git a/BRIEFING.md b/BRIEFING.md
+new file mode 100644
+index 0000000..ab390b8
+--- /dev/null
++++ b/BRIEFING.md
+@@ -0,0 +1,58 @@
++# Q2 2026 Spending Briefing
++
++## Overview
++
++Total Q2 spend came to €44,023.75 across 120 transactions, against a combined
++quarterly budget of €45,300 — under budget in aggregate, but only because
++underspend in four categories masks two significant overruns. Travel is the
++largest category at €12,137.98 (27.6% of all spend) and ran 17.8% over its
++budget; software also overshot, by 18.3%. Spend was spread across three
++currencies (65 EUR, 36 USD, 19 GBP transactions), converted at the fixed
++rates in `rates.csv`.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Total Q2 spend | €44,023.75 |
++| Average transaction | €366.86 |
++| Largest transaction | €1,312.26 (hardware, cables, 2026-05-23) |
++| May vs April | +9.8% |
++| June vs May | +10.0% |
++| Travel share | 27.6% |
++
++## Category breakdown
++
++| Category | Total (EUR) | Budget (EUR) | Status |
++|---|---|---|---|
++| travel | 12,137.98 | 10,300.00 | over |
++| software | 9,702.03 | 8,200.00 | over |
++| training | 8,992.94 | 10,800.00 | under |
++| hardware | 8,874.09 | 10,700.00 | under |
++| meals | 2,541.26 | 3,100.00 | under |
++| office | 1,775.45 | 2,200.00 | under |
++
++## Trends and risks
++
++Monthly spend is climbing steadily: €13,316.21 in April, €14,623.21 in May
++(+9.8%), and €16,084.33 in June (+10.0%). If that ~10% month-over-month pace
++continues into Q3, the aggregate underspend will not last.
++
++The clearest risk is travel. It was modest in April (€3,861.20) and May
++(€1,211.46) but jumped to €7,065.32 in June — nearly 60% of the category's
++quarterly total in a single month, driven by large taxi and car-rental
++charges (including €1,278.28 and €1,057.29 items late in June). Travel ended
++the quarter €1,837.98 over budget; the finance lead should confirm whether
++the June spike is a one-off event or the new run rate, and consider tightening
++approval for ground transport.
++
++Software is the other overrun (€1,502.03 over, 118.3% of budget), but its
++trajectory is encouraging: spend fell from €5,653.13 in April to €2,111.49 in
++May and €1,937.41 in June, suggesting the overage is a front-loaded
++subscription or renewal cost rather than ongoing growth. Hardware and
++training both peaked in May (€4,543.87 and €4,994.49 respectively) and remain
++comfortably under budget, as do meals and office.
++
++Recommended actions: investigate the June travel spike, verify the April
++software charge is non-recurring, and rebalance the Q3 budget toward travel
++if elevated travel demand is expected to persist.

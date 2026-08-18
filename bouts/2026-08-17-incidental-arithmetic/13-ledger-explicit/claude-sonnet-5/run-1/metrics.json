@@ -1,0 +1,41 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 32.1,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Bash": 6,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.21741219999999997,
+  "num_turns": 8,
+  "duration_ms": 28579,
+  "duration_api_ms": 29474,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 16,
+  "output_tokens": 2543,
+  "cache_read_tokens": 287194,
+  "final_message": "`RESULTS.json` is written. Summary:\n\n- Q2 total: \u20ac44,023.75 across 120 transactions\n- Monthly spend rose each month: Apr \u20ac13,316.21 \u2192 May \u20ac14,623.21 (+9.8%) \u2192 Jun \u20ac16,084.33 (+10.0%)\n- Travel is the largest category at \u20ac12,137.98 (27.6% of Q2 spend)\n- Over budget: **software** (\u20ac9,702.03 vs \u20ac8,200) and **travel** (\u20ac12,137.98 vs \u20ac10,300)\n- Largest single transaction: \u20ac1,312.26; mean transaction: \u20ac366.86",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:48:58Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 20 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

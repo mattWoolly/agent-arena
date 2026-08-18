@@ -1,0 +1,40 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 38.8,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Bash": 3
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.24245099999999997,
+  "num_turns": 4,
+  "duration_ms": 37051,
+  "duration_api_ms": 37960,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 3195,
+  "cache_read_tokens": 89030,
+  "final_message": "`RESULTS.json` is written. The schedule:\n\n| Milestone | Days | Start | End |\n|---|---|---|---|\n| kickoff | 3 | Mon 2026-08-24 | Wed 2026-08-26 |\n| requirements | 7 | Thu 2026-08-27 | Mon 2026-09-07 |\n| architecture | 5 | Tue 2026-09-08 | Mon 2026-09-14 |\n| build-core | 12 | Tue 2026-09-15 | Thu 2026-10-01 |\n| build-integrations | 9 | Fri 2026-10-02 | Thu 2026-10-15 |\n| hardening | 6 | Fri 2026-10-16 | Fri 2026-10-23 |\n| acceptance | 4 | Mon 2026-10-26 | Thu 2026-10-29 |\n| launch | 2 | Fri 2026-10-30 | Mon 2026-11-02 |\n\n- `business_days_until_kickoff`: **5** (Aug 18\u201321, then Aug 24; no holidays in that window)\n- `total_business_days`: **48** (Aug 24 \u2192 Nov 2)\n\nVerification I ran:\n- Each milestone's span was re-counted independently with a separate day-by-day counter, and every one matched its declared duration.\n- All three holidays are weekdays and each is absorbed inside a milestone, pushing its end date out: 2026-08-31 (Mon) in *requirements*, 2026-09-25 (Fri) in *build-core*, 2026-10-12 (Mon) in *build-integrations*.\n- `total_business_days` (48) equals the sum of the durations, which is the expected result given the milestones are back-to-back with no idle business days between them \u2014 a useful cross-check that no day was double-counted or dropped at a boundary.\n- Weekday anchors confirmed against `date` rather than assumed.\n\nThe script asserts that `project_start` is itself a business day (it is \u2014 Mon 2026-08-24), since the conventions don't say what to do otherwise.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:09:19Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 38 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

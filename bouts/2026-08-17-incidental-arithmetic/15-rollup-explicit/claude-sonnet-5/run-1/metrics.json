@@ -1,0 +1,41 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 42.9,
+  "agent_exit": 0,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Bash": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 2,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.18502919999999998,
+  "num_turns": 3,
+  "duration_ms": 39297,
+  "duration_api_ms": 40085,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 6,
+  "output_tokens": 4133,
+  "cache_read_tokens": 95324,
+  "final_message": "`RESULTS.json` is written with the quarterly figures. The only anomaly worth noting was June's cost line items summing \u20ac300 higher than its stated total, which I flagged in the notes field.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:32:45Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 11 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

@@ -1,0 +1,45 @@
+diff --git a/BRIEFING.md b/BRIEFING.md
+new file mode 100644
+index 0000000..36f5c36
+--- /dev/null
++++ b/BRIEFING.md
+@@ -0,0 +1,39 @@
++# Q2 2026 Spending Briefing
++
++## Overview
++
++Q2 2026 (April–June) company spend totaled **€44,023.75** across 120 transactions in six categories and three currencies (EUR, USD, GBP). Spending was broadly diversified: software tooling, travel, and training/development were the three largest categories, together accounting for just under two-thirds of the quarter's spend, with hardware, meals, and office supplies rounding out the rest. Overall spend came in **€1,276.25 under** the €45,300 total quarterly budget, but that headline figure masks two categories — software and travel — that ran over their individual budgets while others ran comfortably under. Monthly spend rose steadily through the quarter, from €13,316.21 in April to €16,084.33 in June, a trend worth watching heading into Q3.
++
++## Key figures
++
++| Metric | Value |
++| --- | --- |
++| Total Q2 spend | €44,023.75 |
++| Average transaction | €366.86 |
++| Largest transaction | €1,312.26 (hardware — cables, 2026-05-23) |
++| May vs April | +9.8% |
++| June vs May | +10.0% |
++| Travel share | 27.6% |
++
++## Category breakdown
++
++| Category | Total (EUR) | Budget (EUR) | Status |
++| --- | --- | --- | --- |
++| Travel | 12,137.98 | 10,300.00 | over |
++| Software | 9,702.03 | 8,200.00 | over |
++| Training | 8,992.94 | 10,800.00 | under |
++| Hardware | 8,874.09 | 10,700.00 | under |
++| Meals | 2,541.26 | 3,100.00 | under |
++| Office | 1,775.45 | 2,200.00 | under |
++
++## Trends and risks
++
++**Total spend is trending up month over month** — up 9.8% from April to May and 10.0% from May to June — with no sign of leveling off. If June's run rate carries into Q3, the quarter would open well above Q2's average monthly spend, so this is worth a proactive check-in with category owners rather than waiting for another quarter-end surprise.
++
++**Travel is the biggest risk area.** It's already 17.8% over its quarterly budget (€12,137.98 vs. €10,300) and highly uneven month to month: it dipped to €1,211.46 in May before spiking to €7,065.32 in June — nearly 58% of the entire quarter's travel spend landed in the final month, driven mainly by taxi and car rental costs. That concentration suggests either a one-off event (e.g., a conference or client push) or a budgeting gap that will recur; worth confirming which before setting the Q3 travel budget.
++
++**Software is over budget but decelerating**, front-loaded in April (€5,653.13, largely license renewals) and tapering to €1,937.41 by June. The overage is a timing effect from annual/upfront renewals rather than a growing run rate, so it likely self-corrects next quarter — but it's worth confirming no further large renewals are expected before Q2 closes the books.
++
++**Training and hardware both ran well under budget** (16–17% below plan each), which is the main reason total spend stayed under the overall cap despite the travel and software overages. If training/hardware underspend reflects deferred rather than cancelled plans, expect some of that budget headroom to be consumed in Q3.
++
++**Currency mix adds some FX exposure**: about half of spend (49.7%) was already in EUR, but 33.1% was in USD and 17.2% in GBP. Given travel (largely EUR/GBP) and software (largely USD/EUR) are the categories to watch, a material USD or GBP rate move next quarter would directly affect how those categories compare to their EUR-denominated budgets.

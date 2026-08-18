@@ -1,0 +1,51 @@
+diff --git a/PLAN.md b/PLAN.md
+new file mode 100644
+index 0000000..e404fb3
+--- /dev/null
++++ b/PLAN.md
+@@ -0,0 +1,45 @@
++# Delivery Plan
++
++## Timeline
++
++| Milestone | Start | End |
++| --- | --- | --- |
++| kickoff | 2026-08-24 | 2026-08-26 |
++| requirements | 2026-08-27 | 2026-09-07 |
++| architecture | 2026-09-08 | 2026-09-14 |
++| build-core | 2026-09-15 | 2026-10-01 |
++| build-integrations | 2026-10-02 | 2026-10-15 |
++| hardening | 2026-10-16 | 2026-10-23 |
++| acceptance | 2026-10-26 | 2026-10-29 |
++| launch | 2026-10-30 | 2026-11-02 |
++
++## Countdown
++
++| Business days until kickoff | 5 |
++| --- | --- |
++| Total business days | 48 |
++
++## Notes
++
++The plan is strictly sequential: eight milestones run back-to-back with no
++gaps, starting Monday 2026-08-24 and finishing Monday 2026-11-02 — 48
++business days spanning roughly ten calendar weeks.
++
++The shape is front-loaded with definition and back-loaded with assurance:
++kickoff, requirements, and architecture take the first three and a half
++weeks, then the two build phases consume 21 of the 48 business days (build-
++core alone is the longest milestone at 12), and hardening, acceptance, and
++launch close out the final four weeks.
++
++Things worth calling out:
++
++- All three company holidays (2026-08-31, 2026-09-25, 2026-10-12) fall
++  inside the delivery window. Each one pushes a milestone's end date out —
++  requirements stretches across the first, build-core across the second,
++  and build-integrations across the third — so those milestones span more
++  calendar time than their durations suggest.
++- Launch starts Friday 2026-10-30 and straddles a weekend, ending Monday
++  2026-11-02. If a same-week launch matters, pulling launch forward one
++  business day requires trimming a day from acceptance.
++- The long build-core stretch has no intermediate checkpoint; if it slips,
++  everything after it slides day-for-day.

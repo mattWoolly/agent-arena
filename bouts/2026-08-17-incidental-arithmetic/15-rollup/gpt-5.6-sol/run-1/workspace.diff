@@ -1,0 +1,28 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..466ec17
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,22 @@
++# Quarterly operations report — May–July 2026
++
++## Summary
++
++The quarter delivered €1,233,225 in revenue and €765,585 in net contribution, for a 62.1% margin. Revenue grew in June before falling sharply in July, while costs remained broadly stable. Customer growth stayed positive throughout the quarter, and support closed 95.5% of tickets opened.
++
++## Key figures
++
++| Metric | Result |
++|---|---:|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++July revenue declined 9.6% month over month after June's growth. Net customer adds also slowed each month, from 69 in May to 52 in June and 32 in July, as churn rose. Support performance remained strong overall, with monthly closures close to ticket intake.

@@ -1,0 +1,37 @@
+diff --git a/BRIEFING.md b/BRIEFING.md
+new file mode 100644
+index 0000000..99cd180
+--- /dev/null
++++ b/BRIEFING.md
+@@ -0,0 +1,31 @@
++## Overview
++
++Q2 spend was €44,023.75 across 120 transactions. Travel was the largest category at €12,137.98, followed by software at €9,702.03, training at €8,992.94, and hardware at €8,874.09. In practical terms, the quarter's spending centered on transport and accommodation, software subscriptions and renewals, professional development, and workstation equipment. Total spend remained €1,276.25 under the €45,300.00 quarterly budget, but that aggregate result masks overruns in travel and software.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Total Q2 spend | €44,023.75 |
++| Average transaction | €366.86 |
++| Largest transaction | €1,312.26 — hardware cables, 23 May |
++| May vs April | 9.8% |
++| June vs May | 10.0% |
++| Travel share | 27.6% |
++
++## Category breakdown
++
++| Category | Total (EUR) | Budget (EUR) | Status |
++|---|---:|---:|---|
++| travel | €12,137.98 | €10,300.00 | over |
++| software | €9,702.03 | €8,200.00 | over |
++| hardware | €8,874.09 | €10,700.00 | under |
++| meals | €2,541.26 | €3,100.00 | under |
++| training | €8,992.94 | €10,800.00 | under |
++| office | €1,775.45 | €2,200.00 | under |
++
++## Trends and risks
++
++Monthly spend increased throughout the quarter: from €13,316.21 in April to €14,623.21 in May and €16,084.33 in June. The mix shifted materially—April was led by software at €5,653.13, May by training and hardware at €4,994.49 and €4,543.87, and June by travel at €7,065.32. June travel was the main late-quarter pressure, and the largest individual transaction was a €1,312.26 hardware cables purchase in May.
++
++Travel finished €1,837.98 over budget and software €1,502.03 over budget. The finance lead should review June's high-value travel, confirm the unusually large cables purchase, and examine software renewals and subscriptions for duplication or avoidable capacity. Because underspending elsewhere offset these overruns, category owners should reforecast rather than rely on the quarter-wide €1,276.25 cushion continuing into the next period.

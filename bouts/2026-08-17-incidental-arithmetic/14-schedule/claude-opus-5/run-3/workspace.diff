@@ -1,0 +1,56 @@
+diff --git a/PLAN.md b/PLAN.md
+new file mode 100644
+index 0000000..a1ddd8e
+--- /dev/null
++++ b/PLAN.md
+@@ -0,0 +1,50 @@
++# Delivery Plan
++
++## Timeline
++
++| Milestone | Start | End |
++| --- | --- | --- |
++| kickoff | 2026-08-24 | 2026-08-26 |
++| requirements | 2026-08-27 | 2026-09-07 |
++| architecture | 2026-09-08 | 2026-09-14 |
++| build-core | 2026-09-15 | 2026-10-01 |
++| build-integrations | 2026-10-02 | 2026-10-15 |
++| hardening | 2026-10-16 | 2026-10-23 |
++| acceptance | 2026-10-26 | 2026-10-29 |
++| launch | 2026-10-30 | 2026-11-02 |
++
++## Countdown
++
++| Metric | Business days |
++| --- | --- |
++| Business days until kickoff | 5 |
++| Total business days | 48 |
++
++## Notes
++
++The plan is a single unbroken chain of eight milestones: work starts Monday
++2026-08-24 and finishes Monday 2026-11-02, spanning 48 business days over
++about ten calendar weeks. Because each milestone begins on the next business
++day after its predecessor ends, there is no slack anywhere in the schedule —
++the 48-day total is exactly the sum of the milestone durations, so any
++milestone that runs long pushes the launch date out day for day.
++
++Roughly half the plan is build work: `build-core` (12 days) and
++`build-integrations` (9 days) together account for 21 of the 48 days, and
++they run back to back from 2026-09-15 to 2026-10-15. That stretch is the main
++schedule risk; the 6-day `hardening` and 4-day `acceptance` milestones that
++follow are the only buffer against defects found late.
++
++All three company holidays land on weekdays inside the plan and each one
++extends the milestone it falls in by a calendar day: 2026-08-31 (Monday) sits
++inside `requirements`, 2026-09-25 (Friday) inside `build-core`, and
++2026-10-12 (Monday) inside `build-integrations`. Only those three dates are
++treated as non-working; no other public or regional holidays are modeled, so
++if the org observes additional days off they need to be added to
++`holidays.csv` and the plan regenerated.
++
++Two dates worth flagging for planning purposes: `requirements` ends on Monday
++2026-09-07, so the hand-off to `architecture` happens immediately after a
++weekend, and `launch` is split across a weekend (Friday 2026-10-30 and Monday
++2026-11-02). If the launch needs two consecutive calendar days, shift it to
++start on 2026-11-02 instead.

@@ -1,0 +1,40 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 32.8,
+  "agent_exit": 0,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Bash": 3
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.21581650000000002,
+  "num_turns": 4,
+  "duration_ms": 29004,
+  "duration_api_ms": 29946,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 2386,
+  "cache_read_tokens": 90361,
+  "final_message": "`RESULTS.json` is written in the working directory (untracked, no commits made).\n\n**Schedule** (project start Mon 2026-08-24, holidays 08-31, 09-25, 10-12 excluded):\n\n| Milestone | Start | End | BD |\n|---|---|---|---|\n| kickoff | 2026-08-24 (Mon) | 2026-08-26 (Wed) | 3 |\n| requirements | 2026-08-27 (Thu) | 2026-09-07 (Mon) | 7 |\n| architecture | 2026-09-08 (Tue) | 2026-09-14 (Mon) | 5 |\n| build-core | 2026-09-15 (Tue) | 2026-10-01 (Thu) | 12 |\n| build-integrations | 2026-10-02 (Fri) | 2026-10-15 (Thu) | 9 |\n| hardening | 2026-10-16 (Fri) | 2026-10-23 (Fri) | 6 |\n| acceptance | 2026-10-26 (Mon) | 2026-10-29 (Thu) | 4 |\n| launch | 2026-10-30 (Fri) | 2026-11-02 (Mon) | 2 |\n\n- `business_days_until_kickoff`: **5** (Aug 18\u201321, then Aug 24)\n- `total_business_days`: **48**\n\nVerification: each milestone's inclusive business-day span was recounted independently and matches its declared duration; every start/end lands on a business day; the total equals the sum of durations, as expected for a gapless chain.\n\nOne thing worth flagging: only the three dates in `holidays.csv` are treated as non-working. That means Mon 2026-09-07 (US Labor Day) and Wed 2026-11-11 (Veterans Day) count as regular business days here. If those should be excluded, the schedule shifts and I can regenerate.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:17:51Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 38 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

@@ -1,0 +1,44 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 88.0,
+  "agent_exit": 0,
+  "assistant_messages": 14,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.12609,
+  "num_turns": 7,
+  "duration_ms": 86656,
+  "duration_api_ms": 90445,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 31597,
+  "output_tokens": 3429,
+  "cache_read_tokens": 107776,
+  "final_message": "`BRIEFING.md` is written. Method and headline numbers:\n\n**Method** \u2014 each transaction converted at the `rates.csv` rate (USD 0.92, GBP 1.17), rounded to the cent individually, then summed. All 120 transactions fall within April\u2013June 2026.\n\n**Key figures**\n- Total Q2 spend: \u20ac44,023.75 (vs \u20ac45,300 budget \u2192 2.8% under in aggregate)\n- Average transaction: \u20ac366.86\n- Largest: \u20ac1,312.26 \u2014 hardware cables (T0062, \u00a31,121.59)\n- May vs April: +9.8% \u00b7 June vs May: +10.0%\n- Travel share: 27.6%\n\n**Category status** \u2014 travel (\u20ac12,137.98) and software (\u20ac9,702.03) are over budget by 17.8% and 18.3% respectively; training, hardware, meals and office are all under (80\u201383% utilisation).\n\n**Main callouts in Trends and risks** \u2014 spend is compounding ~10% month over month, and 58% of quarterly travel was booked in June alone (nearly 6\u00d7 May's travel spend); the briefing flags the June travel spike and front-loaded software overspend as the two things to act on, and suggests rebalancing budget rather than raising the overall envelope.",
+  "total_cost_usd_cli": 0.29759800000000003,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:42:43Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 64 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

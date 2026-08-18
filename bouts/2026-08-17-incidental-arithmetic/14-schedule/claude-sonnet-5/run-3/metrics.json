@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 29.6,
+  "agent_exit": 0,
+  "assistant_messages": 8,
+  "tool_calls": {
+    "Read": 2,
+    "Bash": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.1607023,
+  "num_turns": 5,
+  "duration_ms": 26201,
+  "duration_api_ms": 28255,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 2391,
+  "cache_read_tokens": 132271,
+  "final_message": "Created `PLAN.md` with the Timeline, Countdown, and Notes sections. Key numbers: kickoff starts 2026-08-24 (5 business days from today), the plan spans 8 milestones ending 2026-11-02, totaling 48 business days, with the three holidays each falling inside a milestone (requirements, build-core, build-integrations) and nudging their end dates out.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:08:49Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 36 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

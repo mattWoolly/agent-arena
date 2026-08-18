@@ -1,0 +1,43 @@
+diff --git a/BRIEFING.md b/BRIEFING.md
+new file mode 100644
+index 0000000..febb7bd
+--- /dev/null
++++ b/BRIEFING.md
+@@ -0,0 +1,37 @@
++# Q2 2026 Spending Briefing
++
++## Overview
++
++Total spend across April–June 2026 was €44,023.75 across 120 transactions in EUR, USD, and GBP. Spending accelerated through the quarter, rising 9.8% from April to May and a further 10.0% from May to June. Two of six categories — **software** and **travel** — closed the quarter over budget, while hardware, meals, office, and training all came in under. Travel was the single largest category overall (27.6% of total spend), driven almost entirely by a late-quarter surge in June.
++
++## Key figures
++
++| Metric | Value |
++| --- | --- |
++| Total Q2 spend | €44,023.75 |
++| Average transaction | €366.86 |
++| Largest transaction | €1,312.26 (hardware — cables, GBP 1,121.59, 2026-05-23) |
++| May vs April | +9.8% |
++| June vs May | +10.0% |
++| Travel share | 27.6% |
++
++## Category breakdown
++
++| Category | Total (EUR) | Budget (EUR) | Status |
++| --- | --- | --- | --- |
++| Travel | 12,137.98 | 10,300.00 | over |
++| Software | 9,702.03 | 8,200.00 | over |
++| Training | 8,992.94 | 10,800.00 | under |
++| Hardware | 8,874.09 | 10,700.00 | under |
++| Meals | 2,541.26 | 3,100.00 | under |
++| Office | 1,775.45 | 2,200.00 | under |
++
++## Trends and risks
++
++**Travel is the main risk to watch.** It ran well under pace in April and May (€3,861.20 and €1,211.46) but then jumped to €7,065.32 in June — a 483% month-over-month increase — pushing the category 17.8% over its full-quarter budget in a single month. The spike is concentrated in car rentals and taxis (several individual charges above €1,000, e.g. T0114, T0118, T0020, T0109, T0103). This looks like a late-quarter cluster rather than a steady trend; finance should confirm whether it reflects one-off travel (e.g. a conference or client trip) or a new run rate, since a repeat in Q3 would blow well past budget.
++
++**Software spend is front-loaded and easing.** April alone accounted for €5,653.13 of the category's €9,702.03 total, driven by SaaS subscriptions and license renewals; spend then fell 65.7% by June (€1,937.41). The category still finished 18.3% over budget purely on the strength of April's renewals — worth checking whether those are annual/quarterly commitments that won't recur next quarter, in which case no action is needed, or whether new tools were added that should be reflected in the Q3 budget.
++
++**Training and hardware both had one-off peaks in May** (€4,994.49 and €4,543.87 respectively) but stayed under their full-quarter budgets thanks to lighter April and June activity — no action needed there, but the pattern is worth noting if similar bulk purchases (equipment refresh, course enrollments) are planned for next quarter.
++
++**Meals and office spending were steady and comfortably under budget** all quarter, with no notable anomalies.

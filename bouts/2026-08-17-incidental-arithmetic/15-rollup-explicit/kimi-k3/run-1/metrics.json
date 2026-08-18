@@ -1,0 +1,44 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 48.1,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 3,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.09318,
+  "num_turns": 7,
+  "duration_ms": 47016,
+  "duration_api_ms": 50833,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 21199,
+  "output_tokens": 1348,
+  "cache_read_tokens": 105984,
+  "final_message": "`RESULTS.json` is written. Summary of the quarter (May\u2013July 2026):\n\n| Metric | Value |\n|---|---|\n| Revenue | \u20ac1,233,225 |\n| Costs | \u20ac467,640 |\n| Net | \u20ac765,585 (62.1% margin) |\n| Net customer adds | 153 |\n| Ticket close rate | 95.5% (956/1001) |\n| June growth | +4.6% |\n| July growth | \u22129.6% |\n\nNotable trends flagged in `notes`: July revenue dropped sharply while costs held flat, new signings fell every month (86 \u2192 74 \u2192 63), and churn climbed every month (17 \u2192 22 \u2192 31) \u2014 July's net adds were less than half of May's.",
+  "total_cost_usd_cli": 0.192687,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:34:30Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 11 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

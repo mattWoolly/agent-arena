@@ -1,0 +1,41 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 30.3,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Bash": 5,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.20103010000000002,
+  "num_turns": 7,
+  "duration_ms": 26368,
+  "duration_api_ms": 27057,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 14,
+  "output_tokens": 2404,
+  "cache_read_tokens": 248057,
+  "final_message": "Category totals sum matches the Q2 total (44023.75), confirming internal consistency. `RESULTS.json` is written with all required fields: per-category EUR totals, Q2 total, month-over-month percentages for May/June, largest and mean transaction, travel's share of spend, and the two categories (software, travel) that exceeded their Q2 budgets.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:22:12Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 20 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

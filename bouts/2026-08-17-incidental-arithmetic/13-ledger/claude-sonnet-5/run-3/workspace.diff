@@ -1,0 +1,73 @@
+diff --git a/BRIEFING.md b/BRIEFING.md
+new file mode 100644
+index 0000000..b443e47
+--- /dev/null
++++ b/BRIEFING.md
+@@ -0,0 +1,67 @@
++# Q2 2026 Spending Briefing
++
++## Overview
++
++Across April–June 2026, the company recorded 120 expense transactions totaling
++**€44,023.75**. Spend was spread across six categories, with travel
++(€12,137.98), software (€9,702.03), and training (€8,992.94) accounting for
++the largest shares, followed by hardware (€8,874.09), meals (€2,541.26), and
++office (€1,775.45). The heaviest individual lines were recurring hardware
++docks (€5,043.25 over 8 purchases), travel taxis and car rentals
++(€3,720.13 and €3,587.62 respectively), and software license renewals
++(€3,383.33 over 7 purchases) — indicating spend is driven mainly by ongoing
++operational and travel costs rather than one-off purchases.
++
++## Key figures
++
++| Metric | Value |
++| --- | --- |
++| Total Q2 spend | €44,023.75 |
++| Average transaction | €366.86 |
++| Largest transaction | €1,312.26 (hardware – cables, 2026-05-23) |
++| May vs April | +9.8% |
++| June vs May | +10.0% |
++| Travel share | 27.6% |
++
++## Category breakdown
++
++| Category | Total (EUR) | Budget (EUR) | Status |
++| --- | --- | --- | --- |
++| Hardware | 8,874.09 | 10,700.00 | under |
++| Meals | 2,541.26 | 3,100.00 | under |
++| Office | 1,775.45 | 2,200.00 | under |
++| Software | 9,702.03 | 8,200.00 | over |
++| Training | 8,992.94 | 10,800.00 | under |
++| Travel | 12,137.98 | 10,300.00 | over |
++
++## Trends and risks
++
++Monthly spend rose every month of the quarter — €13,316.21 in April,
++€14,623.21 in May (+9.8%), and €16,084.33 in June (+10.0%) — an accelerating
++trend that, if it continues into Q3, would push quarterly spend well above
++current levels. Two categories are already over their Q2 budgets: **travel**
++is €1,837.98 (17.8%) over, and **software** is €1,502.03 (18.3%) over. These
++are worth flagging to the finance lead directly.
++
++Travel is the primary driver of June's spike: travel spend jumped from
++€1,211.46 in May to €7,065.32 in June, largely on taxis and car rentals,
++pushing the category over budget for the quarter despite a quiet April and
++May. If this pace continues, travel could end Q3 significantly further over
++budget — it may be worth reviewing whether a specific trip or a change in
++travel policy is behind the June surge.
++
++Software spend, by contrast, was front-loaded in April (€5,653.13, driven by
++license renewals) and has since tapered to roughly €2,000/month in May and
++June. The category is over budget for the quarter overall, but the trend is
++improving — this is more likely a timing effect (annual renewals landing in
++April) than an ongoing overrun, and should self-correct if no further large
++renewals are expected in Q3.
++
++Hardware and training both had a pronounced spike in May (hardware
++€4,543.87, training €4,994.49) before easing off in June — worth confirming
++these were planned, one-off purchases (e.g., equipment refresh, a batch of
++conference tickets) rather than the start of a new run rate, since both
++categories still have budget headroom for the quarter as a whole. The
++single largest transaction of the quarter, a €1,312.26 GBP cables purchase
++on 2026-05-23, is also worth a sanity check given its size relative to a
++typical hardware line item.

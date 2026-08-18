@@ -1,0 +1,43 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 77.4,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Bash": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.10477,
+  "num_turns": 4,
+  "duration_ms": 76463,
+  "duration_api_ms": 81317,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 28586,
+  "output_tokens": 2669,
+  "cache_read_tokens": 76032,
+  "final_message": "`BRIEFING.md` is written. Summary of the analysis:\n\n**Method**: 120 transactions converted with per-transaction rounding to the cent (USD \u00d70.92, GBP \u00d71.17), then summed with Decimal arithmetic throughout.\n\n**Headline numbers**:\n- Total Q2 spend: **\u20ac44,023.75** vs \u20ac45,300 combined budget \u2014 under in aggregate\n- Average transaction: \u20ac366.86; largest: \u20ac1,312.26 (GBP hardware purchase, May 23)\n- Monthly spend rising: Apr \u20ac13,316.21 \u2192 May \u20ac14,623.21 (**+9.8%**) \u2192 Jun \u20ac16,084.33 (**+10.0%**)\n- Travel share: **27.6%**\n\n**Key findings flagged for the finance lead**:\n- **Travel over budget by \u20ac1,837.98 (117.8%)** \u2014 driven by a June spike (\u20ac7,065.32, ~60% of the category's quarter in one month), mostly large taxi/car-rental charges\n- **Software over by \u20ac1,502.03 (118.3%)**, but declining monthly (\u20ac5,653 \u2192 \u20ac1,937), suggesting a front-loaded April cost rather than run-rate growth\n- The other four categories (training, hardware, meals, office) all finished 17\u201319% under budget\n\nNo git commits were made; the only change is the new `BRIEFING.md` file.",
+  "total_cost_usd_cli": 0.24767099999999997,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:29:32Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 58 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}
