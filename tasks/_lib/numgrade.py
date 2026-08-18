@@ -43,7 +43,12 @@ def parse_number(cell):
     if cell is None:
         return None
     s = str(cell)
-    neg = "(" in s and ")" in s
+    # Accounting-style negative ONLY when parentheses wrap the number itself
+    # ("(1,312.26)", "(9.6%)"). Parenthetical annotations next to a number
+    # ("1312.26 (T0057)") are not negatives — Amendment 1, caught on the first
+    # graded repeat when three models' annotated cells all "went negative".
+    neg = bool(re.fullmatch(r"€?\s*\(\s*[€$\s]*[\d][\d,. ]*\s*%?\s*\)",
+                            s.strip()))
     s2 = s.replace("−", "-")  # unicode minus
     m = _MONEY_RE.search(s2.replace("€", " ").replace("EUR", " ").replace("%", " "))
     if not m:
