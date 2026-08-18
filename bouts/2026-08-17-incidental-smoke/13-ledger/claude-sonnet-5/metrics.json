@@ -1,0 +1,41 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 65.1,
+  "agent_exit": 0,
+  "assistant_messages": 18,
+  "tool_calls": {
+    "Bash": 7,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.30470769999999997,
+  "num_turns": 9,
+  "duration_ms": 61471,
+  "duration_api_ms": 62163,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 18,
+  "output_tokens": 6019,
+  "cache_read_tokens": 331019,
+  "final_message": "I've written `BRIEFING.md`. Summary of what was computed:\n\n- **Total Q2 spend**: \u20ac44,023.75 across 120 transactions, all converted to EUR per-transaction (rounded to the cent) before summing.\n- **Key figures table**: average \u20ac366.86, largest \u20ac1,312.26, May vs April +9.8%, June vs May +10.0%, travel share 27.6%.\n- **Category breakdown**: travel (+17.8%) and software (+18.3%) are over budget; hardware, meals, training, and office are all under.\n- **Trends and risks**: flags travel's sharp June spike (large taxi/car-rental charges) as the main risk, notes software's overage is an April-only artifact that's already normalized, and calls out FX exposure given ~half of spend is in USD/GBP.\n\nAll figures were computed via a Decimal-based script directly from the CSVs/YAML to guarantee correct rounding at each step (per-transaction cent rounding, then cent rounding on sums/percentages).",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:21:07Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 44 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

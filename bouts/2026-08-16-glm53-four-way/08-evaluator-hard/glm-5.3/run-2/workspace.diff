@@ -1,0 +1,302 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..04ffcd0
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,50 @@
++# Solution
++
++Implemented in `sheet/engine.py`: `evaluate(cells)` plus `CycleError`
++(already stubbed). Everything is iterative — no recursion anywhere — so
++neither long dependency chains nor deeply nested formulas can hit Python's
++recursion limit.
++
++## Pipeline
++
++1. **Tokenize** (`_tokenize`) — regex alternation over numbers
++   (`\d+(\.\d*)?` or `.\d+`), cell names (`[A-Za-z]+\d*`), operators, and
++   parens; whitespace is skipped. A `+`/`-` is classified as unary when it
++   starts the formula or follows another operator or `(`.
++2. **Parse to RPN** (`_to_rpn`, shunting-yard) with an operand/operator
++   state machine that rejects malformed input (`=2 3`, `=2+`, `=()`,
++   unbalanced parens, `=*2`, empty formulas → `ValueError`).
++3. **Resolve references** — iterative colored DFS (white/gray/black) over
++   the reference graph. Gray-on-gray ⇒ cycle ⇒ `CycleError` (message shows
++   the path, e.g. `A -> B -> A`). Cells are evaluated post-order, so every
++   reference is already computed by the time its dependent is evaluated,
++   regardless of dict order (forward references and transitive chains just
++   work). Results are memoized, so diamonds like `A = B+B, B = C*2` don't
++   recompute or falsely report cycles.
++4. **Evaluate RPN** (`_eval_rpn`) — explicit stack; `/` is plain Python
++   float division, so `=1/0` raises `ZeroDivisionError` naturally.
++
++## Precedence / associativity details
++
++`+ -` < `* /` < unary `±` < `^`; `+ - * /` left-associative, `^`
++right-associative (`2^3^2` = 512). Putting unary minus *between* `* /` and
++`^` gives the README's rule that unary minus binds looser than `^`:
++`-2^2` = -4 while `(-2)^2` = 4. In the shunting-yard pass a prefix `u-`/`u+`
++is pushed without popping anything — it must not displace a `^` still
++waiting for its right operand (`2^-3` = 0.125, `2^-3^2` = 2^-(3^2)).
++
++## Edge cases handled
++
++- Unary minus in any operand position, including stacked (`=--2` → 2) and
++  after binary operators (`=2*-3`, `=2--3`); unary plus accepted too.
++- Decimal literals in formulas and bare cells (`3.5`, `.5`, `2.`), optional
++  sign on bare cells (`-2`), surrounding whitespace, `int`/`float` cell
++  values accepted leniently; every output value is a `float`.
++- Case-sensitive, exact cell-name matching (no case folding — output keys
++  are the input keys unchanged).
++- References to cells absent from `cells` raise `KeyError`; non-numeric,
++  non-formula cell text and malformed formulas raise `ValueError`.
++- Self-reference (`A = "=A"`), 2-cycles, longer cycles, and cycles reached
++  through a chain all raise `CycleError`; an empty input returns `{}`.
++- Stress-tested: a 20,000-cell dependency chain, a 20,000-term sum, and
++  5,000-deep nested parentheses all evaluate without recursion errors.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..6da9188
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..057c974
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..fa9cdc9 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,227 @@
+ """Implement evaluate() and CycleError per README.md."""
+ 
++import re
++
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references form a dependency cycle."""
++
++
++# --- tokenizing ---------------------------------------------------------------
++
++_TOKEN_RE = re.compile(
++    r"(?P<ws>\s+)"
++    r"|(?P<num>\d+(?:\.\d*)?|\.\d+)"
++    r"|(?P<ref>[A-Za-z]+\d*)"
++    r"|(?P<op>[-+*/^()])"
++)
++
++# A bare (non-formula) cell value: an optionally signed decimal number.
++_BARE_NUMBER_RE = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)")
++
++
++def _tokenize(text):
++    """Split a formula body into ``(kind, value)`` tokens.
++
++    Kinds are ``"num"`` (float), ``"ref"`` (cell name), and ``"op"`` (a
++    binary operator, ``(``, ``)``, ``u-`` or ``u+``).  A ``+``/``-`` is
++    unary when it starts the formula or follows another operator or ``(``.
++    """
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        m = _TOKEN_RE.match(text, pos)
++        if m is None:
++            raise ValueError(f"unexpected character {text[pos]!r} in {text!r}")
++        pos = m.end()
++        kind = m.lastgroup
++        if kind == "ws":
++            continue
++        if kind == "num":
++            tokens.append(("num", float(m.group())))
++        elif kind == "ref":
++            tokens.append(("ref", m.group()))
++        else:
++            sym = m.group()
++            prev = tokens[-1] if tokens else None
++            after_operand = prev is not None and prev[0] in ("num", "ref")
++            closed = prev == ("op", ")")
++            if sym in "+-" and not (after_operand or closed):
++                tokens.append(("op", "u" + sym))
++            else:
++                tokens.append(("op", sym))
++    return tokens
++
++
++# --- parsing (shunting-yard to RPN) -------------------------------------------
++
++# Higher number binds tighter.  Unary +/- sit between `* /` and `^` so that
++# unary minus binds looser than `^`: `-2^2` is `-(2^2)` = -4, `(-2)^2` = 4.
++_PREC = {"+": 1, "-": 1, "*": 2, "/": 2, "u+": 3, "u-": 3, "^": 4}
++_RIGHT_ASSOC = frozenset({"^"})
++_OPEN_PAREN = ("op", "(")
++
++
++def _to_rpn(tokens, src):
++    """Convert tokens to postfix (RPN) via the shunting-yard algorithm.
++
++    ``^`` is right-associative; ``+ - * /`` are left-associative.  A prefix
++    ``u-``/``u+`` is pushed without popping: it must not displace a ``^``
++    waiting for its right operand (``2^-3`` is ``2^(-3)``), and ``-2^2``
++    works out because a later ``^`` outranks the stacked ``u-`` and pops it.
++    """
++    out = []
++    ops = []
++    expect_operand = True  # False means the next token must be an operator/`)`
++    for tok in tokens:
++        kind, val = tok
++        if kind in ("num", "ref"):
++            if not expect_operand:
++                raise ValueError(f"unexpected {val!r} in {src!r}")
++            expect_operand = False
++            out.append(tok)
++        elif val == "(":
++            if not expect_operand:
++                raise ValueError(f"unexpected '(' in {src!r}")
++            ops.append(tok)
++        elif val == ")":
++            if expect_operand:
++                raise ValueError(f"unexpected ')' in {src!r}")
++            while ops and ops[-1] != _OPEN_PAREN:
++                out.append(ops.pop())
++            if not ops:
++                raise ValueError(f"unbalanced parentheses in {src!r}")
++            ops.pop()
++        elif val in ("u-", "u+"):
++            if not expect_operand:
++                raise ValueError(f"unexpected {val!r} in {src!r}")
++            ops.append(tok)
++        else:
++            if expect_operand:
++                raise ValueError(f"missing operand before {val!r} in {src!r}")
++            prec = _PREC[val]
++            while ops and ops[-1] != _OPEN_PAREN:
++                top = _PREC[ops[-1][1]]
++                if top > prec or (top == prec and val not in _RIGHT_ASSOC):
++                    out.append(ops.pop())
++                else:
++                    break
++            ops.append(tok)
++            expect_operand = True
++    if expect_operand:
++        raise ValueError(f"empty or incomplete formula {src!r}")
++    while ops:
++        tok = ops.pop()
++        if tok == _OPEN_PAREN:
++            raise ValueError(f"unbalanced parentheses in {src!r}")
++        out.append(tok)
++    return out
++
++
++# --- evaluation ----------------------------------------------------------------
++
++def _eval_rpn(tokens, values):
++    """Evaluate an RPN token list against already-computed cell values."""
++    stack = []
++    for kind, val in tokens:
++        if kind == "num":
++            stack.append(val)
++        elif kind == "ref":
++            if val not in values:
++                raise KeyError(val)
++            stack.append(values[val])
++        elif val == "u-":
++            if not stack:
++                raise ValueError("malformed formula")
++            stack.append(-stack.pop())
++        elif val == "u+":
++            if not stack:
++                raise ValueError("malformed formula")
++            stack.append(+stack.pop())
++        else:
++            if len(stack) < 2:
++                raise ValueError("malformed formula")
++            right = stack.pop()
++            left = stack.pop()
++            if val == "+":
++                stack.append(left + right)
++            elif val == "-":
++                stack.append(left - right)
++            elif val == "*":
++                stack.append(left * right)
++            elif val == "/":
++                stack.append(left / right)  # ZeroDivisionError propagates
++            else:
++                stack.append(left ** right)
++    if len(stack) != 1:
++        raise ValueError("malformed formula")
++    return stack[0]
++
++
++def _parse_cell(name, text):
++    """Classify one cell as ``("num", value)`` or ``("rpn", tokens, deps)``."""
++    if isinstance(text, str):
++        src = text.strip()
++        if src.startswith("="):
++            tokens = _to_rpn(_tokenize(src[1:]), src)
++            deps = [t[1] for t in tokens if t[0] == "ref"]
++            return ("rpn", tokens, deps)
++        if _BARE_NUMBER_RE.fullmatch(src):
++            return ("num", float(src))
++        raise ValueError(f"invalid value for cell {name!r}: {text!r}")
++    if isinstance(text, (int, float)) and not isinstance(text, bool):
++        return ("num", float(text))
++    raise ValueError(f"invalid value for cell {name!r}: {text!r}")
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell's float value, resolving references in any order.
++
++    Raises :class:`CycleError` if any cell reaches itself through references,
++    ``KeyError`` if a formula references a cell absent from ``cells``, and
++    ``ValueError`` for malformed numbers or formulas.
++    """
++    parsed = {}
++    values = {}
++    color = {}  # absent = unvisited, 1 = being computed, 2 = computed
++
++    def parse(name):
++        if name not in parsed:
++            parsed[name] = _parse_cell(name, cells[name])
++        return parsed[name]
++
++    for root in cells:
++        if color.get(root) == 2:
++            continue
++        # Iterative depth-first search, so arbitrarily long dependency chains
++        # cannot hit Python's recursion limit.  A cell is computed only once
++        # all of its references have been computed (post-order).
++        stack = [(root, False)]
++        path = []  # gray cells, in visit order, for the cycle message
++        while stack:
++            name, expanded = stack.pop()
++            if expanded:
++                entry = parsed[name]
++                if entry[0] == "num":
++                    values[name] = entry[1]
++                else:
++                    values[name] = _eval_rpn(entry[1], values)
++                color[name] = 2
++                path.pop()
++                continue
++            if color.get(name) == 2:
++                continue
++            if color.get(name) == 1:
++                raise CycleError(
++                    "cycle detected: " + " -> ".join(path + [name])
++                )
++            if name not in cells:
++                raise KeyError(name)
++            entry = parse(name)
++            color[name] = 1
++            path.append(name)
++            stack.append((name, True))
++            if entry[0] == "rpn":
++                for dep in entry[2]:
++                    stack.append((dep, False))
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..e41ca6a
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

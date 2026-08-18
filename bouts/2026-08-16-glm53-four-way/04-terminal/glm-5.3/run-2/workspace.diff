@@ -1,0 +1,115 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..80f3941
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,54 @@
++# Fix for `make test`
++
++Four problems, all fallout from the botched merge (Windows-origin content and
++lost file metadata). No Python source was changed; `tests/` was untouched; the
++same checks and the same test suite still run.
++
++## 1. `Makefile:4` — recipe indented with spaces, not a tab
++
++The `test` target's `python3 -m pytest -q tests/` line was indented with four
++spaces. GNU make requires a literal tab to start a recipe line, so make aborted
++with `*** missing separator. Stop.` before running anything.
++
++**Fix:** replaced the four spaces with a tab (matching the `check` target).
++
++## 2. `scripts/run_checks.sh` — not executable
++
++The file's mode was `644`; the Makefile invokes it directly as
++`./scripts/run_checks.sh`, so make failed with `Permission denied` (Error 127).
++The executable bit was lost in the merge (git tracks it, but the merge left it
++cleared).
++
++**Fix:** `chmod +x scripts/run_checks.sh` (mode is now `755`).
++
++## 3. `scripts/run_checks.sh` — CRLF line endings
++
++Every line ended with `\r\n`, so the shebang read `#!/bin/bash\r` and the
++kernel looked for an interpreter named `bash\r` — hence the misleading
++`No such file or directory` error (Error 127) even though the file existed and
++was executable.
++
++**Fix:** stripped the CR characters (`sed -i 's/\r$//'`). Verified no other
++file in the repo has CRLF line endings.
++
++## 4. `data/config.json` — trailing comma (invalid JSON)
++
++`"batch_size": 500,` was followed by the closing brace, which standard JSON
++does not allow. `tools/validate_config.py` died with
++`JSONDecodeError: Expecting property name enclosed in double quotes: line 5`.
++
++**Fix:** removed the trailing comma. All keys/values unchanged.
++
++## Result
++
++```
++$ make test
++./scripts/run_checks.sh
++config ok: data/config.json
++all checks passed
++python3 -m pytest -q tests/
++...                                                        [100%]
++3 passed in 0.02s
++```
++
++Exit code 0.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..6d7f050
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"
+diff --git a/src/pipeline/__pycache__/__init__.cpython-312.pyc b/src/pipeline/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..bb3dc62
+Binary files /dev/null and b/src/pipeline/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/pipeline/__pycache__/transform.cpython-312.pyc b/src/pipeline/__pycache__/transform.cpython-312.pyc
+new file mode 100644
+index 0000000..f88c343
+Binary files /dev/null and b/src/pipeline/__pycache__/transform.cpython-312.pyc differ
+diff --git a/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..98f9cba
+Binary files /dev/null and b/tests/__pycache__/test_transform.cpython-312-pytest-9.0.3.pyc differ

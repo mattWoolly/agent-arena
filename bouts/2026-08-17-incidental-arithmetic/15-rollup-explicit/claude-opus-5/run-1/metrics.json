@@ -1,0 +1,40 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 46.2,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 5
+  },
+  "tool_calls_total": 5,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.288592,
+  "num_turns": 6,
+  "duration_ms": 44238,
+  "duration_api_ms": 44148,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 3591,
+  "cache_read_tokens": 142542,
+  "final_message": "Written `RESULTS.json` (untracked, no commits made).\n\n| Figure | Value |\n|---|---|\n| Q revenue | \u20ac1,233,225 |\n| Q costs | \u20ac467,940 |\n| Q net | \u20ac765,285 |\n| Margin | 62.1% |\n| Net customer adds | 153 |\n| Ticket close rate | 95.5% (956/1001) |\n| June growth | +4.6% |\n| July growth | \u22129.6% |\n\n**The one judgment call:** June's report states total costs of \u20ac158,240, but its own cost table sums to \u20ac158,540 \u2014 a \u20ac300 gap. May and July both reconcile to the cent, so I treated June's bold total as a typo and used the line-item sum. That's the number in `q_costs_eur`. Using June's stated total instead would give costs \u20ac467,640 and net \u20ac765,585; margin rounds to 62.1% either way. Both figures are recorded in `notes` so the choice is visible and reversible.\n\nAlso flagged in `notes`: July revenue fell 9.6% month-on-month, and churn climbed every month (17 \u2192 22 \u2192 31), pulling monthly net adds down from 69 in May to 32 in July. The headline quarterly figures look healthy, but the within-quarter trend is downward on both revenue and customers.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:31:58Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 11 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

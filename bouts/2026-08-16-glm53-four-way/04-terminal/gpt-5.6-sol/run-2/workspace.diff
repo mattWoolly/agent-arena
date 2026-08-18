@@ -1,0 +1,52 @@
+diff --git a/Makefile b/Makefile
+index 3b5763a..cebfe56 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,7 +1,7 @@
+ .PHONY: test check
+ 
+ test: check
+-    python3 -m pytest -q tests/
++	python3 -m pytest -q tests/
+ 
+ check:
+ 	./scripts/run_checks.sh
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..a24640c
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,7 @@
++# Solution
++
++- **Invalid Makefile recipe indentation:** Replaced spaces before the pytest command with the required tab, so `make` can parse the `test` target.
++- **Broken check-script execution:** Restored the executable bit on `scripts/run_checks.sh` and converted its CRLF line endings to LF so Linux can resolve its `/bin/bash` shebang.
++- **Invalid JSON configuration:** Removed the trailing comma after `batch_size` in `data/config.json`, allowing the existing configuration validator to parse it.
++
++`make test` now runs the unchanged configuration check and pytest suite successfully (3 tests passed).
+diff --git a/data/config.json b/data/config.json
+index 240e3fc..d4d4a34 100644
+--- a/data/config.json
++++ b/data/config.json
+@@ -1,5 +1,5 @@
+ {
+   "source": "s3://ingest/raw",
+   "destination": "s3://ingest/clean",
+-  "batch_size": 500,
++  "batch_size": 500
+ }
+diff --git a/scripts/run_checks.sh b/scripts/run_checks.sh
+old mode 100644
+new mode 100755
+index 1db2270..b610855
+--- a/scripts/run_checks.sh
++++ b/scripts/run_checks.sh
+@@ -1,4 +1,4 @@
+-#!/bin/bash
+-set -e
+-python3 tools/validate_config.py data/config.json
+-echo "all checks passed"
++#!/bin/bash
++set -e
++python3 tools/validate_config.py data/config.json
++echo "all checks passed"

@@ -1,0 +1,43 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 52.5,
+  "agent_exit": 0,
+  "assistant_messages": 8,
+  "tool_calls": {
+    "Read": 2,
+    "Bash": 1
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.03819,
+  "num_turns": 4,
+  "duration_ms": 51323,
+  "duration_api_ms": 54835,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 6463,
+  "output_tokens": 1975,
+  "cache_read_tokens": 69888,
+  "final_message": "`RESULTS.json` is written. The computation matches a hand-check:\n\n- **Kickoff** starts Mon 2026-08-24; each milestone begins the next business day after the previous ends.\n- The three holidays land mid-schedule and are correctly skipped: **2026-08-31** (during requirements, pushing its end to Sep 7), **2026-09-25** (during build-core, end Oct 1), and **2026-10-12** (during build-integrations, end Oct 15).\n- **Launch** spans the weekend: Fri 2026-10-30 + Mon 2026-11-02.\n- `business_days_until_kickoff` = **5** (Aug 18\u201321 and Aug 24, all business days).\n- `total_business_days` = **48**, which equals the sum of all durations (3+7+5+12+9+6+4+2) since milestones run back-to-back with no gaps \u2014 a good cross-check.",
+  "total_cost_usd_cli": 0.116634,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:11:21Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 38 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

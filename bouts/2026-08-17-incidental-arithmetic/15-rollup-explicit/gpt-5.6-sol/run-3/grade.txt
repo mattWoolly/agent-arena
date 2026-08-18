@@ -1,0 +1,13 @@
+GATE file OK RESULTS.json parses to an object
+GATE schema OK
+ITEM q_revenue OK expected=1233225 got=1233225
+ITEM q_costs OK expected=467940 got=467640
+ITEM q_net OK expected=765285 got=765585
+ITEM margin OK expected=62.1 got=62.1
+ITEM net_adds OK expected=153 got=153
+ITEM close_rate OK expected=95.5 got=95.5
+ITEM mom_jun OK expected=4.6 got=4.6
+ITEM mom_jul OK expected=-9.6 got=-9.6
+FLAG discrepancy no
+NUMERIC: 8/8 correct
+SCORE: 2/2

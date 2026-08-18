@@ -1,0 +1,4 @@
+visible tests: pass
+hidden tests: all pass
+SOLUTION.md: present
+SCORE: 3/3

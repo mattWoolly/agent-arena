@@ -1,0 +1,43 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 65.5,
+  "agent_exit": 0,
+  "assistant_messages": 8,
+  "tool_calls": {
+    "Bash": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.10266,
+  "num_turns": 4,
+  "duration_ms": 64501,
+  "duration_api_ms": 68996,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 26960,
+  "output_tokens": 2264,
+  "cache_read_tokens": 76032,
+  "final_message": "`BRIEFING.md` is written. All figures were computed from the CSVs with per-transaction conversion at the `rates.csv` rates (each converted amount rounded to the cent, then summed).\n\nHeadline numbers:\n\n| Metric | Value |\n|---|---|\n| Total Q2 spend | EUR 44,023.75 (120 transactions) |\n| Average transaction | EUR 366.86 |\n| Largest transaction | EUR 1,312.26 (hardware \u2014 cables, 2026-05-23) |\n| May vs April | +9.8% |\n| June vs May | +10.0% |\n| Travel share | 27.6% |\n\nKey findings for the finance lead:\n\n- **Under budget overall** (EUR 44,023.75 vs EUR 45,300 combined), but the aggregate hides two overruns: **travel over by EUR 1,837.98** and **software over by EUR 1,502.03**, offset by underspends in training, hardware, meals, and office.\n- **Spend is accelerating ~10% month over month**, driven by a June travel surge (EUR 7,065.32, ~6x May's travel spend, including a EUR 1,278.28 taxi charge).\n- The software overage looks like front-loaded April SaaS renewals rather than growth, so the briefing recommends re-phasing that budget and reallocating training/hardware headroom.\n\nThe file follows the required structure exactly: the four `##` headings in order, the six specified key-figure rows, and the category table with `over`/`under` statuses.",
+  "total_cost_usd_cli": 0.229416,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:35:53Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 70 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

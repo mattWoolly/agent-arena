@@ -1,0 +1,72 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..2acf770
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,66 @@
++# Quarterly operations report — May–July 2026
++
++## Summary
++
++The quarter delivered €1,233,225 of revenue against €467,940 of costs, for a net
++of €765,285 and a margin of 62.1%. On the headline numbers the business is
++healthy and comfortably profitable.
++
++The shape of the quarter is less comfortable than the totals suggest. Revenue
++rose 4.6% in June and then fell 9.6% in July, ending the quarter roughly €23,000
++below where it started in May. Costs did not follow revenue down: they rose from
++€151,120 in May to around €158,000 in both June and July and stayed there, so the
++July revenue drop landed almost entirely on the bottom line. Monthly margin held
++near 63% in May and June and then fell to 59.4% in July.
++
++The customer trend runs in the same direction and is the clearest signal in the
++quarter. New customer signings declined every month (86, then 74, then 63) while
++churn rose every month (17, then 22, then 31). Net adds were still positive at
++153 for the quarter, but the monthly run rate more than halved, from 69 in May to
++32 in July. Support was the bright spot: the team closed 956 of 1,001 tickets
++opened (95.5%), and the monthly close rate improved steadily from 92.1% in May to
++97.7% in July.
++
++## Key figures
++
++| Figure | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,940 |
++| Net | €765,285 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++- **Data discrepancy in the June monthly.** June's cost lines sum to €158,540,
++  but the report states a total of €158,240 — a €300 gap. This report uses the
++  line-item sum, as those are the primary figures. The difference is immaterial
++  to the quarter: margin rounds to 62.1% either way. Worth correcting at source
++  so the monthlies reconcile.
++- **July revenue drop is the headline risk.** July revenue of €389,640 is below
++  May's, so the quarter ends on a decline rather than a plateau. One month is not
++  a trend, but it should be read alongside the customer numbers below rather than
++  in isolation.
++- **Customer momentum is deteriorating on both sides.** Signings fell in each
++  month of the quarter and churn rose in each month. Net adds went 69 → 52 → 32.
++  If both lines continue at this rate, net adds turn negative within the next
++  quarter. This is the item most worth leadership attention.
++- **Costs are flat, not variable.** Payroll was unchanged between June and July
++  (€98,100), and total costs held near €158,000 in both months despite the
++  revenue fall. There is little automatic cost relief if revenue stays soft.
++- **Marketing spend was cut in the month revenue fell.** Marketing went €18,650 →
++  €21,400 → €16,980, with the 21% cut landing in July alongside the revenue
++  decline and the weakest signings month. Causation is unproven from these
++  reports alone and worth a direct look.
++- **Office & travel is rising steadily** (€9,240 → €10,180 → €12,310, up 33%
++  across the quarter) while other lines are flat or down. Small in absolute
++  terms, but it is the fastest-growing cost line.
++- **Support performance improved.** The close rate rose every month to 97.7% in
++  July. Note that July also had the lowest ticket volume of the quarter (298
++  opened vs 361 in June), which is consistent with a smaller or less active
++  customer base, so the improvement should not be read purely as a productivity
++  gain.

@@ -1,0 +1,42 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 32.3,
+  "agent_exit": 0,
+  "assistant_messages": 6,
+  "tool_calls": {
+    "Bash": 2
+  },
+  "tool_calls_total": 2,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.07457,
+  "num_turns": 3,
+  "duration_ms": 31122,
+  "duration_api_ms": 34566,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 20099,
+  "output_tokens": 1199,
+  "cache_read_tokens": 55552,
+  "final_message": "Done. `RESULTS.json` is written. Summary of what was computed:\n\n- **Conversion**: each transaction converted with its currency's `eur_per_unit` rate and rounded to the cent (half-up) *before* summing \u2014 per the conventions.\n- **Data**: 120 transactions, April\u2013June 2026, six categories, three currencies (EUR/USD/GBP).\n\nResults:\n\n| Metric | Value |\n|---|---|\n| Q2 total | \u20ac44,023.75 |\n| Monthly totals | Apr \u20ac13,316.21 \u2192 May \u20ac14,623.21 (**+9.8%**) \u2192 Jun \u20ac16,084.33 (**+10.0%**) |\n| Largest transaction | \u20ac1,312.26 |\n| Mean transaction | \u20ac366.86 |\n| Travel share | 27.6% |\n| Over budget | **travel** (\u20ac12,137.98 vs \u20ac10,300) and **software** (\u20ac9,702.03 vs \u20ac8,200) |\n\nCategory totals: meals \u20ac2,541.26, office \u20ac1,775.45, software \u20ac9,702.03, travel \u20ac12,137.98, hardware \u20ac8,874.09, training \u20ac8,992.94. Cross-check: category totals and monthly totals both sum exactly to the Q2 total.",
+  "total_cost_usd_cli": 0.158246,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:55:51Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 20 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

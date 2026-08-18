@@ -1,0 +1,52 @@
+diff --git a/PLAN.md b/PLAN.md
+new file mode 100644
+index 0000000..5f392cd
+--- /dev/null
++++ b/PLAN.md
+@@ -0,0 +1,46 @@
++# Delivery Plan
++
++## Timeline
++
++| Milestone | Start | End |
++| --- | --- | --- |
++| kickoff | 2026-08-24 | 2026-08-26 |
++| requirements | 2026-08-27 | 2026-09-07 |
++| architecture | 2026-09-08 | 2026-09-14 |
++| build-core | 2026-09-15 | 2026-10-01 |
++| build-integrations | 2026-10-02 | 2026-10-15 |
++| hardening | 2026-10-16 | 2026-10-23 |
++| acceptance | 2026-10-26 | 2026-10-29 |
++| launch | 2026-10-30 | 2026-11-02 |
++
++## Countdown
++
++| Metric | Business days |
++| --- | --- |
++| Business days until kickoff | 5 |
++| Total business days | 48 |
++
++## Notes
++
++The plan is a strict sequential chain: eight milestones, no parallelism and no
++slack, running from Monday 2026-08-24 through Monday 2026-11-02 — 48 business
++days, a little over ten calendar weeks. Because every milestone starts on the
++next business day after its predecessor ends, the total equals the exact sum of
++the listed durations; there is no buffer anywhere in the schedule.
++
++The two build milestones dominate: `build-core` (12 days) and
++`build-integrations` (9 days) together account for 21 of the 48 days, just under
++half the plan. Everything downstream of `build-core` slips day-for-day if it
++runs long, so it is the milestone worth tracking most closely.
++
++All three company holidays fall inside the delivery window and each lands in a
++different milestone, extending it by one calendar day: 2026-08-31 during
++`requirements`, 2026-09-25 during `build-core`, and 2026-10-12 during
++`build-integrations`. These are already absorbed into the dates above.
++
++Two things worth calling out. Kickoff is five business days away, so the week of
++2026-08-17 is the last window for staffing and prerequisites. And `launch` ends
++on Monday 2026-11-02 — its two days straddle a weekend (Friday 2026-10-30 and
++Monday 2026-11-02), which is a poor shape for a launch milestone; pulling the
++chain forward or resequencing so launch sits inside a single week would be worth
++considering.

@@ -3,6 +3,8 @@
 set -u
 WS=$(cd "$1" && pwd)
 HERE=$(cd "$(dirname "$0")" && pwd)
+# shellcheck source=../_lib/arena_pytest.sh
+. "$HERE/../_lib/arena_pytest.sh"
 FAIL=0
 POINTS=0
 
@@ -13,7 +15,9 @@ else
   FAIL=1
 fi
 
-if (cd "$WS" && python3 -m pytest -q tests/ > /dev/null 2>&1); then
+# Visible tests run from the PRISTINE fixture copy, not from $WS -- so the
+# tests/-untouched guard above is structural, not just a scored check.
+if arena_pytest "$WS" "$HERE/fixture/tests" > /dev/null 2>&1; then
   echo "visible tests: pass"
   POINTS=$((POINTS + 1))
 else
@@ -21,15 +25,15 @@ else
   FAIL=1
 fi
 
-cp "$HERE/hidden_tests/test_hidden.py" "$WS/_arena_test_hidden.py"
-if (cd "$WS" && python3 -m pytest -q _arena_test_hidden.py > /dev/null 2>&1); then
+if arena_pytest "$WS" "$HERE/hidden_tests/test_hidden.py" > /dev/null 2>&1; then
   echo "hidden tests: pass"
   POINTS=$((POINTS + 1))
 else
   echo "FAIL: hidden tests failing"
   FAIL=1
 fi
-rm -f "$WS/_arena_test_hidden.py"
+
+arena_config_tripwire "$WS" "$HERE/fixture"
 
 [[ -s "$WS/SOLUTION.md" ]] && echo "SOLUTION.md: present" || echo "note: SOLUTION.md missing/empty"
 

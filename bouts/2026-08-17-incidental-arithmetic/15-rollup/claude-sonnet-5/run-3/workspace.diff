@@ -1,0 +1,28 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..58ba74f
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,22 @@
++# Quarterly operations report — Q2 2026 (May–July)
++
++## Summary
++
++The quarter opened strong, with revenue climbing from €412,380 in May to a peak of €431,205 in June (+4.6%), before falling back to €389,640 in July (-9.6%) — the quarter's only month of decline. Costs held roughly flat across all three months (€151,120 → €158,240 → €158,280), so the July revenue pullback compressed that month's margin even though the quarter as a whole closed with a healthy 62.1% margin on €1,233,225 of revenue and €765,585 of net income. Customer growth decelerated steadily: net adds fell from 69 in May to 52 in June to 32 in July, as new signups slowed and churn rose. Support performance stayed solid, with a 95.5% ticket close rate for the quarter, though ticket volume tracked the same slowdown seen in revenue and new customers.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++July is the month to watch: revenue reversed after two months of growth, new customer signups hit a quarterly low (63, down from 86 in May), and churn hit a quarterly high (31, roughly double May's 17) — net adds nearly halved from June to July. Notably, marketing spend was cut in July (€16,980, down from €21,400 in June) at the same time churn rose, which is worth a closer look to see if the two are related. Cloud costs have also crept up each month (€21,310 → €23,940 → €24,760) and are worth monitoring if usage keeps growing. On the support side, both ticket volume and close rate declined slightly in July alongside the broader activity slowdown, but close rate remained strong all quarter.

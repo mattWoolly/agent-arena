@@ -1,0 +1,42 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 63.1,
+  "agent_exit": 0,
+  "assistant_messages": 15,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 4,
+    "Write": 2
+  },
+  "tool_calls_total": 9,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.316351,
+  "num_turns": 10,
+  "duration_ms": 60064,
+  "duration_api_ms": 60313,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 14,
+  "output_tokens": 4160,
+  "cache_read_tokens": 170460,
+  "final_message": "Done. `python3 -m pytest -q` \u2192 **11 passed**.\n\nImplementation in `money/money.py:1` \u2014 round, format magnitude, apply sign, in that order. Two things in the spec turned out to be coupled:\n\n- **`0.995` must round up.** The binary float is `0.99499999\u2026`, so `Decimal(0.995)` rounds *down*. Converting via `Decimal(str(amount))` uses the float's shortest repr, which rounds as the written literal. Same mechanism gives `0.005 \u2192 $0.01` while still giving `0.994 \u2192 $0.99`.\n- **Sign must be decided after rounding.** `-0.004` quantizes to `Decimal(\"-0.00\")` \u2014 zero in value but signed \u2014 so the check is `value < 0`, not `is_signed()`. The digits are formatted from `abs(value)` so `-0.0` can't leak a stray minus.\n\nAlso: `f\"{value:f}\"` instead of `str()` to avoid scientific notation on large amounts, and the quantize runs at `prec=400` since the default 28 raises `InvalidOperation` on big floats. `SOLUTION.md` writes these up. No test files touched, no commits made.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T05:50:01Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 64 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "2/2"
+}

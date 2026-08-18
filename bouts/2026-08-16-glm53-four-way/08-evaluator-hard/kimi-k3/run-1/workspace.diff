@@ -1,0 +1,231 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..bbe49f0
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,51 @@
++# SOLUTION
++
++## Approach
++
++`sheet/engine.py` implements two pieces:
++
++1. **Formula parser/evaluator** (`_Parser`): a hand-rolled tokenizer (single
++   regex for numbers, cell names `[A-Za-z]+[0-9]*`, and operator/paren tokens,
++   with insignificant whitespace) feeding a recursive-descent parser that
++   evaluates as it parses — no AST is built.
++
++2. **Cell resolution** (`evaluate` + `resolve` closure): on-demand memoized
++   DFS over the cell dict. Each cell is evaluated once and cached in `values`;
++   a `visiting` set holds cells on the current resolution stack, and hitting
++   one of them again raises `CycleError`. Because resolution is demand-driven,
++   forward references (a cell referencing one defined later in the dict) and
++   transitive chains work with no special handling.
++
++## Grammar and precedence
++
++```
++expr  := term  (('+' | '-') term)*    # left-associative
++term  := unary (('*' | '/') unary)*   # left-associative
++unary := ('-' | '+') unary | power    # binds looser than '^'
++power := atom  ('^' unary)?           # right-associative
++atom  := NUMBER | NAME | '(' expr ')'
++```
++
++## Edge cases handled
++
++- **Right-associative `^`**: `power` recurses through `unary` for the
++  exponent, so `2^3^2 = 2^(3^2) = 512`.
++- **Unary minus looser than `^`**: `unary` wraps `power`, so `-2^2 = -(2^2)
++  = -4`, while `(-2)^2 = 4`. Placing the exponent at `unary` level also makes
++  `2^-3` parse naturally.
++- **Left associativity** for `+ - * /` via iterative loops in `expr`/`term`.
++- **Parentheses**, nested unary minus (`--3`), unary plus, and arbitrary
++  whitespace between tokens.
++- **Real division** with floats throughout (all literals parsed as `float`),
++  so `=3/2 = 1.5`; division by zero propagates Python's `ZeroDivisionError`.
++- **Cycles of any length** (self-reference, mutual, or longer transitive
++  loops) raise `CycleError`, including cycles in cells not referenced by
++  others, since every cell is resolved.
++- **Bare values** that aren't formulas (e.g. `"2"`, `"3.5"`, `"-4"`) are
++  converted with `float()` directly.
++- References to nonexistent cells raise `KeyError`; malformed formulas
++  (empty body, trailing tokens, unbalanced parens, bad characters) raise
++  `ValueError`.
++
++All 3 tests in `tests/test_basic.py` pass, plus a manual sweep of the README
++semantics above.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..18f4349
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..eca36c0
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..5f61d8b 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,154 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Spreadsheet formula engine: implements evaluate() and CycleError per README.md."""
++
++import re
++
++__all__ = ["evaluate", "CycleError"]
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell depends on itself, directly or transitively."""
++
++
++_TOKEN_RE = re.compile(
++    r"\s*(?:(?P<number>\d+(?:\.\d*)?|\.\d+)|(?P<name>[A-Za-z]+[0-9]*)|(?P<op>[-+*/^()]))"
++)
++
++
++class _Parser:
++    """Recursive-descent parser/evaluator for one formula body.
++
++    Grammar (precedence low to high), per README:
++
++        expr  := term  (('+' | '-') term)*      # left-associative
++        term  := unary (('*' | '/') unary)*     # left-associative
++        unary := ('-' | '+') unary | power      # binds looser than '^'
++        power := atom  ('^' unary)?             # right-associative
++        atom  := NUMBER | NAME | '(' expr ')'
++
++    Because unary minus recurses into `power`, `-2^2` parses as `-(2^2)`,
++    while `2^-3` still works (the exponent is a `unary`).
++    """
++
++    def __init__(self, text, resolve):
++        self.tokens = self._tokenize(text)
++        self.pos = 0
++        self.resolve = resolve
++
++    @staticmethod
++    def _tokenize(text):
++        tokens = []
++        pos, end = 0, len(text)
++        while pos < end:
++            m = _TOKEN_RE.match(text, pos)
++            if not m:
++                raise ValueError(f"invalid character in formula at {text[pos:]!r}")
++            tokens.append((m.lastgroup, m.group().strip()))
++            pos = m.end()
++        return tokens
++
++    def parse(self):
++        if not self.tokens:
++            raise ValueError("empty formula")
++        value = self.expr()
++        if self.pos != len(self.tokens):
++            raise ValueError(f"unexpected trailing token {self.tokens[self.pos][1]!r}")
++        return value
++
++    def _peek_op(self):
++        if self.pos < len(self.tokens) and self.tokens[self.pos][0] == "op":
++            return self.tokens[self.pos][1]
++        return None
++
++    def expr(self):
++        value = self.term()
++        while True:
++            op = self._peek_op()
++            if op == "+":
++                self.pos += 1
++                value += self.term()
++            elif op == "-":
++                self.pos += 1
++                value -= self.term()
++            else:
++                return value
++
++    def term(self):
++        value = self.unary()
++        while True:
++            op = self._peek_op()
++            if op == "*":
++                self.pos += 1
++                value *= self.unary()
++            elif op == "/":
++                self.pos += 1
++                value /= self.unary()
++            else:
++                return value
++
++    def unary(self):
++        op = self._peek_op()
++        if op == "-":
++            self.pos += 1
++            return -self.unary()
++        if op == "+":
++            self.pos += 1
++            return self.unary()
++        return self.power()
++
++    def power(self):
++        base = self.atom()
++        if self._peek_op() == "^":
++            self.pos += 1
++            return base ** self.unary()
++        return base
++
++    def atom(self):
++        if self.pos >= len(self.tokens):
++            raise ValueError("unexpected end of formula")
++        kind, text = self.tokens[self.pos]
++        if kind == "number":
++            self.pos += 1
++            return float(text)
++        if kind == "name":
++            self.pos += 1
++            return self.resolve(text)
++        if text == "(":
++            self.pos += 1
++            value = self.expr()
++            if self._peek_op() != ")":
++                raise ValueError("missing closing parenthesis")
++            self.pos += 1
++            return value
++        raise ValueError(f"unexpected token {text!r}")
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell's float value, resolving references transitively.
++
++    Forward references are supported (cells are resolved on demand, not in
++    dict order). Any dependency cycle raises CycleError; division by zero
++    propagates Python's ZeroDivisionError.
++    """
++    values = {}
++    visiting = set()
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in visiting:
++            raise CycleError(f"dependency cycle through cell {name!r}")
++        if name not in cells:
++            raise KeyError(f"reference to unknown cell {name!r}")
++        visiting.add(name)
++        raw = cells[name].strip()
++        if raw.startswith("="):
++            value = _Parser(raw[1:], resolve).parse()
++        else:
++            value = float(raw)
++        visiting.discard(name)
++        values[name] = value
++        return value
++
++    for name in cells:
++        resolve(name)
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..0ef2dcc
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

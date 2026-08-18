@@ -1,0 +1,40 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 50.4,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Bash": 3
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.2724515,
+  "num_turns": 4,
+  "duration_ms": 48366,
+  "duration_api_ms": 49144,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 3764,
+  "cache_read_tokens": 88965,
+  "final_message": "`PLAN.md` is written with the three required headings in order, and no commit made.\n\n**Schedule:** 2026-08-24 (Mon) \u2192 2026-11-02 (Mon), 48 business days, ~10 calendar weeks.\n\n**Countdown:** 5 business days until kickoff (Aug 18\u201321 + Aug 24); 48 total.\n\nAll three holidays fall on weekdays inside the span and each pushes its milestone out by a calendar day \u2014 08-31 in `requirements`, 09-25 in `build-core`, 10-12 in `build-integrations`. Since the milestones chain with no gaps, the total equals the sum of durations exactly, so there's zero slack: any overrun moves launch day for day.\n\nTwo things I flagged in Notes that you may want to act on:\n\n- **`launch` straddles a weekend** (Fri 10-30 + Mon 11-02). If it needs two consecutive calendar days, start it 11-02.\n- **Only the three dates in `holidays.csv` are excluded.** Notably 2026-09-07 is treated as a working day and is `requirements`' end date \u2014 if your org observes national holidays beyond the company list, add them to the CSV and I'll regenerate.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:07:58Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 50 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

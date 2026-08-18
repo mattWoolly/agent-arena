@@ -1,0 +1,44 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 47.2,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 6,
+    "Write": 1
+  },
+  "tool_calls_total": 10,
+  "served_models": [
+    "gpt-5.6-sol"
+  ],
+  "served_model": "gpt-5.6-sol",
+  "served_model_leak": false,
+  "total_cost_usd": 0.2204,
+  "num_turns": 11,
+  "duration_ms": 46181,
+  "duration_api_ms": 48536,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 148200,
+  "output_tokens": 1428,
+  "cache_read_tokens": 125210,
+  "final_message": "Created `RESULTS.json` with the quarterly figures and validated its JSON structure and exact keys.",
+  "total_cost_usd_cli": 0.7767000000000001,
+  "cost_source": "proxy-usage-log (8 requests)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:35:19Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 11 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

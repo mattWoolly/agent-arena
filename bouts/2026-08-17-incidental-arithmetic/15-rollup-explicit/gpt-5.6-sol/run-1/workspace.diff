@@ -1,0 +1,17 @@
+diff --git a/RESULTS.json b/RESULTS.json
+new file mode 100644
+index 0000000..4112415
+--- /dev/null
++++ b/RESULTS.json
+@@ -0,0 +1,11 @@
++{
++  "q_revenue_eur": 1233225,
++  "q_costs_eur": 467640,
++  "q_net_eur": 765585,
++  "margin_pct": 62.1,
++  "net_customer_adds": 153,
++  "ticket_close_rate_pct": 95.5,
++  "june_revenue_growth_pct": 4.6,
++  "july_revenue_growth_pct": -9.6,
++  "notes": "July revenue declined 9.6% month over month."
++}

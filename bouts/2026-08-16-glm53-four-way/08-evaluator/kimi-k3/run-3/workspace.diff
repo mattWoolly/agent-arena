@@ -1,0 +1,176 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..b9ef7fa
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,40 @@
++# Solution
++
++## Approach
++
++`sheet/engine.py` is a small recursive-descent evaluator in three parts:
++
++1. **Tokenizer** — a single regex with named groups (`num`, `ref`, `op`)
++   skips leading whitespace and yields numbers (`float`ed immediately), cell
++   references (`[A-Za-z]+\d*` per the README's naming rule), and operator /
++   paren tokens. Anything else raises `ValueError`.
++
++2. **Parser** (`_Parser`) — classic precedence climbing with three levels:
++   `expr` (`+`/`-`), `term` (`*`/`/`), `factor` (number, reference, unary
++   minus, parenthesized expression). Both binary levels loop, giving
++   left-associativity. Cell references are resolved *during* the parse by a
++   callback, so parsing and evaluation are fused into one pass.
++
++3. **Evaluator** (`evaluate`) — a memoized resolver over the cell dict.
++   `resolve(name)` returns the cached value if computed, else parses/evaluates
++   the cell's string (a formula if it starts with `=` after stripping leading
++   whitespace, otherwise a bare number). Because references resolve
++   recursively, forward references and transitive chains work naturally.
++
++## Edge cases handled
++
++- **Cycle detection**: a `visiting` set holds cells on the current dependency
++   path; re-entering one raises `CycleError`. This catches direct self-cycles
++   (`A = =A`) and transitive ones (`A→B→A`). The set entry is removed in a
++   `finally` block so a failure doesn't poison subsequent lookups.
++- **Memoization**: each cell is computed once and cached, so shared
++  dependencies (e.g. many cells referencing one base cell) stay O(n).
++- **Unary minus** binds tighter than binary ops and recurses into `factor`,
++  so `=-3`, `=-(A+1)`, and `--1` all work.
++- **Whitespace** is insignificant between tokens (handled in the tokenizer
++  and when detecting the leading `=`).
++- **Real division**: Python `/` on floats — `=3/2` → `1.5`; division by zero
++  propagates the native `ZeroDivisionError` untouched, as the README requires.
++- **Unknown references** raise `ValueError` naming the missing cell.
++- **Malformed formulas** (trailing tokens, unbalanced parens, unexpected
++  characters) raise `ValueError` rather than silently succeeding.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..8512c7f
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..374738c
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..6bbd0e9 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,111 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Spreadsheet formula engine: recursive-descent parser + memoized evaluator."""
++
++import re
++
++_TOKEN_RE = re.compile(
++    r"\s*(?:(?P<num>\d+(?:\.\d+)?)|(?P<ref>[A-Za-z]+\d*)|(?P<op>[+\-*/()]))"
++)
+ 
+ 
+ class CycleError(Exception):
+     pass
+ 
+ 
++def _tokenize(text):
++    pos = 0
++    while pos < len(text):
++        m = _TOKEN_RE.match(text, pos)
++        if not m or m.end() == pos:
++            raise ValueError(f"unexpected character in formula: {text[pos:]!r}")
++        pos = m.end()
++        if m.group("num") is not None:
++            yield ("num", float(m.group("num")))
++        elif m.group("ref") is not None:
++            yield ("ref", m.group("ref"))
++        else:
++            yield ("op", m.group("op"))
++    yield ("end", None)
++
++
++class _Parser:
++    def __init__(self, text, resolve):
++        self._tokens = _tokenize(text)
++        self._cur = next(self._tokens)
++        self._resolve = resolve  # cell name -> float
++
++    def _advance(self):
++        tok = self._cur
++        self._cur = next(self._tokens)
++        return tok
++
++    def _expect_op(self, op):
++        kind, val = self._cur
++        if kind != "op" or val != op:
++            raise ValueError(f"expected {op!r}, got {self._cur!r}")
++        self._advance()
++
++    def parse(self):
++        value = self._expr()
++        if self._cur[0] != "end":
++            raise ValueError(f"trailing tokens: {self._cur!r}")
++        return value
++
++    def _expr(self):
++        value = self._term()
++        while self._cur == ("op", "+") or self._cur == ("op", "-"):
++            op = self._advance()[1]
++            rhs = self._term()
++            value = value + rhs if op == "+" else value - rhs
++        return value
++
++    def _term(self):
++        value = self._factor()
++        while self._cur == ("op", "*") or self._cur == ("op", "/"):
++            op = self._advance()[1]
++            rhs = self._factor()
++            value = value * rhs if op == "*" else value / rhs
++        return value
++
++    def _factor(self):
++        kind, val = self._cur
++        if kind == "num":
++            self._advance()
++            return val
++        if kind == "ref":
++            self._advance()
++            return self._resolve(val)
++        if self._cur == ("op", "-"):
++            self._advance()
++            return -self._factor()
++        if self._cur == ("op", "("):
++            self._advance()
++            value = self._expr()
++            self._expect_op(")")
++            return value
++        raise ValueError(f"unexpected token: {self._cur!r}")
++
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    values = {}  # name -> float, memoized
++    visiting = set()  # names on the current dependency path
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name not in cells:
++            raise ValueError(f"unknown cell: {name!r}")
++        if name in visiting:
++            raise CycleError(f"dependency cycle involving {name!r}")
++        visiting.add(name)
++        try:
++            raw = cells[name]
++            if raw.lstrip().startswith("="):
++                value = _Parser(raw.lstrip()[1:], resolve).parse()
++            else:
++                value = float(raw.strip())
++        finally:
++            visiting.discard(name)
++        values[name] = value
++        return value
++
++    return {name: resolve(name) for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..4d242c7
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

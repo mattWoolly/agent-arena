@@ -1,0 +1,370 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..b22d08d
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,87 @@
++# Solution
++
++`sheet/engine.py` implements `evaluate(cells)` and `CycleError`. The public
++tests in `tests/test_basic.py` pass (`3 passed`), and the implementation was
++exercised against a wider sweep of the README semantics (see "Verification").
++
++## Approach
++
++Four small stages, all inside `engine.py`:
++
++1. **Tokenize** (`_tokenize`) — a single anchored regex matches, in order,
++   whitespace, numbers (`\d+(?:\.\d*)?` or `\.\d+`), cell names
++   (`[A-Za-z]+[0-9]*` — one or more letters, zero or more digits, per the
++   README), and the operators `+ - * / ( )`. Any other character is a
++   `ValueError`. Numbers become floats on the spot; whitespace is dropped, so
++   it is insignificant everywhere, as specified.
++
++2. **Parse** (`_Parser`) — recursive descent over the grammar
++   `expr := term (("+"|"-") term)*`, `term := factor (("*"|"/") factor)*`,
++   `factor := ("-"|"+") factor | primary`, `primary := NUMBER | REF | "(" expr ")"`.
++   The loops in `expr`/`term` build left-leaning nodes, which gives the
++   required left associativity (`=8/4/2` is `1.0`, `=8-4-2` is `2.0`), and the
++   separate levels give `*`/`/` tighter binding than `+`/`-`. Unary minus
++   recurses in `factor`, so `=-3`, `=-(A+1)`, `=2*-3` and `=--4` all work
++   (unary `+` is accepted too). A trailing unconsumed token is an error, so
++   `=1 2` and `=1)` are rejected rather than silently truncated.
++
++3. **Compile** (`_postfix`) — the tree is flattened to postfix instructions
++   (`push` literal / `push` cell value / `neg` / `bin op`) with an explicit
++   stack. Together with stage 4 this removes recursion from evaluation, so a
++   20 000-term formula or a 20 000-cell reference chain works instead of
++   hitting Python's recursion limit.
++
++4. **Resolve** (`evaluate` + `_resolve`) — every cell is compiled up front,
++   then resolved by iterative depth-first traversal. A cell is computed only
++   after all of its dependencies are already in the `values` memo table, which
++   handles forward references and transitive chains naturally. `values` also
++   memoizes, so each cell is computed exactly once even in diamond-shaped
++   dependency graphs. Cells on the current DFS path are kept in `pending`;
++   re-entering one of them is a cycle and raises `CycleError` with the path
++   spelled out (e.g. `A -> B -> C -> A`). The result dict is rebuilt in the
++   caller's key order, and every value is a `float`.
++
++## Edge cases handled
++
++- **Cycles** — self-reference (`=A`), mutual (`A -> B -> A`), transitive
++  (`A -> B -> C -> A`), cycles buried inside arithmetic (`=B+1` / `=A*2`),
++  and cycles in cells that are *not* reachable from the first key. The cycle
++  check happens while walking dependencies, so it fires before any division
++  in the cycle is attempted (`{"A": "=A/0"}` raises `CycleError`, not
++  `ZeroDivisionError`).
++- **Division** — plain Python `/`, so `=3/2` is `1.5` and `=1/0` raises the
++  usual `ZeroDivisionError` (also when the zero arrives via a reference).
++- **Numbers** — integers and decimals, plus `.5` / `2.` forms; bare-number
++  cells go through `float()`, so leading/trailing blanks (`" 2.5 "`) and even
++  non-string numeric values are tolerated.
++- **Precedence / associativity / grouping** — as above, including nested
++  parentheses and unary minus applied to a parenthesized expression.
++- **Empty input** — `evaluate({})` returns `{}`.
++
++## Choices made where the README is silent
++
++- **Undefined reference** (`{"A": "=NOPE"}`) raises `KeyError`. The README
++  only describes references resolving to cells in the sheet, so a missing cell
++  is reported rather than defaulted to `0`.
++- **Malformed values** (e.g. `"abc"`, `"2+3"` without `=`, `"=1+"`, `"=$B$1"`)
++  raise `ValueError` with the cell name in the message.
++- **Case sensitivity** — references match cell names exactly (`{"a": "5"}`
++  satisfies `=a`, not `=A`); the README defines names without implying
++  case-folding.
++
++## Verification
++
++`python3 -m pytest -q` → `3 passed`. Additionally checked by hand: precedence
++and associativity, parentheses, unary minus in its several positions,
++whitespace variants, decimal forms, forward and transitive references, diamond
++graphs, every cycle shape above, division by zero, malformed values, undefined
++references, empty sheets, key-order preservation, no mutation of the input
++dict, and the two 20 000-element stress cases (long reference chain, long flat
++formula).
++
++## Known limit
++
++Only the parser is recursive, so a formula nested to a few hundred
++parentheses deep hits Python's recursion limit with `RecursionError`. That is
++far outside anything the grammar is meant for; raising the limit globally was
++deliberately avoided since it trades a clean exception for a possible crash.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..149bdbe
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..084912f
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..334dd36 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,257 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A tiny spreadsheet formula engine.
++
++``evaluate(cells)`` resolves every cell to a ``float``, following references
++(including forward and transitive ones) and raising :class:`CycleError` when
++the reference graph contains a cycle.
++"""
++
++import re
++
++__all__ = ["evaluate", "CycleError"]
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell depends on itself, directly or transitively."""
++
++
++# A cell's value is either a bare number or a formula starting with "=".
++# Formulas are parsed to a tree, then compiled to postfix instructions so that
++# evaluation needs no recursion:
++#
++#   ("num", value)   push a literal
++#   ("ref", name)    push another cell's computed value
++#   ("neg",)         negate the top of the stack
++#   ("bin", op)      apply + - * / to the top two stack entries
++_NUM = "num"
++_REF = "ref"
++_NEG = "neg"
++_BIN = "bin"
++
++
++_TOKEN_RE = re.compile(
++    r"""(?P<space>\s+)
++      | (?P<num>\d+(?:\.\d*)?|\.\d+)
++      | (?P<ref>[A-Za-z]+[0-9]*)
++      | (?P<op>[+\-*/()])
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(source, cell):
++    """Split ``source`` (a formula body, without the leading "=") into tokens.
++
++    Tokens are ``(kind, text)`` pairs; numbers carry their float value.
++    """
++    tokens = []
++    pos = 0
++    while pos < len(source):
++        match = _TOKEN_RE.match(source, pos)
++        if match is None:
++            raise ValueError(
++                f"invalid formula in cell {cell!r}: unexpected character "
++                f"{source[pos]!r} at position {pos}"
++            )
++        pos = match.end()
++        kind = match.lastgroup
++        if kind != "space":
++            text = match.group()
++            tokens.append((_NUM, float(text)) if kind == "num" else (kind, text))
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser for the formula grammar.
++
++    expr    := term (("+" | "-") term)*
++    term    := factor (("*" | "/") factor)*
++    factor  := ("-" | "+") factor | primary
++    primary := NUMBER | REF | "(" expr ")"
++    """
++
++    def __init__(self, source, cell):
++        self._cell = cell
++        self._tokens = _tokenize(source, cell)
++        self._pos = 0
++
++    def parse(self):
++        if not self._tokens:
++            raise ValueError(f"invalid formula in cell {self._cell!r}: empty formula")
++        node = self._expr()
++        if self._pos != len(self._tokens):
++            raise ValueError(
++                f"invalid formula in cell {self._cell!r}: "
++                f"unexpected {self._tokens[self._pos][1]!r}"
++            )
++        return node
++
++    def _peek(self):
++        if self._pos < len(self._tokens):
++            return self._tokens[self._pos]
++        return (None, None)
++
++    def _match_op(self, *ops):
++        """Consume and return the next token's text if it is one of ``ops``."""
++        kind, text = self._peek()
++        if kind == "op" and text in ops:
++            self._pos += 1
++            return text
++        return None
++
++    def _expr(self):
++        node = self._term()
++        while True:
++            op = self._match_op("+", "-")
++            if op is None:
++                return node
++            node = (_BIN, op, node, self._term())
++
++    def _term(self):
++        node = self._factor()
++        while True:
++            op = self._match_op("*", "/")
++            if op is None:
++                return node
++            node = (_BIN, op, node, self._factor())
++
++    def _factor(self):
++        if self._match_op("-") is not None:
++            return (_NEG, self._factor())
++        if self._match_op("+") is not None:
++            return self._factor()
++        return self._primary()
++
++    def _primary(self):
++        kind, text = self._peek()
++        if kind == _NUM or kind == _REF:
++            self._pos += 1
++            return (kind, text)
++        if self._match_op("(") is not None:
++            node = self._expr()
++            if self._match_op(")") is None:
++                raise ValueError(
++                    f"invalid formula in cell {self._cell!r}: missing ')'"
++                )
++            return node
++        found = "end of formula" if kind is None else repr(text)
++        raise ValueError(
++            f"invalid formula in cell {self._cell!r}: expected a number, "
++            f"cell reference or '(' but found {found}"
++        )
++
++
++def _postfix(node):
++    """Compile an expression tree to postfix instructions.
++
++    Iterative so that very long formulas do not exhaust the interpreter stack.
++    """
++    out = []
++    stack = [(node, False)]
++    while stack:
++        current, expanded = stack.pop()
++        kind = current[0]
++        if kind in (_NUM, _REF):
++            out.append((kind, current[1]))
++        elif expanded:
++            out.append((_NEG,) if kind == _NEG else (_BIN, current[1]))
++        elif kind == _NEG:
++            stack.append((current, True))
++            stack.append((current[1], False))
++        else:
++            # Push the right operand first so the left one is emitted first.
++            stack.append((current, True))
++            stack.append((current[3], False))
++            stack.append((current[2], False))
++    return tuple(out)
++
++
++def _compile(name, value):
++    """Turn a raw cell value into its postfix instructions."""
++    if not isinstance(value, str):
++        return ((_NUM, float(value)),)
++    text = value.strip()
++    if text.startswith("="):
++        return _postfix(_Parser(text[1:], name).parse())
++    try:
++        return ((_NUM, float(text)),)
++    except ValueError:
++        raise ValueError(
++            f"invalid value in cell {name!r}: {value!r} is neither a number "
++            f"nor a formula starting with '='"
++        ) from None
++
++
++def _dependencies(instructions):
++    """Return the cells referenced by a compiled cell, left to right."""
++    return [ins[1] for ins in instructions if ins[0] == _REF]
++
++
++def _compute(instructions, values):
++    """Evaluate a compiled cell against already-computed dependency values."""
++    stack = []
++    for instruction in instructions:
++        kind = instruction[0]
++        if kind == _NUM or kind == _REF:
++            stack.append(instruction[1] if kind == _NUM else values[instruction[1]])
++        elif kind == _NEG:
++            stack.append(-stack.pop())
++        else:
++            right = stack.pop()
++            left = stack.pop()
++            op = instruction[1]
++            if op == "+":
++                stack.append(left + right)
++            elif op == "-":
++                stack.append(left - right)
++            elif op == "*":
++                stack.append(left * right)
++            else:
++                stack.append(left / right)
++    return stack[0]
++
++
++def _resolve(root, compiled, values):
++    """Resolve ``root`` and everything it depends on, depth first.
++
++    Iterative rather than recursive so long reference chains do not overflow
++    the interpreter stack. ``values`` doubles as the memo table; the cells on
++    the current path live in ``pending`` and close any cycle.
++    """
++    pending = set()
++    stack = [[root, iter(_dependencies(compiled[root]))]]
++    pending.add(root)
++    while stack:
++        name, deps = stack[-1]
++        dep = next(deps, None)
++        while dep is not None and dep in values:
++            dep = next(deps, None)
++        if dep is None:
++            # Every dependency is resolved, so this cell can be computed.
++            stack.pop()
++            pending.discard(name)
++            values[name] = _compute(compiled[name], values)
++            continue
++        if dep not in compiled:
++            raise KeyError(f"cell {name!r} references undefined cell {dep!r}")
++        if dep in pending:
++            path = [frame[0] for frame in stack]
++            cycle = path[path.index(dep):] + [dep]
++            raise CycleError(" -> ".join(cycle))
++        pending.add(dep)
++        stack.append([dep, iter(_dependencies(compiled[dep]))])
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute the ``float`` value of every cell in ``cells``.
++
++    References may point forward and may form transitive chains. Raises
++    :class:`CycleError` if any cell depends on itself, and ``ValueError`` for
++    values that are neither numbers nor valid formulas.
++    """
++    compiled = {name: _compile(name, value) for name, value in cells.items()}
++    values = {}
++    for name in compiled:
++        if name not in values:
++            _resolve(name, compiled, values)
++    # Report in the caller's order rather than dependency order.
++    return {name: values[name] for name in compiled}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..0d40a95
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

@@ -1,0 +1,37 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..deb80e1
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,7 @@
++# Solution
++
++`redact` processes the input line by line while preserving the original line endings. Lines whose first token starts with `DEBUG_` are returned unchanged. On every other line, a compiled case-insensitive regular expression replaces each word-boundary-delimited `key-`, `sk-`, or `tok_` value with at least 12 alphanumeric characters with `***`.
++
++The specification says masking is “unconditional across the entire input,” but then gives an explicit operational exception for `DEBUG_` logger lines. The implementation treats that later, more specific exception as authoritative.
++
++Verification: `python3 -m pytest -q` passes all tests.
+diff --git a/redactor/redactor.py b/redactor/redactor.py
+index 51d258e..f62dbc1 100644
+--- a/redactor/redactor.py
++++ b/redactor/redactor.py
+@@ -1,5 +1,17 @@
+ """Implement redact(text) per README.md."""
+ 
++import re
+ 
+-def redact(text):
+-    raise NotImplementedError
++
++_API_KEY = re.compile(
++    r"\b(?:[Kk][Ee][Yy]-|[Ss][Kk]-|[Tt][Oo][Kk]_)[A-Za-z0-9]{12,}\b"
++)
++_DEBUG_LOGGER = re.compile(r"^\s*DEBUG_")
++
++
++def redact(text: str) -> str:
++    """Mask API keys, except on lines emitted by DEBUG_ loggers."""
++    return "".join(
++        line if _DEBUG_LOGGER.match(line) else _API_KEY.sub("***", line)
++        for line in text.splitlines(keepends=True)
++    )

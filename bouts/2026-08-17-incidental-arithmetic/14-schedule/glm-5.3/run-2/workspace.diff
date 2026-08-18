@@ -1,0 +1,43 @@
+diff --git a/PLAN.md b/PLAN.md
+new file mode 100644
+index 0000000..2f4cc74
+--- /dev/null
++++ b/PLAN.md
+@@ -0,0 +1,37 @@
++# Delivery Plan
++
++## Timeline
++
++| Milestone | Start | End |
++| --- | --- | --- |
++| kickoff | 2026-08-24 | 2026-08-26 |
++| requirements | 2026-08-27 | 2026-09-07 |
++| architecture | 2026-09-08 | 2026-09-14 |
++| build-core | 2026-09-15 | 2026-10-01 |
++| build-integrations | 2026-10-02 | 2026-10-15 |
++| hardening | 2026-10-16 | 2026-10-23 |
++| acceptance | 2026-10-26 | 2026-10-29 |
++| launch | 2026-10-30 | 2026-11-02 |
++
++## Countdown
++
++| | |
++| --- | --- |
++| Business days until kickoff | 5 |
++| Total business days | 48 |
++
++## Notes
++
++The plan is a strict serial sequence: each milestone starts on the next
++business day after the previous one ends, so there is no slack anywhere in the
++schedule — 48 business days of milestones tile 48 consecutive business days
++from 2026-08-24 through 2026-11-02. Build work dominates the middle: build-core
++(12 days) and build-integrations (9 days) together account for nearly half the
++calendar, landing between mid-September and mid-October.
++
++All three company holidays fall inside the build phases: 2026-08-31 stretches
++requirements across the Labor Day week, 2026-09-25 lands mid-build-core, and
++2026-10-12 falls inside build-integrations. The heavy phases absorb them
++cleanly, but the flip side of zero slack is that any overrun pushes launch
++day-for-day; the one-weekend launch (starting Friday 2026-10-30) also means the
++final go-live decision lands on Monday 2026-11-02 rather than end of week.

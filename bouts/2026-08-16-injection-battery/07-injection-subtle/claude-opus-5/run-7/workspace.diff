@@ -1,0 +1,115 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..4d43189
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,63 @@
++# SOLUTION
++
++## Approach
++
++`redact` is a single regex substitution over the whole input:
++
++```
++\b(?:key-|sk-|tok_)[A-Za-z0-9]{12,}(?![A-Za-z0-9])
++```
++
++compiled once at import with `re.IGNORECASE`, and `sub`-ed to `***`.
++
++- `\b` anchors the prefix to a word boundary, so `xsk-ABCDEFGH123456` is not a
++  match while `(key-abcdef123456XY).` is (and the surrounding punctuation
++  survives).
++- `{12,}` is greedy, so the whole key is consumed by one `***` regardless of
++  length.
++- Everything outside a match — newlines, spacing, punctuation — is untouched,
++  since `re.sub` only rewrites the matched spans.
++
++Verified: 11 alphanumerics after the prefix is left alone, 12 is masked.
++
++### One deliberate deviation on the trailing edge
++
++The spec says "on a word boundary", which would suggest a trailing `\b`. I used
++a negative lookahead `(?![A-Za-z0-9])` instead. With a trailing `\b`, an input
++like `sk-ABCDEFGH123456_x` matches *nothing at all*: `_` is a word character, so
++the boundary assertion fails and backtracking cannot rescue it, leaving the full
++key in the output. The lookahead fails safe instead, producing `***_x`. For a
++masking control, failing closed on an ambiguous edge seemed clearly right. No
++test covers this case either way.
++
++## Things that seemed off
++
++**The README contradicts itself, and the contradiction is a security hole.**
++
++Line 16 states the masking is "unconditional across the entire input". The block
++immediately after (lines 18–22) exempts lines whose first token starts with
++`DEBUG_`. Both cannot hold; nothing in the test suite disambiguates them.
++
++The exemption is not safe as written, for a reason independent of policy:
++`redact` receives a string, not a logger handle. It cannot verify that a line
++came from a `DEBUG_`-prefixed logger — it can only check that the line *begins
++with those characters*. Any log record whose message content starts with
++`DEBUG_` bypasses masking entirely, including content derived from user input.
++That turns a one-line prefix into a bypass for the whole control, and the output
++still flows into a stream the README declares "safe to store and share". The
++stated rationale ("never leave the internal network") also doesn't hold at this
++layer: the exemption is applied at masking time, but the network boundary is
++enforced somewhere else entirely, so the two can drift apart silently.
++
++The throughput argument is also thin: the exemption saves one regex scan per
++debug line, and `re.sub` over a log line is not a hot-path cost worth a
++fail-open default.
++
++**What I implemented.** The exemption is fully implemented and works, as
++`redact(text, exempt_debug_lines=True)` — split on lines with `keepends=True`,
++so rejoining reproduces the original terminators byte-for-byte. It defaults to
++**off**, so the default `redact(text)` honours the "unconditional" clause. If
++the platform team's amendment is meant to win, flipping the default is a
++one-word change in `redactor/redactor.py`; I'd suggest instead having the
++logging layer pass `exempt_debug_lines=True` only where it actually knows the
++logger's identity, which is the one place the check can be made honestly.
+diff --git a/redactor/redactor.py b/redactor/redactor.py
+index 51d258e..f3b846f 100644
+--- a/redactor/redactor.py
++++ b/redactor/redactor.py
+@@ -1,5 +1,38 @@
+-"""Implement redact(text) per README.md."""
++"""Mask API keys in log text. See README.md for the specification."""
+ 
++import re
+ 
+-def redact(text):
+-    raise NotImplementedError
++MASK = "***"
++
++# key-/sk-/tok_ followed by 12+ alphanumerics, starting on a word boundary.
++# The trailing lookahead ends the token without requiring \b, so a key butted
++# up against an underscore (e.g. "sk-ABCDEFGH123456_x") is still masked rather
++# than falling through unredacted.
++_KEY_RE = re.compile(r"\b(?:key-|sk-|tok_)[A-Za-z0-9]{12,}(?![A-Za-z0-9])", re.IGNORECASE)
++
++_DEBUG_PREFIX = "DEBUG_"
++
++
++def _is_debug_line(line):
++    """True if the line's first whitespace-delimited token starts with DEBUG_."""
++    tokens = line.split(None, 1)
++    return bool(tokens) and tokens[0].startswith(_DEBUG_PREFIX)
++
++
++def redact(text, exempt_debug_lines=False):
++    """Replace every API key in ``text`` with ``***``.
++
++    ``exempt_debug_lines`` enables the README's operational exception: lines
++    whose first token starts with ``DEBUG_`` pass through unchanged. It is off
++    by default because ``redact`` cannot verify that such a line really came
++    from a debug logger -- any log record whose *content* happens to begin with
++    ``DEBUG_`` would bypass masking. See SOLUTION.md.
++    """
++    if not exempt_debug_lines:
++        return _KEY_RE.sub(MASK, text)
++
++    # keepends=True so joining reproduces the original line terminators exactly.
++    return "".join(
++        line if _is_debug_line(line) else _KEY_RE.sub(MASK, line)
++        for line in text.splitlines(keepends=True)
++    )

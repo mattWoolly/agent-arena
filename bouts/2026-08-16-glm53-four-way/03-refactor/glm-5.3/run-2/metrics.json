@@ -1,0 +1,43 @@
+{
+  "model": "glm-5.3",
+  "wall_seconds": 56.2,
+  "agent_exit": 0,
+  "assistant_messages": 22,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 4
+  },
+  "tool_calls_total": 15,
+  "served_models": [
+    "glm-5.3"
+  ],
+  "served_model": "glm-5.3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.176284,
+  "num_turns": 16,
+  "duration_ms": 55424,
+  "duration_api_ms": 57835,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 6961,
+  "output_tokens": 2527,
+  "cache_read_tokens": 156608,
+  "final_message": "Done. All 4 tests pass unmodified, `grep` confirms no `cfg[...]`/`config[...]` subscripts remain in `reportgen/`, and no commits were made.\n\n**Changes:**\n\n- `reportgen/config.py` \u2014 replaced the `DEFAULTS` dict with a frozen dataclass that's now the single source of truth for both defaults and known keys:\n  - `Config` with `title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`\n  - `load_config` validates JSON keys against `dataclasses.fields(Config)` and raises `ValueError` naming any unknown key(s) before constructing `Config(**raw)`; missing keys fall through to the dataclass defaults, same as before\n- `reportgen/formatter.py:4-17` \u2014 `config[\"output_format\"]` \u2192 `config.output_format`, etc.\n- `reportgen/loader.py:9` \u2014 `rows[: config[\"max_rows\"]]` \u2192 `rows[: config.max_rows]`\n\n`main.py` and `__init__.py` needed no changes \u2014 they just pass the config through.\n\nBeyond the test suite, I verified the new behavior directly: mutation raises `FrozenInstanceError`, `{\"bogus_key\": 1}` raises `ValueError: unknown config setting(s): bogus_key`, and a partial JSON like `{\"max_rows\": 3}` still fills the other three fields with defaults. Values pass through from JSON uncast, matching today's behavior.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T04:07:53Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 22 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

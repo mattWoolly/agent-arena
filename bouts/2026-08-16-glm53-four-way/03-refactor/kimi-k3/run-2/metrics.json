@@ -1,0 +1,45 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 64.8,
+  "agent_exit": 0,
+  "assistant_messages": 19,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 4
+  },
+  "tool_calls_total": 14,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.10581,
+  "num_turns": 15,
+  "duration_ms": 63967,
+  "duration_api_ms": 67185,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 22173,
+  "output_tokens": 1866,
+  "cache_read_tokens": 133888,
+  "final_message": "Done. All 4 tests pass unmodified, and the sanity checks confirm the new behavior.\n\nChanges made (all inside `reportgen/`):\n\n- **`config.py`** \u2014 replaced the `DEFAULTS` dict with a frozen dataclass `Config` (`title: str = \"Report\"`, `output_format: str = \"text\"`, `max_rows: int = 10`, `include_summary: bool = True`). `load_config(path)` now validates every JSON key against the dataclass fields, raising `ValueError` naming the offending key, and returns `Config(**raw)` so file values override defaults as before.\n- **`formatter.py`** \u2014 `config[\"output_format\"]`, `config[\"title\"]`, `config[\"include_summary\"]` \u2192 attribute access.\n- **`loader.py`** \u2014 `config[\"max_rows\"]` \u2192 `config.max_rows`.\n- **`main.py`** / **`__init__.py`** \u2014 unchanged; they never subscripted the config.\n\nVerified: `grep` confirms no `cfg[...]`/`config[...]` subscripts remain in `reportgen/`, `python3 -m pytest -q` shows 4 passed, and a quick script confirmed defaults, override behavior, `ValueError` on unknown keys (message includes the key name), and frozenness. No commits made, nothing under `tests/` touched.",
+  "total_cost_usd_cli": 0.22445900000000002,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T04:08:50Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

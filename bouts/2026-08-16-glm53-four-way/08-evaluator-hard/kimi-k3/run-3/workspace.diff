@@ -1,0 +1,208 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..fd52ea6
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,44 @@
++# Solution
++
++## Approach
++
++`sheet/engine.py` implements `evaluate(cells)` as two parts:
++
++1. **Tokenizer** (`_tokenize`): a single regex pulls out numbers, cell
++   references (letters followed by optional digits), and operator/paren
++   tokens, skipping whitespace. Anything else raises `ValueError`.
++
++2. **Recursive-descent parser/evaluator** (`_Parser`): parses and evaluates
++   in one pass, with grammar levels encoding precedence:
++   - `expr`: `+ -` (left-associative loop)
++   - `term`: `* /` (left-associative loop)
++   - `factor`: unary minus, recursing into itself so `--x` works
++   - `power`: `^`, which recurses through `factor` on the right — this makes
++     `^` right-associative (`2^3^2` = 512), allows negative exponents
++     (`2^-3` = 0.125), and keeps unary minus binding looser than `^`
++     (`-2^2` = `-(2^2)` = -4).
++   - `atom`: number literal, cell reference (resolved via callback), or a
++     parenthesized `expr`.
++
++## Dependency resolution
++
++`evaluate` resolves cells on demand with memoization:
++
++- `values` caches computed results so each cell is evaluated once; forward
++  and transitive references work because resolution is recursive, not ordered
++  by dict position.
++- A `visiting` set tracks the current resolution stack. Re-entering a cell
++  already on the stack means a dependency cycle (direct or transitive) and
++  raises `CycleError`. The cell is removed from `visiting` in a `finally`
++  block so the set stays correct after errors.
++
++## Edge cases handled
++
++- `-2^2` → -4 vs `(-2)^2` → 4 (unary minus looser than `^`)
++- Right-associative `^`: `2^3^2` → 512; negative exponents: `2^-3` → 0.125
++- Real division (`=3/2` → 1.5); division by zero propagates Python's
++  `ZeroDivisionError` (no special-casing)
++- Cycles of any length (`A→A`, `A→B→A`, `A→B→C→A`) raise `CycleError`
++- Whitespace anywhere between tokens
++- References to undefined cells raise `KeyError`; trailing garbage after a
++  valid expression raises `ValueError`
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..8a98e3a
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..a71ef12
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..8d0ddf6 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,140 @@
+ """Implement evaluate() and CycleError per README.md."""
+ 
++import re
++
+ 
+ class CycleError(Exception):
+     pass
+ 
+ 
++_TOKEN_RE = re.compile(r"""
++    \s*(?:(?P<num>\d+(?:\.\d+)?)|(?P<ref>[A-Za-z]+\d*)|(?P<op>[+\-*/^()]))
++""", re.VERBOSE)
++
++# Token types
++NUM, REF, OP = "num", "ref", "op"
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    n = len(text)
++    while pos < n:
++        if text[pos].isspace():
++            pos += 1
++            continue
++        m = _TOKEN_RE.match(text, pos)
++        if not m or m.start() != pos or m.end() == pos:
++            raise ValueError(f"unexpected character at {pos}: {text[pos]!r}")
++        pos = m.end()
++        if m.group(NUM) is not None:
++            tokens.append((NUM, float(m.group(NUM))))
++        elif m.group(REF) is not None:
++            tokens.append((REF, m.group(REF)))
++        else:
++            tokens.append((OP, m.group(OP)))
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser/evaluator over a token stream.
++
++    Grammar (precedence low -> high):
++        expr    := term (('+' | '-') term)*
++        term    := factor (('*' | '/') factor)*
++        factor  := ('-')* power            # unary minus binds looser than ^
++        power   := atom ('^' factor)?      # ^ is right-associative
++        atom    := NUM | REF | '(' expr ')'
++    """
++
++    def __init__(self, tokens, resolve):
++        self.tokens = tokens
++        self.i = 0
++        self.resolve = resolve  # ref name -> float
++
++    def peek(self):
++        return self.tokens[self.i] if self.i < len(self.tokens) else None
++
++    def advance(self):
++        tok = self.tokens[self.i]
++        self.i += 1
++        return tok
++
++    def parse(self):
++        value = self.expr()
++        if self.peek() is not None:
++            raise ValueError("unexpected trailing tokens")
++        return value
++
++    def expr(self):
++        value = self.term()
++        while self.peek() in ((OP, "+"), (OP, "-")):
++            op = self.advance()[1]
++            rhs = self.term()
++            value = value + rhs if op == "+" else value - rhs
++        return value
++
++    def term(self):
++        value = self.factor()
++        while self.peek() in ((OP, "*"), (OP, "/")):
++            op = self.advance()[1]
++            rhs = self.factor()
++            value = value * rhs if op == "*" else value / rhs
++        return value
++
++    def factor(self):
++        if self.peek() == (OP, "-"):
++            self.advance()
++            return -self.factor()
++        return self.power()
++
++    def power(self):
++        base = self.atom()
++        if self.peek() == (OP, "^"):
++            self.advance()
++            # right-associative; exponent goes through factor so that
++            # 2^-3 works and unary minus on the left binds looser.
++            return base ** self.factor()
++        return base
++
++    def atom(self):
++        tok = self.advance()
++        if tok[0] == NUM:
++            return tok[1]
++        if tok[0] == REF:
++            return self.resolve(tok[1])
++        if tok == (OP, "("):
++            value = self.expr()
++            if self.peek() != (OP, ")"):
++                raise ValueError("missing closing parenthesis")
++            self.advance()
++            return value
++        raise ValueError(f"unexpected token: {tok}")
++
++
+ def evaluate(cells):
+-    raise NotImplementedError
++    values = {}
++    visiting = set()
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in visiting:
++            raise CycleError(name)
++        if name not in cells:
++            raise KeyError(f"unknown cell: {name}")
++        visiting.add(name)
++        try:
++            raw = cells[name]
++            if raw.startswith("="):
++                value = _Parser(_tokenize(raw[1:]), resolve).parse()
++            else:
++                value = float(raw)
++            values[name] = value
++            return value
++        finally:
++            visiting.discard(name)
++
++    for name in cells:
++        resolve(name)
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..702adc3
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

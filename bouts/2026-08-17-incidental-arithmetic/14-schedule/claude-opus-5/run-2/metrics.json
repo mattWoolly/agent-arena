@@ -1,0 +1,40 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 67.9,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 5
+  },
+  "tool_calls_total": 5,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.337279,
+  "num_turns": 6,
+  "duration_ms": 64434,
+  "duration_api_ms": 65197,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 4676,
+  "cache_read_tokens": 147910,
+  "final_message": "`PLAN.md` is written with the three required headings in order. No commits made.\n\n**The schedule:** 2026-08-24 \u2192 2026-11-02, 48 business days. Kickoff is 5 business days out.\n\nAll eight milestones chain contiguously, so the 48-day total equals the sum of the durations exactly \u2014 there's no slack in the plan, and every holiday just stretches its milestone by a calendar day. All three company holidays fall inside the window (8/31 in requirements, 9/25 in build-core, 10/12 in build-integrations).\n\nTwo things I flagged in Notes that you may want to act on:\n\n- **`holidays.csv` may be incomplete.** It lists only three company holidays. Monday **2026-09-07 is US Labor Day** and is currently scheduled as a working day \u2014 and it happens to be the end date of `requirements`. If the org observes it, adding it (and any other public holidays) shifts every subsequent date out by a day or more. I scheduled it as a working day because the conventions say to exclude exactly the dates in the file, but this is the most likely input error.\n- **`launch` straddles a weekend**, starting Fri 10/30 and ending Mon 11/2. Correct per the rules, but if you want launch in one contiguous stretch it should start the following Monday.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:04:49Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 52 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

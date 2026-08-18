@@ -1,0 +1,41 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 33.5,
+  "agent_exit": 0,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Bash": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.17426810000000004,
+  "num_turns": 4,
+  "duration_ms": 29846,
+  "duration_api_ms": 30569,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 3045,
+  "cache_read_tokens": 132447,
+  "final_message": "Created `PLAN.md` with the three required sections: an 8-row Timeline table (kickoff 2026-08-24 \u2192 launch ending 2026-11-02), a Countdown table (5 business days until kickoff, 48 total business days), and Notes summarizing the plan shape. Dates were computed with a verified script accounting for weekends and the three holidays in `holidays.csv`.",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:59:47Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

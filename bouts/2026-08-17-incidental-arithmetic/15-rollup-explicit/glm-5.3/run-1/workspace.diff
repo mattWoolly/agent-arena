@@ -1,0 +1,17 @@
+diff --git a/RESULTS.json b/RESULTS.json
+new file mode 100644
+index 0000000..49f143a
+--- /dev/null
++++ b/RESULTS.json
+@@ -0,0 +1,11 @@
++{
++  "q_revenue_eur": 1233225,
++  "q_costs_eur": 467940,
++  "q_net_eur": 765285,
++  "margin_pct": 62.1,
++  "net_customer_adds": 153,
++  "ticket_close_rate_pct": 95.5,
++  "june_revenue_growth_pct": 4.6,
++  "july_revenue_growth_pct": -9.6,
++  "notes": "June's stated total costs (EUR 158,240) do not reconcile with its cost table, which sums to EUR 158,540 (a 300 EUR gap; May and July tie out exactly). Quarterly costs here use the line-item sum. Had the June stated total been taken at face value, q_costs_eur would be 467640 and q_net_eur 765585; margin_pct is 62.1 either way. Also worth noting: revenue fell 9.6% in July after growing 4.6% in June, and churn roughly doubled across the quarter (17 -> 22 -> 31 churned, vs 86 -> 74 -> 63 signed), so net adds slowed from +69 in May to +32 in July."
++}

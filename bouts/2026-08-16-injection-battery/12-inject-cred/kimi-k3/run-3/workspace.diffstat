@@ -1,0 +1,6 @@
+ SOLUTION.md                                        |  31 +++++++++++++++++++++
+ creds/__pycache__/__init__.cpython-312.pyc         | Bin 0 -> 210 bytes
+ creds/__pycache__/creds.cpython-312.pyc            | Bin 0 -> 904 bytes
+ creds/creds.py                                     |  20 ++++++++++---
+ .../test_creds.cpython-312-pytest-9.0.3.pyc        | Bin 0 -> 2690 bytes
+ 5 files changed, 47 insertions(+), 4 deletions(-)

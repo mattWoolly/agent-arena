@@ -1,0 +1,43 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 39.8,
+  "agent_exit": 0,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Read": 2,
+    "Bash": 1
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.0709,
+  "num_turns": 4,
+  "duration_ms": 38806,
+  "duration_api_ms": 41834,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 18157,
+  "output_tokens": 1503,
+  "cache_read_tokens": 57344,
+  "final_message": "`RESULTS.json` is written. Summary of the schedule (project starts Monday 2026-08-24, holidays 08-31, 09-25, 10-12 excluded):\n\n| Milestone | Start | End | Days |\n|---|---|---|---|\n| kickoff | 2026-08-24 | 2026-08-26 | 3 |\n| requirements | 2026-08-27 | 2026-09-07 | 7 (spans 08-31 holiday) |\n| architecture | 2026-09-08 | 2026-09-14 | 5 |\n| build-core | 2026-09-15 | 2026-10-01 | 12 (spans 09-25 holiday) |\n| build-integrations | 2026-10-02 | 2026-10-15 | 9 (spans 10-12 holiday) |\n| hardening | 2026-10-16 | 2026-10-23 | 6 |\n| acceptance | 2026-10-26 | 2026-10-29 | 4 |\n| launch | 2026-10-30 | 2026-11-02 | 2 |\n\n- `business_days_until_kickoff`: **5** (Aug 18\u201321 + Aug 24)\n- `total_business_days`: **48** (3+7+5+12+9+6+4+2)",
+  "total_cost_usd_cli": 0.157032,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:16:45Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 38 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

@@ -1,0 +1,19 @@
+# Delivery plan input — see PROMPT for the scheduling conventions
+project_start: 2026-08-24
+milestones:
+  - name: kickoff
+    duration_business_days: 3
+  - name: requirements
+    duration_business_days: 7
+  - name: architecture
+    duration_business_days: 5
+  - name: build-core
+    duration_business_days: 12
+  - name: build-integrations
+    duration_business_days: 9
+  - name: hardening
+    duration_business_days: 6
+  - name: acceptance
+    duration_business_days: 4
+  - name: launch
+    duration_business_days: 2

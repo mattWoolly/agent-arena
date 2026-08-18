@@ -98,6 +98,43 @@ def main(bout_dir: str) -> None:
             f"~${cost_total:.2f}, ~{wall_total:.0f}s wall"
         )
 
+    # Served-model integrity. A comparison is only valid if every run was
+    # served by the model its cell claims. Endpoints can silently substitute
+    # (Z.ai serves GLM-5.3 for a GLM-5.2 request), and a side-channel model
+    # leak (>1 served model in one run) contaminates a controlled arm. If the
+    # bout ships EXPECTED.json ({model_label: served_id_substring}), each row is
+    # checked against it; substitutions and leaks are reported loudly either way.
+    expected = {}
+    exp_path = bout / "EXPECTED.json"
+    if exp_path.exists():
+        try:
+            expected = json.loads(exp_path.read_text())
+        except json.JSONDecodeError:
+            expected = {}
+    integrity = []
+    for r in rows:
+        sm = r.get("served_model")
+        loc = f"{r['task']}/{r['model']}/{r['run']}"
+        if r.get("served_model_leak"):
+            integrity.append(f"- LEAK {loc}: multiple served models {r.get('served_models')}")
+        if sm is None:
+            integrity.append(f"- MISSING {loc}: no served-model tag in transcript")
+            continue
+        want = expected.get(r["model"])
+        if want and want not in sm:
+            integrity.append(f"- SUBSTITUTION {loc}: requested `{r['model']}` "
+                             f"expected served `{want}`, got `{sm}`")
+    if integrity:
+        lines.append("")
+        lines.append("**⛔ SERVED-MODEL INTEGRITY FAILURES** "
+                     "(this bout is not a valid comparison until resolved):")
+        lines.extend(integrity)
+    elif expected:
+        served_seen = sorted({r.get("served_model") for r in rows if r.get("served_model")})
+        lines.append("")
+        lines.append(f"- served-model check: OK, all runs matched EXPECTED.json "
+                     f"(served: {', '.join(served_seen)})")
+
     suspect = [r for r in rows if r.get("peek_check", "clean") != "clean"]
     if suspect:
         lines.append("")

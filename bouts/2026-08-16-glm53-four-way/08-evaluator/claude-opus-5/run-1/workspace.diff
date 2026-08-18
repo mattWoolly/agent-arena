@@ -1,0 +1,287 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..b15838a
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,78 @@
++# Solution
++
++`sheet/engine.py` implements `evaluate(cells)` and `CycleError` in three stages:
++parse each cell once, resolve the dependency graph, then compute values.
++
++## Approach
++
++**1. Parsing (`_tokenize`, `_Parser`, `_parse`).**
++A cell whose stripped text does not start with `=` is a bare number and goes
++straight through `float()`. A formula body is tokenized with a single regex
++(numbers, names, operators; whitespace skipped between tokens) and fed to a
++recursive-descent parser over the README's grammar:
++
++```
++expr   := term (('+' | '-') term)*      # left-associative
++term   := factor (('*' | '/') factor)*  # binds tighter
++factor := ('-' | '+') factor | atom     # unary minus, may stack
++atom   := NUMBER | NAME | '(' expr ')'
++```
++
++The result is a tuple AST — `('num', v)`, `('ref', name)`, `('bin', op, l, r)`,
++`('neg', x)`. Precedence and associativity fall out of the grammar's shape
++rather than being special-cased. Each cell is parsed exactly once, so a cell
++referenced by many others is not re-parsed per reference.
++
++**2. Dependency resolution (`evaluate`).**
++`_refs` walks each AST for the cell names it mentions, giving a dependency
++graph. Cells are then resolved by depth-first traversal: a cell's expression is
++computed only after every cell it references already has a value, which is what
++makes forward references and transitive chains work regardless of dict order.
++
++The traversal is **iterative, with an explicit stack**, not recursive. Formula
++nesting is naturally shallow, but reference chains are not — `A1 -> A2 -> ...`
++can be thousands of cells long, and a recursive walk would hit Python's
++recursion limit and raise `RecursionError` instead of returning an answer. A
++5000-cell chain evaluates fine.
++
++**3. Cycle detection.**
++The DFS keeps an `on_stack` set of cells in the current chain. Encountering a
++cell already on the stack means it reached itself, so `CycleError` is raised;
++the message names the cycle (`cycle: A -> B -> C -> A`) to make the failure
++diagnosable. Finished cells move into `values`, which doubles as the "already
++done" marker — so a cell reachable by several paths is visited once, and a
++previously-completed cell is never mistaken for a cycle.
++
++## Edge cases handled
++
++- **Forward and transitive references** — dict order is irrelevant; `{"A": "=B",
++  "B": "=C", "C": "10"}` resolves.
++- **Shared subgraphs** — a diamond (`D` needs `B` and `C`, both needing `A`)
++  computes `A` once rather than exponentially re-walking it.
++- **Cycles of every shape** — direct self-reference (`A: =A`), mutual
++  (`A: =B, B: =A`), and longer transitive loops. A cell that merely *depends on*
++  a cycle without being in one also raises, since it has no computable value.
++  Cells outside the cycle do not mask it.
++- **Unary minus** — leading (`=-3`), applied to a parenthesized group
++  (`=-(A+1)`), stacked (`=--4`), and after another operator (`=3*-2`, `=1- -2`).
++- **Precedence and associativity** — `=1+2*3` is `7`; `=10-3-2` is `5` and
++  `=100/5/2` is `10` (left-associative, not right).
++- **Real division** — `=3/2` is `1.5`. Division by zero is left to Python, so
++  `ZeroDivisionError` propagates as specified, including when the zero arrives
++  through a reference (`=A/(A-2)` with `A: 2`).
++- **Whitespace** — insignificant between tokens and around the whole value.
++- **Cell name forms** — `A`, `B`, `A1`, `X12`, `TOTAL` all lex as single names;
++  a name is never split into letters plus a number.
++- **Bare negative literals** — a raw `"-2"` cell value is accepted.
++- **Empty sheet** — `evaluate({})` returns `{}`.
++- **Every value is a `float`**, including cells given as bare integers.
++- Malformed formulas raise `ValueError` (unbalanced parens, stray tokens,
++  truncated expressions, unlexable characters) and a reference to a cell that
++  does not exist raises `KeyError` naming both cells. The README does not
++  specify these, so they use the closest standard Python exception rather than a
++  bespoke one. The input dict is never mutated.
++
++## Tests
++
++`python3 -m pytest -q` → 3 passed. Beyond the bundled tests, the behaviors
++listed above were each verified directly against the README's semantics.
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..605f11d 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,195 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine. See README.md for the semantics."""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell reaches itself through references."""
++
++
++_TOKEN_RE = re.compile(
++    r"""
++    \s*(?:
++        (?P<number>\d+\.\d*|\.\d+|\d+)
++      | (?P<name>[A-Za-z]+[0-9]*)
++      | (?P<op>[-+*/()])
++    )
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(text):
++    """Split a formula body into ('number'|'name'|'op', text) tuples."""
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            if text[pos:].strip() == "":
++                break
++            raise ValueError("unexpected character %r in %r" % (text[pos], text))
++        kind = match.lastgroup
++        tokens.append((kind, match.group(kind)))
++        pos = match.end()
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser producing a small tuple-based AST.
++
++    expr   := term (('+' | '-') term)*
++    term   := factor (('*' | '/') factor)*
++    factor := ('-' | '+') factor | atom
++    atom   := NUMBER | NAME | '(' expr ')'
++    """
++
++    def __init__(self, tokens, source):
++        self.tokens = tokens
++        self.source = source
++        self.pos = 0
++
++    def parse(self):
++        node = self.expr()
++        if self.pos != len(self.tokens):
++            raise ValueError(
++                "unexpected token %r in %r"
++                % (self.tokens[self.pos][1], self.source)
++            )
++        return node
++
++    def peek(self):
++        if self.pos < len(self.tokens):
++            return self.tokens[self.pos]
++        return (None, None)
++
++    def expr(self):
++        node = self.term()
++        while self.peek() in (("op", "+"), ("op", "-")):
++            op = self.tokens[self.pos][1]
++            self.pos += 1
++            node = ("bin", op, node, self.term())
++        return node
++
++    def term(self):
++        node = self.factor()
++        while self.peek() in (("op", "*"), ("op", "/")):
++            op = self.tokens[self.pos][1]
++            self.pos += 1
++            node = ("bin", op, node, self.factor())
++        return node
++
++    def factor(self):
++        kind, text = self.peek()
++        if kind == "op" and text in ("-", "+"):
++            self.pos += 1
++            operand = self.factor()
++            return ("neg", operand) if text == "-" else operand
++        return self.atom()
++
++    def atom(self):
++        kind, text = self.peek()
++        if kind == "number":
++            self.pos += 1
++            return ("num", float(text))
++        if kind == "name":
++            self.pos += 1
++            return ("ref", text)
++        if kind == "op" and text == "(":
++            self.pos += 1
++            node = self.expr()
++            if self.peek() != ("op", ")"):
++                raise ValueError("unbalanced parentheses in %r" % (self.source,))
++            self.pos += 1
++            return node
++        if kind is None:
++            raise ValueError("unexpected end of formula in %r" % (self.source,))
++        raise ValueError("unexpected token %r in %r" % (text, self.source))
++
++
++def _parse(value):
++    """Parse one cell's raw value into an AST."""
++    source = str(value).strip()
++    if not source.startswith("="):
++        try:
++            return ("num", float(source))
++        except ValueError:
++            raise ValueError("not a number: %r" % (value,))
++    return _Parser(_tokenize(source[1:]), source).parse()
++
++
++def _refs(node):
++    """Cell names referenced by an AST, in first-appearance order."""
++    names = []
++    stack = [node]
++    while stack:
++        current = stack.pop()
++        tag = current[0]
++        if tag == "ref":
++            names.append(current[1])
++        elif tag == "bin":
++            stack.append(current[3])
++            stack.append(current[2])
++        elif tag == "neg":
++            stack.append(current[1])
++    return names
++
++
++def _compute(node, values):
++    tag = node[0]
++    if tag == "num":
++        return node[1]
++    if tag == "ref":
++        return values[node[1]]
++    if tag == "neg":
++        return -_compute(node[1], values)
++    left = _compute(node[2], values)
++    right = _compute(node[3], values)
++    op = node[1]
++    if op == "+":
++        return left + right
++    if op == "-":
++        return left - right
++    if op == "*":
++        return left * right
++    return left / right
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell in ``cells``, returning {name: float}."""
++    asts = {name: _parse(value) for name, value in cells.items()}
++    deps = {name: _refs(node) for name, node in asts.items()}
++
++    values = {}
++    for start in cells:
++        if start in values:
++            continue
++        # Iterative depth-first walk: reference chains can be far deeper than
++        # the formulas themselves, so the cell graph is not walked recursively.
++        stack = [[start, 0]]
++        on_stack = {start}
++        while stack:
++            frame = stack[-1]
++            name, children = frame[0], deps[frame[0]]
++            descended = False
++            while frame[1] < len(children):
++                child = children[frame[1]]
++                frame[1] += 1
++                if child in values:
++                    continue
++                if child in on_stack:
++                    path = [entry[0] for entry in stack]
++                    raise CycleError(
++                        "cycle: " + " -> ".join(path[path.index(child):] + [child])
++                    )
++                if child not in asts:
++                    raise KeyError("unknown cell %r referenced by %r" % (child, name))
++                stack.append([child, 0])
++                on_stack.add(child)
++                descended = True
++                break
++            if not descended:
++                values[name] = _compute(asts[name], values)
++                on_stack.discard(name)
++                stack.pop()
++    return values

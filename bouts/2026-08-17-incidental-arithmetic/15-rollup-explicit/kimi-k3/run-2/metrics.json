@@ -1,0 +1,43 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 59.9,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 3
+  },
+  "tool_calls_total": 5,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.08317,
+  "num_turns": 6,
+  "duration_ms": 58928,
+  "duration_api_ms": 63603,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 20269,
+  "output_tokens": 2312,
+  "cache_read_tokens": 81920,
+  "final_message": "`RESULTS.json` is written. Summary of the quarter (May\u2013July 2026):\n\n| Metric | Value |\n|---|---|\n| Revenue | \u20ac1,233,225 |\n| Costs | \u20ac467,640 |\n| Net | \u20ac765,585 (margin 62.1%) |\n| Net customer adds | 153 (69 + 52 + 32) |\n| Ticket close rate | 95.5% (956 of 1,001) |\n| June growth | +4.6% |\n| July growth | \u22129.6% |\n\nOne anomaly found and flagged in `notes`: June's cost line items sum to \u20ac158,540 but the report states \u20ac158,240 \u2014 a \u20ac300 discrepancy. I used the stated totals for consistency (May and July totals match their line items exactly). The notes also flag the worsening trend: July revenue decline, rising churn (17 \u2192 22 \u2192 31), and falling signups (86 \u2192 74 \u2192 63).",
+  "total_cost_usd_cli": 0.20010500000000003,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:37:43Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 11 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

@@ -1,0 +1,42 @@
+{
+  "model": "glm-5.3",
+  "wall_seconds": 47.9,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Read": 4,
+    "Bash": 2,
+    "Write": 2
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "glm-5.3"
+  ],
+  "served_model": "glm-5.3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.152729,
+  "num_turns": 9,
+  "duration_ms": 47049,
+  "duration_api_ms": 47969,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 5743,
+  "output_tokens": 1886,
+  "cache_read_tokens": 153728,
+  "final_message": "Done \u2014 all 11 tests pass.\n\n**Implementation** (`money/money.py`): round via `Decimal(str(amount)).quantize(Decimal(\"0.01\"), ROUND_HALF_UP)`, format the magnitude (`currency` + grouped whole + cents), then apply the sign from the quantized value.\n\nThe two traps the tests target:\n\n1. **Rounding mode** \u2014 Python's `round()` does banker's rounding, so `round(0.005, 2)` gives `0.0`, not `0.01`. `Decimal`'s `ROUND_HALF_UP` is ties-away-from-zero, which is what the spec (and both `\u00b10.005` tests) want.\n2. **Float representation** \u2014 passing the float straight to `Decimal` (`Decimal(0.005)`) yields `0.005000000000000000104...`, making tie behavior depend on binary representation. Going through `str()` takes the shortest decimal repr, so ties are real ties.\n\nThe zero cases (`-0.004`, `-0.0`) both quantize to `-0.00`, and since `Decimal(\"-0.00\") < 0` is false, sign-checking the *quantized* result renders them as `\"$0.00\"` \u2014 no special-casing needed. Details are written up in `SOLUTION.md`.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T05:43:15Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 50 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "2/2"
+}

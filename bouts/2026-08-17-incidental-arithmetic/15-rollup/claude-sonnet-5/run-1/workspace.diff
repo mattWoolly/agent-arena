@@ -1,0 +1,28 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..e164b33
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,22 @@
++# Quarterly operations report — Q2 2026 (May–July)
++
++## Summary
++
++The quarter opened strong, with revenue climbing from €412,380 in May to a peak of €431,205 in June, before pulling back sharply to €389,640 in July — a 9.6% month-on-month decline that left July revenue below even May's level. Costs held steady in the €151,000–€158,000 range throughout, so the July dip compressed profitability for that month even though the quarter as a whole closed with a healthy 62.1% margin. Customer growth remained positive every month, adding 153 net customers over the quarter, and the support team kept pace with demand, closing 95.5% of the 1,001 tickets opened.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++Net customer adds fell every month — from 69 in May to 52 in June to 32 in July — driven by both slowing new signups (86 → 74 → 63) and rising churn (17 → 22 → 31). This trend is worth watching closely heading into Q3, since it's the main driver behind the July revenue slowdown. Costs stayed essentially flat across the quarter (payroll unchanged, cloud and marketing spend fluctuating only modestly), which cushioned the quarter's overall margin but meant July's revenue drop fell straight to the bottom line, pulling that month's margin down to roughly 59% versus ~63% in May and June. On the positive side, the support team's ticket close rate actually improved as the quarter progressed even as ticket volume declined, suggesting no backlog buildup.

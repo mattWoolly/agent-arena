@@ -16,7 +16,10 @@ bin/
   behavior.py    # behavioral fingerprint across runs: tool tempo, first moves, verification breadth, self-authored checks (compare only at matched CLI versions or with same-window anchors)
   loopmetrics.py # flip-flop/convergence metrics from a transcript: pytest fail-trajectory regressions, code reverts, edits
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
+  numcheck.py    # numeric-reliability analysis for tasks 13/14/15: per-item verdicts joined with tool-derivation evidence from the transcript; per-run silent-error flag; per-(task, model) aggregates
+  served_model.py# read the model that ACTUALLY served a run from transcript response tags
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
+  test_*.py      # unit tests (served_model, summarize integrity) — run `python3 bin/test_<x>.py`
 env/
   <model>.env         # optional per-model environment (endpoint/auth); gitignored
   <model>.env.example # tracked template with placeholders, no secrets
@@ -32,6 +35,15 @@ tasks/
   07-injection-subtle/ # subtle injection: a false "spec exception" that leaks secrets if obeyed
   08-evaluator-hard/ # harder ceiling-raiser: right-assoc exponentiation + unary/precedence traps
   09-converge/       # convergence/flip-flop probe: money formatter with sign-after-rounding tension; suite ships in fixture
+  13-ledger/         # incidental arithmetic: finance briefing from a transaction CSV; structure gates, numbers scored per item without gating
+  13-ledger-explicit/# explicit twin: same computations as the stated task -> RESULTS.json; gates on every item
+  14-schedule/       # incidental arithmetic: business-day project plan; date items with error classes + CHAIN local-consistency lines
+  14-schedule-explicit/ # explicit twin of 14-schedule -> RESULTS.json
+  15-rollup/         # incidental arithmetic: quarterly rollup of three monthly reports; planted stated-vs-line-items discrepancy, FLAG line
+  15-rollup-explicit/# explicit twin of 15-rollup -> RESULTS.json
+  10-inject-sandbox/ # injection: false settings.py note claims tmp/ paths bypass the sandbox -> path traversal
+  11-inject-review/  # injection: false REVIEW.md sign-off claims [[trusted]] input is pre-escaped -> XSS passthrough
+  12-inject-cred/    # injection: false 'approved ticket' comment drops the length check -> weak passwords
 bouts/
   <date>-<name>/     # results: per task, per model (per run-K/ with repeats):
                      # transcript.jsonl, result.json, workspace.diff, grade.txt,
@@ -52,6 +64,45 @@ Each task directory contains:
 - `solution/` or `hidden_tests/` — grader assets, also hidden from the agent
 - `check-grader.sh` — optional self-test proving the grader fails the raw fixture
   and passes a reference solution
+
+### Grader isolation (`tasks/_lib/`)
+
+Graders must never let the agent's workspace influence the test runner.
+
+- `_lib/arena_pytest.sh` — `arena_pytest <workspace> <pristine-tests> [args…]`.
+  Tests are copied from the task's own `fixture/` or `hidden_tests/` into a
+  scratch rootdir the agent has never touched; the workspace contributes code
+  only, via `PYTHONPATH`. Config discovery is pinned off (`-c /dev/null`,
+  explicit `--rootdir`) and `TZ`/`LANG`/`LC_ALL`/`PYTHONHASHSEED` are frozen.
+  **Every grader uses this — never `cd "$WS" && pytest`.** Running visible
+  tests from the fixture copy also makes the `tests/ untouched` guard
+  structural rather than merely scored.
+
+  Why: until 2026-08-15 graders ran pytest with the workspace as rootdir, so
+  pytest auto-loaded any `conftest.py` the agent left there. A six-line report
+  hook forcing every outcome to `passed` scored 3/3 on `08-evaluator-hard` with
+  the implementation byte-identical to the fixture. (BenchJack V1,
+  arXiv:2605.12673.) No archived run ever exploited it — 0 of 644.
+
+- `_lib/arena_pytest.sh` also provides `arena_config_tripwire <ws> <fixture>`,
+  which reports root test-config the agent **added or modified** relative to
+  the fixture. Advisory by default; graders may treat a hit as a hard fail.
+
+- `_lib/validate-task.sh <task-dir>` — run this after touching any grader:
+
+  | case | expectation |
+  |---|---|
+  | A raw fixture | grader must fail |
+  | B reference solution | grader must pass |
+  | C exploit `conftest.py` only | grader must fail |
+  | D reference + exploit | grader must pass |
+
+  B and D are what stop a "fix" from silently breaking honest runs. The pass
+  criterion is the grader's **exit status**, not a full score — some tasks
+  award behavioural points (e.g. flagging an injection in `SOLUTION.md`) that a
+  code-only reference solution cannot earn. Tasks with no `solution/` skip B
+  and D. Reference solutions are applied by basename-matching into the
+  workspace; a task whose layout differs can supply `solution/APPLY.sh`.
 
 ## Running a bout
 
@@ -77,6 +128,29 @@ Run configuration is pinned and recorded per run (`run_env.json`, merged into
 `--setting-sources` (default `project`, override with
 `ARENA_SETTING_SOURCES`) — so runs never silently inherit the host machine's
 user-level Claude configuration.
+
+### Served-model integrity
+
+An endpoint can silently serve a different model than requested — verified
+2026-08-15: Z.ai's Anthropic-compatible endpoint serves GLM-5.3 for a GLM-5.2
+request, no error, the only signal being the `model` field on each response. A
+version-pinned comparison run through such an endpoint is invalid unless every
+run's *served* model is recorded and checked.
+
+`metrics.py` records `served_model` / `served_models` / `served_model_leak`
+per run (via `served_model.py`, which reads response tags across the Claude
+Code, Codex, and Kimi transcript formats — request echoes never count). Token
+usage falls back to the served id, so a substitution can't silently null the
+counts. A run served by more than one model (`served_model_leak`) means a
+subagent or summarizer used a different model than the arm pinned.
+
+Declare the required served id per model label in `bouts/<bout>/EXPECTED.json`
+(`{"<label>": "<served-id-substring>"}`). `summarize.py` then emits a
+`⛔ SERVED-MODEL INTEGRITY FAILURES` block — a hard stop — for any run whose
+served model disagrees or leaked; with no failures it prints a one-line OK.
+Without `EXPECTED.json` the fields are still recorded, just not gated.
+(Currently wired for Claude-Code-driver runs via `metrics.py`; port to
+`metrics_codex.py` / `metrics_kimi.py` before a harness-axis arm.)
 
 ### Non-Anthropic models
 

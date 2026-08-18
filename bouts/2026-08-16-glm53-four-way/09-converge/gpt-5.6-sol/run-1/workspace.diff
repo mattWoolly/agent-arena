@@ -1,0 +1,48 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..fa1a6d4
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,10 @@
++# Solution
++
++`format_amount` converts the input to `Decimal` through its string representation and rounds to two decimal places with `ROUND_HALF_UP`, which implements the required half-away-from-zero behavior. It then formats the absolute rounded value with two decimal places and optional thousands separators, prefixes the selected currency string, and applies either parentheses or a leading minus for negative results.
++
++Edge cases handled include:
++
++- Exact half-cent values such as `0.005` and `-0.005`.
++- Small negative values that round to zero, including negative zero, which receive no negative sign.
++- Rounding that carries into the whole part, such as `0.995` becoming `1.00`.
++- Large integer values, custom currency strings, optional grouping, and the leading-minus sign option.
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..293500c 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,26 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP, localcontext
++
++
++_CENT = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    """Render an integer or float as a currency amount."""
++    value = Decimal(str(amount))
++    digits = value.as_tuple().digits
++    exponent = value.as_tuple().exponent
++
++    # Leave enough precision for very large values as well as a rounding carry.
++    with localcontext() as context:
++        context.prec = max(28, len(digits) + max(exponent, 0) + 2)
++        rounded = value.quantize(_CENT, rounding=ROUND_HALF_UP)
++
++    magnitude = abs(rounded)
++    number = f"{magnitude:,.2f}" if group else f"{magnitude:.2f}"
++    formatted = f"{currency}{number}"
++
++    if rounded < 0:
++        return f"({formatted})" if parens_for_negative else f"-{formatted}"
++    return formatted

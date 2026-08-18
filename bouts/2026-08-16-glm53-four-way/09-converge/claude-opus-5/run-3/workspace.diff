@@ -1,0 +1,92 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..a1287d0
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,42 @@
++# Solution
++
++## Approach
++
++`format_amount` does three things in order, matching the spec:
++
++1. **Round** — convert the amount to a `Decimal` and `quantize` to two places
++   with `ROUND_HALF_UP` (which, for `Decimal`, means half *away from zero*, so
++   negatives round correctly too).
++2. **Format the magnitude** — render `abs(value)` with the `f` format spec,
++   split on the decimal point, and group the whole part with `f"{int(whole):,}"`
++   when `group=True`.
++3. **Apply the sign** — wrap in parentheses, or prefix a minus, only when the
++   *rounded* value is strictly less than zero.
++
++## Edge cases and how they interacted
++
++- **Float repr vs. binary value.** `0.995` is really `0.99499999...` in binary,
++  so `Decimal(0.995)` rounds *down* to `0.99` while the test wants `$1.00`.
++  Going through `Decimal(str(amount))` uses the float's shortest repr, so the
++  value rounds as the literal the caller wrote. This is also what makes
++  `0.005 -> $0.01` and `-0.005 -> ($0.01)` work, and it still gives
++  `0.994 -> $0.99`, so the boundary tests pass in both directions.
++
++- **Signed zero after rounding.** `-0.004` quantizes to `Decimal("-0.00")`, and
++  `-0.0` is already signed. Both are zero in value but carry a sign bit, so the
++  negative check is `value < 0` rather than `value.is_signed()`. This is the
++  case where rounding and sign handling interact: the sign must be decided
++  *after* rounding, not from the input.
++
++- **Negative zero leaking into the digits.** Even with the sign check right,
++  formatting `Decimal("-0.00")` directly would emit `-0.00`. The magnitude is
++  formatted from `abs(value)` so the sign is applied in exactly one place.
++
++- **Grouping and the minus/paren wrapper are independent.** Grouping applies to
++  the whole part only, before the sign wrapper is added, so
++  `group=False` plus a negative gives `($1234.50)`.
++
++- **Large values.** `f"{value:f}"` avoids scientific notation that `str()` on a
++  `Decimal` would produce, and the quantize runs in a local context with
++  `prec = 400` so the whole part of any finite float survives rounding intact
++  (the default precision of 28 would raise `InvalidOperation`).
+diff --git a/money/__pycache__/__init__.cpython-312.pyc b/money/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..cfacfac
+Binary files /dev/null and b/money/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/money/__pycache__/money.cpython-312.pyc b/money/__pycache__/money.cpython-312.pyc
+new file mode 100644
+index 0000000..40dd3a1
+Binary files /dev/null and b/money/__pycache__/money.cpython-312.pyc differ
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..86ca12f 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,26 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP, localcontext
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    with localcontext() as ctx:
++        # Enough digits to quantize any finite float without losing the
++        # whole part (max float is ~309 digits).
++        ctx.prec = 400
++        # str() gives a float's shortest repr, so 0.995 rounds up like the
++        # literal it was written as rather than like its binary value
++        # (0.994999...).
++        value = Decimal(str(amount)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
++
++    # Compare against zero rather than checking the sign bit: -0.004 rounds to
++    # Decimal("-0.00"), which is signed but is not a negative amount.
++    negative = value < 0
++    whole, _, cents = f"{abs(value):f}".partition(".")
++    if group:
++        whole = f"{int(whole):,}"
++    body = f"{currency}{whole}.{cents}"
++
++    if not negative:
++        return body
++    return f"({body})" if parens_for_negative else f"-{body}"
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..94f2d57
+Binary files /dev/null and b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc differ

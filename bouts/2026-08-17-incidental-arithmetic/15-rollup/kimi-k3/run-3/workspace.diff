@@ -1,0 +1,39 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..77f98c0
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,33 @@
++# Quarterly operations report — May–July 2026
++
++## Summary
++
++The quarter closed with €1,233,225 in revenue against €467,640 in costs,
++leaving a net of €765,585 and a 62.1% margin. The trajectory within the
++quarter was uneven: revenue rose 4.6% from May to June, then fell 9.6% in
++July, ending the quarter below where it started. Customer growth also
++cooled — net adds declined each month (69 in May, 52 in June, 32 in July)
++as new sign-ups slowed and churn climbed from 17 to 31. Support remained
++healthy, closing 95.5% of the 1,001 tickets opened over the quarter.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++- June's cost lines sum to €158,540, but the June monthly reports a total of
++  €158,240 — a €300 discrepancy. Quarterly costs above use the stated totals;
++  the June figure should be reconciled.
++- Churn rose steadily through the quarter (17 → 22 → 31) while new sign-ups
++  fell (86 → 74 → 63). The combination, alongside July's 9.6% revenue drop,
++  is the main watch item going into August.

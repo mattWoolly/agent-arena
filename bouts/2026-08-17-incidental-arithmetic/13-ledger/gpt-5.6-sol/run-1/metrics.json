@@ -1,0 +1,48 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 138.8,
+  "agent_exit": 0,
+  "assistant_messages": 37,
+  "tool_calls": {
+    "TaskCreate": 3,
+    "TaskUpdate": 6,
+    "Read": 6,
+    "Bash": 5,
+    "TaskGet": 4,
+    "Write": 1,
+    "TaskList": 1
+  },
+  "tool_calls_total": 26,
+  "served_models": [
+    "gpt-5.6-sol"
+  ],
+  "served_model": "gpt-5.6-sol",
+  "served_model_leak": false,
+  "total_cost_usd": 0.64439,
+  "num_turns": 27,
+  "duration_ms": 137672,
+  "duration_api_ms": 141262,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 564421,
+  "output_tokens": 7494,
+  "cache_read_tokens": 533896,
+  "final_message": "Created `BRIEFING.md` with the required four sections, calculated figures, category budget statuses, and finance recommendations.\n\nValidated:\n- Currency conversion and per-transaction rounding\n- Table labels, columns, and category coverage\n- Heading count and order\n- Totals, percentages, and formatting\n- No git commit created",
+  "total_cost_usd_cli": 3.009455,
+  "cost_source": "proxy-usage-log (23 requests)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:30:49Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 33 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

@@ -1,0 +1,337 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..2a7f4fa
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,75 @@
++# Solution
++
++`sheet/engine.py` implements `evaluate(cells)` and `CycleError` in three passes.
++
++## 1. Parse
++
++Each raw cell value is tokenized (regex over numbers, names, operators) and
++parsed once by a small recursive-descent parser into a tuple AST — `("num", v)`,
++`("ref", name)`, `("neg", x)`, `("bin", op, l, r)`. Parsing every cell up front
++means a cell referenced N times is only parsed once.
++
++The grammar encodes the precedence rules from the README:
++
++```
++expr   := term (('+' | '-') term)*        left-associative
++term   := factor (('*' | '/') factor)*    left-associative
++factor := ('-' | '+') factor | power      unary minus, looser than '^'
++power  := atom ('^' factor)?              right-associative
++atom   := number | name | '(' expr ')'
++```
++
++Two details fall out of the shape rather than special-casing:
++
++- Unary minus lives in `factor`, *above* `power`, so `-2^2` parses as `-(2^2)`
++  = -4, while `(-2)^2` = 4.
++- The right operand of `^` is a `factor`, which makes `^` right-associative
++  (`2^3^2` = `2^(3^2)` = 512) and incidentally allows a signed exponent
++  (`2^-1` = 0.5).
++
++## 2. Order (and cycle detection)
++
++A depth-first walk over the reference graph produces a dependency order, and
++re-entering a cell already on the current DFS path is exactly a cycle, so
++`CycleError` comes from the same pass — no separate check. Colors are tracked
++with two sets (`on_path` for the current chain, `done` for finished cells), so
++a shared subgraph is visited once, not once per referrer.
++
++The walk uses an explicit stack rather than recursion: a 5000-cell reference
++chain would otherwise blow Python's recursion limit. Evaluating an individual
++formula stays recursive, since expression ASTs are shallow.
++
++## 3. Evaluate
++
++Cells are evaluated in dependency order, so every reference is already resolved
++by a plain dict lookup — no re-entrant evaluation or memoization bookkeeping.
++All values are floats, and `/` is real division.
++
++## Edge cases handled
++
++- **Forward and transitive references** — order comes from the graph, not from
++  dict insertion order.
++- **Cycles**: direct self-reference (`A: =A`), mutual (`A: =B`, `B: =A`),
++  transitive, cycles hidden under parens/unary minus, cycles in a subgraph that
++  has acyclic cells alongside it, and cycles thousands of cells long.
++- **Division by zero** raises `ZeroDivisionError`, whether the zero is a literal
++  (`=1/0`) or arrives through a reference.
++- **Diamonds / repeated references** (`=A+A`, or two cells sharing a dependency)
++  evaluate the shared cell once.
++- **Whitespace** anywhere between tokens, including around the leading `=`.
++- **Number forms**: integers, decimals, and leading-dot decimals (`.5`).
++- **Multi-character names** — `TOTAL`, `X12` tokenize as single references, and
++  a malformed name like `A1B` splits into two adjacent atoms, which the parser
++  rejects rather than silently accepting.
++- **Unknown references** raise `KeyError` naming both the missing cell and its
++  referrer; malformed formulas raise `ValueError` quoting the offending cell
++  text. The README doesn't specify either case, so these follow the closest
++  Python convention.
++- **Empty cells** evaluate to `0.0`, matching normal spreadsheet behavior.
++- **Empty input** returns `{}`.
++
++## Tests
++
++`python3 -m pytest -q` → 3 passed. The suite only covers addition, precedence,
++and a reference chain, so the behaviors above were verified separately against
++the README; nothing under `tests/` was modified.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..eb64523
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..d428671
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..e6da904 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,236 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine.
++
++See README.md for the semantics. Values are parsed once into small tuple
++ASTs, cells are ordered by an iterative depth-first walk of the reference
++graph (which is also where cycles are detected), and each AST is then
++evaluated against already-computed dependencies.
++"""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell reaches itself through references."""
++
++
++_TOKEN_RE = re.compile(
++    r"""
++    \s*(?:
++        (?P<number>\d+\.\d*|\.\d+|\d+)
++      | (?P<name>[A-Za-z]+[0-9]*)
++      | (?P<op>[-+*/^()])
++    )
++    """,
++    re.VERBOSE,
++)
++
++_NUMBER, _NAME, _OP, _END = "number", "name", "op", "end"
++
++
++def _tokenize(text):
++    """Turn a formula body into a list of (kind, value) pairs."""
++    tokens = []
++    pos = 0
++    end = len(text)
++    while pos < end:
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            if text[pos].isspace():
++                pos += 1
++                continue
++            raise ValueError("unexpected character %r in %r" % (text[pos], text))
++        pos = match.end()
++        kind = match.lastgroup
++        tokens.append((kind, match.group(kind)))
++    tokens.append((_END, None))
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser producing tuple ASTs.
++
++    expr   := term (('+' | '-') term)*
++    term   := factor (('*' | '/') factor)*
++    factor := ('-' | '+') factor | power
++    power  := atom ('^' factor)?
++    atom   := number | name | '(' expr ')'
++
++    Unary minus sits above '^' in `factor`, so `-2^2` parses as `-(2^2)`.
++    The right operand of '^' is a `factor`, which makes '^' right-associative
++    and also allows a signed exponent (`2^-1`).
++    """
++
++    def __init__(self, tokens, source):
++        self.tokens = tokens
++        self.source = source
++        self.pos = 0
++
++    def peek(self):
++        return self.tokens[self.pos]
++
++    def advance(self):
++        token = self.tokens[self.pos]
++        self.pos += 1
++        return token
++
++    def error(self, message):
++        return ValueError("%s in %r" % (message, self.source))
++
++    def parse(self):
++        node = self.expr()
++        kind, value = self.peek()
++        if kind != _END:
++            raise self.error("unexpected token %r" % (value,))
++        return node
++
++    def expr(self):
++        node = self.term()
++        while self.peek() == (_OP, "+") or self.peek() == (_OP, "-"):
++            op = self.advance()[1]
++            node = ("bin", op, node, self.term())
++        return node
++
++    def term(self):
++        node = self.factor()
++        while self.peek() == (_OP, "*") or self.peek() == (_OP, "/"):
++            op = self.advance()[1]
++            node = ("bin", op, node, self.factor())
++        return node
++
++    def factor(self):
++        kind, value = self.peek()
++        if kind == _OP and value in ("-", "+"):
++            self.advance()
++            operand = self.factor()
++            return ("neg", operand) if value == "-" else operand
++        return self.power()
++
++    def power(self):
++        base = self.atom()
++        if self.peek() == (_OP, "^"):
++            self.advance()
++            return ("bin", "^", base, self.factor())
++        return base
++
++    def atom(self):
++        kind, value = self.advance()
++        if kind == _NUMBER:
++            return ("num", float(value))
++        if kind == _NAME:
++            return ("ref", value)
++        if kind == _OP and value == "(":
++            node = self.expr()
++            if self.advance() != (_OP, ")"):
++                raise self.error("missing ')'")
++            return node
++        if kind == _END:
++            raise self.error("unexpected end of formula")
++        raise self.error("unexpected token %r" % (value,))
++
++
++def _parse_cell(text):
++    """Parse one raw cell value into an AST."""
++    body = text.strip() if isinstance(text, str) else text
++    if not isinstance(body, str):
++        # Tolerate a cell already given as a number.
++        return ("num", float(body))
++    if body.startswith("="):
++        body = body[1:]
++    elif body == "":
++        return ("num", 0.0)
++    return _Parser(_tokenize(body), text).parse()
++
++
++def _refs(node, out):
++    """Collect referenced cell names, in first-appearance order."""
++    stack = [node]
++    while stack:
++        current = stack.pop()
++        tag = current[0]
++        if tag == "ref":
++            out.append(current[1])
++        elif tag == "bin":
++            stack.append(current[3])
++            stack.append(current[2])
++        elif tag == "neg":
++            stack.append(current[1])
++    return out
++
++
++def _order(asts):
++    """Return cell names in dependency order, raising CycleError on a cycle.
++
++    Iterative so that long reference chains do not hit Python's recursion
++    limit.
++    """
++    done = set()
++    on_path = set()
++    order = []
++    for root in asts:
++        if root in done:
++            continue
++        # Each frame is [name, deps, index-of-next-dep-to-visit].
++        stack = [[root, _refs(asts[root], []), 0]]
++        on_path.add(root)
++        while stack:
++            frame = stack[-1]
++            name, deps, index = frame
++            if index == len(deps):
++                stack.pop()
++                on_path.discard(name)
++                done.add(name)
++                order.append(name)
++                continue
++            frame[2] += 1
++            dep = deps[index]
++            if dep in done:
++                continue
++            if dep in on_path:
++                raise CycleError(
++                    "cycle detected: %s" % " -> ".join(
++                        [f[0] for f in stack] + [dep]
++                    )
++                )
++            if dep not in asts:
++                raise KeyError("unknown cell %r referenced by %r" % (dep, name))
++            on_path.add(dep)
++            stack.append([dep, _refs(asts[dep], []), 0])
++    return order
++
++
++def _eval(node, values):
++    """Evaluate an AST whose references are all present in `values`."""
++    tag = node[0]
++    if tag == "num":
++        return node[1]
++    if tag == "ref":
++        return values[node[1]]
++    if tag == "neg":
++        return -_eval(node[1], values)
++    op = node[1]
++    left = _eval(node[2], values)
++    right = _eval(node[3], values)
++    if op == "+":
++        return left + right
++    if op == "-":
++        return left - right
++    if op == "*":
++        return left * right
++    if op == "/":
++        if right == 0:
++            raise ZeroDivisionError("float division by zero")
++        return left / right
++    return float(left ** right)
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell's value.
++
++    `cells` maps cell names to bare numbers or `=`-prefixed formulas; the
++    result maps every one of those names to a float.
++    """
++    asts = {name: _parse_cell(text) for name, text in cells.items()}
++    values = {}
++    for name in _order(asts):
++        values[name] = _eval(asts[name], values)
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..df1c1c7
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

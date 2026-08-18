@@ -1,0 +1,43 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 39.6,
+  "agent_exit": 0,
+  "assistant_messages": 8,
+  "tool_calls": {
+    "Read": 3,
+    "Bash": 1
+  },
+  "tool_calls_total": 4,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.14756,
+  "num_turns": 5,
+  "duration_ms": 38577,
+  "duration_api_ms": 44297,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 45989,
+  "output_tokens": 1428,
+  "cache_read_tokens": 35328,
+  "final_message": "`RESULTS.json` is written. Summary of what was computed:\n\n**Approach:** Each non-EUR transaction was converted at the fixed rates (USD \u00d7 0.92, GBP \u00d7 1.17), rounded to the cent individually (half-up), then aggregated \u2014 using `Decimal` arithmetic throughout to avoid float drift.\n\n**Results:**\n\n| Metric | Value |\n|---|---|\n| Q2 total | \u20ac44,023.75 (120 transactions) |\n| Monthly totals | Apr \u20ac13,316.21 \u2192 May \u20ac14,623.21 \u2192 Jun \u20ac16,084.33 |\n| MoM May | **+9.8%** |\n| MoM Jun | **+10.0%** |\n| Largest txn | \u20ac1,312.26 (T0062, 1,121.59 GBP hardware cables) |\n| Mean txn | \u20ac366.86 |\n| Travel share | 27.6% of Q2 spend |\n| Over budget | **software** (\u20ac9,702.03 vs \u20ac8,200), **travel** (\u20ac12,137.98 vs \u20ac10,300) |\n\nAll other categories (meals, office, hardware, training) came in under their quarterly budgets.",
+  "total_cost_usd_cli": 0.283309,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T04:52:36Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 20 insertions(+)",
+  "grade_pass": true,
+  "score": "2/2"
+}

@@ -5,6 +5,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import served_model
+
 
 def computed_cost(out: Path, model: str) -> tuple[float, str] | None:
     """Recompute cost from per-request transcript usage and env/prices.json.
@@ -127,6 +129,16 @@ def main(out_dir: str, model: str) -> None:
     metrics["tool_calls"] = dict(tool_calls)
     metrics["tool_calls_total"] = sum(tool_calls.values())
 
+    # Which model actually served this run, read from response tags in the
+    # transcript -- NOT from the requested label. An endpoint can silently
+    # serve a different version (Z.ai serves GLM-5.3 for a GLM-5.2 request),
+    # and a run with >1 served model leaked to a side channel. summarize.py
+    # refuses to aggregate a cell whose served model disagrees with the arm.
+    sm = served_model.summarize(tpath)
+    metrics["served_models"] = sm["served_models"]
+    metrics["served_model"] = sm["served_model"]
+    metrics["served_model_leak"] = sm["served_model_leak"]
+
     rpath = out / "result.json"
     if rpath.exists() and rpath.read_text().strip():
         r = json.loads(rpath.read_text())
@@ -136,7 +148,18 @@ def main(out_dir: str, model: str) -> None:
         metrics["duration_api_ms"] = r.get("duration_api_ms")
         metrics["is_error"] = r.get("is_error")
         metrics["permission_denials"] = len(r.get("permission_denials") or [])
-        mu = (r.get("modelUsage") or {}).get(model) or {}
+        # Look up usage by the requested label first; if the endpoint served a
+        # different model id (silent substitution), the label is not a key in
+        # modelUsage and the counts would silently go None. Fall back to the
+        # served model id so token metrics survive a substitution -- while
+        # served_model_leak / summarize.py still flag that it happened.
+        model_usage = r.get("modelUsage") or {}
+        mu = model_usage.get(model)
+        if mu is None and metrics.get("served_model"):
+            mu = model_usage.get(metrics["served_model"])
+        if mu is None and len(model_usage) == 1:
+            mu = next(iter(model_usage.values()))
+        mu = mu or {}
         metrics["input_tokens"] = mu.get("inputTokens")
         metrics["output_tokens"] = mu.get("outputTokens")
         metrics["cache_read_tokens"] = mu.get("cacheReadInputTokens")

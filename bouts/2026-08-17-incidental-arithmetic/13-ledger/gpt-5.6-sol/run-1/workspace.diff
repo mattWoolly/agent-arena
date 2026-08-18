@@ -1,0 +1,39 @@
+diff --git a/BRIEFING.md b/BRIEFING.md
+new file mode 100644
+index 0000000..eb0bafa
+--- /dev/null
++++ b/BRIEFING.md
+@@ -0,0 +1,33 @@
++# Q2 2026 spending briefing
++
++## Overview
++
++Q2 spend was €44,023.75, which was €1,276.25 under the overall €45,300.00 budget. Travel was the largest category at 27.6% of spend, followed by software, training, and hardware; together, those four categories accounted for 90.2% of the quarter. The overall underspend masks overruns in travel and software, offset by lower spending in the other four categories.
++
++## Key figures
++
++| Figure | Value |
++|---|---:|
++| Total Q2 spend | €44,023.75 |
++| Average transaction | €366.86 |
++| Largest transaction | €1,312.26 — hardware cables, 23 May |
++| May vs April | +9.8% |
++| June vs May | +10.0% |
++| Travel share | 27.6% |
++
++## Category breakdown
++
++| Category | Total (EUR) | Budget (EUR) | Status |
++|---|---:|---:|---|
++| Travel | €12,137.98 | €10,300.00 | over |
++| Software | €9,702.03 | €8,200.00 | over |
++| Hardware | €8,874.09 | €10,700.00 | under |
++| Meals | €2,541.26 | €3,100.00 | under |
++| Training | €8,992.94 | €10,800.00 | under |
++| Office | €1,775.45 | €2,200.00 | under |
++
++## Trends and risks
++
++Monthly spend rose throughout the quarter, from €13,316.21 in April to €14,623.21 in May and €16,084.33 in June. May's increase was led by hardware and training, while June's increase was driven by travel, which jumped from €1,211.46 in May to €7,065.32 in June. Travel finished €1,837.98 over budget, and software finished €1,502.03 over despite falling each month after April.
++
++Finance should review June travel—particularly the late-quarter taxis and car rentals—and confirm whether that run rate will continue into Q3. It should also examine the high April software spend and recurring licenses before renewal. The €1,312.26 hardware-cables transaction merits a reasonableness check as the quarter's largest purchase, even though hardware remained €1,825.91 under budget. Overall headroom should not obscure the two category overruns because it depends on €2,790.35 of combined underspend in hardware and training.

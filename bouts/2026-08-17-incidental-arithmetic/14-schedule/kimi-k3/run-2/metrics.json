@@ -1,0 +1,44 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 44.1,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Read": 2,
+    "Bash": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 4,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.09955,
+  "num_turns": 5,
+  "duration_ms": 43014,
+  "duration_api_ms": 46434,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 26444,
+  "output_tokens": 1603,
+  "cache_read_tokens": 75008,
+  "final_message": "`PLAN.md` is written. Summary of the computed schedule:\n\n- **Timeline**: 8 milestones, kickoff 2026-08-24 \u2192 launch ends 2026-11-02, each milestone starting the next business day after the prior ends.\n- **Holidays absorbed**: 2026-08-31 falls during *requirements*, 2026-09-25 during *build-core*, and 2026-10-12 during *build-integrations* \u2014 each extends its milestone by a day.\n- **Countdown**: 5 business days until kickoff (Aug 18\u201321 + the 24th itself); 48 total business days start-to-finish (equal to the sum of durations since the schedule is contiguous, verified by an independent day-by-day count).",
+  "total_cost_usd_cli": 0.209799,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:03:40Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

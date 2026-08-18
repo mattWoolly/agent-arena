@@ -1,0 +1,85 @@
+diff --git a/RESULTS.json b/RESULTS.json
+new file mode 100644
+index 0000000..282d690
+--- /dev/null
++++ b/RESULTS.json
+@@ -0,0 +1,20 @@
++{
++  "category_totals_eur": {
++    "hardware": 8874.09,
++    "meals": 2541.26,
++    "office": 1775.45,
++    "software": 9702.03,
++    "training": 8992.94,
++    "travel": 12137.98
++  },
++  "q2_total_eur": 44023.75,
++  "mom_may_pct": 9.8,
++  "mom_jun_pct": 10.0,
++  "largest_txn_eur": 1312.26,
++  "mean_txn_eur": 366.86,
++  "travel_share_pct": 27.6,
++  "over_budget": [
++    "software",
++    "travel"
++  ]
++}
+\ No newline at end of file
+diff --git a/compute.py b/compute.py
+new file mode 100644
+index 0000000..137d5ef
+--- /dev/null
++++ b/compute.py
+@@ -0,0 +1,52 @@
++import csv, json
++from decimal import Decimal, ROUND_HALF_UP
++from collections import defaultdict
++
++C = Decimal("0.01")
++P = Decimal("0.1")
++def money(x): return x.quantize(C, rounding=ROUND_HALF_UP)
++def pct(x):   return x.quantize(P, rounding=ROUND_HALF_UP)
++
++rates = {}
++with open("rates.csv") as f:
++    for r in csv.DictReader(f):
++        rates[r["currency"]] = Decimal(r["eur_per_unit"])
++
++budgets = {}
++for line in open("budget.yaml"):
++    s = line.split("#")[0].strip()
++    if ":" in s and not s.startswith("budgets"):
++        k, v = s.split(":", 1)
++        if v.strip():
++            budgets[k.strip()] = Decimal(v.strip())
++
++cat = defaultdict(lambda: Decimal(0))
++mon = defaultdict(lambda: Decimal(0))
++vals = []
++with open("transactions.csv") as f:
++    for r in csv.DictReader(f):
++        eur = money(Decimal(r["amount"]) * rates[r["currency"]])   # round each txn to the cent
++        vals.append(eur)
++        cat[r["category"]] += eur
++        mon[r["date"][:7]] += eur
++
++total = sum(vals)
++apr, may, jun = mon["2026-04"], mon["2026-05"], mon["2026-06"]
++
++out = {
++  "category_totals_eur": {k: float(money(v)) for k, v in sorted(cat.items())},
++  "q2_total_eur": float(money(total)),
++  "mom_may_pct": float(pct((may - apr) / apr * 100)),
++  "mom_jun_pct": float(pct((jun - may) / may * 100)),
++  "largest_txn_eur": float(money(max(vals))),
++  "mean_txn_eur": float(money(total / len(vals))),
++  "travel_share_pct": float(pct(cat["travel"] / total * 100)),
++  "over_budget": sorted(k for k, v in cat.items() if money(v) > budgets[k]),
++}
++json.dump(out, open("RESULTS.json", "w"), indent=2)
++json.dump(out, __import__("sys").stdout, indent=2)
++print()
++print("--- audit ---")
++print("n txns:", len(vals), "| monthly:", {k: str(money(v)) for k, v in sorted(mon.items())})
++print("sum of category totals:", money(sum(cat.values())), "== q2 total:", money(total))
++for k in sorted(cat): print(f"  {k:9} {money(cat[k]):>9} vs budget {budgets[k]:>7}  {'OVER' if money(cat[k])>budgets[k] else ''}")

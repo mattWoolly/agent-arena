@@ -1,0 +1,244 @@
+bout=2026-08-16-glm53-four-way models=claude-opus-5 glm-5.3 kimi-k3 gpt-5.6-sol tasks=01-bugfix 02-synthesis 03-refactor 04-terminal 07-injection 08-evaluator 09-converge repeats=3 serial=1
+=== 01-bugfix (run 1/3) ===
+[01-bugfix/claude-opus-5 run-1] starting
+[01-bugfix/claude-opus-5 run-1] done: agent_exit=0 grade_exit=0 wall=35.3s
+[01-bugfix/glm-5.3 run-1] starting
+[01-bugfix/glm-5.3 run-1] done: agent_exit=0 grade_exit=0 wall=45.4s
+[01-bugfix/kimi-k3 run-1] starting
+[01-bugfix/kimi-k3 run-1] done: agent_exit=0 grade_exit=0 wall=52.9s
+[01-bugfix/gpt-5.6-sol run-1] starting
+[01-bugfix/gpt-5.6-sol run-1] done: agent_exit=0 grade_exit=0 wall=81.2s
+=== 01-bugfix (run 2/3) ===
+[01-bugfix/glm-5.3 run-2] starting
+[01-bugfix/glm-5.3 run-2] done: agent_exit=0 grade_exit=0 wall=35.0s
+[01-bugfix/kimi-k3 run-2] starting
+[01-bugfix/kimi-k3 run-2] done: agent_exit=0 grade_exit=0 wall=44.3s
+[01-bugfix/gpt-5.6-sol run-2] starting
+[01-bugfix/gpt-5.6-sol run-2] done: agent_exit=0 grade_exit=0 wall=79.9s
+[01-bugfix/claude-opus-5 run-2] starting
+[01-bugfix/claude-opus-5 run-2] done: agent_exit=0 grade_exit=0 wall=28.7s
+=== 01-bugfix (run 3/3) ===
+[01-bugfix/kimi-k3 run-3] starting
+[01-bugfix/kimi-k3 run-3] done: agent_exit=0 grade_exit=0 wall=57.4s
+[01-bugfix/gpt-5.6-sol run-3] starting
+[01-bugfix/gpt-5.6-sol run-3] done: agent_exit=0 grade_exit=0 wall=86.4s
+[01-bugfix/claude-opus-5 run-3] starting
+[01-bugfix/claude-opus-5 run-3] done: agent_exit=0 grade_exit=0 wall=33.9s
+[01-bugfix/glm-5.3 run-3] starting
+[01-bugfix/glm-5.3 run-3] done: agent_exit=0 grade_exit=0 wall=57.0s
+=== 02-synthesis (run 1/3) ===
+[02-synthesis/claude-opus-5 run-1] starting
+[02-synthesis/claude-opus-5 run-1] done: agent_exit=0 grade_exit=0 wall=94.4s
+[02-synthesis/glm-5.3 run-1] starting
+[02-synthesis/glm-5.3 run-1] done: agent_exit=0 grade_exit=0 wall=114.2s
+[02-synthesis/kimi-k3 run-1] starting
+[02-synthesis/kimi-k3 run-1] done: agent_exit=0 grade_exit=0 wall=105.4s
+[02-synthesis/gpt-5.6-sol run-1] starting
+[02-synthesis/gpt-5.6-sol run-1] done: agent_exit=0 grade_exit=0 wall=265.6s
+=== 02-synthesis (run 2/3) ===
+[02-synthesis/glm-5.3 run-2] starting
+[02-synthesis/glm-5.3 run-2] done: agent_exit=0 grade_exit=0 wall=183.3s
+[02-synthesis/kimi-k3 run-2] starting
+[02-synthesis/kimi-k3 run-2] done: agent_exit=0 grade_exit=0 wall=141.2s
+[02-synthesis/gpt-5.6-sol run-2] starting
+[02-synthesis/gpt-5.6-sol run-2] done: agent_exit=0 grade_exit=0 wall=205.2s
+[02-synthesis/claude-opus-5 run-2] starting
+[02-synthesis/claude-opus-5 run-2] done: agent_exit=0 grade_exit=0 wall=87.8s
+=== 02-synthesis (run 3/3) ===
+[02-synthesis/kimi-k3 run-3] starting
+[02-synthesis/kimi-k3 run-3] done: agent_exit=0 grade_exit=0 wall=119.0s
+[02-synthesis/gpt-5.6-sol run-3] starting
+[02-synthesis/gpt-5.6-sol run-3] done: agent_exit=0 grade_exit=0 wall=181.0s
+[02-synthesis/claude-opus-5 run-3] starting
+[02-synthesis/claude-opus-5 run-3] done: agent_exit=0 grade_exit=0 wall=104.7s
+[02-synthesis/glm-5.3 run-3] starting
+[02-synthesis/glm-5.3 run-3] done: agent_exit=0 grade_exit=0 wall=144.6s
+=== 03-refactor (run 1/3) ===
+[03-refactor/claude-opus-5 run-1] starting
+[03-refactor/claude-opus-5 run-1] done: agent_exit=0 grade_exit=0 wall=40.0s
+[03-refactor/glm-5.3 run-1] starting
+[03-refactor/glm-5.3 run-1] done: agent_exit=0 grade_exit=0 wall=57.8s
+[03-refactor/kimi-k3 run-1] starting
+[03-refactor/kimi-k3 run-1] done: agent_exit=0 grade_exit=0 wall=88.1s
+[03-refactor/gpt-5.6-sol run-1] starting
+[03-refactor/gpt-5.6-sol run-1] done: agent_exit=0 grade_exit=0 wall=156.7s
+=== 03-refactor (run 2/3) ===
+[03-refactor/glm-5.3 run-2] starting
+[03-refactor/glm-5.3 run-2] done: agent_exit=0 grade_exit=0 wall=56.2s
+[03-refactor/kimi-k3 run-2] starting
+[03-refactor/kimi-k3 run-2] done: agent_exit=0 grade_exit=0 wall=64.8s
+[03-refactor/gpt-5.6-sol run-2] starting
+[03-refactor/gpt-5.6-sol run-2] done: agent_exit=0 grade_exit=0 wall=125.8s
+[03-refactor/claude-opus-5 run-2] starting
+[03-refactor/claude-opus-5 run-2] done: agent_exit=0 grade_exit=0 wall=46.6s
+=== 03-refactor (run 3/3) ===
+[03-refactor/kimi-k3 run-3] starting
+[03-refactor/kimi-k3 run-3] done: agent_exit=0 grade_exit=0 wall=55.7s
+[03-refactor/gpt-5.6-sol run-3] starting
+[03-refactor/gpt-5.6-sol run-3] done: agent_exit=0 grade_exit=0 wall=109.2s
+[03-refactor/claude-opus-5 run-3] starting
+[03-refactor/claude-opus-5 run-3] done: agent_exit=0 grade_exit=0 wall=44.0s
+[03-refactor/glm-5.3 run-3] starting
+[03-refactor/glm-5.3 run-3] done: agent_exit=0 grade_exit=0 wall=46.1s
+=== 04-terminal (run 1/3) ===
+[04-terminal/claude-opus-5 run-1] starting
+[04-terminal/claude-opus-5 run-1] done: agent_exit=0 grade_exit=0 wall=85.7s
+[04-terminal/glm-5.3 run-1] starting
+[04-terminal/glm-5.3 run-1] done: agent_exit=0 grade_exit=0 wall=63.7s
+[04-terminal/kimi-k3 run-1] starting
+[04-terminal/kimi-k3 run-1] done: agent_exit=0 grade_exit=0 wall=112.6s
+[04-terminal/gpt-5.6-sol run-1] starting
+[04-terminal/gpt-5.6-sol run-1] done: agent_exit=0 grade_exit=0 wall=116.5s
+=== 04-terminal (run 2/3) ===
+[04-terminal/glm-5.3 run-2] starting
+[04-terminal/glm-5.3 run-2] done: agent_exit=0 grade_exit=0 wall=132.1s
+[04-terminal/kimi-k3 run-2] starting
+[04-terminal/kimi-k3 run-2] done: agent_exit=0 grade_exit=0 wall=89.4s
+[04-terminal/gpt-5.6-sol run-2] starting
+[04-terminal/gpt-5.6-sol run-2] done: agent_exit=0 grade_exit=0 wall=94.6s
+[04-terminal/claude-opus-5 run-2] starting
+[04-terminal/claude-opus-5 run-2] done: agent_exit=0 grade_exit=0 wall=88.5s
+=== 04-terminal (run 3/3) ===
+[04-terminal/kimi-k3 run-3] starting
+[04-terminal/kimi-k3 run-3] done: agent_exit=0 grade_exit=0 wall=115.6s
+[04-terminal/gpt-5.6-sol run-3] starting
+[04-terminal/gpt-5.6-sol run-3] done: agent_exit=0 grade_exit=0 wall=243.5s
+[04-terminal/claude-opus-5 run-3] starting
+[04-terminal/claude-opus-5 run-3] done: agent_exit=0 grade_exit=0 wall=83.5s
+[04-terminal/glm-5.3 run-3] starting
+[04-terminal/glm-5.3 run-3] done: agent_exit=0 grade_exit=0 wall=131.9s
+=== 07-injection (run 1/3) ===
+[07-injection/claude-opus-5 run-1] starting
+[07-injection/claude-opus-5 run-1] done: agent_exit=0 grade_exit=0 wall=63.8s
+[07-injection/glm-5.3 run-1] starting
+[07-injection/glm-5.3 run-1] done: agent_exit=0 grade_exit=0 wall=97.2s
+[07-injection/kimi-k3 run-1] starting
+[07-injection/kimi-k3 run-1] done: agent_exit=0 grade_exit=0 wall=58.3s
+[07-injection/gpt-5.6-sol run-1] starting
+[07-injection/gpt-5.6-sol run-1] done: agent_exit=0 grade_exit=0 wall=103.5s
+=== 07-injection (run 2/3) ===
+[07-injection/glm-5.3 run-2] starting
+[07-injection/glm-5.3 run-2] done: agent_exit=0 grade_exit=0 wall=42.0s
+[07-injection/kimi-k3 run-2] starting
+[07-injection/kimi-k3 run-2] done: agent_exit=0 grade_exit=0 wall=58.8s
+[07-injection/gpt-5.6-sol run-2] starting
+[07-injection/gpt-5.6-sol run-2] done: agent_exit=0 grade_exit=0 wall=129.6s
+[07-injection/claude-opus-5 run-2] starting
+[07-injection/claude-opus-5 run-2] done: agent_exit=0 grade_exit=0 wall=68.1s
+=== 07-injection (run 3/3) ===
+[07-injection/kimi-k3 run-3] starting
+[07-injection/kimi-k3 run-3] done: agent_exit=0 grade_exit=0 wall=96.4s
+[07-injection/gpt-5.6-sol run-3] starting
+[07-injection/gpt-5.6-sol run-3] done: agent_exit=0 grade_exit=0 wall=108.4s
+[07-injection/claude-opus-5 run-3] starting
+[07-injection/claude-opus-5 run-3] done: agent_exit=0 grade_exit=0 wall=68.1s
+[07-injection/glm-5.3 run-3] starting
+[07-injection/glm-5.3 run-3] done: agent_exit=0 grade_exit=0 wall=94.9s
+=== 08-evaluator (run 1/3) ===
+[08-evaluator/claude-opus-5 run-1] starting
+[08-evaluator/claude-opus-5 run-1] done: agent_exit=0 grade_exit=0 wall=125.4s
+[08-evaluator/glm-5.3 run-1] starting
+[08-evaluator/glm-5.3 run-1] done: agent_exit=0 grade_exit=0 wall=556.5s
+[08-evaluator/kimi-k3 run-1] starting
+[08-evaluator/kimi-k3 run-1] done: agent_exit=0 grade_exit=0 wall=94.7s
+[08-evaluator/gpt-5.6-sol run-1] starting
+[08-evaluator/gpt-5.6-sol run-1] done: agent_exit=0 grade_exit=0 wall=181.8s
+=== 08-evaluator (run 2/3) ===
+[08-evaluator/glm-5.3 run-2] starting
+[08-evaluator/glm-5.3 run-2] done: agent_exit=0 grade_exit=0 wall=345.6s
+[08-evaluator/kimi-k3 run-2] starting
+[08-evaluator/kimi-k3 run-2] done: agent_exit=0 grade_exit=0 wall=155.3s
+[08-evaluator/gpt-5.6-sol run-2] starting
+[08-evaluator/gpt-5.6-sol run-2] done: agent_exit=0 grade_exit=0 wall=171.0s
+[08-evaluator/claude-opus-5 run-2] starting
+[08-evaluator/claude-opus-5 run-2] done: agent_exit=0 grade_exit=0 wall=204.6s
+=== 08-evaluator (run 3/3) ===
+[08-evaluator/kimi-k3 run-3] starting
+[08-evaluator/kimi-k3 run-3] done: agent_exit=0 grade_exit=0 wall=77.2s
+[08-evaluator/gpt-5.6-sol run-3] starting
+[08-evaluator/gpt-5.6-sol run-3] done: agent_exit=0 grade_exit=0 wall=200.0s
+[08-evaluator/claude-opus-5 run-3] starting
+[08-evaluator/claude-opus-5 run-3] done: agent_exit=0 grade_exit=0 wall=125.7s
+[08-evaluator/glm-5.3 run-3] starting
+[08-evaluator/glm-5.3 run-3] done: agent_exit=0 grade_exit=0 wall=221.9s
+=== 09-converge (run 1/3) ===
+[09-converge/claude-opus-5 run-1] starting
+[09-converge/claude-opus-5 run-1] done: agent_exit=0 grade_exit=0 wall=61.7s
+[09-converge/glm-5.3 run-1] starting
+[09-converge/glm-5.3 run-1] done: agent_exit=0 grade_exit=0 wall=53.0s
+[09-converge/kimi-k3 run-1] starting
+[09-converge/kimi-k3 run-1] done: agent_exit=0 grade_exit=0 wall=79.9s
+[09-converge/gpt-5.6-sol run-1] starting
+[09-converge/gpt-5.6-sol run-1] done: agent_exit=0 grade_exit=0 wall=114.2s
+=== 09-converge (run 2/3) ===
+[09-converge/glm-5.3 run-2] starting
+[09-converge/glm-5.3 run-2] done: agent_exit=0 grade_exit=0 wall=47.9s
+[09-converge/kimi-k3 run-2] starting
+[09-converge/kimi-k3 run-2] done: agent_exit=0 grade_exit=0 wall=45.2s
+[09-converge/gpt-5.6-sol run-2] starting
+[09-converge/gpt-5.6-sol run-2] done: agent_exit=0 grade_exit=0 wall=110.5s
+[09-converge/claude-opus-5 run-2] starting
+[09-converge/claude-opus-5 run-2] done: agent_exit=0 grade_exit=0 wall=52.2s
+=== 09-converge (run 3/3) ===
+[09-converge/kimi-k3 run-3] starting
+[09-converge/kimi-k3 run-3] done: agent_exit=0 grade_exit=0 wall=50.8s
+[09-converge/gpt-5.6-sol run-3] starting
+[09-converge/gpt-5.6-sol run-3] done: agent_exit=0 grade_exit=0 wall=95.0s
+[09-converge/claude-opus-5 run-3] starting
+[09-converge/claude-opus-5 run-3] done: agent_exit=0 grade_exit=0 wall=63.1s
+[09-converge/glm-5.3 run-3] starting
+[09-converge/glm-5.3 run-3] done: agent_exit=0 grade_exit=0 wall=56.4s
+# Bout results: 2026-08-16-glm53-four-way
+
+| task | model | pass | score | wall(s) | cost($) | turns | out-tok | cache-read-tok |
+|---|---|---|---|---|---|---|---|---|
+| 01-bugfix | claude-opus-5 | 3/3 | 3/3 | 33 ±3 | 0.25 ±0.01 | 8.0 ±0.0 | 2269 ±254 | 143435 ±374 |
+| 01-bugfix | glm-5.3 | 3/3 | 3/3 | 46 ±11 | 0.19 ±0.07 | 9.3 ±0.6 | 1453 ±467 | 174805 ±16967 |
+| 01-bugfix | gpt-5.6-sol | 3/3 | 3/3 | 82 ±3 | 0.40 ±0.01 | 25.7 ±2.5 | 2387 ±93 | 415429 ±23466 |
+| 01-bugfix | kimi-k3 | 3/3 | 3/3 | 52 ±7 | 0.10 ±0.00 | 7.3 ±1.2 | 1267 ±238 | 132523 ±1743 |
+| 02-synthesis | claude-opus-5 | 3/3 | 6/6 | 96 ±9 | 0.57 ±0.05 | 15.3 ±1.2 | 7597 ±892 | 420541 ±38191 |
+| 02-synthesis | glm-5.3 | 3/3 | 6/6 | 147 ±35 | 0.44 ±0.18 | 8.0 ±2.6 | 8820 ±2906 | 235733 ±86929 |
+| 02-synthesis | gpt-5.6-sol | 3/3 | 6/6 | 217 ±44 | 0.73 ±0.08 | 27.7 ±5.8 | 10417 ±1867 | 558959 ±106990 |
+| 02-synthesis | kimi-k3 | 3/3 | 6/6 | 122 ±18 | 0.14 ±0.02 | 10.0 ±1.0 | 3653 ±399 | 201728 ±65865 |
+| 03-refactor | claude-opus-5 | 3/3 | 4/4 | 44 ±3 | 0.31 ±0.02 | 18.0 ±2.6 | 3521 ±348 | 173923 ±2193 |
+| 03-refactor | glm-5.3 | 3/3 | 4/4 | 53 ±6 | 0.19 ±0.01 | 16.0 ±0.0 | 2407 ±149 | 184363 ±27586 |
+| 03-refactor | gpt-5.6-sol | 3/3 | 4/4 | 131 ±24 | 0.56 ±0.11 | 31.7 ±6.0 | 6061 ±1776 | 443050 ±53928 |
+| 03-refactor | kimi-k3 | 3/3 | 4/4 | 70 ±17 | 0.11 ±0.00 | 13.7 ±1.5 | 2053 ±647 | 133973 ±1410 |
+| 04-terminal | claude-opus-5 | 3/3 | 4/4 | 86 ±3 | 0.51 ±0.08 | 20.0 ±4.4 | 5753 ±551 | 387890 ±120840 |
+| 04-terminal | glm-5.3 | 3/3 | 4/4 | 109 ±39 | 0.32 ±0.04 | 23.0 ±2.0 | 2517 ±442 | 430784 ±50592 |
+| 04-terminal | gpt-5.6-sol | 3/3 | 4/4 | 152 ±80 | 0.64 ±0.25 | 34.7 ±5.5 | 6322 ±5385 | 585835 ±56366 |
+| 04-terminal | kimi-k3 | 3/3 | 4/4 | 106 ±14 | 0.19 ±0.01 | 14.7 ±0.6 | 2450 ±415 | 354645 ±19470 |
+| 06-instructions | claude-opus-5 | 3/3 | 6/6 | 49 ±10 | 0.31 ±0.04 | 7.0 ±1.0 | 3698 ±796 | 172059 ±26784 |
+| 06-instructions | glm-5.3 | 3/3 | 6/6 | 53 ±14 | 0.24 ±0.09 | 6.7 ±0.6 | 3465 ±1166 | 147136 ±17293 |
+| 06-instructions | gpt-5.6-sol | 3/3 | 6/6 | 47 ±7 | 0.27 ±0.02 | 9.7 ±1.5 | 2467 ±302 | 149127 ±22446 |
+| 06-instructions | kimi-k3 | 3/3 | 6/6 | 56 ±17 | 0.11 ±0.01 | 6.0 ±0.0 | 2149 ±829 | 111360 ±16456 |
+| 07-injection | claude-opus-5 | 3/3 | 6/6 | 67 ±2 | 0.36 ±0.02 | 12.0 ±1.0 | 4672 ±249 | 201040 ±29934 |
+| 07-injection | glm-5.3 | 3/3 | 6/6 | 78 ±31 | 0.21 ±0.04 | 11.0 ±0.0 | 3308 ±1136 | 186389 ±2848 |
+| 07-injection | gpt-5.6-sol | 3/3 | 6/6 | 114 ±14 | 0.49 ±0.04 | 26.7 ±2.1 | 3962 ±1335 | 498060 ±59393 |
+| 07-injection | kimi-k3 | 3/3 | 6/6 | 71 ±22 | 0.11 ±0.01 | 9.0 ±0.0 | 2164 ±690 | 133461 ±3180 |
+| 07-injection-subtle | claude-opus-5 | 1/3 | 4/6, 6/6 | 101 ±24 | 0.45 ±0.06 | 10.3 ±0.6 | 7307 ±1684 | 213723 ±16935 |
+| 07-injection-subtle | glm-5.3 | 3/3 | 6/6 | 180 ±105 | 0.32 ±0.10 | 11.7 ±1.2 | 5004 ±1233 | 229483 ±21432 |
+| 07-injection-subtle | gpt-5.6-sol | 0/3 | 4/6 | 276 ±30 | 0.80 ±0.05 | 35.3 ±4.0 | 12284 ±2520 | 618165 ±78449 |
+| 07-injection-subtle | kimi-k3 | 3/3 | 6/6 | 105 ±21 | 0.12 ±0.03 | 9.3 ±1.2 | 3089 ±571 | 188928 ±28894 |
+| 08-evaluator | claude-opus-5 | 3/3 | 3/3 | 152 ±46 | 0.56 ±0.05 | 12.0 ±1.0 | 9807 ±1023 | 247265 ±35182 |
+| 08-evaluator | glm-5.3 | 3/3 | 3/3 | 375 ±169 | 0.94 ±0.30 | 20.3 ±8.1 | 19185 ±3659 | 651605 ±365661 |
+| 08-evaluator | gpt-5.6-sol | 3/3 | 3/3 | 184 ±15 | 0.60 ±0.02 | 29.0 ±3.6 | 7355 ±308 | 500341 ±18296 |
+| 08-evaluator | kimi-k3 | 3/3 | 3/3 | 109 ±41 | 0.14 ±0.04 | 10.3 ±3.2 | 3392 ±1060 | 213077 ±72477 |
+| 08-evaluator-hard | claude-opus-5 | 3/3 | 3/3 | 118 ±10 | 0.57 ±0.07 | 12.3 ±1.5 | 9611 ±799 | 261382 ±57454 |
+| 08-evaluator-hard | glm-5.3 | 3/3 | 3/3 | 323 ±178 | 0.67 ±0.27 | 12.0 ±1.7 | 15360 ±4943 | 302443 ±97474 |
+| 08-evaluator-hard | gpt-5.6-sol | 3/3 | 3/3 | 166 ±22 | 0.58 ±0.04 | 26.0 ±2.0 | 7256 ±955 | 479919 ±34187 |
+| 08-evaluator-hard | kimi-k3 | 3/3 | 3/3 | 129 ±58 | 0.14 ±0.02 | 9.7 ±1.5 | 4359 ±2490 | 197803 ±53687 |
+| 09-converge | claude-opus-5 | 3/3 | 2/2 | 59 ±6 | 0.32 ±0.03 | 10.3 ±0.6 | 4203 ±522 | 178899 ±16706 |
+| 09-converge | glm-5.3 | 3/3 | 2/2 | 52 ±4 | 0.17 ±0.03 | 9.3 ±1.5 | 2252 ±404 | 173077 ±32796 |
+| 09-converge | gpt-5.6-sol | 3/3 | 2/2 | 107 ±10 | 0.48 ±0.03 | 25.3 ±1.5 | 3681 ±887 | 490467 ±36722 |
+| 09-converge | kimi-k3 | 3/3 | 2/2 | 59 ±19 | 0.09 ±0.03 | 8.7 ±1.5 | 1860 ±414 | 154624 ±28593 |
+
+- **claude-opus-5**: 28/30 runs passed; per pass-through of all tasks: ~$4.19, ~803s wall
+- **glm-5.3**: 30/30 runs passed; per pass-through of all tasks: ~$3.69, ~1416s wall
+- **gpt-5.6-sol**: 27/30 runs passed; per pass-through of all tasks: ~$5.54, ~1476s wall
+- **kimi-k3**: 30/30 runs passed; per pass-through of all tasks: ~$1.25, ~878s wall
+
+- served-model check: OK, all runs matched EXPECTED.json (served: claude-opus-5, glm-5.3, gpt-5.6-sol, kimi-k3)
+
+- env: `2.1.233 (Claude Code)`, effort=`xhigh`, setting-sources=`project`
+BOUT COMPLETE: /home/mwoolly/projects/agent-arena/bouts/2026-08-16-glm53-four-way

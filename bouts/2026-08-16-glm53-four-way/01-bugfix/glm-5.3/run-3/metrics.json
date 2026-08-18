@@ -1,0 +1,43 @@
+{
+  "model": "glm-5.3",
+  "wall_seconds": 57.0,
+  "agent_exit": 0,
+  "assistant_messages": 17,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 3,
+    "Edit": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 9,
+  "served_models": [
+    "glm-5.3"
+  ],
+  "served_model": "glm-5.3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.17494099999999999,
+  "num_turns": 10,
+  "duration_ms": 55986,
+  "duration_api_ms": 59227,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 6454,
+  "output_tokens": 1991,
+  "cache_read_tokens": 185792,
+  "final_message": "Done \u2014 `python3 -m pytest -q` reports **6 passed**.\n\nBoth failures were in `lrucache/cache.py` and each was a one-line fix:\n\n1. **`get` didn't refresh recency** (`cache.py:30`) \u2014 a read hit returned the value but never called `move_to_end`, so the key just read stayed at the LRU end and got evicted by the next `put`. This broke `test_get_refreshes_recency`: after `get(\"a\")`, `put(\"c\")` evicted `\"a\"` instead of `\"b\"`.\n\n2. **`put` on an existing key evicted another entry** (`cache.py:33`) \u2014 the capacity check ran before the code knew whether the key was already present. Updating a key in a full cache can't grow it, but the code still popped the LRU entry first, losing `\"x\"` in `test_updating_existing_key_does_not_evict_others`. Guarded the eviction with `key not in self._data`.\n\nThe existing `move_to_end` in `put` is correct and was worth keeping: reassigning an existing key in an `OrderedDict` preserves its old position, so that call is what refreshes recency on update. Nothing under `tests/` was touched, and no commits were made.\n\n`SOLUTION.md` is written with the same two root causes.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T03:31:46Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 19 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

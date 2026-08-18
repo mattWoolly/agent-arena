@@ -1,0 +1,43 @@
+{
+  "model": "glm-5.3",
+  "wall_seconds": 46.1,
+  "agent_exit": 0,
+  "assistant_messages": 23,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 3
+  },
+  "tool_calls_total": 15,
+  "served_models": [
+    "glm-5.3"
+  ],
+  "served_model": "glm-5.3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.18018699999999999,
+  "num_turns": 16,
+  "duration_ms": 45137,
+  "duration_api_ms": 50263,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 6367,
+  "output_tokens": 2240,
+  "cache_read_tokens": 184704,
+  "final_message": "Done. All 4 tests pass unmodified, `tests/` is untouched, and nothing was committed.\n\n**`reportgen/config.py`** \u2014 replaced the `DEFAULTS` dict with a frozen dataclass and rewrote `load_config`:\n\n```python\n@dataclass(frozen=True)\nclass Config:\n    title: str = \"Report\"\n    output_format: str = \"text\"  # \"text\" or \"markdown\"\n    max_rows: int = 10\n    include_summary: bool = True\n\n\ndef load_config(path):\n    with open(path) as f:\n        raw = json.load(f)\n    known = {f.name for f in fields(Config)}\n    unknown = sorted(set(raw) - known)\n    if unknown:\n        raise ValueError(f\"unknown config setting(s): {', '.join(unknown)}\")\n    return Config(**raw)\n```\n\nThe known-key set is derived from `fields(Config)`, so the field list is the single source of truth \u2014 adding a field later automatically makes it loadable and validated. Constructing with `Config(**raw)` both applies the overrides and supplies defaults for absent keys, matching the old `dict(DEFAULTS)` + `update(raw)` behavior.\n\n**`reportgen/formatter.py`** and **`reportgen/loader.py`** \u2014 mechanical conversion to attribute access (`config.title`, `config.include_summary`, `config.max_rows`). `reportgen/main.py` and `__init__.py` only pass the config through, so they needed no changes.\n\nTwo things worth flagging:\n\n- **The old `DEFAULTS` module-level dict is gone.** Nothing in the package or tests imported it, so nothing broke \u2014 but if any external consumer was doing `from reportgen.config import DEFAULTS`, that would now fail. Say the word if you need it kept as an alias.\n- **Validation is name-only, not type-checked.** `{\"max_rows\": \"ten\"}` passes `load_config` and only fails later, at the slice in `loader.py` (`rows[: \"ten\"]` \u2192 `TypeError`). The dataclass annotations aren't enforced at runtime. That's within the letter of the requirements, but if you want malformed values rejected at load time, that's a follow-up.\n\nA `grep` for `config[`/`cfg[` across `reportgen/` comes back clean, confirming requirement 3.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T04:16:25Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 21 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

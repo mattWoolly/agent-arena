@@ -1,0 +1,48 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 258.8,
+  "agent_exit": 0,
+  "assistant_messages": 66,
+  "tool_calls": {
+    "TaskCreate": 5,
+    "TaskUpdate": 10,
+    "Read": 5,
+    "Bash": 8,
+    "Edit": 4,
+    "Write": 1,
+    "TaskGet": 1
+  },
+  "tool_calls_total": 34,
+  "served_models": [
+    "gpt-5.6-sol"
+  ],
+  "served_model": "gpt-5.6-sol",
+  "served_model_leak": false,
+  "total_cost_usd": 0.85989,
+  "num_turns": 35,
+  "duration_ms": 257957,
+  "duration_api_ms": 260185,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 706315,
+  "output_tokens": 13122,
+  "cache_read_tokens": 681187,
+  "final_message": "Implemented `redact` in `redactor/redactor.py` and added `SOLUTION.md`.\n\nKey behavior:\n- Redacts case-insensitive `key-`, `sk-`, and `tok_` API keys.\n- Enforces the minimum 12-character ASCII alphanumeric suffix and word boundaries.\n- Preserves whitespace, punctuation, and line endings.\n- Passes `DEBUG_` logger lines through unchanged.\n\nVerification:\n\n```text\n3 passed in 0.01s\n```\n\nAlso checked additional boundary, multiline, case-insensitivity, and debug-line scenarios. No tests were modified and no commit was created.",
+  "total_cost_usd_cli": 3.8596250000000007,
+  "cost_source": "proxy-usage-log (33 requests)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T15:52:31Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 25 insertions(+), 2 deletions(-)",
+  "grade_pass": false,
+  "score": "4/6"
+}

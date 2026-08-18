@@ -1,0 +1,45 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..1aefc25
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,39 @@
++# Quarterly operations report — May–July 2026
++
++## Summary
++
++The quarter closed at €1,233,225 in revenue against €467,640 in costs, for a
++net result of €765,585 and a 62.1% margin. Revenue grew 4.6% in June before
++falling back 9.6% in July, leaving the quarter dependent on a strong start:
++May and June together carried the result, while July came in below every
++other month. Costs were essentially flat from June onward (€158,240 vs
++€158,280), so the July revenue decline flowed almost entirely to the bottom
++line. Customer acquisition weakened through the quarter — new signings fell
++from 86 in May to 63 in July while churn rose from 17 to 31 — though the
++quarter still added 153 net new customers. Support held up well throughout,
++closing 95.5% of the 1,001 tickets opened.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | −9.6% |
++
++## Notes
++
++Two items worth leadership attention. First, the June report is internally
++inconsistent: its cost line items sum to €158,540, €300 above the stated
++total of €158,240. This report uses the stated totals; the discrepancy is
++small enough that the margin is unaffected at one decimal place (62.1% either
++way), but finance should confirm which figure is correct. Second, the
++combination of falling signings and rising churn across all three months,
++alongside the 9.6% July revenue decline, suggests the July dip is a trend
++rather than a one-off — cloud costs also climbed each month (€21,310 →
++€23,940 → €24,760), compressing an otherwise healthy margin.

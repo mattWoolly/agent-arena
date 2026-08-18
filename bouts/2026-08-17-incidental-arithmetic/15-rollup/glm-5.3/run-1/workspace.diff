@@ -1,0 +1,49 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..7690a15
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,43 @@
++# Quarterly operations report — May–July 2026
++
++## Summary
++
++The quarter closed at €1,233,225 in revenue against €467,640 in costs, for a net
++result of €765,585 and a 62.1% margin. The quarter splits into two halves: May and
++June grew steadily — June revenue was up 4.6% on May — before July fell back 9.6%
++to €389,640, the lowest month of the quarter. Costs stayed flat through the period
++(€151,120 rising to €158,240 in June and €158,280 in July), so the July revenue dip
++flowed almost entirely to the bottom line. Customer momentum softened on both ends
++of the funnel: signings declined each month (86, 74, 63) while churn nearly doubled
++(17, 22, 31), cutting monthly net adds from 69 in May to 32 in July. Support held
++steady throughout, closing 95.5% of the 1,001 tickets opened over the quarter.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++- **June cost total doesn't reconcile.** The June report's stated total (€158,240)
++  is €300 below the sum of its own cost lines (€158,540). May and July tie out
++  exactly. This report uses the published totals; if the line items are correct,
++  quarterly costs are €467,940 and net is €765,285 (margin unchanged at 62.1%).
++  Worth a correction from whoever owns the June numbers.
++- **July revenue reversal.** The -9.6% July decline wiped out June's 4.6% gain and
++  then some; July was the weakest revenue month of the quarter while costs held
++  flat, so the margin compressed accordingly.
++- **Churn is trending the wrong way.** Churned customers rose 17 → 22 → 31 across
++  the quarter. Combined with falling signings, net adds dropped by more than half
++  from May (69) to July (32).
++- **Cloud spend keeps climbing.** Cloud costs rose every month (€21,310 → €23,940
++  → €24,760, up ~16% over the quarter) even as July revenue fell — worth a look
++  before the pattern carries into Q3.

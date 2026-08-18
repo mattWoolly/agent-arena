@@ -1,0 +1,43 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 24.1,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 5,
+  "served_models": [
+    "gpt-5.6-sol"
+  ],
+  "served_model": "gpt-5.6-sol",
+  "served_model_leak": false,
+  "total_cost_usd": 0.17978,
+  "num_turns": 6,
+  "duration_ms": 23141,
+  "duration_api_ms": 24583,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 83323,
+  "output_tokens": 1441,
+  "cache_read_tokens": 62237,
+  "final_message": "Created `PLAN.md` with the requested timeline, countdown, and notes. No git commit was created.",
+  "total_cost_usd_cli": 0.45264,
+  "cost_source": "proxy-usage-log (5 requests)",
+  "run_env": {
+    "cli_version": "2.1.234 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-18T05:04:25Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "5/5"
+}

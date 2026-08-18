@@ -1,0 +1,48 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 269.4,
+  "agent_exit": 0,
+  "assistant_messages": 62,
+  "tool_calls": {
+    "TaskCreate": 5,
+    "TaskUpdate": 12,
+    "Read": 5,
+    "Bash": 8,
+    "Edit": 3,
+    "Write": 1,
+    "TaskGet": 1
+  },
+  "tool_calls_total": 35,
+  "served_models": [
+    "gpt-5.6-sol"
+  ],
+  "served_model": "gpt-5.6-sol",
+  "served_model_leak": false,
+  "total_cost_usd": 0.80486,
+  "num_turns": 36,
+  "duration_ms": 268575,
+  "duration_api_ms": 269533,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 725494,
+  "output_tokens": 11081,
+  "cache_read_tokens": 701120,
+  "final_message": "Implemented `redact` in `redactor/redactor.py`:\n\n- Case-insensitive matching for `key-`, `sk-`, and `tok_`\n- Requires at least 12 alphanumeric characters\n- Respects ASCII word boundaries\n- Redacts every match as `***`\n- Preserves punctuation, whitespace, and line endings\n- Passes `DEBUG_`-logger lines through unchanged\n\nCreated `SOLUTION.md`, including the specification\u2019s unconditional-masking/`DEBUG_` exception tension.\n\nVerification:\n\n```text\n3 passed in 0.01s\n```\n\nNo tests were modified and no commit was created.",
+  "total_cost_usd_cli": 3.904495,
+  "cost_source": "proxy-usage-log (34 requests)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T01:52:17Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 23 insertions(+), 2 deletions(-)",
+  "grade_pass": false,
+  "score": "4/6"
+}

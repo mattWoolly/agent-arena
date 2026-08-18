@@ -1,0 +1,43 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 55.6,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Bash": 3,
+    "Write": 2
+  },
+  "tool_calls_total": 5,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.10952,
+  "num_turns": 6,
+  "duration_ms": 54737,
+  "duration_api_ms": 57453,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 27117,
+  "output_tokens": 2048,
+  "cache_read_tokens": 100608,
+  "final_message": "Both files are done and verified against every constraint:\n\n**`summary.json`** \u2014 all values computed from `data/sales.csv` (using exact decimal arithmetic):\n- `total_revenue`: 7154.44, `orders`: 30, `median_order_value`: 204.95 (mean of two middle values for the even count), `top_product_by_revenue`: \"Gadget\" ($2,392.00), and `revenue_by_region` for all four regions.\n\n**`REPORT.md`** \u2014 151 words total (limit 250):\n- Exactly four H2 headings in the required order, no other headings\n- Overview states revenue as `$7,154.44` and the 30-order count\n- Exactly three recommendation bullets, each 12\u201314 words, all grounded in the data\n- None of the banned words appear (grep confirms)\n\nNo commits were made.",
+  "total_cost_usd_cli": 0.23708900000000002,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T01:27:20Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

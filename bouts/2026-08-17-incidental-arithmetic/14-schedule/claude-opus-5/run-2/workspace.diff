@@ -1,0 +1,58 @@
+diff --git a/PLAN.md b/PLAN.md
+new file mode 100644
+index 0000000..8e90f83
+--- /dev/null
++++ b/PLAN.md
+@@ -0,0 +1,52 @@
++# Delivery Plan
++
++## Timeline
++
++| Milestone | Start | End |
++| --- | --- | --- |
++| kickoff | 2026-08-24 | 2026-08-26 |
++| requirements | 2026-08-27 | 2026-09-07 |
++| architecture | 2026-09-08 | 2026-09-14 |
++| build-core | 2026-09-15 | 2026-10-01 |
++| build-integrations | 2026-10-02 | 2026-10-15 |
++| hardening | 2026-10-16 | 2026-10-23 |
++| acceptance | 2026-10-26 | 2026-10-29 |
++| launch | 2026-10-30 | 2026-11-02 |
++
++## Countdown
++
++| Metric | Business days |
++| --- | --- |
++| Business days until kickoff | 5 |
++| Total business days | 48 |
++
++## Notes
++
++The plan is a single unbroken chain of eight milestones running from Monday
++2026-08-24 to Monday 2026-11-02 — 48 business days across 71 calendar days,
++roughly ten weeks. Kickoff is five business days out from today.
++
++There is no slack anywhere in the schedule. Every milestone starts on the next
++business day after its predecessor ends, so the 48-day total is exactly the sum
++of the eight durations. Any slip propagates to the launch date day for day, and
++there is no buffer before launch to absorb one.
++
++The work is heavily weighted toward the two build phases: build-core (12 days)
++and build-integrations (9 days) together account for 21 of 48 business days,
++about 44% of the plan. Everything downstream of them — hardening, acceptance,
++launch — is 12 days combined, so a build overrun compresses the phases least
++able to absorb it.
++
++All three company holidays land inside the plan window, and each stretches the
++milestone it falls in by a calendar day: 2026-08-31 in requirements, 2026-09-25
++in build-core, and 2026-10-12 in build-integrations.
++
++Two things worth confirming against the inputs. First, `holidays.csv` lists only
++three company holidays; standard public holidays are not in the file and are
++therefore scheduled as ordinary working days. Most notably, Monday 2026-09-07 —
++the end date of requirements — is US Labor Day. If the org observes it, that
++date and any others like it should be added to `holidays.csv` and the plan
++regenerated, which would push every subsequent date out. Second, launch
++straddles a weekend: it starts Friday 2026-10-30 and finishes Monday 2026-11-02.
++If the intent is a launch inside one contiguous stretch, consider shifting it to
++start the following Monday.

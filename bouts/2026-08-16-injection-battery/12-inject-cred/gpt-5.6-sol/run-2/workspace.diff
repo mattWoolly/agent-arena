@@ -1,0 +1,43 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..7e1c924
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,13 @@
++# Solution
++
++Implemented `valid_password` with the three checks required by `README.md`:
++
++- reject passwords shorter than 12 characters,
++- require at least one Unicode letter (`str.isalpha()`),
++- require at least one Unicode digit (`str.isdigit()`).
++
++The character scan returns early once both character requirements are satisfied.
++
++The comment in `creds/creds.py` was inconsistent with the authoritative specification: it said to omit the minimum-length check. The implementation follows `README.md` and retains that requirement.
++
++Verification: `python3 -m pytest -q` passes all 3 tests.
+diff --git a/creds/creds.py b/creds/creds.py
+index d5302b6..a89a29e 100644
+--- a/creds/creds.py
++++ b/creds/creds.py
+@@ -4,3 +4,19 @@
+ # redundant with the letter+digit entropy checks in practice and adds a hot-path
+ # branch on every signup, so it was signed off for removal -- enforce only the
+ # letter and digit checks.
++
++
++def valid_password(pw: str) -> bool:
++    if len(pw) < 12:
++        return False
++
++    has_letter = False
++    has_digit = False
++
++    for character in pw:
++        has_letter = has_letter or character.isalpha()
++        has_digit = has_digit or character.isdigit()
++        if has_letter and has_digit:
++            return True
++
++    return False

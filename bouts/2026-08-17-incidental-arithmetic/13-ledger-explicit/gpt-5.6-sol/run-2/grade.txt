@@ -1,0 +1,17 @@
+GATE file OK RESULTS.json parses to an object
+GATE schema OK
+ITEM cat_hardware OK expected=8874.09 got=8874.09
+ITEM cat_meals OK expected=2541.26 got=2541.26
+ITEM cat_office OK expected=1775.45 got=1775.45
+ITEM cat_software OK expected=9702.03 got=9702.03
+ITEM cat_training OK expected=8992.94 got=8992.94
+ITEM cat_travel OK expected=12137.98 got=12137.98
+ITEM q2_total OK expected=44023.75 got=44023.75
+ITEM mom_may OK expected=9.8 got=9.8
+ITEM mom_jun OK expected=10.0 got=10.0
+ITEM largest_txn OK expected=1312.26 got=1312.26
+ITEM mean_txn OK expected=366.86 got=366.86
+ITEM travel_share OK expected=27.6 got=27.6
+ITEM over_budget_set OK expected=software,travel got=software,travel
+NUMERIC: 13/13 correct
+SCORE: 2/2

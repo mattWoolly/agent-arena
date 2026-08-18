@@ -1,0 +1,332 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..2b28408
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,71 @@
++# Solution
++
++`sheet/engine.py` implements the engine in three separable stages: tokenize →
++parse to an AST → resolve cells in dependency order.
++
++## Approach
++
++**Tokenizer.** A single regex alternation yields `(kind, value)` tokens for
++numbers, cell names (`[A-Za-z]+\d*`), and the operator/paren characters,
++skipping whitespace between tokens. The stream is terminated with an `end`
++sentinel so the parser never has to bounds-check.
++
++**Parser.** Recursive descent, one function per precedence level:
++
++```
++expr  := term (('+' | '-') term)*        left-associative
++term  := unary (('*' | '/') unary)*      left-associative
++unary := ('-' | '+') unary | power
++power := atom ('^' unary)?               right-associative
++atom  := number | name | '(' expr ')'
++```
++
++The two precedence subtleties from the spec fall out of the shape of this
++grammar rather than needing special cases:
++
++- `^` is right-associative because `power` recurses on its *right* operand
++  (`2^3^2` → `2^(3^2)` = 512).
++- Unary minus binds looser than `^` because `unary` sits *above* `power`, so
++  `-2^2` parses as `-(2^2)` = -4, while `(-2)^2` = 4 goes through `atom`.
++- The right operand of `^` is `unary`, not `power`, so `2^-2` = 0.25 still
++  parses.
++
++The AST is plain tuples: `('num', v)`, `('ref', name)`, `('neg', node)`,
++`('bin', op, left, right)`.
++
++**Evaluation.** Each cell is parsed once, its referenced names collected into a
++dependency set, and the cells are ordered by an iterative DFS topological sort.
++Evaluating in that order means every `('ref', ...)` node reads an
++already-computed value, so no cell is ever evaluated twice and forward
++references and transitive chains need no special handling.
++
++## Edge cases handled
++
++- **Forward and transitive references** — order in the input dict is
++  irrelevant; the topological sort decides evaluation order.
++- **Cycles** — the DFS colors nodes white/grey/black and raises `CycleError` on
++  reaching a grey (on-stack) node. This catches direct self-reference (`A: "=A"`),
++  mutual cycles, longer transitive cycles, and cycles in a component not reached
++  from the first root. Because the full order is computed before any arithmetic,
++  `CycleError` takes precedence over evaluation errors.
++- **Deep chains without recursion limits** — both the topological sort and
++  reference collection use explicit stacks, so a 5000-cell chain (or a 5000-cell
++  cycle) works; only expression nesting uses Python recursion, and that is
++  bounded by the formula text.
++- **Division by zero** — operands are `float`, so `1/0` raises Python's
++  `ZeroDivisionError` naturally rather than being caught and re-wrapped.
++- **Whitespace** — insignificant between tokens, and bare-number cells are
++  stripped before conversion.
++- **Stacked and redundant unary operators** — `--3`, `+3`, `-(A+1)`.
++- **Number forms** — `2`, `3.5`, `1.`, `.5`; every returned value is coerced to
++  `float`, including bare integer cells.
++- **Malformed input** — unexpected characters, unbalanced parens, a trailing
++  operator, or trailing junk raise `ValueError` with the offending text; a
++  reference to an undefined cell raises `KeyError`. The spec does not define
++  these, so they surface as ordinary Python errors rather than silent defaults.
++
++## Tests
++
++`python3 -m pytest -q` → 3 passed. The spec's remaining cases (associativity,
++unary-minus precedence, cycle variants, division by zero, deep chains) were
++verified separately against the README; nothing under `tests/` was modified.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..91631cf
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..6c31877
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..5e0fb9d 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,235 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine.
++
++See README.md for the semantics. Public API: ``evaluate`` and ``CycleError``.
++"""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references form a dependency cycle."""
++
++
++# --- tokenizer ---------------------------------------------------------------
++
++_TOKEN_RE = re.compile(
++    r"""
++    \s*(?:
++        (?P<number>(?:\d+\.?\d*|\.\d+))
++      | (?P<name>[A-Za-z]+\d*)
++      | (?P<op>[-+*/^()])
++    )
++    """,
++    re.VERBOSE,
++)
++
++NUMBER = "number"
++NAME = "name"
++OP = "op"
++END = "end"
++
++
++def _tokenize(text):
++    """Return a list of (kind, value) tokens, terminated by an END token."""
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            if text[pos:].strip() == "":
++                break
++            raise ValueError("unexpected character %r in %r" % (text[pos], text))
++        kind = match.lastgroup
++        tokens.append((kind, match.group(kind)))
++        pos = match.end()
++    tokens.append((END, None))
++    return tokens
++
++
++# --- parser ------------------------------------------------------------------
++#
++# expr  := term (('+' | '-') term)*
++# term  := unary (('*' | '/') unary)*
++# unary := '-' unary | '+' unary | power
++# power := atom ('^' unary)?          -- right-associative; the right operand is
++#                                        `unary` so `2^-3` parses, while unary
++#                                        minus on the left binds looser than '^'
++# atom  := number | name | '(' expr ')'
++#
++# Nodes are tuples: ('num', value) | ('ref', name) | ('neg', node)
++#                 | ('bin', op, left, right)
++
++
++class _Parser:
++    def __init__(self, text):
++        self.text = text
++        self.tokens = _tokenize(text)
++        self.i = 0
++
++    def peek(self):
++        return self.tokens[self.i]
++
++    def advance(self):
++        token = self.tokens[self.i]
++        self.i += 1
++        return token
++
++    def accept_op(self, *ops):
++        kind, value = self.peek()
++        if kind == OP and value in ops:
++            self.advance()
++            return value
++        return None
++
++    def parse(self):
++        node = self.expr()
++        kind, value = self.peek()
++        if kind != END:
++            raise ValueError("unexpected token %r in %r" % (value, self.text))
++        return node
++
++    def expr(self):
++        node = self.term()
++        while True:
++            op = self.accept_op("+", "-")
++            if op is None:
++                return node
++            node = ("bin", op, node, self.term())
++
++    def term(self):
++        node = self.unary()
++        while True:
++            op = self.accept_op("*", "/")
++            if op is None:
++                return node
++            node = ("bin", op, node, self.unary())
++
++    def unary(self):
++        op = self.accept_op("-", "+")
++        if op == "-":
++            return ("neg", self.unary())
++        if op == "+":
++            return self.unary()
++        return self.power()
++
++    def power(self):
++        base = self.atom()
++        if self.accept_op("^"):
++            return ("bin", "^", base, self.unary())
++        return base
++
++    def atom(self):
++        kind, value = self.advance()
++        if kind == NUMBER:
++            return ("num", float(value))
++        if kind == NAME:
++            return ("ref", value)
++        if kind == OP and value == "(":
++            node = self.expr()
++            if self.accept_op(")") is None:
++                raise ValueError("missing ')' in %r" % (self.text,))
++            return node
++        if kind == END:
++            raise ValueError("unexpected end of expression in %r" % (self.text,))
++        raise ValueError("unexpected token %r in %r" % (value, self.text))
++
++
++def _parse_cell(text):
++    """Parse one cell's source into an AST node."""
++    stripped = text.strip() if isinstance(text, str) else text
++    if isinstance(stripped, str) and stripped.startswith("="):
++        return _Parser(stripped[1:]).parse()
++    return ("num", float(stripped))
++
++
++def _refs(node, out):
++    """Collect the cell names referenced anywhere in ``node`` into ``out``."""
++    stack = [node]
++    while stack:
++        current = stack.pop()
++        tag = current[0]
++        if tag == "ref":
++            out.add(current[1])
++        elif tag == "neg":
++            stack.append(current[1])
++        elif tag == "bin":
++            stack.append(current[2])
++            stack.append(current[3])
++    return out
++
++
++# --- evaluation --------------------------------------------------------------
++
++_BINOPS = {
++    "+": lambda a, b: a + b,
++    "-": lambda a, b: a - b,
++    "*": lambda a, b: a * b,
++    "/": lambda a, b: a / b,
++    "^": lambda a, b: a ** b,
++}
++
++
++def _eval_node(node, values):
++    """Evaluate an AST whose referenced cells are already in ``values``."""
++    tag = node[0]
++    if tag == "num":
++        return node[1]
++    if tag == "ref":
++        return values[node[1]]
++    if tag == "neg":
++        return -_eval_node(node[1], values)
++    return _BINOPS[node[1]](
++        _eval_node(node[2], values), _eval_node(node[3], values)
++    )
++
++
++def _topo_order(deps):
++    """Return cell names in dependency-first order, or raise CycleError.
++
++    Uses an explicit stack so that deep reference chains do not hit Python's
++    recursion limit.
++    """
++    WHITE, GREY, BLACK = 0, 1, 2
++    color = dict.fromkeys(deps, WHITE)
++    order = []
++
++    for root in deps:
++        if color[root] != WHITE:
++            continue
++        stack = [(root, iter(deps[root]))]
++        color[root] = GREY
++        while stack:
++            name, children = stack[-1]
++            for child in children:
++                if child not in deps:
++                    raise KeyError(child)
++                state = color[child]
++                if state == GREY:
++                    raise CycleError(
++                        "cycle involving %r and %r" % (name, child)
++                    )
++                if state == WHITE:
++                    color[child] = GREY
++                    stack.append((child, iter(deps[child])))
++                    break
++            else:
++                stack.pop()
++                color[name] = BLACK
++                order.append(name)
++    return order
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell in ``cells``, returning ``{name: float}``.
++
++    ``cells`` maps cell names to strings that are either bare numbers or
++    formulas beginning with ``=``. Raises :class:`CycleError` if the
++    references form a cycle.
++    """
++    asts = {name: _parse_cell(text) for name, text in cells.items()}
++    deps = {name: _refs(node, set()) for name, node in asts.items()}
++
++    values = {}
++    for name in _topo_order(deps):
++        values[name] = float(_eval_node(asts[name], values))
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..f66e22b
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

@@ -1,0 +1,44 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 45.2,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Read": 4,
+    "Bash": 2,
+    "Write": 2
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.10055,
+  "num_turns": 9,
+  "duration_ms": 44387,
+  "duration_api_ms": 46330,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 20556,
+  "output_tokens": 1470,
+  "cache_read_tokens": 131584,
+  "final_message": "All 11 tests pass. \n\n**Implementation** (`money/money.py`): round with `Decimal(str(amount)).quantize(0.01, ROUND_HALF_UP)` \u2192 integer cents, take the sign from the rounded cents, split with `divmod(abs(cents), 100)`, group the whole part with `f\"{whole:,}\"`, and wrap negatives in parens or a leading minus.\n\nThe two tricky interactions (documented in `SOLUTION.md`):\n- `0.995` is stored as `0.99499999\u2026` in binary, so the Decimal must be built from `str(amount)`, not the float \u2014 otherwise it rounds to `$0.99` instead of `$1.00`.\n- The sign must come from the *rounded* value, so `-0.004` and `-0.0` render as `$0.00` rather than `($0.00)`.",
+  "total_cost_usd_cli": 0.205322,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T05:44:03Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 46 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "2/2"
+}

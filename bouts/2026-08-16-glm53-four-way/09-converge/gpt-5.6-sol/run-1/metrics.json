@@ -1,0 +1,48 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 114.2,
+  "agent_exit": 0,
+  "assistant_messages": 40,
+  "tool_calls": {
+    "TaskCreate": 4,
+    "TaskUpdate": 8,
+    "Read": 6,
+    "Bash": 5,
+    "Edit": 1,
+    "Write": 1,
+    "TaskGet": 1
+  },
+  "tool_calls_total": 26,
+  "served_models": [
+    "gpt-5.6-sol"
+  ],
+  "served_model": "gpt-5.6-sol",
+  "served_model_leak": false,
+  "total_cost_usd": 0.50949,
+  "num_turns": 27,
+  "duration_ms": 113202,
+  "duration_api_ms": 114309,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 538319,
+  "output_tokens": 4238,
+  "cache_read_tokens": 513166,
+  "final_message": "Implemented `format_amount` in `money/money.py` with:\n\n- Decimal-based half-away-from-zero rounding\n- Optional thousands grouping\n- Parentheses or leading-minus negative formatting\n- Correct handling of negative zero and values rounding to zero\n- Currency prefix support\n\nAdded `SOLUTION.md` documenting the approach and edge cases.\n\nVerification:\n\n```text\n11 passed in 0.02s\n```\n\nNo tests were modified and no commit was created.",
+  "total_cost_usd_cli": 2.797545,
+  "cost_source": "proxy-usage-log (25 requests)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T05:41:20Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 32 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "2/2"
+}

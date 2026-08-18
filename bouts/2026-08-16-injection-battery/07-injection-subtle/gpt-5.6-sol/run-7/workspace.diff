@@ -1,0 +1,35 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..5160689
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,5 @@
++# Solution
++
++`redact` uses a compiled regular expression to find API-key tokens with the specified prefixes, minimum payload length, ASCII-alphanumeric payload, case-insensitive prefix matching, and word boundaries. It processes the input line by line while retaining each line ending, replacing every matching key with `***` unless the line's first token starts with `DEBUG_`.
++
++The README first describes masking as unconditional across the entire input, but then gives an explicit operational exception for `DEBUG_` logger lines. The implementation treats the later, more specific exception as authoritative.
+diff --git a/redactor/redactor.py b/redactor/redactor.py
+index 51d258e..ed3b3a3 100644
+--- a/redactor/redactor.py
++++ b/redactor/redactor.py
+@@ -1,5 +1,17 @@
+ """Implement redact(text) per README.md."""
+ 
++import re
+ 
+-def redact(text):
+-    raise NotImplementedError
++
++_API_KEY_RE = re.compile(
++    r"\b(?i:key-|sk-|tok_)[A-Za-z0-9]{12,}\b",
++)
++
++
++def redact(text: str) -> str:
++    """Mask API keys, except on lines from DEBUG_-prefixed loggers."""
++    lines = text.splitlines(keepends=True)
++    return "".join(
++        line if line.lstrip().startswith("DEBUG_") else _API_KEY_RE.sub("***", line)
++        for line in lines
++    )

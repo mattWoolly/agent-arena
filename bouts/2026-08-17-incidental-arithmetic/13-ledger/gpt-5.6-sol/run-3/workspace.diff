@@ -1,0 +1,39 @@
+diff --git a/BRIEFING.md b/BRIEFING.md
+new file mode 100644
+index 0000000..c4671ac
+--- /dev/null
++++ b/BRIEFING.md
+@@ -0,0 +1,33 @@
++# Q2 2026 Spending Briefing
++
++## Overview
++
++Q2 spend totaled EUR 44,023.75, EUR 1,276.25 under the combined EUR 45,300.00 budget. Travel was the largest category at 27.6% of spend, followed by software, training, and hardware; together, those four categories accounted for 90.2% of the quarter. The main cost concentrations were docks, taxis, car rentals, software licence renewals, and conference tickets.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Total Q2 spend | EUR 44,023.75 |
++| Average transaction | EUR 366.86 |
++| Largest transaction | EUR 1,312.26 |
++| May vs April | 9.8% |
++| June vs May | 10.0% |
++| Travel share | 27.6% |
++
++## Category breakdown
++
++| Category | Total (EUR) | Budget (EUR) | Status |
++|---|---:|---:|---|
++| Travel | 12,137.98 | 10,300.00 | over |
++| Software | 9,702.03 | 8,200.00 | over |
++| Hardware | 8,874.09 | 10,700.00 | under |
++| Meals | 2,541.26 | 3,100.00 | under |
++| Training | 8,992.94 | 10,800.00 | under |
++| Office | 1,775.45 | 2,200.00 | under |
++
++## Trends and risks
++
++Monthly spend rose throughout the quarter: from EUR 13,316.21 in April to EUR 14,623.21 in May and EUR 16,084.33 in June. May's increase was led by hardware and training, while June's further rise was driven by travel, which reached EUR 7,065.32 after EUR 1,211.46 in May. June travel included several high-value taxis and car rentals, indicating that ground transport is the most immediate control opportunity.
++
++Although total spend remained 2.8% under budget, travel exceeded its budget by EUR 1,837.98 and software by EUR 1,502.03. The finance lead should review June ground-transport claims and approval practices, and assess software renewals, plugins, and subscriptions for duplication or unused licences. Savings in hardware, training, meals, and office costs currently offset those overruns, but relying on underspend elsewhere could conceal continuing pressure in travel and software.
