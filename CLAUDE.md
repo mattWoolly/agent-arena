@@ -9,7 +9,7 @@
 - Published bouts under `bouts/` are the immutable record backing live
   articles — never rewrite their artifacts; new runs go in new bout dirs.
 - After changing anything in `bin/`, run `bin/check-graders.sh` (must stay
-  12/12) and prefer a cheap smoke bout (`bin/run-bout.sh -r 2 -s smoke
+  24/24) and prefer a cheap smoke bout (`bin/run-bout.sh -r 2 -s smoke
   claude-opus-4-8 01-bugfix`) before pushing; delete the smoke bout dir
   afterwards.
 - Honest-reporting rules in README.md apply to everything published from here.

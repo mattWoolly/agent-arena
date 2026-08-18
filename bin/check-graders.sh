@@ -83,4 +83,14 @@ seed 06-instructions "$TMP/06-sol"
 python3 "$ROOT/tasks/06-instructions/make-solution.py" "$TMP/06-sol"
 expect pass 06-instructions "$TMP/06-sol" "reference solution"
 
+# --- 13/14/15 incidental-arithmetic pairs (solutions are APPLY.sh scripts) ---
+for t in 13-ledger 13-ledger-explicit 14-schedule 14-schedule-explicit \
+         15-rollup 15-rollup-explicit; do
+  seed "$t" "$TMP/$t-raw"
+  expect fail "$t" "$TMP/$t-raw" "raw fixture"
+  seed "$t" "$TMP/$t-sol"
+  WS="$TMP/$t-sol" SOL="$ROOT/tasks/$t/solution" bash "$ROOT/tasks/$t/solution/APPLY.sh"
+  expect pass "$t" "$TMP/$t-sol" "reference solution"
+done
+
 exit "$RESULT"

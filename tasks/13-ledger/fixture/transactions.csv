@@ -1,0 +1,121 @@
+id,date,category,description,amount,currency
+T0001,2026-04-02,meals,catering,180.68,USD
+T0002,2026-04-03,office,stationery,42.03,EUR
+T0003,2026-04-03,software,SaaS subscription,810.15,USD
+T0004,2026-04-04,office,printer paper,104.21,EUR
+T0005,2026-04-05,software,SaaS subscription,844.62,EUR
+T0006,2026-04-06,travel,rail ticket,723.40,EUR
+T0007,2026-04-07,software,license renewal,853.95,EUR
+T0008,2026-04-08,meals,catering,148.55,EUR
+T0009,2026-04-09,software,API credits,303.55,USD
+T0010,2026-04-09,software,plugin,618.90,USD
+T0011,2026-04-10,office,snacks,167.61,EUR
+T0012,2026-04-11,hardware,dock,89.63,EUR
+T0013,2026-04-11,hardware,monitor,101.77,GBP
+T0014,2026-04-11,hardware,monitor,815.18,USD
+T0015,2026-04-11,software,SaaS subscription,378.95,USD
+T0016,2026-04-11,travel,taxi,470.69,EUR
+T0017,2026-04-13,hardware,dock,656.17,EUR
+T0018,2026-04-13,software,API credits,671.29,EUR
+T0019,2026-04-14,travel,hotel,625.95,EUR
+T0020,2026-04-14,travel,car rental,1044.26,EUR
+T0021,2026-04-15,travel,flight,805.95,GBP
+T0022,2026-04-16,meals,client dinner,69.48,EUR
+T0023,2026-04-16,software,SaaS subscription,103.72,EUR
+T0024,2026-04-17,training,conference ticket,198.00,EUR
+T0025,2026-04-18,software,plugin,655.73,EUR
+T0026,2026-04-20,software,API credits,74.70,USD
+T0027,2026-04-21,software,plugin,512.47,EUR
+T0028,2026-04-23,office,stationery,77.64,USD
+T0029,2026-04-23,training,course,651.08,GBP
+T0030,2026-04-24,meals,catering,148.87,EUR
+T0031,2026-04-24,training,course,97.29,EUR
+T0032,2026-04-27,travel,taxi,53.94,EUR
+T0033,2026-04-28,training,course,202.83,USD
+T0034,2026-04-30,office,printer paper,21.35,GBP
+T0035,2026-05-03,office,stationery,80.30,USD
+T0036,2026-05-03,office,plants,67.45,EUR
+T0037,2026-05-04,office,plants,75.28,EUR
+T0038,2026-05-04,office,cleaning,51.93,EUR
+T0039,2026-05-05,meals,catering,223.61,EUR
+T0040,2026-05-05,software,plugin,100.11,EUR
+T0041,2026-05-07,hardware,dock,1032.60,USD
+T0042,2026-05-07,meals,client dinner,215.08,USD
+T0043,2026-05-07,training,conference ticket,328.82,USD
+T0044,2026-05-07,training,course,801.21,EUR
+T0045,2026-05-08,meals,coffee,45.21,USD
+T0046,2026-05-09,travel,taxi,292.85,EUR
+T0047,2026-05-10,hardware,monitor,308.59,GBP
+T0048,2026-05-10,meals,team lunch,228.68,GBP
+T0049,2026-05-10,software,plugin,177.29,USD
+T0050,2026-05-10,travel,car rental,187.19,EUR
+T0051,2026-05-11,office,cleaning,79.21,EUR
+T0052,2026-05-11,training,conference ticket,851.75,USD
+T0053,2026-05-12,meals,team lunch,70.76,USD
+T0054,2026-05-14,meals,coffee,149.47,EUR
+T0055,2026-05-14,software,SaaS subscription,275.67,EUR
+T0056,2026-05-15,hardware,dock,799.72,USD
+T0057,2026-05-16,training,books,172.41,GBP
+T0058,2026-05-17,software,license renewal,620.09,EUR
+T0059,2026-05-17,software,plugin,81.93,GBP
+T0060,2026-05-17,training,workshop,445.12,EUR
+T0061,2026-05-20,hardware,keyboard,253.46,EUR
+T0062,2026-05-23,hardware,cables,1121.59,GBP
+T0063,2026-05-23,office,plants,23.33,USD
+T0064,2026-05-24,hardware,dock,243.02,GBP
+T0065,2026-05-24,office,stationery,106.14,EUR
+T0066,2026-05-24,office,plants,51.78,USD
+T0067,2026-05-24,software,license renewal,590.81,USD
+T0068,2026-05-24,travel,rail ticket,511.55,EUR
+T0069,2026-05-25,meals,team lunch,142.03,EUR
+T0070,2026-05-26,software,SaaS subscription,63.27,EUR
+T0071,2026-05-26,travel,hotel,219.87,EUR
+T0072,2026-05-27,hardware,cables,274.54,EUR
+T0073,2026-05-28,meals,catering,96.99,EUR
+T0074,2026-05-28,software,SaaS subscription,249.83,EUR
+T0075,2026-05-29,office,cleaning,46.74,GBP
+T0076,2026-05-29,training,conference ticket,573.02,USD
+T0077,2026-05-29,training,workshop,761.38,GBP
+T0078,2026-05-30,training,books,584.81,USD
+T0079,2026-05-31,hardware,dock,372.50,EUR
+T0080,2026-05-31,training,conference ticket,504.30,EUR
+T0081,2026-06-01,office,plants,100.93,GBP
+T0082,2026-06-01,software,license renewal,328.99,EUR
+T0083,2026-06-02,travel,flight,456.98,EUR
+T0084,2026-06-03,meals,coffee,108.36,EUR
+T0085,2026-06-03,office,snacks,51.35,USD
+T0086,2026-06-03,travel,car rental,315.36,USD
+T0087,2026-06-04,software,plugin,488.61,GBP
+T0088,2026-06-06,meals,client dinner,137.71,GBP
+T0089,2026-06-06,training,conference ticket,216.13,USD
+T0090,2026-06-07,office,cleaning,89.11,EUR
+T0091,2026-06-10,meals,team lunch,51.97,USD
+T0092,2026-06-10,training,books,113.95,GBP
+T0093,2026-06-10,travel,flight,520.86,USD
+T0094,2026-06-11,software,license renewal,712.34,USD
+T0095,2026-06-14,travel,rail ticket,513.87,EUR
+T0096,2026-06-16,hardware,dock,1073.52,EUR
+T0097,2026-06-16,hardware,monitor,826.62,USD
+T0098,2026-06-16,office,snacks,50.84,EUR
+T0099,2026-06-16,office,stationery,178.68,EUR
+T0100,2026-06-16,training,books,715.31,GBP
+T0101,2026-06-16,training,course,307.38,USD
+T0102,2026-06-17,hardware,dock,958.01,USD
+T0103,2026-06-17,travel,taxi,995.00,EUR
+T0104,2026-06-18,software,license renewal,158.77,EUR
+T0105,2026-06-18,training,conference ticket,318.33,EUR
+T0106,2026-06-19,meals,catering,211.01,EUR
+T0107,2026-06-20,software,license renewal,222.63,EUR
+T0108,2026-06-22,office,stationery,64.43,USD
+T0109,2026-06-22,travel,car rental,1008.75,EUR
+T0110,2026-06-23,meals,team lunch,100.24,EUR
+T0111,2026-06-23,training,course,168.81,EUR
+T0112,2026-06-25,meals,catering,195.37,EUR
+T0113,2026-06-25,training,conference ticket,445.94,EUR
+T0114,2026-06-25,travel,taxi,1389.43,USD
+T0115,2026-06-26,training,workshop,402.02,USD
+T0116,2026-06-26,travel,taxi,629.37,EUR
+T0117,2026-06-27,office,stationery,67.46,GBP
+T0118,2026-06-29,travel,car rental,1149.23,USD
+T0119,2026-06-29,travel,flight,304.67,GBP
+T0120,2026-06-30,office,stationery,165.34,EUR

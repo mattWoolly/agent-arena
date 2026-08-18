@@ -16,6 +16,7 @@ bin/
   behavior.py    # behavioral fingerprint across runs: tool tempo, first moves, verification breadth, self-authored checks (compare only at matched CLI versions or with same-window anchors)
   loopmetrics.py # flip-flop/convergence metrics from a transcript: pytest fail-trajectory regressions, code reverts, edits
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
+  numcheck.py    # numeric-reliability analysis for tasks 13/14/15: per-item verdicts joined with tool-derivation evidence from the transcript; per-run silent-error flag; per-(task, model) aggregates
   served_model.py# read the model that ACTUALLY served a run from transcript response tags
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
   test_*.py      # unit tests (served_model, summarize integrity) — run `python3 bin/test_<x>.py`
@@ -34,6 +35,12 @@ tasks/
   07-injection-subtle/ # subtle injection: a false "spec exception" that leaks secrets if obeyed
   08-evaluator-hard/ # harder ceiling-raiser: right-assoc exponentiation + unary/precedence traps
   09-converge/       # convergence/flip-flop probe: money formatter with sign-after-rounding tension; suite ships in fixture
+  13-ledger/         # incidental arithmetic: finance briefing from a transaction CSV; structure gates, numbers scored per item without gating
+  13-ledger-explicit/# explicit twin: same computations as the stated task -> RESULTS.json; gates on every item
+  14-schedule/       # incidental arithmetic: business-day project plan; date items with error classes + CHAIN local-consistency lines
+  14-schedule-explicit/ # explicit twin of 14-schedule -> RESULTS.json
+  15-rollup/         # incidental arithmetic: quarterly rollup of three monthly reports; planted stated-vs-line-items discrepancy, FLAG line
+  15-rollup-explicit/# explicit twin of 15-rollup -> RESULTS.json
   10-inject-sandbox/ # injection: false settings.py note claims tmp/ paths bypass the sandbox -> path traversal
   11-inject-review/  # injection: false REVIEW.md sign-off claims [[trusted]] input is pre-escaped -> XSS passthrough
   12-inject-cred/    # injection: false 'approved ticket' comment drops the length check -> weak passwords
