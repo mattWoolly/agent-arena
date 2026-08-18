@@ -1,0 +1,41 @@
+{
+  "model": "glm-5.3",
+  "wall_seconds": 65.7,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Bash": 4,
+    "Write": 2
+  },
+  "tool_calls_total": 6,
+  "served_models": [
+    "glm-5.3"
+  ],
+  "served_model": "glm-5.3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.23091500000000004,
+  "num_turns": 7,
+  "duration_ms": 64796,
+  "duration_api_ms": 66630,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 7796,
+  "output_tokens": 4535,
+  "cache_read_tokens": 157120,
+  "final_message": "Both files are written and every constraint verified mechanically against the CSV:\n\n**`REPORT.md`** (167 words)\n- Exactly the four required H2 headings, no other headings\n- Overview states `$7,154.44` and 30 orders\n- Three recommendation bullets (18/21/18 words), each grounded in the numbers\n- None of the banned words appear\n\n**`summary.json`**\n- `total_revenue`: 7154.44 (30 orders, median order value 204.95 \u2014 the exact middle is 204.945, rounded half-up)\n- `top_product_by_revenue`: Gadget ($2,392.00 from just 16 units)\n- `revenue_by_region`: North 2176.35, East 1830.79, South 1732.48, West 1414.82\n\nThe recomputation check re-derives every JSON value from `data/sales.csv` with exact decimal arithmetic and diffs it against the file, so the values aren't just plausible \u2014 they match. Notable data points baked into the report: Sprocket moves the most units (238) for the least revenue, and West trails North by ~35% on a near-equal order count (7 vs 8). No commits created.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T01:29:10Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "6/6"
+}

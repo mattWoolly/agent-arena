@@ -1,0 +1,202 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..d4b59d3
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,15 @@
++# Solution
++
++`sheet/engine.py` uses a recursive-descent parser for formulas and a memoized
++resolver for cell dependencies.
++
++The parser implements the documented precedence and associativity rules,
++including right-associative exponentiation and unary minus binding less tightly
++than `^`. It also handles parentheses, insignificant whitespace, decimal
++numbers, and cell references.
++
++Cell values are resolved lazily, so forward and transitive references work.
++Computed values are cached as floats. A set plus the active resolution path
++tracks cells currently being evaluated; revisiting one raises `CycleError` for
++both direct and indirect cycles. Native arithmetic behavior is preserved,
++including `ZeroDivisionError` for division by zero.
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..355ef77 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,173 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula evaluator."""
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references contain a dependency cycle."""
++
++
++class _Parser:
++    def __init__(self, formula, resolve):
++        self.formula = formula
++        self.resolve = resolve
++        self.position = 0
++        self.token = None
++        self.value = None
++        self._advance()
++
++    def parse(self):
++        value = self._expression()
++        if self.token != "EOF":
++            raise ValueError(
++                f"unexpected token {self.value!r} at position {self.position}"
++            )
++        return value
++
++    def _advance(self):
++        text = self.formula
++        length = len(text)
++        while self.position < length and text[self.position].isspace():
++            self.position += 1
++
++        if self.position == length:
++            self.token = "EOF"
++            self.value = None
++            return
++
++        start = self.position
++        char = text[start]
++        if char in "+-*/^()":
++            self.position += 1
++            self.token = char
++            self.value = char
++            return
++
++        if char.isascii() and char.isalpha():
++            self.position += 1
++            while self.position < length:
++                char = text[self.position]
++                if not (char.isascii() and char.isalpha()):
++                    break
++                self.position += 1
++            while self.position < length:
++                char = text[self.position]
++                if not (char.isascii() and char.isdigit()):
++                    break
++                self.position += 1
++            self.token = "CELL"
++            self.value = text[start : self.position]
++            return
++
++        if char.isascii() and (char.isdigit() or char == "."):
++            saw_digit = False
++            while self.position < length:
++                char = text[self.position]
++                if not (char.isascii() and char.isdigit()):
++                    break
++                saw_digit = True
++                self.position += 1
++            if self.position < length and text[self.position] == ".":
++                self.position += 1
++                while self.position < length:
++                    char = text[self.position]
++                    if not (char.isascii() and char.isdigit()):
++                        break
++                    saw_digit = True
++                    self.position += 1
++            if not saw_digit:
++                raise ValueError(f"invalid number at position {start}")
++            self.token = "NUMBER"
++            self.value = text[start : self.position]
++            return
++
++        raise ValueError(f"unexpected character {char!r} at position {start}")
++
++    def _expression(self):
++        value = self._term()
++        while self.token in ("+", "-"):
++            operator = self.token
++            self._advance()
++            right = self._term()
++            if operator == "+":
++                value += right
++            else:
++                value -= right
++        return value
++
++    def _term(self):
++        value = self._unary()
++        while self.token in ("*", "/"):
++            operator = self.token
++            self._advance()
++            right = self._unary()
++            if operator == "*":
++                value *= right
++            else:
++                value /= right
++        return value
++
++    def _unary(self):
++        if self.token == "-":
++            self._advance()
++            return -self._unary()
++        return self._power()
++
++    def _power(self):
++        value = self._primary()
++        if self.token == "^":
++            self._advance()
++            value **= self._unary()
++        return value
++
++    def _primary(self):
++        if self.token == "NUMBER":
++            value = float(self.value)
++            self._advance()
++            return value
++
++        if self.token == "CELL":
++            name = self.value
++            self._advance()
++            return self.resolve(name)
++
++        if self.token == "(":
++            self._advance()
++            value = self._expression()
++            if self.token != ")":
++                raise ValueError("missing closing parenthesis")
++            self._advance()
++            return value
++
++        raise ValueError(f"expected a number, cell, or '('; got {self.value!r}")
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Evaluate every value in *cells* and return their floating-point results."""
++    results = {}
++    visiting = set()
++    path = []
++
++    def resolve(name):
++        if name in results:
++            return results[name]
++        if name in visiting:
++            cycle_start = path.index(name)
++            cycle = path[cycle_start:] + [name]
++            raise CycleError("dependency cycle: " + " -> ".join(cycle))
++
++        raw_value = cells[name]
++        visiting.add(name)
++        path.append(name)
++        try:
++            if raw_value.startswith("="):
++                value = _Parser(raw_value[1:], resolve).parse()
++            else:
++                value = float(raw_value)
++            results[name] = float(value)
++            return results[name]
++        finally:
++            path.pop()
++            visiting.remove(name)
++
++    for name in cells:
++        resolve(name)
++    return results

@@ -1,0 +1,195 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..d88233f
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,7 @@
++# Solution
++
++`sheet/engine.py` uses a small recursive-descent parser to turn each formula into an expression tree. Separate parser levels implement the required precedence and associativity, including right-associative exponentiation and unary minus binding less tightly than `^`.
++
++Cell values are resolved lazily with memoization, so forward references and transitive dependency chains work without depending on dictionary order. A set and stack track cells currently being resolved; revisiting an active cell raises `CycleError` for direct or indirect cycles.
++
++The evaluator returns floats for both bare numbers and formulas, ignores formula whitespace, performs real division, and leaves normal Python errors such as `ZeroDivisionError` in place. Edge cases covered include parenthesized negative bases, negative exponents, right-associative power chains, multi-character cell names, and dependency cycles.
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..168a768 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,174 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Evaluate the spreadsheet formulas described in README.md."""
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references contain a dependency cycle."""
++
++
++class _Parser:
++    def __init__(self, formula):
++        self.tokens = self._tokenize(formula)
++        self.position = 0
++
++    @staticmethod
++    def _tokenize(formula):
++        tokens = []
++        position = 0
++
++        while position < len(formula):
++            character = formula[position]
++
++            if character.isspace():
++                position += 1
++                continue
++
++            if character.isdigit():
++                start = position
++                while position < len(formula) and formula[position].isdigit():
++                    position += 1
++                if position < len(formula) and formula[position] == ".":
++                    position += 1
++                    decimal_start = position
++                    while position < len(formula) and formula[position].isdigit():
++                        position += 1
++                    if decimal_start == position:
++                        raise ValueError("decimal point must be followed by a digit")
++                tokens.append(("number", formula[start:position]))
++                continue
++
++            if character.isalpha():
++                start = position
++                while position < len(formula) and formula[position].isalpha():
++                    position += 1
++                while position < len(formula) and formula[position].isdigit():
++                    position += 1
++                tokens.append(("reference", formula[start:position]))
++                continue
++
++            if character in "+-*/^()":
++                tokens.append((character, character))
++                position += 1
++                continue
++
++            raise ValueError(f"unexpected character {character!r}")
++
++        tokens.append(("end", ""))
++        return tokens
++
++    def parse(self):
++        expression = self._parse_sum()
++        if self._peek() != "end":
++            raise ValueError(f"unexpected token {self._value()!r}")
++        return expression
++
++    def _peek(self):
++        return self.tokens[self.position][0]
++
++    def _value(self):
++        return self.tokens[self.position][1]
++
++    def _take(self, kind):
++        if self._peek() != kind:
++            raise ValueError(f"expected {kind!r}, got {self._value()!r}")
++        value = self._value()
++        self.position += 1
++        return value
++
++    def _parse_sum(self):
++        expression = self._parse_product()
++        while self._peek() in ("+", "-"):
++            operator = self._take(self._peek())
++            expression = (operator, expression, self._parse_product())
++        return expression
++
++    def _parse_product(self):
++        expression = self._parse_unary()
++        while self._peek() in ("*", "/"):
++            operator = self._take(self._peek())
++            expression = (operator, expression, self._parse_unary())
++        return expression
++
++    def _parse_unary(self):
++        if self._peek() == "-":
++            self._take("-")
++            return ("negate", self._parse_unary())
++        return self._parse_power()
++
++    def _parse_power(self):
++        expression = self._parse_primary()
++        if self._peek() == "^":
++            self._take("^")
++            expression = ("^", expression, self._parse_unary())
++        return expression
++
++    def _parse_primary(self):
++        kind = self._peek()
++        if kind == "number":
++            return ("number", float(self._take("number")))
++        if kind == "reference":
++            return ("reference", self._take("reference"))
++        if kind == "(":
++            self._take("(")
++            expression = self._parse_sum()
++            self._take(")")
++            return expression
++        raise ValueError(f"expected a number, cell reference, or '(', got {self._value()!r}")
++
++
++def _evaluate_expression(expression, resolve):
++    kind = expression[0]
++
++    if kind == "number":
++        return expression[1]
++    if kind == "reference":
++        return resolve(expression[1])
++    if kind == "negate":
++        return -_evaluate_expression(expression[1], resolve)
++
++    left = _evaluate_expression(expression[1], resolve)
++    right = _evaluate_expression(expression[2], resolve)
++
++    if kind == "+":
++        return left + right
++    if kind == "-":
++        return left - right
++    if kind == "*":
++        return left * right
++    if kind == "/":
++        return left / right
++    if kind == "^":
++        return left**right
++    raise ValueError(f"unknown expression kind {kind!r}")
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Return the computed floating-point value of every cell in *cells*."""
++
++    values = {}
++    active = set()
++    stack = []
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in active:
++            cycle_start = stack.index(name)
++            cycle = stack[cycle_start:] + [name]
++            raise CycleError("dependency cycle: " + " -> ".join(cycle))
++
++        active.add(name)
++        stack.append(name)
++        try:
++            raw_value = cells[name]
++            if raw_value.startswith("="):
++                expression = _Parser(raw_value[1:]).parse()
++                value = _evaluate_expression(expression, resolve)
++            else:
++                value = float(raw_value)
++            values[name] = float(value)
++            return values[name]
++        finally:
++            stack.pop()
++            active.remove(name)
++
++    return {name: resolve(name) for name in cells}

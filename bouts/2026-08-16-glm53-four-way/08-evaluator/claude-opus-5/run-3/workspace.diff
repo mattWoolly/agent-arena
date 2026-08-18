@@ -1,0 +1,317 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..f1437a9
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,64 @@
++# Solution
++
++`sheet/engine.py` implements the README's semantics in three stages: compile
++each cell once, order the cells by dependency, then execute.
++
++## Approach
++
++**1. Compile (`_tokenize`, `_Parser`, `_compile`).**
++A cell whose stripped source starts with `=` is tokenized into numbers, cell
++references (`[A-Za-z]+\d*`), operators and parens, with whitespace skipped. A
++bare value is just `float()`ed. A recursive-descent parser over the usual
++grammar
++
++```
++expr  := term (('+'|'-') term)*
++term  := unary (('*'|'/') unary)*
++unary := ('+'|'-') unary | atom
++atom  := NUMBER | REF | '(' expr ')'
++```
++
++gives `*`/`/` tighter binding than `+`/`-`, left associativity (the repeated
++operators are consumed in a loop, not by right recursion), and unary minus at
++any operand position. The parser emits **postfix instructions** rather than a
++tree, which keeps evaluation a flat stack loop.
++
++**2. Order (`_evaluation_order`).**
++Dependencies are read straight off the instruction list. An iterative DFS
++topologically sorts the cells: a cell is marked `0` while it is on the current
++path and `1` once finished, so reaching a `0` means the path has looped back —
++that raises `CycleError`, reporting the cycle (`A -> B -> C -> A`). Because the
++sort runs before any arithmetic, forward references and transitive chains cost
++nothing special, and a cycle is reported even if the cell that triggers it is
++not the one the caller listed first.
++
++**3. Execute (`_run`).**
++Instructions run against a stack; every dependency is already computed, so a
++reference is a dict lookup. `/` is plain Python float division, so `=3/2` is
++`1.5` and dividing by zero raises `ZeroDivisionError` on its own.
++
++## Edge cases handled
++
++- **Forward and transitive references** — order is derived from the dependency
++  graph, so dict insertion order is irrelevant.
++- **Cycles** of any length, including a direct self-reference (`A: "=A"`), and
++  cycles that only exist in a sub-graph off to the side of the first cell.
++- **Left associativity**: `=10-3-2` is `5`, `=100/5/2` is `10`.
++- **Unary minus** stacked (`=--4`), applied to a group (`=-(A+1)`), and after a
++  binary operator (`=2*-3`).
++- **Repeated references** in one formula (`=A*A+A`) — deduped for the graph
++  walk, evaluated normally.
++- **No recursion at runtime**: both cell resolution and formula execution are
++  iterative, so a 3000-cell chain or a 3000-term formula evaluates without
++  touching Python's recursion limit. (Parsing is recursive, so only paren
++  nesting is depth-limited.)
++- **Unknown reference** raises `KeyError` naming both cells; **malformed
++  formulas** (`=1+`, `=(1`, stray characters) raise `ValueError`. The README
++  does not specify these, so they get the natural Python exception.
++- All values come back as `float`, and the result preserves the caller's cell
++  order rather than dependency order. The input dict is not mutated.
++
++## Tests
++
++`python3 -m pytest -q` — 3 passed. The README covers more than the bundled
++tests, so the behaviours above were also verified directly against the spec.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..bf39190
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..d32395a
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..53ba2a8 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,227 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine.
++
++See README.md for the semantics. Each cell's source is compiled once into a
++postfix instruction list; cells are then evaluated in dependency order, which
++is found with an iterative depth-first search that also detects cycles.
++"""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cells reference each other in a cycle."""
++
++
++# --- lexer ----------------------------------------------------------------
++
++_NUMBER = re.compile(r"\d+(?:\.\d*)?|\.\d+")
++_NAME = re.compile(r"[A-Za-z]+\d*")
++_OPERATORS = "+-*/()"
++
++_NUM, _REF, _OP = "num", "ref", "op"
++
++
++def _tokenize(text):
++    """Turn a formula body into a list of (kind, value) tokens."""
++    tokens = []
++    pos, end = 0, len(text)
++    while pos < end:
++        ch = text[pos]
++        if ch.isspace():
++            pos += 1
++            continue
++        if ch in _OPERATORS:
++            tokens.append((_OP, ch))
++            pos += 1
++            continue
++        match = _NUMBER.match(text, pos) if (ch.isdigit() or ch == ".") else None
++        if match is not None:
++            tokens.append((_NUM, float(match.group())))
++            pos = match.end()
++            continue
++        match = _NAME.match(text, pos)
++        if match is not None:
++            tokens.append((_REF, match.group()))
++            pos = match.end()
++            continue
++        raise ValueError("unexpected character %r in %r" % (ch, text))
++    return tokens
++
++
++# --- parser ---------------------------------------------------------------
++#
++#   expr   := term (('+' | '-') term)*
++#   term   := unary (('*' | '/') unary)*
++#   unary  := ('+' | '-') unary | atom
++#   atom   := NUMBER | REF | '(' expr ')'
++#
++# The parser emits postfix instructions, so evaluation never recurses and a
++# formula like "=1+1+1+..." cannot exhaust the interpreter stack.
++
++_PUSH_NUM, _PUSH_REF, _BINOP, _NEGATE = 0, 1, 2, 3
++
++
++class _Parser:
++    def __init__(self, tokens, source):
++        self.tokens = tokens
++        self.source = source
++        self.pos = 0
++        self.code = []
++
++    def peek(self):
++        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
++
++    def parse(self):
++        self.expr()
++        if self.pos != len(self.tokens):
++            raise ValueError("trailing input in %r" % self.source)
++        return self.code
++
++    def expr(self):
++        self.term()
++        while True:
++            token = self.peek()
++            if token is None or token[0] != _OP or token[1] not in "+-":
++                return
++            self.pos += 1
++            self.term()
++            self.code.append((_BINOP, token[1]))
++
++    def term(self):
++        self.unary()
++        while True:
++            token = self.peek()
++            if token is None or token[0] != _OP or token[1] not in "*/":
++                return
++            self.pos += 1
++            self.unary()
++            self.code.append((_BINOP, token[1]))
++
++    def unary(self):
++        token = self.peek()
++        if token is not None and token[0] == _OP and token[1] in "+-":
++            self.pos += 1
++            self.unary()
++            if token[1] == "-":
++                self.code.append((_NEGATE, None))
++            return
++        self.atom()
++
++    def atom(self):
++        token = self.peek()
++        if token is None:
++            raise ValueError("unexpected end of formula in %r" % self.source)
++        kind, value = token
++        self.pos += 1
++        if kind == _NUM:
++            self.code.append((_PUSH_NUM, value))
++        elif kind == _REF:
++            self.code.append((_PUSH_REF, value))
++        elif value == "(":
++            self.expr()
++            closing = self.peek()
++            if closing is None or closing != (_OP, ")"):
++                raise ValueError("unbalanced parenthesis in %r" % self.source)
++            self.pos += 1
++        else:
++            raise ValueError("unexpected %r in %r" % (value, self.source))
++
++
++def _compile(source):
++    """Compile a cell's source string into postfix instructions."""
++    if not isinstance(source, str):
++        raise TypeError("cell value must be a string, got %r" % (source,))
++    text = source.strip()
++    if text.startswith("="):
++        return _Parser(_tokenize(text[1:]), source).parse()
++    return [(_PUSH_NUM, float(text))]
++
++
++# --- evaluation -----------------------------------------------------------
++
++
++def _dependencies(code):
++    """Referenced cell names, in first-seen order and without duplicates."""
++    seen, deps = set(), []
++    for op, arg in code:
++        if op == _PUSH_REF and arg not in seen:
++            seen.add(arg)
++            deps.append(arg)
++    return deps
++
++
++def _evaluation_order(programs):
++    """Topologically sort cells so dependencies come first.
++
++    Iterative DFS: `state` is 0 while a cell is on the current path and 1 once
++    it is finished, so meeting a 0 means we have looped back on ourselves.
++    """
++    order = []
++    state = {}
++    for root in programs:
++        if root in state:
++            continue
++        state[root] = 0
++        stack = [[root, 0]]
++        path = [root]
++        while stack:
++            frame = stack[-1]
++            name, index = frame
++            deps = _dependencies(programs[name])
++            if index == len(deps):
++                state[name] = 1
++                order.append(name)
++                path.pop()
++                stack.pop()
++                continue
++            frame[1] = index + 1
++            dep = deps[index]
++            if dep not in programs:
++                raise KeyError("%s references unknown cell %s" % (name, dep))
++            visited = state.get(dep)
++            if visited is None:
++                state[dep] = 0
++                stack.append([dep, 0])
++                path.append(dep)
++            elif visited == 0:
++                cycle = path[path.index(dep):] + [dep]
++                raise CycleError(" -> ".join(cycle))
++    return order
++
++
++def _run(code, values):
++    """Execute postfix instructions against already-computed cell values."""
++    stack = []
++    for op, arg in code:
++        if op == _PUSH_NUM:
++            stack.append(arg)
++        elif op == _PUSH_REF:
++            stack.append(values[arg])
++        elif op == _NEGATE:
++            stack[-1] = -stack[-1]
++        else:
++            right = stack.pop()
++            left = stack.pop()
++            if arg == "+":
++                stack.append(left + right)
++            elif arg == "-":
++                stack.append(left - right)
++            elif arg == "*":
++                stack.append(left * right)
++            else:
++                stack.append(left / right)
++    return stack[0]
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute every cell's value.
++
++    Returns a dict mapping each cell name to its ``float`` value. Raises
++    ``CycleError`` if any cell reaches itself through references.
++    """
++    programs = {name: _compile(source) for name, source in cells.items()}
++    computed = {}
++    for name in _evaluation_order(programs):
++        computed[name] = _run(programs[name], computed)
++    # Hand back the caller's own cell order rather than dependency order.
++    return {name: computed[name] for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..2e282bc
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

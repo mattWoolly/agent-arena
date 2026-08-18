@@ -1,0 +1,320 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..267f5d7
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,51 @@
++# Solution
++
++`sheet/engine.py` implements `evaluate(cells)` and `CycleError` in three stages:
++
++1. **Tokenizer** (`_tokenize`) — a single regex scan producing numbers
++   (`\d+(\.\d+)?` or `\.\d+`), cell references (`[A-Za-z]+\d*`), and the
++   operator/paren symbols, skipping whitespace. Anything else raises
++   `SyntaxError`.
++2. **Recursive-descent parser** (`_Parser`) — builds tuple-based ASTs with the
++   precedence ladder `expr (+ -)` → `term (* /)` → `unary (-)` → `power (^)` →
++   `atom`. `+ - * /` are left-associative; `^` is right-associative.
++3. **Resolution + evaluation** — cell dependencies are collected from each AST,
++   an **iterative** colored DFS (`_topological_order`) orders cells so every
++   cell is computed after its references (forward and transitive references
++   come out naturally), and each AST is then evaluated against the memoized
++   result dict.
++
++## Precedence details
++
++The spec's unusual rule — unary minus binds *looser* than `^` — falls out of
++the ladder: `unary := ('+'|'-') unary | power` and `power := atom ('^' unary)?`.
++
++- `-2^2` parses as `neg(2^2)` = **-4**; `(-2)^2` = 4.
++- The exponent operand being a `unary` also admits `2^-2` (= 0.25) and makes
++  `^` right-associative: `2^3^2` = `2^(3^2)` = 512.
++- Unary `+` is accepted as a no-op for robustness.
++
++## Cycle detection
++
++During the topological DFS a gray (on-stack) node reached from the current
++node is a back edge → `CycleError`, with the cycle path in the message
++(`A -> B -> C -> A`). This catches self-references (`=A`), direct pairs, and
++transitive cycles, including cycles located entirely in cells later in the
++dict. The DFS is iterative (explicit stack), so a 5000-cell reference chain
++resolves without hitting Python's recursion limit.
++
++## Edge cases handled
++
++- Bare numbers and decimals (`.5` too), leading/trailing whitespace in cells,
++  whitespace between tokens (`= 1 + 2 * 3`).
++- Real division; `=1/0` propagates the ordinary Python `ZeroDivisionError`.
++- Result contains *every* cell as `float`, regardless of dict order.
++- Empty dict → empty dict.
++- Multi-letter/numbered names (`TOTAL`, `X12`); references are exact-match
++  (case-sensitive), matching the sheet's own keys.
++- Malformed formulas (`=1+`, `=(1`, stray characters) raise `SyntaxError`;
++  non-numeric, non-`=` cell bodies raise `ValueError` from `float()`. The
++  README leaves both unspecified — they fail loudly rather than silently.
++- A reference to a cell not present in the sheet raises `KeyError` (also
++  unspecified in the README; left as an explicit failure rather than a
++  default value).
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..89a2b28
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..7ae0d66
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..5ff56db 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,243 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine.
++
++Implements ``evaluate(cells)`` and ``CycleError`` per README.md.
++"""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references form a dependency cycle."""
++
++
++# ---------------------------------------------------------------------------
++# Tokenizer
++# ---------------------------------------------------------------------------
++
++_TOKEN_RE = re.compile(
++    r"""
++      (?P<number>\d+(?:\.\d+)?|\.\d+)   # 3, 3.5, .5
++    | (?P<name>[A-Za-z]+\d*)            # A, B, A1, TOTAL, X12
++    | (?P<op>[+\-*/^()])                # operators and parentheses
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(text):
++    """Turn formula text into a list of (kind, value) tokens, ending with ('end', None)."""
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        if text[pos].isspace():
++            pos += 1
++            continue
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            raise SyntaxError("unexpected character %r in %r" % (text[pos], text))
++        kind = match.lastgroup
++        value = match.group()
++        if kind == "number":
++            tokens.append(("num", float(value)))
++        elif kind == "name":
++            tokens.append(("ref", value))
++        else:
++            tokens.append(("op", value))
++        pos = match.end()
++    tokens.append(("end", None))
++    return tokens
++
++
++# ---------------------------------------------------------------------------
++# Parser (recursive descent)
++#
++# Precedence, loosest to tightest:
++#     expr  := term  (('+' | '-') term)*          left-assoc
++#     term  := unary (('*' | '/') unary)*         left-assoc
++#     unary := ('+' | '-') unary | power          binds looser than '^'
++#     power := atom ('^' unary)?                  right-assoc
++#     atom  := number | reference | '(' expr ')'
++#
++# Unary minus below '^' gives -2^2 == -(2^2) == -4, while the exponent side
++# being a unary lets 2^-3 and 2^3^2 == 2^(3^2) both work.
++# ---------------------------------------------------------------------------
++
++
++class _Parser:
++    def __init__(self, tokens):
++        self.tokens = tokens
++        self.pos = 0
++
++    def _peek(self):
++        return self.tokens[self.pos]
++
++    def _advance(self):
++        token = self.tokens[self.pos]
++        self.pos += 1
++        return token
++
++    def _match_op(self, *ops):
++        kind, value = self._peek()
++        if kind == "op" and value in ops:
++            self._advance()
++            return value
++        return None
++
++    def parse(self):
++        node = self._expr()
++        kind, value = self._peek()
++        if kind != "end":
++            raise SyntaxError("unexpected token %r" % (value,))
++        return node
++
++    def _expr(self):
++        node = self._term()
++        while True:
++            op = self._match_op("+", "-")
++            if op is None:
++                return node
++            node = (op, node, self._term())
++
++    def _term(self):
++        node = self._unary()
++        while True:
++            op = self._match_op("*", "/")
++            if op is None:
++                return node
++            node = (op, node, self._unary())
++
++    def _unary(self):
++        op = self._match_op("+", "-")
++        if op == "-":
++            return ("neg", self._unary())
++        if op == "+":
++            return self._unary()
++        return self._power()
++
++    def _power(self):
++        base = self._atom()
++        if self._match_op("^") is None:
++            return base
++        return ("^", base, self._unary())
++
++    def _atom(self):
++        kind, value = self._advance()
++        if kind == "num":
++            return ("num", value)
++        if kind == "ref":
++            return ("ref", value)
++        if kind == "op" and value == "(":
++            node = self._expr()
++            if self._match_op(")") is None:
++                raise SyntaxError("missing closing parenthesis")
++            return node
++        raise SyntaxError("unexpected token %r" % (value,))
++
++
++def _collect_refs(node, out):
++    if not isinstance(node, tuple):  # number leaf inside 'num' nodes
++        return
++    kind = node[0]
++    if kind == "ref":
++        out.add(node[1])
++    elif kind == "num":
++        pass
++    elif kind == "neg":
++        _collect_refs(node[1], out)
++    else:  # binary operator node
++        _collect_refs(node[1], out)
++        _collect_refs(node[2], out)
++
++
++def _eval_node(node, values):
++    kind = node[0]
++    if kind == "num":
++        return node[1]
++    if kind == "ref":
++        return values[node[1]]  # KeyError for references to unknown cells
++    if kind == "neg":
++        return -_eval_node(node[1], values)
++    left = _eval_node(node[1], values)
++    right = _eval_node(node[2], values)
++    if kind == "+":
++        return left + right
++    if kind == "-":
++        return left - right
++    if kind == "*":
++        return left * right
++    if kind == "/":
++        return left / right  # ZeroDivisionError propagates, per spec
++    return left ** right  # '^'
++
++
++# ---------------------------------------------------------------------------
++# Dependency resolution and evaluation
++# ---------------------------------------------------------------------------
++
++def _topological_order(cells, deps):
++    """Order cell names so every cell comes after the cells it references.
++
++    Iterative DFS (no recursion limit on long chains); raises CycleError on
++    encountering a back edge to a cell still on the stack.
++    """
++    WHITE, GRAY, BLACK = 0, 1, 2
++    color = dict.fromkeys(cells, WHITE)
++    order = []
++    for start in cells:
++        if color[start] != WHITE:
++            continue
++        color[start] = GRAY
++        stack = [(start, iter(sorted(deps[start])))]
++        while stack:
++            node, dep_iter = stack[-1]
++            descended = False
++            for dep in dep_iter:
++                if dep not in cells:
++                    continue  # unknown cells surface as KeyError at eval time
++                if color[dep] == WHITE:
++                    color[dep] = GRAY
++                    stack.append((dep, iter(sorted(deps[dep]))))
++                    descended = True
++                    break
++                if color[dep] == GRAY:
++                    cycle = [n for n, _ in stack] + [dep]
++                    raise CycleError(
++                        "dependency cycle: %s"
++                        % " -> ".join(cycle[cycle.index(dep):])
++                    )
++            if not descended:
++                stack.pop()
++                color[node] = BLACK
++                order.append(node)
++    return order
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute the float value of every cell in ``cells``.
++
++    ``cells`` maps names to either bare numeric strings or ``=``-formulas.
++    Forward and transitive references are resolved; a dependency cycle raises
++    :class:`CycleError`.
++    """
++    asts = {}
++    literals = {}
++    deps = {}
++    for name, source in cells.items():
++        text = source.strip()
++        if text.startswith("="):
++            ast = _Parser(_tokenize(text[1:])).parse()
++            asts[name] = ast
++            refs = set()
++            _collect_refs(ast, refs)
++            deps[name] = refs
++        else:
++            literals[name] = float(text)
++            deps[name] = set()
++
++    values = {}
++    for name in _topological_order(cells, deps):
++        if name in literals:
++            values[name] = literals[name]
++        else:
++            values[name] = _eval_node(asts[name], values)
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..305419f
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

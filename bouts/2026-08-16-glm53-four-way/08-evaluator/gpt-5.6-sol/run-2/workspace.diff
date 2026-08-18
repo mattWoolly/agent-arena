@@ -1,0 +1,163 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..bc22597
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,7 @@
++# Solution
++
++`sheet/engine.py` uses a recursive-descent parser for formulas. Separate parsing levels implement the required precedence and left associativity for `+`, `-`, `*`, and `/`; factors handle numbers, cell references, parentheses, and unary minus.
++
++Cell values are resolved lazily with memoization, so forward references and transitive dependency chains work without depending on dictionary order. A set and stack track cells currently being evaluated; revisiting an active cell raises `CycleError` and includes the cycle path in its message.
++
++Handled edge cases include whitespace, decimal values, nested parentheses, repeated dependencies, direct and indirect cycles, real division, and propagation of Python's normal `ZeroDivisionError` for division by zero.
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..ebb55cc 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,142 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Evaluate the small spreadsheet language described in README.md."""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references contain a dependency cycle."""
++
++
++_NUMBER_RE = re.compile(r"(?:\d+(?:\.\d*)?|\.\d+)")
++_REFERENCE_RE = re.compile(r"[A-Za-z]+\d*")
++
++
++class _Parser:
++    def __init__(self, formula, resolve):
++        self.formula = formula
++        self.resolve = resolve
++        self.position = 0
++        self.token = None
++        self.value = None
++        self._advance()
++
++    def parse(self):
++        value = self._expression()
++        if self.token is not None:
++            raise ValueError(f"unexpected token {self.value!r}")
++        return value
++
++    def _advance(self):
++        while (
++            self.position < len(self.formula)
++            and self.formula[self.position].isspace()
++        ):
++            self.position += 1
++
++        if self.position == len(self.formula):
++            self.token = None
++            self.value = None
++            return
++
++        number = _NUMBER_RE.match(self.formula, self.position)
++        if number:
++            self.token = "number"
++            self.value = number.group()
++            self.position = number.end()
++            return
++
++        reference = _REFERENCE_RE.match(self.formula, self.position)
++        if reference:
++            self.token = "reference"
++            self.value = reference.group()
++            self.position = reference.end()
++            return
++
++        character = self.formula[self.position]
++        if character in "+-*/()":
++            self.token = character
++            self.value = character
++            self.position += 1
++            return
++
++        raise ValueError(f"unexpected character {character!r}")
++
++    def _expression(self):
++        value = self._term()
++        while self.token in ("+", "-"):
++            operator = self.token
++            self._advance()
++            right = self._term()
++            value = value + right if operator == "+" else value - right
++        return value
++
++    def _term(self):
++        value = self._factor()
++        while self.token in ("*", "/"):
++            operator = self.token
++            self._advance()
++            right = self._factor()
++            value = value * right if operator == "*" else value / right
++        return value
++
++    def _factor(self):
++        if self.token == "-":
++            self._advance()
++            return -self._factor()
++
++        if self.token == "number":
++            value = float(self.value)
++            self._advance()
++            return value
++
++        if self.token == "reference":
++            name = self.value
++            self._advance()
++            return self.resolve(name)
++
++        if self.token == "(":
++            self._advance()
++            value = self._expression()
++            if self.token != ")":
++                raise ValueError("missing closing parenthesis")
++            self._advance()
++            return value
++
++        if self.token is None:
++            raise ValueError("unexpected end of formula")
++        raise ValueError(f"unexpected token {self.value!r}")
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Return the floating-point value of every cell in *cells*."""
++
++    values = {}
++    visiting = []
++    active = set()
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in active:
++            cycle_start = visiting.index(name)
++            cycle = visiting[cycle_start:] + [name]
++            raise CycleError(" -> ".join(cycle))
++
++        raw_value = cells[name]
++        active.add(name)
++        visiting.append(name)
++        try:
++            if raw_value.startswith("="):
++                value = _Parser(raw_value[1:], resolve).parse()
++            else:
++                value = float(raw_value)
++        finally:
++            visiting.pop()
++            active.remove(name)
++
++        values[name] = value
++        return value
++
++    for name in cells:
++        resolve(name)
++    return values

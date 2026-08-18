@@ -1,0 +1,30 @@
+# Z.ai Anthropic-compatible endpoint model routing
+# probed: 2026-08-15T20:59:55Z
+# base_url: https://api.z.ai/api/anthropic
+# account: GLM Coding Plan attached
+
+## requested -> served
+glm-5.3                  -> glm-5.3
+glm-5.2                  -> glm-5.3
+glm-5.1                  -> glm-5.3
+glm-5                    -> glm-5.3
+glm-4.7                  -> glm-4.7
+glm-4.5-air              -> glm-4.7
+claude-opus-4-8          -> glm-4.7
+claude-sonnet-4-6        -> glm-4.7
+not-a-real-model-xyz     -> ERROR 1214: [1214][modelCode: does not exist][20260816050021903c9e16fb12470d]
+
+## stability: 5 repeats requesting glm-5.2
+glm-5.2 -> glm-5.3
+glm-5.2 -> glm-5.3
+glm-5.2 -> glm-5.3
+glm-5.2 -> glm-5.3
+glm-5.2 -> glm-5.3
+
+## glm-5.3 request-shape validation (which shapes are accepted)
+no thinking field                  -> glm-5.3
+thinking.disabled                  -> glm-5.3
+thinking.enabled                   -> glm-5.3
+thinking.adaptive                  -> glm-5.3
+output_config.effort=high          -> glm-5.3
+output_config.effort=max           -> glm-5.3

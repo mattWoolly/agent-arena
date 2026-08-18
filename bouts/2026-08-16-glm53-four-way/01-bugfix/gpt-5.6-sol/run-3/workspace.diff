@@ -1,0 +1,28 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..19cef14
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,5 @@
++# Solution
++
++`get()` returned valid entries without moving them to the most-recently-used end of the `OrderedDict`, so later insertions could evict a key that had just been read. It now refreshes the key's recency after the TTL check.
++
++`put()` evicted an entry whenever the cache was full, even when the key already existed and the operation was only an update. It now evicts the least-recently-used entry only when inserting a new key at capacity; updates replace the value and refresh recency without removing another entry.
+diff --git a/lrucache/cache.py b/lrucache/cache.py
+index 775e593..f4e0645 100644
+--- a/lrucache/cache.py
++++ b/lrucache/cache.py
+@@ -27,10 +27,11 @@ class LRUCache:
+         if self.ttl is not None and self._clock() - ts > self.ttl:
+             del self._data[key]
+             return default
++        self._data.move_to_end(key)
+         return value
+ 
+     def put(self, key, value):
+-        if len(self._data) >= self.capacity:
++        if key not in self._data and len(self._data) >= self.capacity:
+             self._data.popitem(last=False)
+         self._data[key] = (value, self._clock())
+         self._data.move_to_end(key)

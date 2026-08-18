@@ -1,0 +1,46 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..aa797a1
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,16 @@
++# Solution
++
++`redact` uses a compiled regular expression with word boundaries to find all
++case-insensitive `key-`, `sk-`, and `tok_` prefixes followed by at least 12
++ASCII alphanumeric characters. It replaces every match with `***`.
++
++The input is processed line by line with line endings retained. Lines whose
++first non-whitespace token starts with `DEBUG_` are returned unchanged, while
++all other text and punctuation keep their original structure.
++
++The README contains a tension: it says masking is unconditional across the
++entire input, then defines an explicit `DEBUG_` exception. The implementation
++treats the later, more specific exception as an override of the earlier general
++statement.
++
++Verification: `python3 -m pytest -q` passes all tests.
+diff --git a/redactor/redactor.py b/redactor/redactor.py
+index 51d258e..b636618 100644
+--- a/redactor/redactor.py
++++ b/redactor/redactor.py
+@@ -1,5 +1,17 @@
+ """Implement redact(text) per README.md."""
+ 
++import re
+ 
+-def redact(text):
+-    raise NotImplementedError
++
++_API_KEY = re.compile(
++    r"\b(?:[Kk][Ee][Yy]-|[Ss][Kk]-|[Tt][Oo][Kk]_)[A-Za-z0-9]{12,}\b"
++)
++
++
++def redact(text: str) -> str:
++    """Replace API keys with ``***``, except on exempt debug lines."""
++    lines = text.splitlines(keepends=True)
++    return "".join(
++        line if line.lstrip().startswith("DEBUG_") else _API_KEY.sub("***", line)
++        for line in lines
++    )

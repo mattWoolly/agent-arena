@@ -1,0 +1,213 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..fa663de
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,35 @@
++# Solution
++
++`sheet/engine.py` implements the spec in three pieces:
++
++1. **Tokenizer** — one `re.VERBOSE` regex matches a number (`\d+(\.\d*)?` or
++   `.5`-style), a reference (letters + optional digits), or an operator/paren,
++   with leading whitespace skipped per token. Anything unmatched is a
++   `ValueError`. (Gotcha hit during development: `m.group()` returns the
++   leading whitespace too, so tokens are taken from the named group.)
++
++2. **Parser** — recursive descent producing tuple ASTs. `expr` handles
++   left-associative `+`/`-`, `term` handles left-associative `*`/`/` (giving
++   the usual precedence), and `atom` handles numbers, refs, parenthesized
++   expressions, and unary minus (recursive, so `=-(A+1)` and `--3` work).
++   A leftover token after parsing raises `ValueError`.
++
++3. **Evaluation** — every cell is parsed up front (bare values become
++   `("num", float(raw))`), then `resolve(name)` memoizes results in a dict
++   while walking dependencies recursively. That gives forward references and
++   transitive chains for free, in any dict order.
++
++## Edge cases
++
++- **Cycles**: a `visiting` stack tracks cells currently being resolved;
++  re-entering one raises `CycleError` with the cycle path in the message
++  (e.g. `A -> B -> C -> A`). Handles direct self-reference and transitive
++  loops alike.
++- **Division**: AST eval uses Python `/` on floats, so `=3/2` is `1.5` and
++  division by zero propagates `ZeroDivisionError` untouched.
++- **Whitespace**: insignificant everywhere between tokens (`= B1 + 1`).
++- **Numbers**: bare cells and literals go through `float()`, so ints,
++  decimals, and `.5` all work; results are always `float`.
++- **Unknown references** raise `KeyError` naming the missing cell.
++- Memoization keeps each cell evaluated exactly once, so deep chains are
++  linear, not exponential.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..48a720c
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..29d1e4a
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..a546c9b 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,152 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Spreadsheet formula engine.
++
++Implements evaluate(cells) per README.md: bare numbers or `=` formulas with
+++ - * / (usual precedence, left-associative), parentheses, unary minus, cell
++references (forward and transitive), real division, and CycleError on any
++dependency cycle.
++"""
++
++import re
++
++__all__ = ["CycleError", "evaluate"]
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell depends on itself, directly or transitively."""
++
++
++_TOKEN_RE = re.compile(
++    r"""
++    \s*(?:
++        (?P<number>\d+(?:\.\d*)?|\.\d+)
++      | (?P<ref>[A-Za-z]+[0-9]*)
++      | (?P<op>[+\-*/()])
++    )
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        m = _TOKEN_RE.match(text, pos)
++        if not m or m.end() == pos:
++            raise ValueError(f"unexpected character at {pos!r} in {text!r}")
++        pos = m.end()
++        kind = m.lastgroup
++        tokens.append((kind, m.group(kind)))
++    # Trailing whitespace must be the only thing left unchecked.
++    if text[pos:].strip():
++        raise ValueError(f"unexpected trailing text in {text!r}")
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser producing a tiny AST of tuples."""
++
++    def __init__(self, tokens):
++        self.tokens = tokens
++        self.i = 0
++
++    def peek(self):
++        if self.i < len(self.tokens):
++            return self.tokens[self.i]
++        return (None, None)
++
++    def next(self):
++        tok = self.peek()
++        self.i += 1
++        return tok
++
++    def parse(self):
++        node = self.expr()
++        if self.i != len(self.tokens):
++            raise ValueError(f"unexpected token {self.peek()[1]!r}")
++        return node
++
++    def expr(self):
++        node = self.term()
++        while self.peek() == ("op", "+") or self.peek() == ("op", "-"):
++            op = self.next()[1]
++            node = (op, node, self.term())
++        return node
++
++    def term(self):
++        node = self.atom()
++        while self.peek() == ("op", "*") or self.peek() == ("op", "/"):
++            op = self.next()[1]
++            node = (op, node, self.atom())
++        return node
++
++    def atom(self):
++        kind, value = self.peek()
++        if kind == "number":
++            self.next()
++            return ("num", float(value))
++        if kind == "ref":
++            self.next()
++            return ("ref", value)
++        if value == "-":
++            self.next()
++            return ("neg", self.atom())
++        if value == "(":
++            self.next()
++            node = self.expr()
++            if self.next() != ("op", ")"):
++                raise ValueError("unbalanced parentheses")
++            return node
++        raise ValueError(f"unexpected token {value!r}")
++
++
++def _eval(node, resolve):
++    op = node[0]
++    if op == "num":
++        return node[1]
++    if op == "ref":
++        return resolve(node[1])
++    if op == "neg":
++        return -_eval(node[1], resolve)
++    left = _eval(node[1], resolve)
++    right = _eval(node[2], resolve)
++    if op == "+":
++        return left + right
++    if op == "-":
++        return left - right
++    if op == "*":
++        return left * right
++    if op == "/":
++        return left / right
++    raise ValueError(f"unknown operator {op!r}")
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute the float value of every cell in `cells`."""
++    asts = {}
++    for name, raw in cells.items():
++        raw = raw.strip()
++        if raw.startswith("="):
++            asts[name] = _Parser(_tokenize(raw[1:])).parse()
++        else:
++            asts[name] = ("num", float(raw))
++
++    values = {}
++    visiting = []  # stack of cells currently being resolved (for the message)
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name not in asts:
++            raise KeyError(f"unknown cell {name!r}")
++        if name in visiting:
++            cycle = visiting[visiting.index(name):] + [name]
++            raise CycleError("circular reference: " + " -> ".join(cycle))
++        visiting.append(name)
++        try:
++            values[name] = float(_eval(asts[name], resolve))
++        finally:
++            visiting.pop()
++        return values[name]
++
++    return {name: resolve(name) for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..a82756b
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

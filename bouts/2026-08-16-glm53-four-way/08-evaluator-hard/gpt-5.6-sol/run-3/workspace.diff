@@ -1,0 +1,151 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..071d695
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,7 @@
++# Solution
++
++`sheet/engine.py` uses a recursive-descent parser for formulas, with a parsing level for each precedence group. Addition, subtraction, multiplication, and division are evaluated left-to-right. Exponentiation recurses on its right operand, making it right-associative, and the unary-minus layer is arranged so that powers bind more tightly than negation.
++
++Cell references are resolved lazily with depth-first evaluation, so forward and transitive references work naturally. Computed values are memoized. A set of cells currently being evaluated detects direct and indirect dependency cycles and raises `CycleError` with the cycle path.
++
++Handled edge cases include whitespace, parenthesized negative values, negative exponents, decimal literals, undefined references (which retain normal `KeyError` behavior), division by zero, invalid formula tokens, and formulas containing trailing or missing syntax.
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..53477f1 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,130 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Evaluate the small spreadsheet language described in README.md."""
++
++import re
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references form a dependency cycle."""
++
++
++_TOKEN_RE = re.compile(
++    r"(?:\d+(?:\.\d*)?|\.\d+)|(?:[A-Za-z]+\d*)|[+\-*/^()]"
++)
++_CELL_RE = re.compile(r"[A-Za-z]+\d*\Z")
++
++
++class _Parser:
++    def __init__(self, expression, resolve):
++        self.tokens = self._tokenize(expression)
++        self.position = 0
++        self.resolve = resolve
++
++    @staticmethod
++    def _tokenize(expression):
++        tokens = []
++        position = 0
++        while position < len(expression):
++            if expression[position].isspace():
++                position += 1
++                continue
++            match = _TOKEN_RE.match(expression, position)
++            if match is None:
++                raise ValueError(f"invalid token at position {position}")
++            tokens.append(match.group())
++            position = match.end()
++        return tokens
++
++    def parse(self):
++        value = self._parse_addition()
++        if self.position != len(self.tokens):
++            raise ValueError(f"unexpected token {self._peek()!r}")
++        return value
++
++    def _peek(self):
++        if self.position == len(self.tokens):
++            return None
++        return self.tokens[self.position]
++
++    def _take(self, token=None):
++        current = self._peek()
++        if current is None:
++            raise ValueError("unexpected end of formula")
++        if token is not None and current != token:
++            raise ValueError(f"expected {token!r}, got {current!r}")
++        self.position += 1
++        return current
++
++    def _parse_addition(self):
++        value = self._parse_multiplication()
++        while self._peek() in ("+", "-"):
++            operator = self._take()
++            right = self._parse_multiplication()
++            value = value + right if operator == "+" else value - right
++        return value
++
++    def _parse_multiplication(self):
++        value = self._parse_unary()
++        while self._peek() in ("*", "/"):
++            operator = self._take()
++            right = self._parse_unary()
++            value = value * right if operator == "*" else value / right
++        return value
++
++    def _parse_unary(self):
++        if self._peek() == "-":
++            self._take("-")
++            return -self._parse_unary()
++        return self._parse_power()
++
++    def _parse_power(self):
++        value = self._parse_primary()
++        if self._peek() == "^":
++            self._take("^")
++            value = value ** self._parse_unary()
++        return value
++
++    def _parse_primary(self):
++        token = self._take()
++        if token == "(":
++            value = self._parse_addition()
++            self._take(")")
++            return value
++        if _CELL_RE.fullmatch(token):
++            return self.resolve(token)
++        if token in ("+", "-", "*", "/", "^", ")"):
++            raise ValueError(f"unexpected token {token!r}")
++        return float(token)
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Return the floating-point value of every cell in *cells*."""
++
++    values = {}
++    visiting = set()
++    stack = []
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in visiting:
++            cycle_start = stack.index(name)
++            cycle = stack[cycle_start:] + [name]
++            raise CycleError(" -> ".join(cycle))
++
++        # Indexing the original mapping deliberately preserves the normal
++        # KeyError for a reference to an undefined cell.
++        source = cells[name]
++        visiting.add(name)
++        stack.append(name)
++        try:
++            if source.startswith("="):
++                value = _Parser(source[1:], resolve).parse()
++            else:
++                value = float(source)
++            values[name] = float(value)
++            return values[name]
++        finally:
++            stack.pop()
++            visiting.remove(name)
++
++    return {name: resolve(name) for name in cells}

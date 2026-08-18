@@ -1,0 +1,44 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 97.5,
+  "agent_exit": 0,
+  "assistant_messages": 10,
+  "tool_calls": {
+    "Read": 3,
+    "Bash": 2,
+    "Write": 2
+  },
+  "tool_calls_total": 7,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.1284,
+  "num_turns": 8,
+  "duration_ms": 96680,
+  "duration_api_ms": 99221,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 27982,
+  "output_tokens": 2968,
+  "cache_read_tokens": 152320,
+  "final_message": "Done. All 3 tests pass, plus a set of extra edge-case checks I ran against the README semantics.\n\n**Implementation** (`sheet/engine.py`):\n- Regex tokenizer \u2192 recursive-descent parser that evaluates in one pass: `expr` (`+-`) \u2192 `term` (`*/`) \u2192 `unary` (leading `-`/`+`) \u2192 `power` (`^`, right-associative by recursing through `unary`) \u2192 `atom` (number / reference / parens).\n- Demand-driven cell resolution with memoization, so forward and transitive references just work; a `resolving` set (cleaned up in `finally`) detects direct and transitive cycles and raises `CycleError`.\n\nKey semantics verified: `2^3^2 = 512`, `-2^2 = -4`, `(-2)^2 = 4`, `=3/2 = 1.5`, `=1/0` raises `ZeroDivisionError`, `A\u2192B\u2192A` and `=A` raise `CycleError`. `SOLUTION.md` documents the approach and edge cases.",
+  "total_cost_usd_cli": 0.29027,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T02:29:55Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 196 insertions(+), 2 deletions(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

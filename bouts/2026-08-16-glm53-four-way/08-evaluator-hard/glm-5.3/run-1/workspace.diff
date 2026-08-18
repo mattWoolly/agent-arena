@@ -1,0 +1,305 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..a497bdb
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,63 @@
++# Solution
++
++`sheet/engine.py` implements `evaluate()` and `CycleError` in three layers:
++
++## Parsing
++
++A regex tokenizer splits formulas into numbers, cell references
++(`[A-Za-z]+\d*`), operators, and parens; whitespace is discarded. A
++recursive-descent parser then builds a small tuple AST with one function per
++precedence level:
++
++```
++expr   := term (('+' | '-') term)*        left-assoc
++term   := unary (('*' | '/') unary)*      left-assoc
++unary  := ('+' | '-') unary | power
++power  := atom ('^' unary)?               right-assoc
++atom   := NUMBER | CELLREF | '(' expr ')'
++```
++
++Placing `unary` *below* `power` gives the README's required binding: `-2^2`
++parses as `-(2^2) = -4` while `(-2)^2 = 4`. Because the `^` rule recurses into
++`unary` for its exponent, right-associativity (`2^3^2 = 512`) and signed
++exponents (`2^-2 = 0.25`) both work.
++
++## Resolution
++
++Each cell's string is parsed once and cached (AST + dependency list). Bare
++(non-`=`) values become literal number nodes via `float()`. Cells are resolved
++with an **iterative** depth-first traversal using a white/gray/black state
++machine — no Python recursion, so a 5000-cell dependency chain works fine
++(verified). All dependencies of a cell are fully computed before the cell
++itself is evaluated, which makes forward references and transitive chains
++free. Hitting a cell that is still _in progress_ means a dependency path
++looped back on itself → `CycleError`.
++
++## Evaluation
++
++The AST is walked recursively (depth = formula nesting only) with plain float
++arithmetic: `/` raises Python's `ZeroDivisionError` naturally, and `**`
++handles `^`.
++
++## Edge cases handled
++
++- `^` right-associative; unary minus looser than `^` but usable in exponents
++- Unary plus and repeated signs (`=--5`)
++- Whitespace anywhere between tokens, including around bare values
++- Decimal numbers, including leading-dot form (`.5`), in both cells and formulas
++- Self-cycles (`=A`), 2-cycles, transitive cycles, and cycles off a branch
++- Division/modulo-power by zero → `ZeroDivisionError` (`=1/0`, `=0/0`, `=0^-1`)
++- Long dependency chains (no recursion-limit failures)
++
++## Unspecified behavior (chosen conservatively)
++
++- A reference to a cell not in the dict raises `KeyError` (the natural dict
++  lookup); the README only defines references between existing cells.
++- Malformed input (e.g. `=1+`, `"abc"`) raises `ValueError` with a message
++  naming the offending cell/token.
++
++## Tests
++
++`python3 -m pytest -q` → 3 passed. The extra edge-case script used during
++development (precedence table, all cycle shapes, division-by-zero variants,
++5000-deep chain) also passes.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..2f368ed
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..d154c0d
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..3347118 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,217 @@
+ """Implement evaluate() and CycleError per README.md."""
+ 
++import re
++
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell's dependencies form a cycle."""
++
++
++# --- Formula parsing ---------------------------------------------------------
++#
++# Grammar, lowest to highest precedence:
++#
++#   expr   := term (('+' | '-') term)*       left-associative
++#   term   := unary (('*' | '/') unary)*     left-associative
++#   unary  := ('+' | '-') unary | power
++#   power  := atom ('^' unary)?              right-associative; the exponent
++#                                           may carry its own unary sign
++#   atom   := NUMBER | CELLREF | '(' expr ')'
++#
++# Unary minus sits between '* /' and '^', so `-2^2` parses as `-(2^2)` while
++# `2^-3` still works because the exponent recurses through `unary`.
++
++_TOKEN_RE = re.compile(
++    r"""
++      (?P<ws>\s+)
++    | (?P<num>\d+\.\d*|\.\d+|\d+)
++    | (?P<ref>[A-Za-z]+\d*)
++    | (?P<op>[+\-*/^()])
++    """,
++    re.VERBOSE,
++)
++
++
++def _tokenize(text):
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        match = _TOKEN_RE.match(text, pos)
++        if match is None:
++            raise ValueError(
++                f"unexpected character {text[pos]!r} in formula {text!r}"
++            )
++        pos = match.end()
++        if match.lastgroup != "ws":
++            tokens.append((match.lastgroup, match.group()))
++    return tokens
++
++
++class _Parser:
++    def __init__(self, tokens):
++        self._tokens = tokens
++        self._pos = 0
++
++    def parse(self):
++        node = self._expr()
++        kind, text = self._peek()
++        if kind is not None:
++            raise ValueError(f"unexpected token {text!r}")
++        return node
++
++    def _peek(self):
++        if self._pos < len(self._tokens):
++            return self._tokens[self._pos]
++        return None, None
++
++    def _advance(self):
++        token = self._peek()
++        self._pos += 1
++        return token
++
++    def _expr(self):
++        node = self._term()
++        while True:
++            kind, text = self._peek()
++            if kind == "op" and text in "+-":
++                self._advance()
++                node = ("bin", text, node, self._term())
++            else:
++                return node
++
++    def _term(self):
++        node = self._unary()
++        while True:
++            kind, text = self._peek()
++            if kind == "op" and text in "*/":
++                self._advance()
++                node = ("bin", text, node, self._unary())
++            else:
++                return node
++
++    def _unary(self):
++        kind, text = self._peek()
++        if kind == "op" and text in "+-":
++            self._advance()
++            operand = self._unary()
++            return operand if text == "+" else ("neg", operand)
++        return self._power()
++
++    def _power(self):
++        node = self._atom()
++        kind, text = self._peek()
++        if kind == "op" and text == "^":
++            self._advance()
++            return ("bin", "^", node, self._unary())
++        return node
++
++    def _atom(self):
++        kind, text = self._advance()
++        if kind == "num":
++            return ("num", float(text))
++        if kind == "ref":
++            return ("ref", text)
++        if kind == "op" and text == "(":
++            node = self._expr()
++            kind, text = self._advance()
++            if kind != "op" or text != ")":
++                raise ValueError("expected ')'")
++            return node
++        if kind is None:
++            raise ValueError("unexpected end of formula")
++        raise ValueError(f"unexpected token {text!r}")
++
++
++def _dependencies(node, out):
++    """Collect referenced cell names from an AST, in left-to-right order."""
++    tag = node[0]
++    if tag == "ref":
++        out.append(node[1])
++    elif tag == "neg":
++        _dependencies(node[1], out)
++    elif tag == "bin":
++        _dependencies(node[2], out)
++        _dependencies(node[3], out)
++
++
++def _compute(node, values):
++    tag = node[0]
++    if tag == "num":
++        return node[1]
++    if tag == "ref":
++        return values[node[1]]
++    if tag == "neg":
++        return -_compute(node[1], values)
++    left = _compute(node[2], values)
++    right = _compute(node[3], values)
++    op = node[1]
++    if op == "+":
++        return left + right
++    if op == "-":
++        return left - right
++    if op == "*":
++        return left * right
++    if op == "/":
++        return left / right  # ZeroDivisionError propagates, per spec
++    return left ** right
++
++
++_IN_PROGRESS = 1
++_DONE = 2
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute the float value of every cell in ``cells``.
++
++    ``cells`` maps cell names to strings: either a bare number or a formula
++    beginning with ``=``. References may point forward or backward, and are
++    resolved transitively. Raises :class:`CycleError` if any cell can reach
++    itself through its references.
++    """
++    asts = {}
++    deps = {}
++    values = {}
++    state = {}
++
++    def prepare(name):
++        """Parse cell ``name`` once, caching its AST and reference list."""
++        if name not in asts:
++            source = cells[name]
++            if source.startswith("="):
++                ast = _Parser(_tokenize(source[1:])).parse()
++            else:
++                try:
++                    ast = ("num", float(source))
++                except ValueError:
++                    raise ValueError(
++                        f"invalid value for cell {name!r}: {source!r}"
++                    ) from None
++            references = []
++            _dependencies(ast, references)
++            asts[name] = ast
++            deps[name] = references
++        return deps[name]
++
++    # Iterative depth-first resolution, so long dependency chains cannot
++    # overflow the interpreter stack. A cell is _IN_PROGRESS while any of its
++    # dependencies are still being resolved; meeting such a cell again means
++    # the dependency path loops back on itself.
++    for root in cells:
++        if state.get(root) == _DONE:
++            continue
++        stack = [(root, False)]
++        while stack:
++            name, expanded = stack.pop()
++            if state.get(name) == _DONE:
++                continue
++            if expanded:
++                state[name] = _DONE
++                values[name] = _compute(asts[name], values)
++            elif state.get(name) == _IN_PROGRESS:
++                raise CycleError(f"dependency cycle through cell {name!r}")
++            else:
++                state[name] = _IN_PROGRESS
++                stack.append((name, True))
++                for dep in prepare(name):
++                    stack.append((dep, False))
++    return values
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..c9fbac7
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

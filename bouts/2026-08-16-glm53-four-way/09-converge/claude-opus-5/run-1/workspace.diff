@@ -1,0 +1,97 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..c6d9550
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,49 @@
++# Solution
++
++`format_amount` does three things in order: round to cents, render the
++magnitude, then apply the sign. Keeping them in that order is what makes the
++edge cases fall out for free.
++
++## Approach
++
++1. **Round** with `Decimal(str(amount)).quantize(Decimal("0.01"), ROUND_HALF_UP)`.
++   In the `decimal` module `ROUND_HALF_UP` means "ties away from zero", which is
++   exactly the rule the spec asks for, and it applies symmetrically to negatives.
++2. **Render the magnitude** from `abs(value)`: `int()` for the whole part,
++   `(magnitude - whole) * 100` for the cents. Both are exact because the value is
++   already quantized to two places. Grouping is `f"{whole:,}"`, or plain `f"{whole}"`
++   when `group=False`.
++3. **Apply the sign** last: parentheses around the whole rendered string
++   (currency symbol included), or a leading `-` before the currency symbol when
++   `parens_for_negative=False`.
++
++## Edge cases, and how they interact
++
++- **`str()` before `Decimal` is load-bearing.** `f(0.995)` must give `"$1.00"`,
++  but the float `0.995` is really `0.994999...`, so `Decimal(0.995)` — and
++  likewise the builtin `round(0.995, 2)` — rounds *down* to `0.99`. Passing
++  through `str()` gets Python's shortest round-trip repr, `"0.995"`, so the
++  literal the caller wrote is what gets rounded. Same trap as the classic
++  `round(2.675, 2) == 2.67`; this implementation returns `$2.68`.
++- **`ROUND_HALF_UP`, not `ROUND_HALF_EVEN`.** Decimal's default is banker's
++  rounding, which would turn `0.995` into `0.99` and `1.005` into `1.00`. The
++  name is also mildly misleading for negatives — it rounds away from zero, not
++  toward `+inf`, which is what `f(-0.005) == "($0.01)"` wants.
++- **Sign is decided after rounding, and this is where two cases meet.**
++  `-0.004` rounds to `-0.00`, which is *not* negative for display purposes, so
++  it must print `"$0.00"` and not `"($0.00)"`. Testing `value < 0` handles this
++  (`Decimal("-0.00") < 0` is `False`), whereas testing the input sign, or
++  `Decimal.is_signed()`, would keep the sticky negative-zero flag and produce
++  `"($0.00)"`. The same check covers the `-0.0` float input, whose sign bit
++  survives `str()` as `"-0.0"`. Deciding the sign *before* rounding gets both
++  of these wrong.
++- **Negative sign styles differ in scope.** Parentheses wrap the currency
++  symbol, `"($1,234.50)"`; the minus goes outside it, `"-$5.00"`. So the sign
++  is applied to the finished magnitude string rather than spliced in next to
++  the digits.
++- **`group=False` only affects the whole part.** Cents are always two digits
++  (`f"{cents:02d}"`), so `0.5` stays `"$0.50"` rather than `"$0.5"`.
++
++## Tests
++
++`python3 -m pytest -q` → 11 passed.
+diff --git a/money/__pycache__/__init__.cpython-312.pyc b/money/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..edabcc2
+Binary files /dev/null and b/money/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/money/__pycache__/money.cpython-312.pyc b/money/__pycache__/money.cpython-312.pyc
+new file mode 100644
+index 0000000..8f7b03a
+Binary files /dev/null and b/money/__pycache__/money.cpython-312.pyc differ
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..0fa562e 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,24 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP
++
++_CENTS = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    # Go through str() so we round the decimal literal the caller wrote:
++    # Decimal(0.995) is 0.99499...  and would round down, but 0.995 must
++    # round up. ROUND_HALF_UP is decimal's "ties away from zero".
++    value = Decimal(str(amount)).quantize(_CENTS, rounding=ROUND_HALF_UP)
++
++    # Sign is decided after rounding, so -0.004 and -0.0 are plain "$0.00".
++    negative = value < 0
++    magnitude = abs(value)
++
++    whole = int(magnitude)
++    cents = int((magnitude - whole) * 100)
++    text = f"{currency}{whole:,}.{cents:02d}" if group else f"{currency}{whole}.{cents:02d}"
++
++    if not negative:
++        return text
++    return f"({text})" if parens_for_negative else f"-{text}"
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..2c7bef7
+Binary files /dev/null and b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc differ

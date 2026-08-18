@@ -1,0 +1,47 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..441028c
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,12 @@
++# Solution
++
++`format_amount` converts the input to `Decimal` through its string representation, then quantizes it to cents with `ROUND_HALF_UP`. This provides the required half-away-from-zero behavior without binary floating-point rounding errors.
++
++The rounded magnitude is formatted with exactly two decimal places and optional thousands separators. The currency prefix is then added, followed by either parentheses or a leading minus for negative results.
++
++Handled edge cases include:
++
++- Positive and negative half-cent values such as `0.005` and `-0.005`.
++- Negative inputs that round to zero, including `-0.004` and `-0.0`, which do not receive a negative sign.
++- Large integer inputs, using a local decimal context with sufficient precision.
++- Custom currency strings, disabled grouping, and the leading-minus option.
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..bedbcf0 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,23 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP, localcontext
++
++
++_CENT = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    """Render an integer or float as a currency amount."""
++    value = Decimal(str(amount))
++
++    # Leave enough precision for large integer inputs as well as their cents.
++    with localcontext() as context:
++        context.prec = max(context.prec, len(value.as_tuple().digits) + 2)
++        rounded = value.quantize(_CENT, rounding=ROUND_HALF_UP)
++
++    number = format(abs(rounded), ",.2f" if group else ".2f")
++    rendered = f"{currency}{number}"
++
++    if rounded < 0:
++        return f"({rendered})" if parens_for_negative else f"-{rendered}"
++    return rendered

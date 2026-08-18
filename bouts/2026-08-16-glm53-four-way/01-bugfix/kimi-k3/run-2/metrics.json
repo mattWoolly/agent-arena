@@ -1,0 +1,45 @@
+{
+  "model": "kimi-k3",
+  "wall_seconds": 44.3,
+  "agent_exit": 0,
+  "assistant_messages": 9,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 1,
+    "Edit": 1,
+    "Write": 1
+  },
+  "tool_calls_total": 5,
+  "served_models": [
+    "kimi-k3"
+  ],
+  "served_model": "kimi-k3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.10017,
+  "num_turns": 6,
+  "duration_ms": 43454,
+  "duration_api_ms": 45394,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 20759,
+  "output_tokens": 1036,
+  "cache_read_tokens": 130560,
+  "final_message": "All 6 tests pass. Two bugs fixed in `lrucache/cache.py`:\n\n1. **`get` didn't refresh recency** \u2014 a hit returned the value without `move_to_end`, so recently-read keys could be evicted. Now a hit moves the key to the MRU end.\n2. **`put` evicted on updates** \u2014 the capacity check evicted the LRU entry even when the key already existed. Now eviction only happens when inserting a *new* key into a full cache.\n\n`SOLUTION.md` written with the root-cause summary.",
+  "total_cost_usd_cli": 0.194975,
+  "cost_source": "computed:env/prices.json (per-request)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.moonshot.ai/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/kimi-k3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T03:26:07Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 16 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

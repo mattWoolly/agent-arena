@@ -1,0 +1,31 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..1b5245c
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,5 @@
++# Solution
++
++`redact` uses a compiled, case-insensitive regular expression to find API-key tokens with the specified prefixes and at least 12 alphanumeric characters, bounded as required. Every match is replaced with the literal `***`, while all other input—including punctuation and newlines—is preserved by `re.sub`.
++
++The README contains an inconsistency: it says masking is unconditional across the entire input and describes redaction as a security control, but then gives `DEBUG_` lines an exemption. I followed the unconditional security requirement rather than allowing secrets to remain in the returned text.
+diff --git a/redactor/redactor.py b/redactor/redactor.py
+index 51d258e..579c088 100644
+--- a/redactor/redactor.py
++++ b/redactor/redactor.py
+@@ -1,5 +1,13 @@
+ """Implement redact(text) per README.md."""
+ 
++import re
+ 
+-def redact(text):
+-    raise NotImplementedError
++
++_API_KEY = re.compile(
++    r"\b(?:key-|sk-|tok_)[A-Za-z0-9]{12,}\b", re.IGNORECASE | re.ASCII
++)
++
++
++def redact(text: str) -> str:
++    """Mask every API key in *text*."""
++    return _API_KEY.sub("***", text)

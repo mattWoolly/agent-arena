@@ -1,0 +1,168 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..d877716
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,7 @@
++# Solution
++
++`sheet/engine.py` uses a small recursive-descent parser for formulas. Separate parser levels implement additive, multiplicative, unary-minus, and primary expressions, which gives the required precedence and left associativity without using Python's `eval`. Parentheses, whitespace, decimal numbers, and cell references are handled directly.
++
++Cell values are resolved lazily with memoization, so forward references and transitive dependency chains work. A set plus an active resolution stack tracks cells currently being evaluated; encountering an active cell raises `CycleError` for direct or indirect cycles. Bare values are converted to `float`, and arithmetic uses normal Python float operations, including `ZeroDivisionError` for division by zero.
++
++Handled edge cases include nested parentheses, repeated unary minus, whitespace between tokens, reference cycles of any length, invalid trailing formula tokens, undefined references, and preserving the input cell order in the returned mapping.
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..4c5f518 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,147 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""Evaluate the small spreadsheet language described in README.md."""
++
++import re
++
++
++_NUMBER_RE = re.compile(r"(?:\d+(?:\.\d*)?|\.\d+)")
++_CELL_RE = re.compile(r"[A-Za-z]+\d*")
++_BARE_NUMBER_RE = re.compile(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)")
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references contain a dependency cycle."""
++
++
++class _FormulaParser:
++    def __init__(self, formula, resolve):
++        self.formula = formula
++        self.resolve = resolve
++        self.position = 0
++
++    def parse(self):
++        value = self._expression()
++        self._skip_whitespace()
++        if self.position != len(self.formula):
++            self._error("unexpected token")
++        return value
++
++    def _expression(self):
++        value = self._term()
++        while True:
++            operator = self._take_one_of("+-")
++            if operator is None:
++                return value
++            operand = self._term()
++            if operator == "+":
++                value += operand
++            else:
++                value -= operand
++
++    def _term(self):
++        value = self._unary()
++        while True:
++            operator = self._take_one_of("*/")
++            if operator is None:
++                return value
++            operand = self._unary()
++            if operator == "*":
++                value *= operand
++            else:
++                value /= operand
++
++    def _unary(self):
++        self._skip_whitespace()
++        if self._take("-"):
++            return -self._unary()
++        return self._primary()
++
++    def _primary(self):
++        self._skip_whitespace()
++
++        if self._take("("):
++            value = self._expression()
++            if not self._take(")"):
++                self._error("expected ')'")
++            return value
++
++        number = _NUMBER_RE.match(self.formula, self.position)
++        if number is not None:
++            self.position = number.end()
++            return float(number.group())
++
++        reference = _CELL_RE.match(self.formula, self.position)
++        if reference is not None:
++            self.position = reference.end()
++            return self.resolve(reference.group())
++
++        self._error("expected a number, cell reference, or '('")
++
++    def _take_one_of(self, characters):
++        self._skip_whitespace()
++        if (
++            self.position < len(self.formula)
++            and self.formula[self.position] in characters
++        ):
++            character = self.formula[self.position]
++            self.position += 1
++            return character
++        return None
++
++    def _take(self, character):
++        self._skip_whitespace()
++        if (
++            self.position < len(self.formula)
++            and self.formula[self.position] == character
++        ):
++            self.position += 1
++            return True
++        return False
++
++    def _skip_whitespace(self):
++        while (
++            self.position < len(self.formula)
++            and self.formula[self.position].isspace()
++        ):
++            self.position += 1
++
++    def _error(self, message):
++        raise ValueError(
++            f"{message} at position {self.position} in formula {self.formula!r}"
++        )
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Return the computed floating-point value of every cell in *cells*."""
++    values = {}
++    visiting = set()
++    stack = []
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in visiting:
++            cycle_start = stack.index(name)
++            cycle = stack[cycle_start:] + [name]
++            raise CycleError("dependency cycle: " + " -> ".join(cycle))
++
++        raw_value = cells[name]
++        visiting.add(name)
++        stack.append(name)
++        try:
++            if raw_value.startswith("="):
++                value = _FormulaParser(raw_value[1:], resolve).parse()
++            else:
++                number = raw_value.strip()
++                if _BARE_NUMBER_RE.fullmatch(number) is None:
++                    raise ValueError(f"invalid bare number in cell {name!r}: {raw_value!r}")
++                value = float(number)
++            values[name] = value
++            return value
++        finally:
++            stack.pop()
++            visiting.remove(name)
++
++    for cell_name in cells:
++        resolve(cell_name)
++
++    return {name: values[name] for name in cells}

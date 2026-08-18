@@ -1,0 +1,170 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..72b9694
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,5 @@
++# Solution
++
++`evaluate` uses memoized depth-first evaluation: each cell is computed on demand, so forward references and transitive dependency chains work regardless of dictionary order. A set of cells currently being evaluated detects both direct and indirect dependency cycles and raises `CycleError`.
++
++Formulas are handled by a small recursive-descent parser implementing the specified precedence and left associativity. It supports numbers, cell references, parentheses, insignificant whitespace, and recursive unary minus. All values are converted to `float`, while arithmetic uses Python's normal behavior, including `ZeroDivisionError` for division by zero.
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..307fb61 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,151 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula evaluator."""
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when cell references form a dependency cycle."""
++
++
++class _FormulaParser:
++    def __init__(self, formula, resolve):
++        self.formula = formula
++        self.resolve = resolve
++        self.position = 0
++
++    def parse(self):
++        value = self._parse_expression()
++        self._skip_whitespace()
++        if self.position != len(self.formula):
++            self._syntax_error()
++        return value
++
++    def _parse_expression(self):
++        value = self._parse_term()
++        while True:
++            operator = self._take_one_of("+-")
++            if operator is None:
++                return value
++            right = self._parse_term()
++            if operator == "+":
++                value += right
++            else:
++                value -= right
++
++    def _parse_term(self):
++        value = self._parse_unary()
++        while True:
++            operator = self._take_one_of("*/")
++            if operator is None:
++                return value
++            right = self._parse_unary()
++            if operator == "*":
++                value *= right
++            else:
++                value /= right
++
++    def _parse_unary(self):
++        self._skip_whitespace()
++        if self._take("-"):
++            return -self._parse_unary()
++        return self._parse_primary()
++
++    def _parse_primary(self):
++        self._skip_whitespace()
++        if self._take("("):
++            value = self._parse_expression()
++            if not self._take(")"):
++                self._syntax_error("missing closing parenthesis")
++            return value
++
++        character = self._peek()
++        if character is not None and character.isdigit():
++            return self._parse_number()
++        if character is not None and character.isascii() and character.isalpha():
++            return self.resolve(self._parse_cell_name())
++        self._syntax_error("expected a number, cell reference, or parenthesis")
++
++    def _parse_number(self):
++        start = self.position
++        while self._peek() is not None and self._peek().isdigit():
++            self.position += 1
++        if self._peek() == ".":
++            self.position += 1
++            decimal_start = self.position
++            while self._peek() is not None and self._peek().isdigit():
++                self.position += 1
++            if self.position == decimal_start:
++                self._syntax_error("expected digits after decimal point")
++        return float(self.formula[start:self.position])
++
++    def _parse_cell_name(self):
++        start = self.position
++        while (
++            self._peek() is not None
++            and self._peek().isascii()
++            and self._peek().isalpha()
++        ):
++            self.position += 1
++        while self._peek() is not None and self._peek().isdigit():
++            self.position += 1
++        return self.formula[start:self.position]
++
++    def _take_one_of(self, characters):
++        self._skip_whitespace()
++        character = self._peek()
++        if character is not None and character in characters:
++            self.position += 1
++            return character
++        return None
++
++    def _take(self, character):
++        self._skip_whitespace()
++        if self._peek() == character:
++            self.position += 1
++            return True
++        return False
++
++    def _peek(self):
++        if self.position >= len(self.formula):
++            return None
++        return self.formula[self.position]
++
++    def _skip_whitespace(self):
++        while self._peek() is not None and self._peek().isspace():
++            self.position += 1
++
++    def _syntax_error(self, detail="unexpected token"):
++        raise ValueError(
++            f"invalid formula at position {self.position}: {detail}"
++        )
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Return the computed floating-point value of every cell in *cells*."""
++    values = {}
++    visiting = set()
++    stack = []
++
++    def resolve(name):
++        if name in values:
++            return values[name]
++        if name in visiting:
++            cycle_start = stack.index(name)
++            cycle = stack[cycle_start:] + [name]
++            raise CycleError("dependency cycle: " + " -> ".join(cycle))
++
++        raw_value = cells[name]
++        visiting.add(name)
++        stack.append(name)
++        try:
++            if raw_value.startswith("="):
++                value = _FormulaParser(raw_value[1:], resolve).parse()
++            else:
++                value = float(raw_value)
++            values[name] = value
++            return value
++        finally:
++            stack.pop()
++            visiting.remove(name)
++
++    for name in cells:
++        resolve(name)
++    return values

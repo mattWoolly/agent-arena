@@ -1,0 +1,298 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..ce4f05a
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,56 @@
++# Solution
++
++## Approach
++
++Three stages, all in `sheet/engine.py`:
++
++1. **Compile** (`_compile` + `_tokenize` + `_Parser` + `_to_postfix`) — every
++   cell value is compiled up front into a small postfix (stack-machine)
++   program. A bare number compiles to a single `("num", v)` instruction, so
++   bare cells and formula cells are uniform from here on. Formulas are tokenized
++   with per-kind regexes (numbers `[A-Za-z]+\d*` references, operators/parens)
++   and parsed by recursive descent following the grammar
++   `expr → term (± term)*`, `term → unary (*/ unary)*`,
++   `unary → "-" unary | atom`, `atom → number | ref | "(" expr ")"` —
++   left-associative, `*` `/` binding tighter than `+` `-`, unary minus below
++   both. The AST is then flattened to postfix iteratively.
++
++2. **Resolve** (`_resolve`) — lazy, memoized, depth-first evaluation over an
++   explicit stack of frames `[cell, program, pc, operands]`. When a `ref`
++   instruction is hit, the target cell is either already memoized, becomes a
++   new nested frame, or is found on the current frame stack → `CycleError`.
++   Forward and transitive references fall out naturally; each cell is computed
++   once and shared dependencies are free (diamond shapes do no redundant work).
++
++3. **Collect** — `evaluate` resolves each cell name and returns
++   `{name: float}`.
++
++## Edge cases handled
++
++- **No recursion anywhere in evaluation**: cell chains are resolved with an
++  explicit frame stack and formulas execute as stack programs, so a 20,000-cell
++  reference chain or a 5,000-term flat formula never approaches Python's
++  recursion limit (the parser recurses only on parenthesis nesting).
++- **Cycles**, direct (`=A`), mutual, longer loops, and cycles reached from an
++  acyclic entry cell, all raise `CycleError`; the message names the cycle path
++  (`A -> B -> C -> A`).
++- **Division by zero** raises the plain Python `ZeroDivisionError`, including
++  when the zero arrives via a reference; division is real division (`3/2 = 1.5`).
++- **Unary minus** in all positions: `=-3`, `=-(A+1)`, `=2*-3`, `=--4`,
++  `=1--2` (unary plus is not in the spec and is a parse error).
++- **Whitespace** between tokens is insignificant, including tabs/newlines.
++- **Numbers**: integers, decimals, leading-dot (`.5`) and trailing-dot (`3.`)
++  forms; bare values may carry a sign. All results are `float`.
++- **Syntax errors** (`=1+`, `=(1+2`, `=1$2`, `=1 2`, bare `hello`, empty `=`)
++  raise `ValueError` with position/context; non-string, non-numeric values
++  raise `TypeError`.
++- A reference to a cell not present in the sheet raises `KeyError` (the README
++  doesn't specify this case; missing-key semantics seemed most natural).
++- **Empty sheet** returns `{}`.
++
++## Verification
++
++`python3 -m pytest -q` → 3 passed. Additionally exercised the full README
++semantics with an ad-hoc script (precedence/associativity, unary minus,
++forward/transitive refs, diamonds, 20k-deep chain, div-by-zero, four cycle
++shapes, and the syntax-error cases above) — all passing.
+diff --git a/sheet/__pycache__/__init__.cpython-312.pyc b/sheet/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..0148fe6
+Binary files /dev/null and b/sheet/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/sheet/__pycache__/engine.cpython-312.pyc b/sheet/__pycache__/engine.cpython-312.pyc
+new file mode 100644
+index 0000000..526603d
+Binary files /dev/null and b/sheet/__pycache__/engine.cpython-312.pyc differ
+diff --git a/sheet/engine.py b/sheet/engine.py
+index c9f86c6..85fad7d 100644
+--- a/sheet/engine.py
++++ b/sheet/engine.py
+@@ -1,9 +1,216 @@
+-"""Implement evaluate() and CycleError per README.md."""
++"""A small spreadsheet formula engine: evaluate() and CycleError per README.md."""
++
++import re
++
++__all__ = ["evaluate", "CycleError"]
+ 
+ 
+ class CycleError(Exception):
+-    pass
++    """Raised when a cell depends on its own value, directly or transitively."""
++
++
++_NUMBER_RE = re.compile(r"\d+(?:\.\d*)?|\.\d+")
++_NAME_RE = re.compile(r"[A-Za-z]+\d*")
++_OPERATOR_RE = re.compile(r"[-+*/()]")
++
++# A bare (non-formula) cell value: an optional sign, then an integer or decimal.
++_BARE_NUMBER_RE = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)")
++
++
++def _tokenize(text):
++    """Split a formula body into (kind, value) tokens.
++
++    Kinds: "num" (float value), "name" (cell reference), "op" (operator or
++    parenthesis character). Raises ValueError on any other character.
++    """
++    tokens = []
++    pos = 0
++    while pos < len(text):
++        if text[pos].isspace():
++            pos += 1
++            continue
++        match = _NUMBER_RE.match(text, pos) or _NAME_RE.match(text, pos)
++        if match:
++            if match.re is _NUMBER_RE:
++                tokens.append(("num", float(match.group())))
++            else:
++                tokens.append(("name", match.group()))
++        else:
++            match = _OPERATOR_RE.match(text, pos)
++            if not match:
++                raise ValueError(
++                    f"unexpected character {text[pos]!r} at position {pos} in {text!r}"
++                )
++            tokens.append(("op", match.group()))
++        pos = match.end()
++    return tokens
++
++
++class _Parser:
++    """Recursive-descent parser over the token stream.
++
++    Builds a tuple-based AST: ("num", value), ("ref", name), ("neg", operand),
++    and ("bin", op, left, right). Binary operators are left-associative, with
++    "*" and "/" binding tighter than "+" and "-"; unary minus sits below that.
++    """
++
++    def __init__(self, text):
++        self.text = text
++        self.tokens = _tokenize(text)
++        self.pos = 0
++
++    def parse(self):
++        node = self._expr()
++        if self.pos != len(self.tokens):
++            raise ValueError(
++                f"unexpected token {self.tokens[self.pos][1]!r} in {self.text!r}"
++            )
++        return node
++
++    def _peek(self):
++        return self.tokens[self.pos] if self.pos < len(self.tokens) else None
++
++    def _take(self):
++        token = self._peek()
++        if token is None:
++            raise ValueError(f"unexpected end of formula {self.text!r}")
++        self.pos += 1
++        return token
++
++    def _expr(self):
++        node = self._term()
++        while self._peek() in (("op", "+"), ("op", "-")):
++            op = self._take()[1]
++            node = ("bin", op, node, self._term())
++        return node
++
++    def _term(self):
++        node = self._unary()
++        while self._peek() in (("op", "*"), ("op", "/")):
++            op = self._take()[1]
++            node = ("bin", op, node, self._unary())
++        return node
++
++    def _unary(self):
++        if self._peek() == ("op", "-"):
++            self._take()
++            return ("neg", self._unary())
++        return self._atom()
++
++    def _atom(self):
++        kind, value = self._take()
++        if kind in ("num", "name"):
++            return ("num", value) if kind == "num" else ("ref", value)
++        if (kind, value) == ("op", "("):
++            node = self._expr()
++            if self._take() != ("op", ")"):
++                raise ValueError(f"missing closing parenthesis in {self.text!r}")
++            return node
++        raise ValueError(f"unexpected token {value!r} in {self.text!r}")
++
++
++def _to_postfix(root):
++    """Flatten an AST into postfix (stack-machine) instruction order.
++
++    Instructions: ("num", value), ("ref", name), ("neg",), ("apply", op).
++    Iterative so that long operator chains never hit the recursion limit.
++    """
++    instructions = []
++    stack = [(root, False)]
++    while stack:
++        node, ready = stack.pop()
++        if ready:
++            instructions.append(node)
++        elif node[0] == "bin":
++            _, op, left, right = node
++            stack.append((("apply", op), True))
++            stack.append((right, False))
++            stack.append((left, False))
++        elif node[0] == "neg":
++            stack.append((("neg",), True))
++            stack.append((node[1], False))
++        else:  # ("num", ...) or ("ref", ...)
++            instructions.append(node)
++    return instructions
++
++
++def _compile(value, name):
++    """Compile one cell's raw value into a postfix program."""
++    if isinstance(value, (int, float)):
++        return [("num", float(value))]
++    if not isinstance(value, str):
++        raise TypeError(f"cell {name!r} has a non-string value: {value!r}")
++    text = value.strip()
++    if text.startswith("="):
++        return _to_postfix(_Parser(text[1:]).parse())
++    if _BARE_NUMBER_RE.fullmatch(text):
++        return [("num", float(text))]
++    raise ValueError(f"cell {name!r} has an invalid value: {value!r}")
++
++
++def _apply(op, left, right):
++    if op == "+":
++        return left + right
++    if op == "-":
++        return left - right
++    if op == "*":
++        return left * right
++    return left / right  # "/"; ZeroDivisionError propagates, as specified
++
++
++def _resolve(root, programs, values):
++    """Compute `root`'s value, resolving dependencies depth-first on an
++    explicit stack of frames (so long reference chains never recurse)."""
++    if root in values:
++        return values[root]
++    # Each frame is [cell, program, instruction pointer, operand stack].
++    frames = [[root, programs[root], 0, []]]
++    on_stack = {root}
++    while frames:
++        name, program, pc, operands = frames[-1]
++        if pc == len(program):
++            frames.pop()
++            value = operands[-1]
++            values[name] = value
++            on_stack.discard(name)
++            if frames:
++                frames[-1][3].append(value)
++            continue
++        frames[-1][2] = pc + 1
++        kind = program[pc][0]
++        if kind == "num":
++            operands.append(program[pc][1])
++        elif kind == "ref":
++            target = program[pc][1]
++            if target in values:
++                operands.append(values[target])
++            elif target in on_stack:
++                start = next(i for i, frame in enumerate(frames) if frame[0] == target)
++                cycle = [frame[0] for frame in frames[start:]] + [target]
++                raise CycleError("dependency cycle: " + " -> ".join(cycle))
++            elif target not in programs:
++                raise KeyError(f"reference to unknown cell {target!r} from {name!r}")
++            else:
++                on_stack.add(target)
++                frames.append([target, programs[target], 0, []])
++        elif kind == "neg":
++            operands.append(-operands.pop())
++        else:  # ("apply", op)
++            right = operands.pop()
++            left = operands.pop()
++            operands.append(_apply(program[pc][1], left, right))
++    return values[root]
+ 
+ 
+ def evaluate(cells):
+-    raise NotImplementedError
++    """Compute the float value of every cell in `cells`.
++
++    Formulas may reference cells defined anywhere in the sheet (forward and
++    transitive references included). Raises CycleError if any cell reaches
++    itself through references, and ZeroDivisionError on division by zero.
++    """
++    programs = {name: _compile(value, name) for name, value in cells.items()}
++    values = {}
++    for name in programs:
++        _resolve(name, programs, values)
++    return {name: values[name] for name in cells}
+diff --git a/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..ca7594e
+Binary files /dev/null and b/tests/__pycache__/test_basic.cpython-312-pytest-9.0.3.pyc differ

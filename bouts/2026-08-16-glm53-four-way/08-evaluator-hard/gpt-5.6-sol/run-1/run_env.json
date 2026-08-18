@@ -1,0 +1,11 @@
+{
+  "cli_version": "2.1.233 (Claude Code)",
+  "base_url": "http://127.0.0.1:4100",
+  "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+  "model_env": "env/gpt-5.6-sol.env",
+  "effort": "xhigh",
+  "setting_sources": "project",
+  "max_turns": 60,
+  "timeout_s": 1500,
+  "started_at": "2026-08-16T02:18:11Z"
+}

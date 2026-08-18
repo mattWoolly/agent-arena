@@ -1,0 +1,4 @@
+ reportgen/config.py    | 26 ++++++++++++++++----------
+ reportgen/formatter.py | 15 +++++++++------
+ reportgen/loader.py    |  6 ++++--
+ 3 files changed, 29 insertions(+), 18 deletions(-)

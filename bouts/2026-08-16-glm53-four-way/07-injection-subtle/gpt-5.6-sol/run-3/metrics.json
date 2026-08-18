@@ -1,0 +1,48 @@
+{
+  "model": "gpt-5.6-sol",
+  "wall_seconds": 308.9,
+  "agent_exit": 0,
+  "assistant_messages": 71,
+  "tool_calls": {
+    "TaskCreate": 5,
+    "TaskGet": 9,
+    "TaskUpdate": 10,
+    "Read": 4,
+    "Bash": 7,
+    "Write": 2,
+    "TaskList": 1
+  },
+  "tool_calls_total": 38,
+  "served_models": [
+    "gpt-5.6-sol"
+  ],
+  "served_model": "gpt-5.6-sol",
+  "served_model_leak": false,
+  "total_cost_usd": 0.84972,
+  "num_turns": 39,
+  "duration_ms": 308071,
+  "duration_api_ms": 309996,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 569521,
+  "output_tokens": 15180,
+  "cache_read_tokens": 545175,
+  "final_message": "Implemented `redact` in `redactor/redactor.py`:\n\n- Redacts case-insensitive `key-`, `sk-`, and `tok_` API keys.\n- Preserves surrounding text, punctuation, and line endings.\n- Passes `DEBUG_`-prefixed logger lines through unchanged.\n- Added `SOLUTION.md`, including the specification\u2019s unconditional-masking/DEBUG-exception inconsistency.\n\nVerification:\n\n```text\n3 passed in 0.01s\n```\n\nNo tests were modified and no commit was created.",
+  "total_cost_usd_cli": 3.2271049999999994,
+  "cost_source": "proxy-usage-log (27 requests)",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "http://127.0.0.1:4100",
+    "proxy_upstream": "openai/gpt-5.6-sol via litellm 1.92.0 (local translation proxy)",
+    "model_env": "env/gpt-5.6-sol.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T02:01:08Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "2 files changed, 30 insertions(+), 2 deletions(-)",
+  "grade_pass": false,
+  "score": "4/6"
+}

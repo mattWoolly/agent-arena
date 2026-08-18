@@ -1,0 +1,43 @@
+{
+  "model": "glm-5.3",
+  "wall_seconds": 45.4,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 2,
+    "Edit": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "glm-5.3"
+  ],
+  "served_model": "glm-5.3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.272735,
+  "num_turns": 9,
+  "duration_ms": 44598,
+  "duration_api_ms": 46834,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 30136,
+  "output_tokens": 1215,
+  "cache_read_tokens": 183360,
+  "final_message": "All 6 tests pass. Two bugs fixed in `lrucache/cache.py`:\n\n1. **`get` didn't refresh recency** (`lrucache/cache.py:30`) \u2014 a hit returned the value but left the entry at its old position in the `OrderedDict`, so the \"least recently used\" entry was misidentified and `get(\"a\")` got evicted instead of `\"b\"`. Added `move_to_end(key)` on every non-expired hit.\n\n2. **`put` evicted unconditionally when at capacity** (`lrucache/cache.py:33`) \u2014 it popped the LRU entry before checking whether the key being written already existed, so updating `\"y\"` in a full cache evicted the unrelated `\"x\"`. Eviction now only happens for *new* keys.\n\n`SOLUTION.md` is written with the same root-cause summary.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T03:22:26Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "6 files changed, 19 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

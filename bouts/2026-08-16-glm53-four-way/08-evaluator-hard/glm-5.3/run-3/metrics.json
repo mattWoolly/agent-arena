@@ -1,0 +1,42 @@
+{
+  "model": "glm-5.3",
+  "wall_seconds": 246.4,
+  "agent_exit": 0,
+  "assistant_messages": 20,
+  "tool_calls": {
+    "Read": 4,
+    "Bash": 4,
+    "Write": 2
+  },
+  "tool_calls_total": 10,
+  "served_models": [
+    "glm-5.3"
+  ],
+  "served_model": "glm-5.3",
+  "served_model_leak": false,
+  "total_cost_usd": 0.504056,
+  "num_turns": 11,
+  "duration_ms": 245576,
+  "duration_api_ms": 245848,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 15843,
+  "output_tokens": 12145,
+  "cache_read_tokens": 242432,
+  "final_message": "Done. `python3 -m pytest -q` passes (3/3), and I verified the README's edge cases with an additional script (since the visible suite only covers three basics).\n\n**Implementation** \u2014 `sheet/engine.py`:\n\n- **Parser**: regex tokenizer + recursive-descent into tuple ASTs. The README's trickiest rule \u2014 unary minus binding *looser* than `^` but tighter than `* /` \u2014 is handled by placing the `unary` production between those precedence levels:\n  ```\n  expr := term ((\"+\"|\"-\") term)*\n  term := unary ((\"*\"|\"/\") unary)*\n  unary := (\"+\"|\"-\") unary | power\n  power := primary (\"^\" unary)?\n  ```\n  That one placement yields `-2^2 = -4`, `(-2)^2 = 4`, `2^-3 = 0.125`, and right-associative `2^3^2 = 512` simultaneously.\n- **Resolution**: iterative (explicit-stack) DFS with memoization, so forward references, shared deps, and cycles all work \u2014 and a 20,000-cell reference chain completes without hitting Python's recursion limit.\n- **Errors**: revisiting an in-progress cell raises `CycleError` (message shows the cycle, e.g. `A -> B -> A`); div-by-zero propagates native `ZeroDivisionError`; malformed input raises `ValueError` / `KeyError` for unknown references (undefined by spec, so natural Python behavior).\n\nOne note on the run: my first edge-case script \"failed\" on `=2^2^-1` \u2014 that was a wrong expectation in my own test (it's `2^(2^-1)` = \u221a2), not an engine bug; corrected and everything passes. `SOLUTION.md` describes the approach and edge cases.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.z.ai/api/anthropic",
+    "proxy_upstream": "none",
+    "model_env": "env/glm-5.3.env",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T02:42:32Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 278 insertions(+), 2 deletions(-)",
+  "grade_pass": true,
+  "score": "3/3"
+}

@@ -1,0 +1,6 @@
+ SOLUTION.md                                        |  70 ++++++
+ sheet/__pycache__/__init__.cpython-312.pyc         | Bin 0 -> 235 bytes
+ sheet/__pycache__/engine.cpython-312.pyc           | Bin 0 -> 9483 bytes
+ sheet/engine.py                                    | 239 ++++++++++++++++++++-
+ .../test_basic.cpython-312-pytest-9.0.3.pyc        | Bin 0 -> 2128 bytes
+ 5 files changed, 306 insertions(+), 3 deletions(-)

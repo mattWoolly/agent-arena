@@ -1,0 +1,42 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 61.7,
+  "agent_exit": 0,
+  "assistant_messages": 18,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 4,
+    "Write": 2
+  },
+  "tool_calls_total": 10,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.35644149999999997,
+  "num_turns": 11,
+  "duration_ms": 58919,
+  "duration_api_ms": 58601,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 451,
+  "output_tokens": 4745,
+  "cache_read_tokens": 198141,
+  "final_message": "`python3 -m pytest -q` \u2192 **11 passed**.\n\n**Implementation** ([money/money.py](/tmp/arena-ws.xMFHFm/money/money.py)) \u2014 round, render magnitude, apply sign, in that order:\n\n```python\nvalue = Decimal(str(amount)).quantize(_CENTS, rounding=ROUND_HALF_UP)\nnegative = value < 0\nmagnitude = abs(value)\n```\n\nTwo things carried most of the edge cases:\n\n- **`str()` before `Decimal`.** `f(0.995)` must be `\"$1.00\"`, but the float is really `0.994999...`, so `Decimal(0.995)` \u2014 and builtin `round(0.995, 2)` \u2014 rounds *down*. Going through `str()` rounds the literal the caller wrote. Same trap as `round(2.675, 2) == 2.67`; this returns `$2.68`. `ROUND_HALF_UP` is decimal's \"ties away from zero\", so it also covers `-0.005 \u2192 ($0.01)` without a special case.\n- **Sign decided after rounding.** This is where two tests meet: `-0.004` rounds to `-0.00`, which must print `\"$0.00\"`, not `\"($0.00)\"`. `value < 0` is `False` for `Decimal(\"-0.00\")`, whereas checking the input's sign or `is_signed()` keeps the sticky negative-zero flag and gets it wrong \u2014 that same check also handles the `-0.0` float input, whose sign survives `str()` as `\"-0.0\"`.\n\nThe sign is applied to the finished string because its scope differs by style: parens wrap the currency symbol, the minus sits outside it.\n\n[SOLUTION.md](/tmp/arena-ws.xMFHFm/SOLUTION.md) writes this up in full. Nothing under `tests/` was touched, and no commits were made.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T05:38:02Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "5 files changed, 69 insertions(+), 1 deletion(-)",
+  "grade_pass": true,
+  "score": "2/2"
+}

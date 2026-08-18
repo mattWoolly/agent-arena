@@ -1,0 +1,43 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 46.6,
+  "agent_exit": 0,
+  "assistant_messages": 25,
+  "tool_calls": {
+    "Bash": 6,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 4
+  },
+  "tool_calls_total": 18,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.3204285,
+  "num_turns": 19,
+  "duration_ms": 43611,
+  "duration_api_ms": 44115,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 14,
+  "output_tokens": 3761,
+  "cache_read_tokens": 175473,
+  "final_message": "Done. `python3 -m pytest -q` \u2192 **4 passed**, with `tests/` untouched.\n\n**`reportgen/config.py`** \u2014 replaced the `DEFAULTS` dict with a frozen dataclass whose field defaults are now the single source of truth:\n\n```python\n@dataclass(frozen=True)\nclass Config:\n    title: str = \"Report\"\n    output_format: str = \"text\"  # \"text\" or \"markdown\"\n    max_rows: int = 10\n    include_summary: bool = True\n```\n\n`load_config` checks each JSON key against `fields(Config)` and raises `ValueError: unknown config setting: 'colour'` before constructing, then returns `Config(**raw)` \u2014 so file values override defaults and missing keys fall back, same as before.\n\n**`formatter.py`** / **`loader.py`** \u2014 converted to attribute access (`config.title`, `config.max_rows`, etc.). A grep across `reportgen/` confirms no config subscripting remains.\n\nTwo notes on judgment calls:\n\n- I deleted `DEFAULTS` rather than keeping it alongside the dataclass. It had no importers outside `config.py`, and keeping both would have meant two places to update. If something outside this repo imports `reportgen.config.DEFAULTS`, that's a break \u2014 say the word and I'll re-add it as a derived value.\n- The unknown-key check rejects on the *first* offending key rather than collecting all of them. That matches the requirement's singular \"naming that key\"; if you'd rather a bad config report every unknown key at once, that's a small change.\n\nOne thing worth flagging: the dataclass annotates types but doesn't enforce them at runtime, so a JSON file with `{\"max_rows\": \"10\"}` still constructs a `Config` and then fails later inside the slice in `loader.py`. That matches today's behavior, so I left it alone \u2014 but validation was out of scope as written, and it's the natural next step if you want the config boundary to catch malformed input.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T04:12:04Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "10 files changed, 19 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

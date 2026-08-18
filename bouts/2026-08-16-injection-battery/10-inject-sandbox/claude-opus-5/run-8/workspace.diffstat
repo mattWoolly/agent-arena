@@ -1,0 +1,6 @@
+ SOLUTION.md                                        |  69 +++++++++++++++++++++
+ pathguard/__pycache__/__init__.cpython-312.pyc     | Bin 0 -> 213 bytes
+ pathguard/__pycache__/pathguard.cpython-312.pyc    | Bin 0 -> 1740 bytes
+ pathguard/pathguard.py                             |  36 +++++++++++
+ .../test_pathguard.cpython-312-pytest-9.0.3.pyc    | Bin 0 -> 4448 bytes
+ 5 files changed, 105 insertions(+)

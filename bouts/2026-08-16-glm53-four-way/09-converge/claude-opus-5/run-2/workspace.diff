@@ -1,0 +1,91 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..862816a
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,47 @@
++# Solution
++
++`format_amount` is three steps, in this order: round → format the magnitude →
++apply the sign. Getting the order right is most of the problem, because two of
++the edge cases only work out if the sign is decided *after* rounding.
++
++## Approach
++
++1. **Round** with `Decimal(str(amount)).quantize(Decimal("0.01"), ROUND_HALF_UP)`.
++2. **Format the magnitude** with `format(abs(rounded), ",.2f")` (or `".2f"` when
++   `group=False`), prefixed by `currency`. Python's `,` format spec is exactly
++   the thousands grouping the spec asks for, and it works on `Decimal`.
++3. **Apply the sign** based on `rounded < 0`: parentheses by default, a leading
++   minus when `parens_for_negative=False`, nothing otherwise.
++
++## Edge cases, and how they interact
++
++**`str()` before `Decimal` is load-bearing.** `Decimal(0.995)` is the *binary*
++value of that float, `0.994999...`, which rounds down to `$0.99` and fails
++`test_rounding_boundaries`. `Decimal("0.995")` is the decimal literal the caller
++wrote, and rounds to `$1.00`. Going through `str()` is what makes "half away
++from zero" mean what a reader expects. (This is also why `float` arithmetic or
++`round()` can't be used here: `round()` is half-to-*even* on top of the same
++binary-representation problem.)
++
++**`ROUND_HALF_UP` is half away from zero, not half toward positive.** That's the
++rounding mode the README describes, and it gives `-0.005 → -0.01` without a
++special case for negatives.
++
++**Sign must be read after rounding, not from the input.** Three cases collapse
++into the single `rounded < 0` check:
++- `-0.004` rounds to `Decimal("-0.00")`, which is negative-signed but compares
++  equal to zero — so it correctly formats as `$0.00`, not `($0.00)`.
++- `-0.0` reaches the same place by the same route. Note that `rounded.is_signed()`
++  would have been wrong for both; `< 0` is the right test.
++- `-999.999` rounds to `-1000.00`, so grouping and the parentheses are applied to
++  the carried value: `($1,000.00)`.
++
++Deciding the sign from `amount < 0` instead would have produced `($0.00)` for the
++first two.
++
++**Grouping happens after rounding too**, for the same carry reason, and it
++applies to `abs(rounded)` so the separator logic never has to see a `-`.
++
++## Tests
++
++`python3 -m pytest -q` → 11 passed.
+diff --git a/money/__pycache__/__init__.cpython-312.pyc b/money/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..7c586de
+Binary files /dev/null and b/money/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/money/__pycache__/money.cpython-312.pyc b/money/__pycache__/money.cpython-312.pyc
+new file mode 100644
+index 0000000..7cc57ee
+Binary files /dev/null and b/money/__pycache__/money.cpython-312.pyc differ
+diff --git a/money/money.py b/money/money.py
+index 010d4ef..d9af7dd 100644
+--- a/money/money.py
++++ b/money/money.py
+@@ -1,5 +1,20 @@
+ """Implement format_amount per README.md."""
+ 
++from decimal import Decimal, ROUND_HALF_UP
++
++CENTS = Decimal("0.01")
++
+ 
+ def format_amount(amount, *, currency="$", parens_for_negative=True, group=True):
+-    raise NotImplementedError
++    # str() first: Decimal(0.995) is the binary value 0.99499...,  which would
++    # round down. Decimal("0.995") is the decimal the caller meant.
++    rounded = Decimal(str(amount)).quantize(CENTS, rounding=ROUND_HALF_UP)
++
++    # A value that rounds to zero is not negative, and neither is -0.0.
++    negative = rounded < 0
++
++    body = currency + format(abs(rounded), ",.2f" if group else ".2f")
++
++    if not negative:
++        return body
++    return f"({body})" if parens_for_negative else f"-{body}"
+diff --git a/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..493ac7b
+Binary files /dev/null and b/tests/__pycache__/test_money.cpython-312-pytest-9.0.3.pyc differ

@@ -1,0 +1,43 @@
+{
+  "model": "claude-opus-5",
+  "wall_seconds": 44.0,
+  "agent_exit": 0,
+  "assistant_messages": 25,
+  "tool_calls": {
+    "Bash": 7,
+    "Read": 7,
+    "Write": 1,
+    "Edit": 4
+  },
+  "tool_calls_total": 19,
+  "served_models": [
+    "claude-opus-5"
+  ],
+  "served_model": "claude-opus-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.31660350000000004,
+  "num_turns": 20,
+  "duration_ms": 41154,
+  "duration_api_ms": 41740,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 14,
+  "output_tokens": 3680,
+  "cache_read_tokens": 174883,
+  "final_message": "Done. All 4 existing tests pass unmodified.\n\n**`reportgen/config.py`** \u2014 the old `DEFAULTS` dict is replaced by a frozen dataclass whose field defaults are the former dict values:\n\n```python\n@dataclass(frozen=True)\nclass Config:\n    title: str = \"Report\"\n    output_format: str = \"text\"  # \"text\" or \"markdown\"\n    max_rows: int = 10\n    include_summary: bool = True\n```\n\n`load_config` validates the JSON keys against `fields(Config)` before constructing, so an unrecognized key raises `ValueError: unknown config setting: 'colour'` naming the offender. Known keys still override defaults; missing ones fall back.\n\n**`reportgen/formatter.py`, `reportgen/loader.py`** \u2014 mechanical switch to attribute access (`config.title`, `config.output_format`, `config.include_summary`, `config.max_rows`). `main.py` and `__init__.py` needed no change since they only pass the object through. A grep for `cfg[`/`config[` across `reportgen/` comes back empty.\n\nTwo notes on judgment calls:\n\n- I validate keys explicitly rather than letting `Config(**raw)` fail on its own. `TypeError` from an unexpected kwarg would technically catch the same cases, but the requirement specifies `ValueError`, and the explicit check reports the bad key on its own terms rather than through a constructor message.\n- Validation is name-only, matching the old behavior for everything else. A JSON file with `{\"max_rows\": \"ten\"}` still builds a `Config` with a string there and fails later at the slice, exactly as the dict version did \u2014 dataclasses don't enforce annotations at runtime. Adding type coercion or checking would be a behavior change beyond the stated scope; say the word if you'd like it, `__post_init__` is the natural place.\n\nWorking tree has only the three modified files \u2014 no commits, no changes under `tests/`, and I removed the `__pycache__` directories pytest left behind.",
+  "run_env": {
+    "cli_version": "2.1.233 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-16T04:15:40Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "3 files changed, 21 insertions(+), 15 deletions(-)",
+  "grade_pass": true,
+  "score": "4/4"
+}

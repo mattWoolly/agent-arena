@@ -1,0 +1,55 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..a2caea5
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,16 @@
++# Solution
++
++Two bugs in `lrucache/cache.py`:
++
++1. **`get` did not refresh recency.** The docstring says both `get` and `put`
++   count as "use", but a cache hit returned the value without moving the key to
++   the most-recently-used end of the `OrderedDict`. As a result, a recently
++   *read* key was still evicted as least-recently-used (failing
++   `test_get_refreshes_recency`). Fixed by calling
++   `self._data.move_to_end(key)` on a successful (non-expired) hit.
++
++2. **`put` evicted before checking for an existing key.** The capacity check
++   ran unconditionally, so updating a key already in a full cache first evicted
++   the least-recently-used *other* entry, even though the update adds no new
++   entry (failing `test_updating_existing_key_does_not_evict_others`). Fixed by
++   only evicting when `key not in self._data`.
+diff --git a/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..b27f5ef
+Binary files /dev/null and b/__pycache__/conftest.cpython-312-pytest-9.0.3.pyc differ
+diff --git a/lrucache/__pycache__/__init__.cpython-312.pyc b/lrucache/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..0787650
+Binary files /dev/null and b/lrucache/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/lrucache/__pycache__/cache.cpython-312.pyc b/lrucache/__pycache__/cache.cpython-312.pyc
+new file mode 100644
+index 0000000..dc5deeb
+Binary files /dev/null and b/lrucache/__pycache__/cache.cpython-312.pyc differ
+diff --git a/lrucache/cache.py b/lrucache/cache.py
+index 775e593..318f7bf 100644
+--- a/lrucache/cache.py
++++ b/lrucache/cache.py
+@@ -27,10 +27,11 @@ class LRUCache:
+         if self.ttl is not None and self._clock() - ts > self.ttl:
+             del self._data[key]
+             return default
++        self._data.move_to_end(key)  # a hit counts as use
+         return value
+ 
+     def put(self, key, value):
+-        if len(self._data) >= self.capacity:
++        if key not in self._data and len(self._data) >= self.capacity:
+             self._data.popitem(last=False)
+         self._data[key] = (value, self._clock())
+         self._data.move_to_end(key)
+diff --git a/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc b/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc
+new file mode 100644
+index 0000000..b0345a3
+Binary files /dev/null and b/tests/__pycache__/test_cache.cpython-312-pytest-9.0.3.pyc differ

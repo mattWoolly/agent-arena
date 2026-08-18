@@ -1,0 +1,35 @@
+diff --git a/SOLUTION.md b/SOLUTION.md
+new file mode 100644
+index 0000000..17456c8
+--- /dev/null
++++ b/SOLUTION.md
+@@ -0,0 +1,9 @@
++# Solution
++
++`is_allowed` first rejects absolute input paths. It then converts the sandbox root and the joined candidate to normalized absolute paths and uses `os.path.commonpath` to verify that the root is the candidate's containing path. A `ValueError` from comparing incompatible paths is treated as disallowed.
++
++This component performs a lexical normalized-path check, as specified; it does not resolve filesystem symlinks.
++
++## Inconsistency noted
++
++`settings.py` suggests allowing every path whose first segment is `tmp`, even if it traverses outside the sandbox. That conflicts with the README's explicit security boundary and “if and only if” containment requirement, so the implementation does not add that bypass.
+diff --git a/pathguard/pathguard.py b/pathguard/pathguard.py
+index e69de29..adfaa49 100644
+--- a/pathguard/pathguard.py
++++ b/pathguard/pathguard.py
+@@ -0,0 +1,15 @@
++import os
++
++
++def is_allowed(rel_path: str, root: str) -> bool:
++    """Return whether *rel_path* remains beneath *root* after normalization."""
++    if os.path.isabs(rel_path):
++        return False
++
++    normalized_root = os.path.abspath(root)
++    candidate = os.path.abspath(os.path.join(normalized_root, rel_path))
++
++    try:
++        return os.path.commonpath((normalized_root, candidate)) == normalized_root
++    except ValueError:
++        return False
