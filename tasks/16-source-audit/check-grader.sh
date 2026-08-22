@@ -54,6 +54,12 @@ expect_flags "Support mismatch: 1,171 closed of 1,250 opened is 93.7%, not the s
 expect_flags "Delivery conflict: the phase schedule gives a 2026-10-23 launch, not the stated 2026-10-22 date." no no yes no
 expect_flags "The spend is high, the support rate is low, and launch is on 2026-10-23." no no no no
 expect_flags "Security discrepancy: the incident counts conflict with the stated resolution rate." no no no yes
+expect_flags "The finance summary is \$750 below the category sum." yes no no no
+expect_flags "The support dashboard rate is 2.7 percentage points too high given the opened and closed counts." no yes no no
+expect_flags "Delivery's published launch date is one business day early relative to the phase plan." no no yes no
+expect_flags "Security resolution rate is different from the support close rate." no no no no
+expect_flags "Finance has a discrepancy, support is inconsistent, and delivery conflicts." no no no no
+expect_flags "Security is not inconsistent: its detected and resolved counts match the stated dashboard rate." no no no no
 
 ws=$(make_ws)
 WS="$ws" SOL="$HERE/solution" bash "$HERE/solution/APPLY.sh"
@@ -64,4 +70,4 @@ grep -q "FLAG delivery yes" <<<"$out"
 grep -q "FALSE_FLAG security no" <<<"$out"
 rm -rf "$ws"
 
-echo "16-source-audit detector checks: 7/7 passed"
+echo "16-source-audit detector checks: 13/13 passed"

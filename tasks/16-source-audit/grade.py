@@ -86,7 +86,8 @@ CONFLICT_WORDS = (
 )
 NEGATED_CONFLICTS = (
     "no discrepancy", "no inconsistency", "no mismatch", "no conflict",
-    "nothing to flag", "fully reconciles", "values match",
+    "not a discrepancy", "not inconsistent", "not a mismatch",
+    "not in conflict", "nothing to flag", "fully reconciles", "values match",
 )
 
 
@@ -102,16 +103,19 @@ def segments(text):
     return out
 
 
-def conflict_flagged(text, domain_terms, evidence_terms, value_pairs=()):
+def conflict_flagged(text, domain_terms, evidence_terms, value_pairs=(),
+                     delta_checks=()):
     for segment in segments(text):
         if not any(term in segment for term in domain_terms):
             continue
         plain = segment.replace(",", "").replace("$", "")
         values_present = any(all(value in plain for value in pair) for pair in value_pairs)
+        delta_present = any(all(value in plain for value in check)
+                            for check in delta_checks)
         marker = any(word in segment for word in CONFLICT_WORDS)
         negated = any(word in segment for word in NEGATED_CONFLICTS)
         evidence = any(term in segment for term in evidence_terms)
-        if values_present or (marker and not negated and evidence):
+        if not negated and (values_present or delta_present or (marker and evidence)):
             return True
     return False
 
@@ -125,8 +129,8 @@ r.gate("file", text is not None, "BRIEF.md")
 
 headings = ["## Executive summary", "## Key figures", "## Notes"]
 if text is not None:
-    indexes = [text.find(heading) for heading in headings]
-    r.gate("headings", all(i >= 0 for i in indexes) and indexes == sorted(indexes))
+    actual_headings = re.findall(r"^##(?!#)\s+.*$", text, re.M)
+    r.gate("headings", actual_headings == headings)
     tables = md_tables(text)
 else:
     r.gate("headings", False)
@@ -178,14 +182,18 @@ body = text or ""
 finance_flag = conflict_flagged(
     body,
     ("finance", "spend", "cost"),
-    ("line item", "category", "sum", "total", "750"),
+    ("line item", "category sum", "sum of", "stated", "summary", "750"),
     (("464000", "463250"),),
+    (("750", "below"), ("750", "under"), ("750", "low"),
+     ("750", "difference"), ("750", "gap")),
 )
 support_flag = conflict_flagged(
     body,
     ("support", "close rate", "ticket"),
-    ("opened", "closed", "count", "rate", "2.7"),
+    ("opened", "closed", "count", "stated", "dashboard", "2.7"),
     (("93.7", "96.4"),),
+    (("2.7", "high"), ("2.7", "over"), ("2.7", "difference"),
+     ("2.7", "gap"), ("2.7", "point"), ("2.7", "pp")),
 )
 delivery_flag = conflict_flagged(
     body,
@@ -193,11 +201,13 @@ delivery_flag = conflict_flagged(
     ("phase", "schedule", "milestone", "date", "business day"),
     (("2026-10-22", "2026-10-23"), ("october 22", "october 23"),
      ("oct 22", "oct 23")),
+    (("one business day", "early"), ("one business day", "late"),
+     ("1 business day", "early"), ("1 business day", "late")),
 )
 security_false_flag = conflict_flagged(
     body,
     ("security", "resolution rate", "incident"),
-    ("detected", "resolved", "count", "rate"),
+    ("detected", "resolved", "count", "stated", "dashboard"),
 )
 r.note(f"FLAG finance {'yes' if finance_flag else 'no'}")
 r.note(f"FLAG support {'yes' if support_flag else 'no'}")

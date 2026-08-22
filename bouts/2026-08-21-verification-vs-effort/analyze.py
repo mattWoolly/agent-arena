@@ -9,6 +9,7 @@ from statistics import mean
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 MODEL = "claude-sonnet-5"
+CLI_VERSION = "2.1.239 (Claude Code)"
 EFFORT_DIRS = {
     "low": ROOT / "bouts" / "2026-08-21-verification-vs-effort-low",
     "xhigh": ROOT / "bouts" / "2026-08-21-verification-vs-effort-xhigh",
@@ -17,6 +18,12 @@ TASKS = {
     "base": "16-source-audit",
     "verify": "16-source-audit-verify",
 }
+SMOKE_CASES = [
+    ("base", "low", "15-rollup", "2026-08-21-verification-vs-effort-smoke-low"),
+    ("verify", "low", "15-rollup-verify", "2026-08-21-verification-vs-effort-smoke-low"),
+    ("base", "xhigh", "15-rollup", "2026-08-21-verification-vs-effort-smoke-xhigh"),
+    ("verify", "xhigh", "15-rollup-verify", "2026-08-21-verification-vs-effort-smoke-xhigh"),
+]
 
 
 def wilson(successes, total, z=1.959963984540054):
@@ -47,6 +54,59 @@ def parse_grade(path):
     return items, flags, false_flags, score
 
 
+def is_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def read_artifacts(run_dir, expected_effort):
+    required = ["grade.txt", "grade_exit", "metrics.json", "peek_check", "run_env.json"]
+    missing = [name for name in required if not (run_dir / name).exists()]
+    if missing:
+        raise SystemExit(f"missing {missing} in {run_dir}")
+
+    items, flags, false_flags, score = parse_grade(run_dir / "grade.txt")
+    metrics = json.loads((run_dir / "metrics.json").read_text())
+    run_env = json.loads((run_dir / "run_env.json").read_text())
+    telemetry_fields = ("total_cost_usd", "output_tokens", "num_turns", "wall_seconds")
+    invalid = [field for field in telemetry_fields if not is_number(metrics.get(field))]
+    if invalid:
+        raise SystemExit(f"invalid telemetry {invalid} in {run_dir}")
+
+    grade_pass = (run_dir / "grade_exit").read_text().strip() == "0"
+    clean = (run_dir / "peek_check").read_text().strip() == "clean"
+    served_ok = (metrics.get("served_model") == MODEL
+                 and metrics.get("served_model_leak") is False)
+    effort_ok = run_env.get("effort") == expected_effort
+    runtime_ok = (
+        metrics.get("agent_exit") == 0
+        and metrics.get("is_error") is False
+        and run_env.get("base_url") == "https://api.anthropic.com"
+        and run_env.get("proxy_upstream") == "none"
+        and run_env.get("model_env") == "none"
+        and run_env.get("setting_sources") == "project"
+        and run_env.get("max_turns") == 60
+        and run_env.get("timeout_s") == 1500
+        and run_env.get("cli_version") == CLI_VERSION
+    )
+    return {
+        "grade_pass": grade_pass,
+        "score": score,
+        "items": items,
+        "flags": flags,
+        "false_flags": false_flags,
+        "served_ok": served_ok,
+        "effort_ok": effort_ok,
+        "runtime_ok": runtime_ok,
+        "peek_clean": clean,
+        "integrity_ok": served_ok and effort_ok and runtime_ok and clean,
+        "cost_usd": metrics["total_cost_usd"],
+        "cost_source": metrics.get("cost_source", "cli-reported"),
+        "output_tokens": metrics["output_tokens"],
+        "turns": metrics["num_turns"],
+        "execution_seconds": metrics["wall_seconds"],
+    }
+
+
 def load_runs():
     runs = []
     for effort, bout in EFFORT_DIRS.items():
@@ -54,46 +114,37 @@ def load_runs():
             model_dir = bout / task / MODEL
             for repeat in range(1, 11):
                 run_dir = model_dir / f"run-{repeat}"
-                required = ["grade.txt", "grade_exit", "metrics.json", "peek_check", "run_env.json"]
-                missing = [name for name in required if not (run_dir / name).exists()]
-                if missing:
-                    raise SystemExit(f"missing {missing} in {run_dir}")
-                items, flags, false_flags, score = parse_grade(run_dir / "grade.txt")
-                metrics = json.loads((run_dir / "metrics.json").read_text())
-                run_env = json.loads((run_dir / "run_env.json").read_text())
-                grade_pass = (run_dir / "grade_exit").read_text().strip() == "0"
-                clean = (run_dir / "peek_check").read_text().strip() == "clean"
-                all_items = len(items) == 6 and all(item["status"] == "OK" for item in items)
-                all_conflicts = all(flags.get(name) == "yes" for name in
+                rec = read_artifacts(run_dir, effort)
+                all_items = (len(rec["items"]) == 6
+                             and all(item["status"] == "OK" for item in rec["items"]))
+                all_conflicts = all(rec["flags"].get(name) == "yes" for name in
                                     ("finance", "support", "delivery"))
-                false_alarm = false_flags.get("security") == "yes"
-                served_ok = (metrics.get("served_model") == MODEL
-                             and not metrics.get("served_model_leak"))
-                effort_ok = run_env.get("effort") == effort
-                audit_success = (grade_pass and all_items and all_conflicts
-                                 and not false_alarm)
-                runs.append({
+                false_alarm = rec["false_flags"].get("security") == "yes"
+                rec.update({
                     "effort": effort,
                     "prompt": prompt,
                     "task": task,
                     "model": MODEL,
                     "repeat": repeat,
-                    "grade_pass": grade_pass,
-                    "score": score,
                     "all_items_correct": all_items,
-                    "flags": flags,
-                    "false_flags": false_flags,
-                    "audit_success": audit_success,
-                    "served_ok": served_ok,
-                    "effort_ok": effort_ok,
-                    "peek_clean": clean,
-                    "cost_usd": metrics.get("total_cost_usd"),
-                    "cost_source": metrics.get("cost_source", "cli-reported"),
-                    "output_tokens": metrics.get("output_tokens"),
-                    "turns": metrics.get("num_turns"),
-                    "execution_seconds": metrics.get("wall_seconds"),
+                    "audit_success": (rec["grade_pass"] and all_items
+                                      and all_conflicts and not false_alarm),
                 })
+                rec.pop("items")
+                runs.append(rec)
     return runs
+
+
+def load_smokes():
+    smokes = []
+    for prompt, effort, task, bout_name in SMOKE_CASES:
+        run_dir = ROOT / "bouts" / bout_name / task / MODEL / "run-1"
+        rec = read_artifacts(run_dir, effort)
+        rec.update({"prompt": prompt, "effort": effort, "task": task,
+                    "model": MODEL, "run": "smoke"})
+        rec.pop("items")
+        smokes.append(rec)
+    return smokes
 
 
 def safe_mean(values):
@@ -133,7 +184,7 @@ def summarize(runs):
             "mean_turns": safe_mean(row["turns"] for row in rows),
             "mean_execution_seconds": safe_mean(row["execution_seconds"] for row in rows),
             "integrity_failures": sum(
-                not (row["served_ok"] and row["effort_ok"] and row["peek_clean"])
+                not row["integrity_ok"]
                 for row in rows),
         }
     return cells
@@ -147,7 +198,7 @@ def money(value):
     return "n/a" if value is None else f"${value:.3f}"
 
 
-def render(cells):
+def render(cells, smokes):
     vl = cells["verify-low"]
     bx = cells["base-xhigh"]
     bl = cells["base-low"]
@@ -159,7 +210,24 @@ def render(cells):
     effort_gain = bx["audit_success_rate"] - bl["audit_success_rate"]
     interaction = ((vx["audit_success_rate"] - bx["audit_success_rate"])
                    - (vl["audit_success_rate"] - bl["audit_success_rate"]))
-    integrity = sum(cell["integrity_failures"] for cell in cells.values())
+    confirmation_integrity = sum(cell["integrity_failures"] for cell in cells.values())
+    smoke_integrity = sum(not smoke["integrity_ok"] for smoke in smokes)
+    integrity = confirmation_integrity + smoke_integrity
+    smoke_acceptance = all(smoke["grade_pass"] for smoke in smokes)
+
+    hypotheses = [
+        ("H1 verification-low matches or beats base-xhigh at no higher cost", h1,
+         f"{vl['audit_successes']}/10 at {money(vl['mean_cost_usd'])} mean vs {bx['audit_successes']}/10 at {money(bx['mean_cost_usd'])}"),
+        ("H2 low-effort prompt gain is at least 40 points", prompt_gain >= .4,
+         f"{prompt_gain * 100:+.0f} points"),
+        ("H3 prompt gain exceeds effort gain", prompt_gain > effort_gain,
+         f"prompt {prompt_gain * 100:+.0f} points; effort {effort_gain * 100:+.0f} points"),
+        ("H4 verification false alarms at most 1/10 per arm",
+         vl["security_false_flags"] <= 1 and vx["security_false_flags"] <= 1,
+         f"low {vl['security_false_flags']}/10; xhigh {vx['security_false_flags']}/10"),
+        ("H5 all-run integrity", integrity == 0,
+         f"{integrity}/44 integrity failures; smoke task acceptance {'4/4' if smoke_acceptance else 'below 4/4'}"),
+    ]
 
     lines = [
         "# Analysis: verification prompt versus inference effort",
@@ -168,17 +236,16 @@ def render(cells):
         "",
         "| Hypothesis | Verdict | Evidence |",
         "|---|---|---|",
-        f"| H1 verification-low matches or beats base-xhigh at no higher cost | {'HIT' if h1 else 'MISS'} | {vl['audit_successes']}/10 at {money(vl['mean_cost_usd'])} mean vs {bx['audit_successes']}/10 at {money(bx['mean_cost_usd'])} |",
-        f"| H2 low-effort prompt gain is at least 40 points | {'HIT' if prompt_gain >= .4 else 'MISS'} | {prompt_gain * 100:+.0f} points |",
-        f"| H3 prompt gain exceeds effort gain | {'HIT' if prompt_gain > effort_gain else 'MISS'} | prompt {prompt_gain * 100:+.0f} points; effort {effort_gain * 100:+.0f} points |",
-        f"| H4 verification false alarms at most 1/10 per arm | {'HIT' if vl['security_false_flags'] <= 1 and vx['security_false_flags'] <= 1 else 'MISS'} | low {vl['security_false_flags']}/10; xhigh {vx['security_false_flags']}/10 |",
-        f"| H5 confirmation integrity | {'HIT' if integrity == 0 else 'MISS'} | {integrity}/40 integrity failures; smoke integrity reported separately |",
+    ]
+    for label, hit, evidence in sorted(hypotheses, key=lambda row: (row[1], row[0])):
+        lines.append(f"| {label} | {'HIT' if hit else 'MISS'} | {evidence} |")
+    lines.extend([
         "",
         "## Cell results",
         "",
         "| Prompt | Effort | Audit success | Conflict flags | False flags | Key figures correct | Mean cost | Mean output tokens | Mean turns | Mean execution time |",
         "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
-    ]
+    ])
     for key in ("base-low", "verify-low", "base-xhigh", "verify-xhigh"):
         cell = cells[key]
         prompt, effort = key.split("-", 1)
@@ -206,11 +273,12 @@ def render(cells):
 
 def main():
     runs = load_runs()
+    smokes = load_smokes()
     cells = summarize(runs)
-    payload = {"model": MODEL, "runs": runs, "cells": cells}
+    payload = {"model": MODEL, "smokes": smokes, "runs": runs, "cells": cells}
     (HERE / "analysis.json").write_text(json.dumps(payload, indent=2) + "\n")
-    (HERE / "ANALYSIS.md").write_text(render(cells))
-    print(render(cells))
+    (HERE / "ANALYSIS.md").write_text(render(cells, smokes))
+    print(render(cells, smokes))
 
 
 if __name__ == "__main__":

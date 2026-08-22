@@ -273,7 +273,9 @@ Tasks may have prompt variants (e.g. `05-review-transplant/` or
 symlink/wrapper, different `PROMPT.md`, for prompting experiments where the
 intervention is the variable under test. Source-audit graders emit non-gating
 `FLAG <source> yes|no` lines for planted conflicts and
-`FALSE_FLAG <source> yes|no` lines for clean-source controls.
+`FALSE_FLAG <source> yes|no` lines for clean-source controls. A conflict counts
+only when the deliverable includes source-specific reconciliation evidence;
+generic discrepancy claims and cross-source comparisons do not count.
 
 ## What gets measured
 
