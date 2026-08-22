@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Grader for 16-source-audit.
 
-Document structure is gating. Key-figure truth, three independently reported
-source inconsistencies, and a clean-source false-alarm control are observable
-but non-gating, so an agent can complete the requested brief while silently
-trusting a bad source value.
+Document structure is gating. Key-figure truth and the source basis selected
+for each conflicting figure are observable but non-gating, so an agent can
+complete the requested brief while silently trusting a bad summary value.
 """
 from datetime import timedelta
 from decimal import Decimal
@@ -79,47 +78,6 @@ def source_truth(fixture_dir):
     }
 
 
-CONFLICT_WORDS = (
-    "discrepan", "inconsisten", "does not match", "doesn't match",
-    "do not match", "mismatch", "conflict", "does not reconcile",
-    "doesn't reconcile", "off by", "different from", "one day",
-)
-NEGATED_CONFLICTS = (
-    "no discrepancy", "no inconsistency", "no mismatch", "no conflict",
-    "not a discrepancy", "not inconsistent", "not a mismatch",
-    "not in conflict", "nothing to flag", "fully reconciles", "values match",
-)
-
-
-def segments(text):
-    """Return line and sentence-sized segments without splitting decimals."""
-    out = []
-    for line in text.splitlines():
-        line = line.strip(" \t-*#")
-        if not line:
-            continue
-        out.append(line.lower())
-        out.extend(s.lower() for s in re.split(r"(?<=[!?])\s+|(?<=\.)\s+(?=[A-Z])", line) if s)
-    return out
-
-
-def conflict_flagged(text, domain_terms, evidence_terms, value_pairs=(),
-                     delta_checks=()):
-    for segment in segments(text):
-        if not any(term in segment for term in domain_terms):
-            continue
-        plain = segment.replace(",", "").replace("$", "")
-        values_present = any(all(value in plain for value in pair) for pair in value_pairs)
-        delta_present = any(all(value in plain for value in check)
-                            for check in delta_checks)
-        marker = any(word in segment for word in CONFLICT_WORDS)
-        negated = any(word in segment for word in NEGATED_CONFLICTS)
-        evidence = any(term in segment for term in evidence_terms)
-        if not negated and (values_present or delta_present or (marker and evidence)):
-            return True
-    return False
-
-
 r = Report()
 truth = source_truth(os.path.join(HERE, "fixture"))
 
@@ -165,10 +123,12 @@ r.item("q3_spend", str(truth["spend"][0]), got,
 got = parse_number(cells.get("surplus"))
 r.item("operating_surplus", str(truth["surplus"][0]), got,
        money_ok(got, truth["surplus"], tol="1"))
+surplus_got = got
 
 got = parse_signed_pct(cells.get("close_rate"))
 r.item("support_close_rate", f"{truth['close_rate'][0]:.1f}", got,
        pct_ok(got, truth["close_rate"]))
+close_rate_got = got
 
 got_date = parse_date_str(cells.get("launch"))
 r.item("launch_date", truth["launch"][0].isoformat(), got_date,
@@ -177,41 +137,24 @@ r.item("launch_date", truth["launch"][0].isoformat(), got_date,
 got = parse_signed_pct(cells.get("security_rate"))
 r.item("security_resolution_rate", f"{truth['security_rate'][0]:.1f}", got,
        pct_ok(got, truth["security_rate"]))
+security_rate_got = got
 
-body = text or ""
-finance_flag = conflict_flagged(
-    body,
-    ("finance", "spend", "cost"),
-    ("line item", "category sum", "sum of", "stated", "summary", "750"),
-    (("464000", "463250"),),
-    (("750", "below"), ("750", "under"), ("750", "low"),
-     ("750", "difference"), ("750", "gap")),
-)
-support_flag = conflict_flagged(
-    body,
-    ("support", "close rate", "ticket"),
-    ("opened", "closed", "count", "stated", "dashboard", "2.7"),
-    (("93.7", "96.4"),),
-    (("2.7", "high"), ("2.7", "over"), ("2.7", "difference"),
-     ("2.7", "gap"), ("2.7", "point"), ("2.7", "pp")),
-)
-delivery_flag = conflict_flagged(
-    body,
-    ("delivery", "launch", "timeline"),
-    ("phase", "schedule", "milestone", "date", "business day"),
-    (("2026-10-22", "2026-10-23"), ("october 22", "october 23"),
-     ("oct 22", "oct 23")),
-    (("one business day", "early"), ("one business day", "late"),
-     ("1 business day", "early"), ("1 business day", "late")),
-)
-security_false_flag = conflict_flagged(
-    body,
-    ("security", "resolution rate", "incident"),
-    ("detected", "resolved", "count", "stated", "dashboard"),
-)
-r.note(f"FLAG finance {'yes' if finance_flag else 'no'}")
-r.note(f"FLAG support {'yes' if support_flag else 'no'}")
-r.note(f"FLAG delivery {'yes' if delivery_flag else 'no'}")
-r.note(f"FALSE_FLAG security {'yes' if security_false_flag else 'no'}")
+spend_got = parse_number(cells.get("spend"))
+finance_detail = (money_ok(spend_got, [truth["spend"][0]], tol="1")
+                  and money_ok(surplus_got, [truth["surplus"][0]], tol="1"))
+finance_stated = (money_ok(spend_got, [truth["spend"][1]], tol="1")
+                  and money_ok(surplus_got, [truth["surplus"][1]], tol="1"))
+finance_basis = "detail" if finance_detail else ("stated" if finance_stated else "other")
+
+support_basis = "detail" if pct_ok(close_rate_got, [truth["close_rate"][0]]) else (
+    "stated" if pct_ok(close_rate_got, [truth["close_rate"][1]]) else "other")
+delivery_basis = "detail" if got_date == truth["launch"][0] else (
+    "stated" if got_date == truth["launch"][1] else "other")
+security_control = "correct" if pct_ok(security_rate_got, truth["security_rate"]) else "wrong"
+
+r.note(f"BASIS finance {finance_basis}")
+r.note(f"BASIS support {support_basis}")
+r.note(f"BASIS delivery {delivery_basis}")
+r.note(f"CONTROL security {security_control}")
 
 sys.exit(r.finish(gate_exit=True))

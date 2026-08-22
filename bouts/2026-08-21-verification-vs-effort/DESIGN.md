@@ -44,9 +44,10 @@ confirmatory estimates:
 4. verify-low
 
 The confirmatory grid may begin only if each smoke has the requested effort in
-`run_env.json`, served model `claude-sonnet-5`, a clean `peek_check`, complete
-metrics, and a parseable discrepancy FLAG. Any instrument change after a smoke
-requires a numbered amendment committed and pushed before confirmation.
+`run_env.json`, served model `claude-sonnet-5`, independently recorded native
+subscription authentication, a clean `peek_check`, complete metrics, a passing
+task grade, and a parseable discrepancy FLAG. Any instrument change after a
+smoke requires a numbered amendment committed and pushed before confirmation.
 
 ## Confirmatory task
 
@@ -58,14 +59,18 @@ leadership brief. Three packets contain different inconsistency mechanisms:
 - delivery: a stated launch date conflicts with a business-day phase plan.
 
 The fourth, security, is a clean control whose stated resolution rate exactly
-matches its counts. This measures verification-induced false alarms without
-doubling the model calls.
+matches its counts. It detects accuracy regressions on consistent evidence
+without doubling the model calls.
 
 The grader recomputes truth from its pristine fixture. It accepts either
-defensible source basis for downstream key figures, separately reports six
-key-figure verdicts, emits three non-gating `FLAG <source> yes|no` lines, and
-emits `FALSE_FLAG security yes|no`. Document structure is the task-level gate.
-The agent never sees the grader, reference solution, or repository tree.
+defensible source basis for the three conflicting key figures, separately
+reports six key-figure verdicts, emits three deterministic non-gating
+`BASIS <source> detail|stated|other` lines, and emits
+`CONTROL security correct|wrong`. Finance counts as `detail` only when both
+spend and its derived surplus use the category sum; mixed bases count as
+`other`. The classifications depend only on table values, not prose. Document
+structure is the task-level gate. The agent never sees the grader, reference
+solution, or repository tree.
 
 ## Fixed and varied factors
 
@@ -80,6 +85,7 @@ The agent never sees the grader, reference solution, or repository tree.
 | Task | `16-source-audit` plus its prompt-only variant |
 | Max turns / timeout | 60 / 1,500 seconds |
 | Settings sources | `project` |
+| Authentication proof | `claude.ai`, first-party, Max subscription, no API-key source |
 
 The model is fixed because the causal question is prompt versus inference
 effort, not a model leaderboard. Sonnet was chosen from development evidence:
@@ -97,8 +103,9 @@ The primary per-run outcome is **audit utility success**:
 
 - task-level grade passes;
 - all six key figures are correct under an accepted source interpretation;
-- all three planted inconsistencies are explicitly identified; and
-- the clean security packet is not falsely flagged.
+- all three conflicting sources use their supporting-detail value rather than
+  the contradictory stated summary value; and
+- the clean security value is correct.
 
 The confirmatory contrast is verification-low minus base-xhigh. Exact counts
 and Wilson 95% intervals are reported. Verification-low is the economic winner
@@ -111,7 +118,7 @@ Secondary outcomes:
 - base-low versus verification-low: prompt effect at low effort;
 - base-low versus base-xhigh: effort effect under the base prompt;
 - prompt-by-effort difference in differences;
-- per-source detection rate and clean-source false-alarm rate;
+- per-source detail-basis rate and clean-source accuracy;
 - key-figure accuracy, task pass rate, tokens, turns, cost, and execution time.
 
 No LLM judge and no null-hypothesis significance test are used. Ten runs per
@@ -127,11 +134,11 @@ setting.
   base-low by at least 40 percentage points.
 - **H3 (relative intervention):** the low-effort prompt gain is larger than
   the base-prompt gain from low to xhigh.
-- **H4 (false alarms):** neither verification arm falsely flags the clean
-  security packet in more than 1/10 runs.
+- **H4 (clean control):** each verification arm reports the correct security
+  value in at least 9/10 runs.
 - **H5 (integrity):** all 44 new runs, including four excluded smokes, match
-  the declared served model and requested effort, with zero peek or secret
-  leak flags.
+  the declared served model, requested effort, pinned runtime, and native Max
+  subscription authentication, with zero peek or secret leak flags.
 
 Misses are reported before hits.
 
@@ -143,11 +150,12 @@ to remain below $10 notional, with zero incremental API charge under the
 existing subscription. The hard stop is $25 notional or any evidence that the
 subscription route was shadowed by a pay-as-you-go key.
 
-Stop before confirmation if a smoke has the wrong served model or effort,
-missing telemetry, a grader failure, a peek or secret warning, or an
-unparseable FLAG. Stop the grid if cumulative notional cost exceeds $20, leaving
-room for retries under the $25 hard stop. Do not replace failed outputs or tune
-the prompt after seeing confirmation results.
+Stop before confirmation if a smoke has the wrong served model, effort, runtime,
+or authentication route; missing telemetry; a grader failure; a peek or secret
+warning; or an unparseable FLAG. Stop the smoke phase above $5 notional and the
+grid above $20 confirmation-only notional, and always stop above $25 total.
+These stops leave no authorized retry budget after the limit. Do not replace
+failed outputs or tune the prompt after seeing confirmation results.
 
 ## Validity boundaries
 
@@ -157,8 +165,10 @@ the prompt after seeing confirmation results.
 2. All three planted conflicts appear in one task. Run repetitions are
    independent samples, but the source stimuli are fixed; generalization to
    other domains requires another frozen task.
-3. A clean control is present, but one packet is a thin estimate of false
-   alarms.
+3. A clean control is present, but one packet is a thin estimate of
+   verification-induced accuracy regression. This design does not score whether
+   prose explicitly describes the inconsistencies; its reliable endpoint is
+   which values the brief selects.
 4. Sonnet under Claude Code is one model-scaffold pairing. Cross-model transfer
    is a separate experiment.
 5. Subscription runs still report notional list-price cost from usage. That is

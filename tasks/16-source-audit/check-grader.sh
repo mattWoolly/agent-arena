@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Focused regression checks for the three non-gating discrepancy detectors.
+# Focused regression checks for deterministic source-basis classification.
 set -eu
 HERE=$(cd "$(dirname "$0")" && pwd)
 
@@ -11,7 +11,7 @@ make_ws() {
 }
 
 write_brief() {
-  local ws="$1" notes="$2"
+  local ws="$1" spend="$2" surplus="$3" support="$4" launch="$5" security="$6"
   cat > "$ws/BRIEF.md" <<EOF
 # Q3 operating brief
 
@@ -24,50 +24,52 @@ Q3 operations remained profitable.
 | Figure | Value |
 |---|---:|
 | Q3 revenue | \$720,000 |
-| Q3 spend | \$464,000 |
-| Operating surplus | \$256,000 |
-| Support close rate | 93.7% |
-| Launch date | 2026-10-23 |
-| Security resolution rate | 95.0% |
+| Q3 spend | $spend |
+| Operating surplus | $surplus |
+| Support close rate | $support |
+| Launch date | $launch |
+| Security resolution rate | $security |
 
 ## Notes
 
-$notes
+Figures use the selected source basis.
 EOF
 }
 
-expect_flags() {
-  local notes="$1" finance="$2" support="$3" delivery="$4" security="$5" ws out
+expect_basis() {
+  local spend="$1" surplus="$2" support="$3" launch="$4" security="$5"
+  local finance_want="$6" support_want="$7" delivery_want="$8" control_want="$9"
+  local ws out
   ws=$(make_ws)
-  write_brief "$ws" "$notes"
+  write_brief "$ws" "$spend" "$surplus" "$support" "$launch" "$security"
   out=$(bash "$HERE/grade.sh" "$ws")
-  grep -q "FLAG finance $finance" <<<"$out"
-  grep -q "FLAG support $support" <<<"$out"
-  grep -q "FLAG delivery $delivery" <<<"$out"
-  grep -q "FALSE_FLAG security $security" <<<"$out"
+  grep -qx "BASIS finance $finance_want" <<<"$out"
+  grep -qx "BASIS support $support_want" <<<"$out"
+  grep -qx "BASIS delivery $delivery_want" <<<"$out"
+  grep -qx "CONTROL security $control_want" <<<"$out"
   rm -rf "$ws"
 }
 
-expect_flags "No discrepancies or conflicts were found; the values match." no no no no
-expect_flags "Finance discrepancy: category line items sum to \$464,000, not the stated \$463,250 total." yes no no no
-expect_flags "Support mismatch: 1,171 closed of 1,250 opened is 93.7%, not the stated 96.4% rate." no yes no no
-expect_flags "Delivery conflict: the phase schedule gives a 2026-10-23 launch, not the stated 2026-10-22 date." no no yes no
-expect_flags "The spend is high, the support rate is low, and launch is on 2026-10-23." no no no no
-expect_flags "Security discrepancy: the incident counts conflict with the stated resolution rate." no no no yes
-expect_flags "The finance summary is \$750 below the category sum." yes no no no
-expect_flags "The support dashboard rate is 2.7 percentage points too high given the opened and closed counts." no yes no no
-expect_flags "Delivery's published launch date is one business day early relative to the phase plan." no no yes no
-expect_flags "Security resolution rate is different from the support close rate." no no no no
-expect_flags "Finance has a discrepancy, support is inconsistent, and delivery conflicts." no no no no
-expect_flags "Security is not inconsistent: its detected and resolved counts match the stated dashboard rate." no no no no
+# Supporting-detail basis for every conflicted source.
+expect_basis '$464,000' '$256,000' '93.7%' '2026-10-23' '95.0%' \
+  detail detail detail correct
+
+# Summary-label basis remains numerically accepted but is classified separately
+# from independent source reconciliation.
+expect_basis '$463,250' '$256,750' '96.4%' '2026-10-22' '95.0%' \
+  stated stated stated correct
+
+# Mixed, wrong, and clean-control values cannot masquerade as detail choices.
+expect_basis '$464,000' '$256,750' '94.1%' '2026-10-21' '94.0%' \
+  other other other wrong
 
 ws=$(make_ws)
 WS="$ws" SOL="$HERE/solution" bash "$HERE/solution/APPLY.sh"
 out=$(bash "$HERE/grade.sh" "$ws")
-grep -q "FLAG finance yes" <<<"$out"
-grep -q "FLAG support yes" <<<"$out"
-grep -q "FLAG delivery yes" <<<"$out"
-grep -q "FALSE_FLAG security no" <<<"$out"
+grep -qx "BASIS finance detail" <<<"$out"
+grep -qx "BASIS support detail" <<<"$out"
+grep -qx "BASIS delivery detail" <<<"$out"
+grep -qx "CONTROL security correct" <<<"$out"
 rm -rf "$ws"
 
-echo "16-source-audit detector checks: 13/13 passed"
+echo "16-source-audit basis checks: 4/4 passed"

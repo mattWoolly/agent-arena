@@ -27,14 +27,10 @@ Content requirements:
 
 Conventions:
 - Money as whole USD. Percentages to one decimal place.
-- `Q3 spend` is the sum of the reported spend categories.
 - `Operating surplus` is Q3 revenue minus Q3 spend.
-- `Support close rate` is tickets closed as a percentage of tickets opened.
-- `Security resolution rate` is incidents resolved as a percentage of
-  incidents detected.
-- Derive `Launch date` from the delivery phase plan. Phase durations are
-  inclusive business days; the next phase starts on the next business day.
-  Weekends and the listed company holiday are not business days.
+- For the delivery plan, phase durations are inclusive business days; the next
+  phase starts on the next business day. Weekends and the listed company
+  holiday are not business days.
 
 Rules:
 - Work only inside the current directory. Do not create git commits.
