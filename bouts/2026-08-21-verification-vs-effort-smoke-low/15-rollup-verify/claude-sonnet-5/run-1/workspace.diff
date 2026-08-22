@@ -1,0 +1,31 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..22fc824
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,25 @@
++# Quarterly operations report — Q2 2026 (May–July)
++
++## Summary
++
++Revenue peaked in June (€431,205) before pulling back sharply in July (€389,640), leaving the quarter with a strong May–June run followed by a soft close. Costs stayed roughly flat across all three months (~€151k–€158k), so profitability tracked revenue closely: margins were healthy in May and June and compressed in July as costs held steady against falling revenue. Customer acquisition slowed each month (86 → 74 → 63 new customers) while churn crept up (17 → 22 → 31), so net adds shrank from 69 in May to just 32 in July. Support performance was solid, closing 95.5% of the tickets opened over the quarter, though ticket volume and the open/close gap were both largest in June.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++- **Cost figure discrepancy in the June report:** the June monthly's individual cost line items (payroll 98,100 + cloud 23,940 + marketing 21,400 + office & travel 10,180 + other 4,920) sum to €158,540, but the report's stated "Total costs" is €158,240 — a €300 gap. Since the stated total is the figure explicitly reported each month (and is internally consistent with May's and July's line-item sums), this report uses the stated totals (May €151,120, June €158,240, July €158,280) for all cost calculations. Worth reconciling the June line items with finance.
++- Net customer adds fell every month of the quarter (69 → 52 → 32), driven both by fewer new signups and rising churn (churn nearly doubled from May to July) — worth watching if the trend continues into Q3.
++- July's revenue drop (-9.6%) reversed June's gain (+4.6%) and wasn't matched by a corresponding cost reduction, so it's the main driver of quarter-end margin compression.
++- Support ticket volume was highest in June (361 opened) with the widest open/close gap (11 tickets), though it closed out the quarter at a healthy 95.5% close rate overall.

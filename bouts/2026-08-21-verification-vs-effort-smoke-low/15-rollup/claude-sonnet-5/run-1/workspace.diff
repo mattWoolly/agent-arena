@@ -1,0 +1,31 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..19624f3
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,25 @@
++# Quarterly operations report — May–July 2026
++
++## Summary
++
++The quarter opened strong, with revenue peaking in June before pulling back sharply in July. May and June both grew month-over-month, but July's revenue dropped nearly 10% versus June, driven by a slowdown in new customer signings and a drop in ticket throughput. Despite the July pullback, the quarter as a whole was solidly profitable, closing with a healthy margin. Customer growth remained positive every month, though net adds slowed considerably by July as new signings fell and churn rose. Support performance was strong overall, with close rates holding in the mid-90s despite a heavier ticket load in June.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++- July's revenue decline coincided with a drop in new customer signings (63, the lowest of the quarter) and the highest churn (31), pushing net adds for the month down to 32 — less than half of May's 69.
++- Marketing spend was cut in July (€16,980, down from €21,400 in June) even as new signings fell; worth checking whether the two are connected.
++- June saw the heaviest support load (361 tickets opened) but still closed at a strong rate; July's lighter ticket volume (298 opened) closed at a similar rate, suggesting support capacity is not the constraint on the July slowdown.
++- Payroll costs were flat at €98,100 across June and July after a smaller base in May (€96,400), while cloud costs crept up each month.

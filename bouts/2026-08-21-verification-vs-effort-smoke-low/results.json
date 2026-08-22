@@ -1,0 +1,88 @@
+[
+  {
+    "model": "claude-sonnet-5",
+    "wall_seconds": 18.7,
+    "agent_exit": 0,
+    "assistant_messages": 5,
+    "tool_calls": {
+      "Bash": 1,
+      "Write": 1
+    },
+    "tool_calls_total": 2,
+    "served_models": [
+      "claude-sonnet-5"
+    ],
+    "served_model": "claude-sonnet-5",
+    "served_model_leak": false,
+    "total_cost_usd": 0.08530660000000001,
+    "num_turns": 3,
+    "duration_ms": 15810,
+    "duration_api_ms": 16601,
+    "is_error": false,
+    "permission_denials": 0,
+    "input_tokens": 6,
+    "output_tokens": 1443,
+    "cache_read_tokens": 95143,
+    "final_message": "Q-REPORT.md written with the three required sections, computed figures verified against the monthly reports (net \u20ac765,585, margin 62.1%, net adds 153, close rate 95.5%, June +4.6%, July -9.6%).",
+    "run_env": {
+      "cli_version": "2.1.239 (Claude Code)",
+      "base_url": "https://api.anthropic.com",
+      "proxy_upstream": "none",
+      "model_env": "none",
+      "effort": "low",
+      "setting_sources": "project",
+      "max_turns": 60,
+      "timeout_s": 1500,
+      "started_at": "2026-08-22T06:19:27Z"
+    },
+    "peek_check": "clean",
+    "diffstat": "1 file changed, 25 insertions(+)",
+    "grade_pass": true,
+    "score": "3/3",
+    "task": "15-rollup",
+    "run": "run-1"
+  },
+  {
+    "model": "claude-sonnet-5",
+    "wall_seconds": 25.3,
+    "agent_exit": 0,
+    "assistant_messages": 5,
+    "tool_calls": {
+      "Bash": 1,
+      "Write": 1
+    },
+    "tool_calls_total": 2,
+    "served_models": [
+      "claude-sonnet-5"
+    ],
+    "served_model": "claude-sonnet-5",
+    "served_model_leak": false,
+    "total_cost_usd": 0.0943944,
+    "num_turns": 3,
+    "duration_ms": 22398,
+    "duration_api_ms": 23237,
+    "is_error": false,
+    "permission_denials": 0,
+    "input_tokens": 6,
+    "output_tokens": 2064,
+    "cache_read_tokens": 95362,
+    "final_message": "Wrote `Q-REPORT.md`. One data issue found during verification: June's cost line items sum to \u20ac158,540, but the report states a June total of \u20ac158,240 (\u20ac300 off) \u2014 May and July line items reconcile cleanly with their stated totals. I used the stated totals throughout (consistent with the other two months) and flagged the discrepancy in Notes for finance to reconcile.",
+    "run_env": {
+      "cli_version": "2.1.239 (Claude Code)",
+      "base_url": "https://api.anthropic.com",
+      "proxy_upstream": "none",
+      "model_env": "none",
+      "effort": "low",
+      "setting_sources": "project",
+      "max_turns": 60,
+      "timeout_s": 1500,
+      "started_at": "2026-08-22T06:21:45Z"
+    },
+    "peek_check": "clean",
+    "diffstat": "1 file changed, 25 insertions(+)",
+    "grade_pass": true,
+    "score": "3/3",
+    "task": "15-rollup-verify",
+    "run": "run-1"
+  }
+]

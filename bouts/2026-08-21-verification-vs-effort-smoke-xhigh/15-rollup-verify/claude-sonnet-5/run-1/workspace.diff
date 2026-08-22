@@ -1,0 +1,32 @@
+diff --git a/Q-REPORT.md b/Q-REPORT.md
+new file mode 100644
+index 0000000..de205e4
+--- /dev/null
++++ b/Q-REPORT.md
+@@ -0,0 +1,26 @@
++# Quarterly Operations Report — May–July 2026
++
++## Summary
++
++The quarter opened strong but lost momentum by the end. Revenue rose from €412,380 in May to €431,205 in June (+4.6%), then fell back to €389,640 in July (-9.6%), erasing June's gain and finishing the quarter below where it started. Across the full quarter, revenue totalled €1,233,225 against €467,640 in costs, leaving a net of €765,585 and a healthy 62.1% margin, with monthly costs holding steady in the €151k–€158k range throughout.
++
++Customer growth decelerated markedly month over month: new signups fell each month (86 → 74 → 63) while churn rose (17 → 22 → 31), taking net adds from 69 in May down to just 32 in July, for 153 net adds across the quarter. Support was a bright spot — the team closed 95.5% of the 1,001 tickets opened in the quarter, with the close rate improving each month.
++
++## Key figures
++
++| Metric | Value |
++|---|---|
++| Quarterly revenue | €1,233,225 |
++| Quarterly costs | €467,640 |
++| Net | €765,585 |
++| Margin | 62.1% |
++| Net customer adds | 153 |
++| Ticket close rate | 95.5% |
++| June revenue growth | 4.6% |
++| July revenue growth | -9.6% |
++
++## Notes
++
++**Data conflict:** June's monthly report is internally inconsistent. Its listed cost-line items (payroll €98,100 + cloud €23,940 + marketing €21,400 + office & travel €10,180 + other €4,920) sum to €158,540, but the report's stated "Total costs" figure is €158,240 — a €300 gap. May's and July's stated totals both reconcile exactly with their line items, so this report uses June's stated €158,240 figure for Quarterly costs, Net, and Margin, consistent with that pattern. The €300 discrepancy should be confirmed with finance; it does not change Margin at one decimal place either way (62.1% under both readings).
++
++**Trend to watch:** new customer signups nearly halved from May to July while churn nearly doubled, cutting monthly net adds by more than half over the quarter — worth investigating before it compounds into Q3. July's revenue drop also fully reversed June's gain; if the pattern continues into August it would be worth a closer look at what changed in the sales pipeline.
