@@ -202,7 +202,13 @@ if [[ ! -f "$LOG" ]]; then
   printf 'timestamp\tsequence\teffort\ttask\tmodel\trepeat\tstatus\n' > "$LOG"
 fi
 
-tail -n +2 "$ORDER" | while IFS=$'\t' read -r sequence effort task model repeat; do
+mapfile -t order_rows < <(tail -n +2 "$ORDER")
+[[ "${#order_rows[@]}" -eq 40 ]] || {
+  echo "ORDER.tsv must contain exactly 40 data rows" >&2
+  exit 2
+}
+for order_row in "${order_rows[@]}"; do
+  IFS=$'\t' read -r sequence effort task model repeat <<<"$order_row"
   enforce_budget
   [[ "$model" == "$MODEL" ]]
   [[ "$effort" == low || "$effort" == xhigh ]]

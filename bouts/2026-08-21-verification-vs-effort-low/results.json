@@ -1,0 +1,45 @@
+[
+  {
+    "model": "claude-sonnet-5",
+    "wall_seconds": 41.8,
+    "agent_exit": 0,
+    "assistant_messages": 5,
+    "tool_calls": {
+      "Bash": 1,
+      "Write": 1
+    },
+    "tool_calls_total": 2,
+    "served_models": [
+      "claude-sonnet-5"
+    ],
+    "served_model": "claude-sonnet-5",
+    "served_model_leak": false,
+    "total_cost_usd": 0.1272468,
+    "num_turns": 3,
+    "duration_ms": 38246,
+    "duration_api_ms": 38975,
+    "is_error": false,
+    "permission_denials": 0,
+    "input_tokens": 6,
+    "output_tokens": 4050,
+    "cache_read_tokens": 96909,
+    "final_message": "Done. `BRIEF.md` is written with the required structure. During verification I found three conflicts between the packet summaries and the underlying data, all disclosed in Notes:\n\n- **Spend**: line items sum to $464,000, but finance packet states $463,250 (used the recomputed sum).\n- **Support close rate**: 1,171/1,250 = 93.7%, but the packet states 96.4% (used the recomputed rate).\n- **Launch date**: recomputing the business-day schedule from the stated start/holidays gives 2026-10-23, one day later than the packet's stated 2026-10-22 (used the recomputed date).\n\nSecurity's 95.0% resolution rate checked out exactly against the raw counts.",
+    "run_env": {
+      "cli_version": "2.1.239 (Claude Code)",
+      "base_url": "https://api.anthropic.com",
+      "proxy_upstream": "none",
+      "model_env": "none",
+      "effort": "low",
+      "setting_sources": "project",
+      "max_turns": 60,
+      "timeout_s": 1500,
+      "started_at": "2026-08-22T06:27:07Z"
+    },
+    "peek_check": "clean",
+    "diffstat": "1 file changed, 54 insertions(+)",
+    "grade_pass": true,
+    "score": "3/3",
+    "task": "16-source-audit-verify",
+    "run": "run-9"
+  }
+]

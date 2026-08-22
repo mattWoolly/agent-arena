@@ -4,6 +4,23 @@ Pre-registered before any new model run. The exact prompts, confirmatory task,
 grader, run order, model, effort settings, repetitions, and analysis code are
 committed and pushed before the first development smoke.
 
+## Amendment 1 — manifest stdin isolation
+
+Frozen and pushed after confirmation sequence 1 completed and before sequence
+2 starts. The original grid loop streamed `ORDER.tsv` into a shell `while`
+loop. A subprocess inherited and consumed that stream, so the runner exited
+successfully after sequence 1 instead of advancing. The completed sequence-1
+artifact remains the sole run for its frozen cell and will be resumed as
+`skipped-complete`; it is not replaced.
+
+The runner now loads all 40 manifest rows with `mapfile`, asserts that count,
+and iterates the in-memory array. This changes only manifest transport: the
+committed order, prompts, tasks, model, effort settings, grader, outcomes,
+analysis, auth/runtime gates, and cost/stop rules are unchanged. Before this
+amendment, the operator observed only the runner console and generated bout
+summary (task pass, telemetry, and served-model integrity); no `grade.txt`
+`BASIS` lines, deliverable, transcript, or primary outcome were inspected.
+
 ## Question
 
 For one fixed coding agent, does a short, generic verification instruction at

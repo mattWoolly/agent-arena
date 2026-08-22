@@ -1,0 +1,60 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..6e17a5a
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,54 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter, with revenue of $720,000 against total
++spend of $464,000, leaving an operating surplus of $256,000. Support held up
++reasonably well but closed a meaningfully smaller share of tickets than
++originally reported (93.7% rather than the dashboard's 96.4%), which
++leadership should track. The delivery plan is on schedule with a launch date
++of October 23, one business day later than the packet's headline date once
++the stated phase durations and the company holiday are applied correctly.
++Security performance was strong, resolving 95.0% of detected incidents,
++consistent with the dashboard figure.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three figures in the source packets did not reconcile with the underlying
++data, and are worth flagging to leadership:
++
++- **Finance:** The line-item spend categories (Payroll $286,400 +
++  Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to
++  $464,000, but the finance summary states total Q3 spend as $463,250 — a
++  $750 discrepancy. This brief uses the recomputed sum ($464,000) and the
++  corresponding operating surplus ($256,000), since the line items are the
++  primary data and the summary figure appears to be a transcription or
++  rounding error.
++- **Support:** 1,171 closed tickets out of 1,250 opened computes to a 93.7%
++  close rate, not the 96.4% the support dashboard reports. This brief uses
++  the recomputed rate (93.7%). The gap is large enough (roughly 33 tickets)
++  that it's worth confirming whether the dashboard is using a different
++  denominator (e.g., a rolling or prior-period ticket count) before this
++  number is repeated externally.
++- **Delivery:** Recomputing the schedule from the stated start date
++  (2026-10-05, a Monday), the given phase durations (Discovery 3, Build 6,
++  QA 4, Release 1 business day), the "next phase starts the next business
++  day" rule, and the single company holiday (2026-10-12) yields a launch
++  date of **2026-10-23**, one business day after the 2026-10-22 date
++  recorded in the delivery summary. This brief uses the recomputed date.
++  Worth double-checking with the delivery team whether the holiday or a
++  phase length was applied differently on their end.
++
++Security incident resolution (76 of 80, 95.0%) was independently verified
++and matches the security dashboard exactly — no discrepancy there.
