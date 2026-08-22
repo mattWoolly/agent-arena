@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Analyze the pre-registered source-audit prompt-by-effort bout."""
 from collections import defaultdict
+from decimal import Decimal
+from fractions import Fraction
 import json
 import math
 from pathlib import Path
@@ -273,6 +275,8 @@ def summarize(runs):
             "security_correct_runs": sum(row["security_correct"] for row in rows),
             "all_items_correct_runs": sum(row["all_items_correct"] for row in rows),
             "task_passes": sum(row["grade_pass"] for row in rows),
+            "total_cost_usd_exact": str(sum(
+                (Decimal(str(row["cost_usd"])) for row in rows), Decimal("0"))),
             "mean_cost_usd": safe_mean(row["cost_usd"] for row in rows),
             "mean_output_tokens": safe_mean(row["output_tokens"] for row in rows),
             "mean_turns": safe_mean(row["turns"] for row in rows),
@@ -295,13 +299,16 @@ def render(cells, smokes):
     bx = cells["base-xhigh"]
     bl = cells["base-low"]
     vx = cells["verify-xhigh"]
-    h1 = (vl["audit_success_rate"] >= bx["audit_success_rate"]
-          and vl["mean_cost_usd"] is not None and bx["mean_cost_usd"] is not None
-          and vl["mean_cost_usd"] <= bx["mean_cost_usd"])
-    prompt_gain = vl["audit_success_rate"] - bl["audit_success_rate"]
-    effort_gain = bx["audit_success_rate"] - bl["audit_success_rate"]
-    interaction = ((vx["audit_success_rate"] - bx["audit_success_rate"])
-                   - (vl["audit_success_rate"] - bl["audit_success_rate"]))
+    vl_rate = Fraction(vl["audit_successes"], vl["runs"])
+    bx_rate = Fraction(bx["audit_successes"], bx["runs"])
+    bl_rate = Fraction(bl["audit_successes"], bl["runs"])
+    vx_rate = Fraction(vx["audit_successes"], vx["runs"])
+    vl_cost = Decimal(vl["total_cost_usd_exact"]) / vl["runs"]
+    bx_cost = Decimal(bx["total_cost_usd_exact"]) / bx["runs"]
+    h1 = vl_rate >= bx_rate and vl_cost <= bx_cost
+    prompt_gain = vl_rate - bl_rate
+    effort_gain = bx_rate - bl_rate
+    interaction = (vx_rate - bx_rate) - (vl_rate - bl_rate)
     confirmation_integrity = sum(cell["integrity_failures"] for cell in cells.values())
     smoke_integrity = sum(not smoke["integrity_ok"] for smoke in smokes)
     integrity = confirmation_integrity + smoke_integrity
@@ -310,10 +317,11 @@ def render(cells, smokes):
     hypotheses = [
         ("H1 verification-low matches or beats base-xhigh at no higher cost", h1,
          f"{vl['audit_successes']}/10 at {money(vl['mean_cost_usd'])} mean vs {bx['audit_successes']}/10 at {money(bx['mean_cost_usd'])}"),
-        ("H2 low-effort prompt gain is at least 40 points", prompt_gain >= .4,
-         f"{prompt_gain * 100:+.0f} points"),
+        ("H2 low-effort prompt gain is at least 40 points",
+         prompt_gain >= Fraction(2, 5),
+         f"{float(prompt_gain * 100):+.0f} points"),
         ("H3 prompt gain exceeds effort gain", prompt_gain > effort_gain,
-         f"prompt {prompt_gain * 100:+.0f} points; effort {effort_gain * 100:+.0f} points"),
+         f"prompt {float(prompt_gain * 100):+.0f} points; effort {float(effort_gain * 100):+.0f} points"),
         ("H4 verification clean-control accuracy is at least 9/10 per arm",
          vl["security_correct_runs"] >= 9 and vx["security_correct_runs"] >= 9,
          f"low {vl['security_correct_runs']}/10; xhigh {vx['security_correct_runs']}/10"),
@@ -351,10 +359,10 @@ def render(cells, smokes):
         "",
         "## Pre-registered contrasts",
         "",
-        f"- Verification-low minus base-xhigh: {(vl['audit_success_rate'] - bx['audit_success_rate']) * 100:+.0f} percentage points.",
-        f"- Verification-low minus base-low: {prompt_gain * 100:+.0f} percentage points.",
-        f"- Base-xhigh minus base-low: {effort_gain * 100:+.0f} percentage points.",
-        f"- Prompt-by-effort interaction: {interaction * 100:+.0f} percentage points.",
+        f"- Verification-low minus base-xhigh: {float((vl_rate - bx_rate) * 100):+.0f} percentage points.",
+        f"- Verification-low minus base-low: {float(prompt_gain * 100):+.0f} percentage points.",
+        f"- Base-xhigh minus base-low: {float(effort_gain * 100):+.0f} percentage points.",
+        f"- Prompt-by-effort interaction: {float(interaction * 100):+.0f} percentage points.",
         "",
         "Wilson intervals, per-run records, per-source basis counts, and cost-source fields are in `analysis.json`.",
         "The 10 repeats in each cell estimate sampling variance on this fixed task, not broad task transfer.",

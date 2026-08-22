@@ -127,7 +127,8 @@ Secondary outcomes:
 No LLM judge and no null-hypothesis significance test are used. Ten runs per
 cell can identify a large behavioral movement, not a subtle one. Repeats
 measure sampling variance on this task, not transfer to every source-audit
-setting.
+setting. Hypothesis thresholds and rate contrasts are evaluated from exact
+integer counts rather than floating-point boundary comparisons.
 
 ## Hypotheses
 
