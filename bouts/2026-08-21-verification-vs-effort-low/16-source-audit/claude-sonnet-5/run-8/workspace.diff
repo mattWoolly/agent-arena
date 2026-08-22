@@ -1,0 +1,28 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..c6d7102
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,22 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter operationally and financially. Revenue reached $720,000 against total spend of $464,000, leaving a healthy operating surplus of $256,000. Support held a strong close rate of 93.7% against 1,250 opened tickets, and security resolved 95.0% of detected incidents (76 of 80). The delivery plan that began on October 5, 2026 is on track for a launch date of October 23, 2026. Overall the business is performing well, though several source-packet figures did not reconcile with underlying data and are flagged below for leadership awareness.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance packet discrepancy:** the finance summary states total Q3 spend as $463,250, but the itemized spend categories (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, a $750 difference. The figures above use the itemized sum; finance should reconcile which total is authoritative.
++- **Support packet discrepancy:** the support dashboard labels the Q3 close rate as 96.4%, but the underlying counts (1,171 closed of 1,250 opened) compute to 93.7%. The figure above reflects the computed rate; the dashboard label should be corrected or the discrepancy investigated.
++- **Delivery packet discrepancy:** the delivery summary lists the launch date as 2026-10-22. However, working through the phase durations (Discovery 3, Build 6, QA 4, Release 1 business days, each starting the next business day after the prior phase, excluding weekends and the October 12 company holiday) from the October 5, 2026 start yields a launch date of October 23, 2026 — one business day later than stated. Given the launch date impacts external commitments, this should be reconciled with the delivery team before communicating externally.

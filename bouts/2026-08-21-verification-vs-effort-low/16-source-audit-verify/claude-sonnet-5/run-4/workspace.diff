@@ -1,0 +1,49 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..5806ac4
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,43 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid but operationally mixed quarter. Revenue of $720,000 against
++recomputed spend of $464,000 produced an operating surplus of $256,000. Security performance
++was strong, with 95.0% of detected incidents resolved. Support and delivery both had
++source-packet claims that did not match the underlying data when recomputed; see Notes for
++the discrepancies and which figures this brief uses as a result.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance spend discrepancy:** The itemized spend categories (Payroll $286,400 +
++  Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but the
++  finance packet's summary line states total Q3 spend as $463,250 — a $750 gap. This brief
++  uses the recomputed itemized total ($464,000) and the corresponding operating surplus
++  ($256,000), since it is directly verifiable from the line items. Finance should confirm
++  which figure is correct.
++- **Support close rate discrepancy:** Recomputing from the raw counts (1,171 closed / 1,250
++  opened) gives 93.7%, not the 96.4% stated in the support packet's summary line. This brief
++  uses the recomputed rate (93.7%). Support should verify whether the ticket counts or the
++  stated rate is in error — a nearly 3-point gap is material for leadership reporting.
++- **Delivery launch date discrepancy:** Recomputing the phase plan from the 2026-10-05
++  (Monday) start date, with each phase's duration as inclusive business days, the next phase
++  starting the next business day, and 2026-10-12 excluded as a company holiday, gives:
++  Discovery 10/5–10/7, Build 10/8–10/16, QA 10/19–10/22, Release 10/23–10/23. That makes the
++  launch date (end of the Release phase) **2026-10-23**, one business day later than the
++  2026-10-22 date stated in the delivery packet's summary — which appears to match the end of
++  QA rather than the end of Release. This brief uses the recomputed date (2026-10-23).
++  Delivery should confirm the Release phase was accounted for in their stated launch date.
++- Security is the one area where the packet's stated figure (95.0%) matches the recomputed
++  figure from raw counts (76/80), so no escalation needed there.

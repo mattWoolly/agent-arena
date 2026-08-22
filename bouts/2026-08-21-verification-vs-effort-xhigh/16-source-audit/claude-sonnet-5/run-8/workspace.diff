@@ -1,0 +1,55 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..44b158b
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,49 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with revenue of $720,000 against spend of
++$464,000, producing an operating surplus of $256,000. Support held a strong
++close rate of 93.7% across 1,250 opened tickets. The delivery team's project
++plan, run against the business-day rules and the single company holiday in
++the period, points to a launch date of 2026-10-23. Security resolved 76 of
++80 detected incidents, a 95.0% resolution rate. Overall the quarter shows
++healthy margins and stable operational execution, though see the Notes
++section for source-data discrepancies that should be corrected before these
++figures are circulated further.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three of the four source packets contain a summary figure that does not
++match the underlying data, and the figures above use the recomputed
++(correct) values rather than the packets' stated summaries. These should be
++escalated to the respective teams so their dashboards and reports can be
++fixed:
++
++- **Finance:** the packet states total Q3 spend as $463,250, but the listed
++  spend categories (Payroll $286,400 + Infrastructure $81,750 + Contractors
++  $64,200 + Facilities $31,650) sum to $464,000 — a $750 discrepancy.
++- **Support:** the packet labels the Q3 close rate as 96.4%, but 1,171
++  closed tickets out of 1,250 opened computes to 93.7% — a 2.7-point gap.
++- **Delivery:** the packet states the launch date as 2026-10-22. Applying
++  the phase durations (Discovery 3, Build 6, QA 4, Release 1 business days,
++  each phase starting the next business day after the prior one ends) from
++  the 2026-10-05 start, and excluding the 2026-10-12 company holiday, the
++  plan actually lands on 2026-10-23.
++- **Security:** no discrepancy found; the stated 95.0% resolution rate
++  matches the underlying incident counts (76 of 80).
++
++Recommend leadership treat the finance and support figures above as
++provisional pending confirmation with those teams, and flag the delivery
++timeline slip of one business day to the project stakeholders.

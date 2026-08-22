@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 45.3,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.1426396,
+  "num_turns": 8,
+  "duration_ms": 42611,
+  "duration_api_ms": 43140,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 4452,
+  "cache_read_tokens": 169808,
+  "final_message": "Wrote `BRIEF.md`. Cross-checking each packet's stated summary against its underlying data surfaced three conflicts, which the brief uses computed values for and flags in Notes:\n\n- **Finance**: category totals sum to $464,000, not the stated $463,250 (off by $750). Used $464,000.\n- **Support**: 1,171/1,250 = 93.7%, not the stated 96.4%. Used 93.7%.\n- **Delivery**: applying the given business-day rules (weekends + the Oct 12 holiday excluded) from the Oct 5 start yields launch date 2026-10-23, not the stated 2026-10-22. Used 2026-10-23.\n\nSecurity's 95.0% resolution rate checked out with no discrepancy.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:42:24Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 28 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

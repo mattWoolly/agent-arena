@@ -1,0 +1,29 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..aad8525
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,23 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with $720,000 in revenue against $464,000 in spend, producing an operating surplus of $256,000. Support held up well operationally, closing the large majority of the 1,250 tickets opened, though the closure rate is materially lower than the dashboard headline once recomputed from the underlying counts (see Notes). Security performance was strong, resolving 76 of 80 detected incidents for a 95.0% resolution rate. The delivery plan that began 2026-10-05 works out to a launch date of 2026-10-23 once all four phases (Discovery, Build, QA, Release) and the company holiday are correctly sequenced — one business day later than the date circulated in the delivery packet. Overall the quarter's fundamentals are healthy, but three source packets contain summary figures that don't reconcile with their own underlying data and should be corrected before wider distribution.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance packet discrepancy:** the packet's line items (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but the packet's own summary sentence states total spend as $463,250 — a $750 shortfall. The figures above use the line-item total; the source packet should be corrected.
++- **Support packet discrepancy:** 1,171 closed of 1,250 opened computes to a 93.7% close rate, not the 96.4% stated in the packet's summary sentence. This is a large enough gap (2.7 points) to warrant a data-quality check on the support dashboard before the rate is reported further.
++- **Delivery packet discrepancy:** walking the phase durations (Discovery 3, Build 6, QA 4, Release 1 business days) from the 2026-10-05 start, and skipping weekends plus the 2026-10-12 company holiday, lands the launch on 2026-10-23 — one business day after the 2026-10-22 date recorded in the packet's summary. The stated date appears to reflect the end of QA rather than the end of the Release phase; the plan should be corrected or the extra day explicitly justified before it's shared externally.
++- **Security packet:** no discrepancy found — the 95.0% resolution rate in the summary matches the underlying incident counts (76 of 80).

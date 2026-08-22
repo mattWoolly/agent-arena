@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 77.6,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.20357019999999998,
+  "num_turns": 9,
+  "duration_ms": 73476,
+  "duration_api_ms": 73926,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 8142,
+  "cache_read_tokens": 215031,
+  "final_message": "I wrote `BRIEF.md` with the required three sections. While reconciling each packet's raw data against its own headline summary, I found discrepancies in three of the four:\n\n- **Finance**: spend table sums to $464,000, but the packet's summary claims $463,250\n- **Support**: raw counts give a 93.7% close rate, but the dashboard label claims 96.4%\n- **Delivery**: walking the business-day phases (skipping weekends + the Oct 12 holiday) puts launch at 2026-10-23, not the stated 2026-10-22 (which is actually when QA finishes)\n- **Security**: checked out clean \u2014 95.0% matches exactly\n\nI used the computed values (not the packets' stated summaries) in the Key figures table, and flagged all three mismatches in Notes for leadership to verify.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T07:11:23Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 49 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

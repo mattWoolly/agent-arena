@@ -1,0 +1,60 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..6c61c38
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,54 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter operationally and financially. Revenue reached $720,000 against
++$464,000 in spend, producing an operating surplus of $256,000 (a 35.6% margin).
++Support closed 93.7% of the 1,250 tickets opened in the quarter, and the security
++team resolved 95.0% of the 80 incidents it detected. The Q3 delivery plan, kicked
++off October 5, is on track to launch October 23 once all four project phases
++(Discovery, Build, QA, Release) and the company holiday on October 12 are accounted
++for. Overall the quarter shows healthy margins and strong resolution rates across
++both support and security, with one delivery-schedule item worth double-checking
++before it's communicated externally (see Notes).
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three of the four source packets contain a stated "summary" or "dashboard" figure
++that does not match the raw data in the same packet. This brief uses figures
++recomputed from the raw data per the conventions above, not the packets' own
++labeled summary values. Leadership should be aware of the following gaps, and the
++underlying dashboards/reports should be corrected at the source:
++
++- **Finance:** the packet's spend line items (Payroll $286,400 + Infrastructure
++  $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but the
++  finance summary states total Q3 spend as $463,250 — a $750 understatement.
++  Operating surplus above uses the correct $464,000 total.
++- **Support:** with 1,250 tickets opened and 1,171 closed, the close rate is
++  1,171 / 1,250 = 93.7%, but the support dashboard labels it 96.4% — a 2.7 point
++  overstatement. Worth checking whether the dashboard is using a different
++  denominator or is simply stale.
++- **Delivery:** walking the phase plan (Discovery 3 business days, Build 6, QA 4,
++  Release 1) from the October 5, 2026 start, with weekends and the October 12
++  company holiday excluded and each phase starting on the next business day after
++  the prior phase ends, produces a launch date of October 23, 2026 — one business
++  day later than the October 22 date recorded in the delivery summary. If October
++  22 has already been communicated externally, it should be corrected or the plan
++  re-verified.
++- **Security:** the incident resolution rate (76 / 80 = 95.0%) matches the
++  security dashboard exactly — no discrepancy here, included as a point of
++  contrast with the other three packets.
++
++Given the pattern across three of four packets, it's worth a broader check of
++whether other dashboards in these systems are drifting from their underlying data.

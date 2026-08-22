@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 78.9,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.1983662,
+  "num_turns": 9,
+  "duration_ms": 76210,
+  "duration_api_ms": 76649,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 7760,
+  "cache_read_tokens": 211881,
+  "final_message": "I wrote `BRIEF.md` with the three required headings and the six-row Key figures table.\n\nQuality check performed: I recomputed every material claim against the raw data in each packet rather than trusting the packets' own summary sentences, and found three internal inconsistencies:\n\n- **Finance**: line items sum to $464,000, but the packet's stated total is $463,250 ($750 gap) \u2014 used the recomputed sum.\n- **Support**: raw counts give 93.7% close rate, but the packet labels it 96.4% \u2014 used the recomputed rate.\n- **Delivery**: recomputing the schedule from the stated start date, durations, and holiday gives 2026-10-23, one business day after the packet's stated 2026-10-22 (which matches the end of QA, suggesting the Release day was dropped) \u2014 used the recomputed date.\n\nSecurity's 95.0% resolution rate checked out exactly (76/80) \u2014 no conflict there. Each discrepancy, and which figure this brief used, is documented in the Notes section.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:46:16Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 57 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

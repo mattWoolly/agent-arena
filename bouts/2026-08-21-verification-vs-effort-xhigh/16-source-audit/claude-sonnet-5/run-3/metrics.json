@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 69.6,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 1,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.1778314,
+  "num_turns": 7,
+  "duration_ms": 66631,
+  "duration_api_ms": 67460,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 7569,
+  "cache_read_tokens": 130567,
+  "final_message": "`BRIEF.md` is written. It uses figures recomputed from the raw source data rather than the packets' own summary sentences, since three of the four packets had a mismatch between their prose summary and their underlying table:\n\n- Finance: itemized spend sums to $464,000, not the stated $463,250\n- Support: close rate computes to 93.7%, not the stated 96.4%\n- Delivery: correct business-day walk (accounting for the Oct 12 holiday) gives a launch date of 2026-10-23, not the stated 2026-10-22\n- Security: the stated 95.0% checked out fine\n\nAll of this is flagged in the Notes section for leadership. No git commits were made, per instructions.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:41:13Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 48 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

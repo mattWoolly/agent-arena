@@ -1,0 +1,49 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..875ffff
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,43 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with revenue of $720,000 against spend of
++$464,000, producing an operating surplus of $256,000. Support handled a high
++volume of tickets but closed a smaller share of them than the team's own
++dashboard reported. Security maintained a strong incident resolution rate.
++The delivery plan is on track, with the launch landing in late October once
++all four phases (Discovery, Build, QA, Release) are accounted for.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three figures in the source packets do not match their own underlying data
++and should be corrected at the source before wider distribution:
++
++- **Finance:** the packet's stated total spend ($463,250) is $750 lower than
++  the sum of its own itemized categories ($464,000, from payroll +
++  infrastructure + contractors + facilities). The itemized sum was used
++  above; the surplus figure reflects it.
++- **Support:** the packet's stated close rate (96.4%) does not match its own
++  ticket counts. 1,171 closed of 1,250 opened is 93.7%, not 96.4%. This is a
++  meaningful gap and worth confirming with the support team before it's
++  cited externally.
++- **Delivery:** the packet's stated launch date (2026-10-22) corresponds to
++  the end of the QA phase, not the end of the Release phase. Adding the
++  1-day Release phase (accounting for the 2026-10-12 company holiday and
++  weekends) puts the actual launch date at 2026-10-23. The plan itself looks
++  healthy; the packet's summary line just needs correcting.
++
++Security's incident resolution rate (95.0%, 76 of 80 resolved) checks out
++against the underlying counts and needs no action.

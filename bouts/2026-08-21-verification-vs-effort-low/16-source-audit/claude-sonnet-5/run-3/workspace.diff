@@ -1,0 +1,48 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..6dce67e
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,42 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with $720,000 in revenue against $464,000 in verified
++spend, producing an operating surplus of $256,000. Support held a close rate near 93.7%
++against 1,250 opened tickets, and security resolved 95.0% of the 80 incidents it detected.
++The delivery team's project begun on 2026-10-05 tracks to a launch on 2026-10-23 once
++weekends and the company planning-day holiday are correctly accounted for. Several figures
++published in the underlying source packets do not match the underlying itemized data and
++are called out below for leadership awareness.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance spend discrepancy:** the finance packet's summary line states total Q3 spend as
++  $463,250, but the itemized spend categories (Payroll $286,400 + Infrastructure $81,750 +
++  Contractors $64,200 + Facilities $31,650) sum to $464,000, a $750 difference. The figure
++  above uses the itemized total; finance should reconcile the summary line.
++- **Support close rate discrepancy:** the support dashboard reports a 96.4% close rate, but
++  1,171 closed of 1,250 opened tickets computes to 93.7%. This is a meaningful gap worth
++  escalating to the support team to confirm which figure (and which underlying counts) is
++  correct.
++- **Delivery launch date discrepancy:** the delivery summary records the launch date as
++  2026-10-22. Recomputing the phase schedule from the 2026-10-05 start date (Discovery 3
++  days, Build 6 days, QA 4 days, Release 1 day; each phase inclusive of its duration in
++  business days, next phase starting the next business day, weekends and the 2026-10-12
++  company planning-day holiday excluded) yields a launch date of 2026-10-23, one business
++  day later than recorded. Leadership should confirm the correct launch date before it is
++  communicated externally.
++- **Security figures:** the 95.0% resolution rate (76 of 80 incidents) matches the packet's
++  own summary and required no correction.

@@ -1,0 +1,34 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..1c9c9f8
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,28 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter: revenue of $720,000 against recomputed spend of $464,000 produced an operating surplus of $256,000. Support held a strong close rate on ticket volume, and security resolved the large majority of detected incidents. The delivery plan for the next project is on track, though the confirmed launch date runs one business day later than the packet's own summary states once the company holiday is correctly excluded. Three figures in the source packets did not match their underlying data on recomputation; those are detailed in Notes below, along with the values this brief uses.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three inconsistencies were found between packet summary statements and the underlying data they were derived from; this brief uses the recomputed values in each case:
++
++- **Finance spend**: the itemized spend categories (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but the finance packet's own summary states total Q3 spend as $463,250 — a $750 discrepancy. Operating surplus above ($256,000) uses the recomputed $464,000 figure.
++- **Support close rate**: 1,171 closed of 1,250 opened tickets computes to 93.7%, but the support packet's summary states 96.4%. The recomputed rate (93.7%) is used above; leadership should confirm which of the two ticket counts or the stated rate is correct in the source system.
++- **Delivery launch date**: applying the stated phase durations (Discovery 3, Build 6, QA 4, Release 1 business day, each phase starting the next business day after the prior one ends) from the 2026-10-05 start, and excluding weekends and the 2026-10-12 company holiday, yields a launch date of 2026-10-23 — one business day after the delivery packet's stated 2026-10-22. The packet's date appears not to account for the holiday falling inside the Build phase. This brief uses the recomputed 2026-10-23.
++
++Security's resolution rate (76/80 = 95.0%) matched the packet's own summary and required no correction.
++
++All three discrepancies should be escalated to the respective functional owners (Finance, Support, Delivery/PM) to confirm which source is authoritative before these numbers are used in external reporting.

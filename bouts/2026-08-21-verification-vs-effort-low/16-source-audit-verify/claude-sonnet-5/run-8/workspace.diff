@@ -1,0 +1,32 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..5e10816
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,26 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with $720,000 in revenue against $464,000 in spend, yielding an operating surplus of $256,000. Support handled a high ticket volume (1,250 opened, 1,171 closed), though the closure rate came in near 93.7%, below the level reported on the support dashboard. Security performance was strong, resolving 95.0% of the 80 incidents detected. The delivery plan, kicked off 2026-10-05 and spanning Discovery, Build, QA, and Release phases around the company's mid-October holiday, points to a launch date of 2026-10-23. Several figures in the source packets did not reconcile with their own underlying data; these are flagged in Notes below.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three discrepancies were found between the packets' summary claims and their own underlying data; the recomputed figures were used above:
++
++- **Finance spend**: the itemized spend categories (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but the finance summary states total Q3 spend as $463,250 — a $750 shortfall. Operating surplus above uses the recomputed $464,000 figure ($256,000 surplus vs. $256,750 if the stated figure is used).
++- **Support close rate**: 1,171 closed of 1,250 opened computes to 93.7%, not the 96.4% stated on the support dashboard. This gap (roughly 2.7 points) is worth confirming with Support before it's cited externally.
++- **Delivery launch date**: applying the stated phase durations (Discovery 3, Build 6, QA 4, Release 1 business days) sequentially from the 2026-10-05 start, skipping weekends and the 2026-10-12 company holiday, the Release phase runs 2026-10-23 to 2026-10-23 — making 2026-10-23 the launch date, not the 2026-10-22 recorded in the delivery summary (which appears to reflect the end of QA rather than Release).
++
++Recommend leadership have Finance, Support, and Delivery each verify their summary figures against underlying data before these numbers are used in external communications.

@@ -1,0 +1,29 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..0541060
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,23 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter, with revenue of $720,000 against total spend of $464,000, leaving a healthy operating surplus of $256,000. Support held up reasonably well but closed materially fewer tickets than the dashboard reported, and the delivery team's plan runs one day longer than its own summary states once business-day and holiday rules are applied correctly. Security performance was strong, resolving the large majority of detected incidents. Recalculated figures are used throughout this brief where they differ from packet summaries; see Notes for details.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance:** The itemized spend table (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sums to $464,000, which is $750 higher than the $463,250 figure quoted in the finance packet's narrative summary. The itemized total was used above; the discrepancy should be reconciled with finance.
++- **Support:** Tickets closed (1,171) divided by tickets opened (1,250) yields a 93.7% close rate, not the 96.4% stated in the support packet. This is a meaningful gap (worth about 34 additional unclosed tickets relative to the reported rate) and should be verified with the support team before it's cited externally.
++- **Delivery:** Applying the stated phase durations (Discovery 3, Build 6, QA 4, Release 1 business days, each phase starting the next business day after the prior one ends) against the 2026-10-05 start date, weekends, and the 2026-10-12 company holiday produces a launch date of 2026-10-23 — one business day later than the 2026-10-22 date recorded in the delivery packet's summary. Worth confirming with the delivery team whether the holiday was properly accounted for in their plan.
++- **Security:** Incident resolution (76 of 80 detected) checks out at 95.0%, matching the packet. No escalation needed here.

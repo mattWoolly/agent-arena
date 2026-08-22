@@ -1,0 +1,32 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..69ab130
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,26 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter, with $720,000 in revenue against $464,000 in spend, producing an operating surplus of $256,000. Support held up well, closing 93.7% of the 1,250 tickets opened in the quarter. The security team resolved 95.0% of detected incidents, a strong outcome. The delivery plan that kicked off October 5 works out to a launch date of October 23 once the company holiday and weekends are excluded from the business-day schedule. Overall the quarter shows healthy margins and dependable operational execution, though a few source figures warrant a second look before they're repeated externally (see Notes).
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three figures in the source packets did not reconcile with their own underlying data, and each is worth a leadership-level flag before these numbers circulate further:
++
++- **Finance spend total is understated by $750.** The finance packet's line items (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but the packet's prose states total Q3 spend as $463,250. This brief uses the $464,000 itemized sum (and the corresponding $256,000 surplus), since it's directly auditable from the listed categories; the finance team should confirm whether the $463,250 figure or a line item itself was mistyped.
++- **Support close rate is overstated by ~2.7 points.** The support packet reports 1,171 closed tickets out of 1,250 opened, which computes to 93.7%, not the 96.4% the dashboard label claims. This brief uses the recomputed 93.7%. Worth checking whether the dashboard is pulling from a different (larger) closed-ticket count or a stale denominator.
++- **Stated launch date is one business day early.** Applying the stated rule (inclusive business-day phases, next phase starts the next business day, weekends and the Oct 12 company holiday excluded) to a Discovery(3) → Build(6) → QA(4) → Release(1) plan starting Monday 2026-10-05 lands the Release day — and thus the launch — on Friday 2026-10-23, not the 2026-10-22 stated in the delivery summary. This brief uses the recomputed 2026-10-23. The one-day gap suggests the summary was written before the Oct 12 holiday was added to the plan, or the holiday wasn't applied when the date was calculated.
++
++No inconsistency was found in the security figures: 76 of 80 incidents resolved recomputes to exactly 95.0%, matching the dashboard label.

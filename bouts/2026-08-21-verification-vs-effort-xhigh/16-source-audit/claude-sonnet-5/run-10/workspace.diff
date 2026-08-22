@@ -1,0 +1,50 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..34c5faa
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,44 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter, closing with $720,000 in revenue against
++$464,000 in spend for an operating surplus of $256,000. Support held a strong
++close rate of 93.7% on 1,250 opened tickets, and the security team resolved
++95.0% of the 80 incidents detected during the quarter. The Q3 delivery
++project, kicked off October 5, is on track for an October 23 launch once the
++company holiday on October 12 is factored into the phased schedule.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance spend total is understated in the source packet.** The finance
++  packet's summary line states Q3 spend as $463,250, but the itemized
++  category breakdown (Payroll, Infrastructure, Contractors, Facilities) sums
++  to $464,000 — a $750 discrepancy. This brief uses the reconciled $464,000
++  figure and the resulting $256,000 surplus; leadership may want to confirm
++  which number is correct with finance.
++- **Support close rate in the source packet is materially wrong.** The
++  support packet's dashboard label states a 96.4% close rate, but 1,171
++  closed of 1,250 opened tickets computes to 93.7%. Worth flagging to the
++  support team, since a 2.7-point gap could mask a real trend in unresolved
++  tickets.
++- **Delivery launch date needs correction.** The delivery packet's stated
++  launch date of 2026-10-22 does not account for the October 12 company
++  holiday when walking the phase schedule (Discovery 3 days, Build 6, QA 4,
++  Release 1) forward from the October 5 start. Recalculating with the
++  holiday excluded pushes the launch to 2026-10-23. Recommend confirming
++  the corrected date with the delivery team before it's communicated
++  externally.
++- Security's reported 95.0% resolution rate reconciles cleanly with the
++  underlying incident counts (76 of 80) — no issue there.

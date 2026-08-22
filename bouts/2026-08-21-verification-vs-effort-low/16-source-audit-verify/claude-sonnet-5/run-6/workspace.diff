@@ -1,0 +1,57 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..f923d0a
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,51 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter, closing with revenue of $720,000 against
++itemized spend of $464,000, for an operating surplus of $256,000. Support
++handled a high volume of tickets (1,250 opened, 1,171 closed) with a close
++rate of 93.7%. Security maintained a strong resolution rate of 95.0% across
++80 detected incidents. The delivery plan for the next project, based on the
++published phase durations and the company holiday calendar, points to a
++launch date of 2026-10-23. Several figures in the source packets did not
++match their own underlying data and are flagged below for leadership
++awareness.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three inconsistencies between the source packets' narrative claims and their
++own underlying data were found during verification. Leadership should be
++aware these figures differ from the "headline" numbers previously
++circulated:
++
++- **Q3 spend**: the finance packet states total spend as $463,250, but the
++  itemized categories (Payroll $286,400 + Infrastructure $81,750 +
++  Contractors $64,200 + Facilities $31,650) sum to $464,000, a $750
++  discrepancy. This brief uses the itemized total ($464,000) and the
++  operating surplus above ($256,000) reflects that figure.
++- **Support close rate**: the support packet states a close rate of 96.4%,
++  but 1,171 closed of 1,250 opened computes to 93.7%. This brief uses the
++  computed rate (93.7%).
++- **Launch date**: the delivery packet states a launch date of 2026-10-22,
++  but recomputing the phase schedule (Discovery 3 business days from
++  2026-10-05, then Build 6, QA 4, and Release 1, each starting the next
++  business day after the prior phase ends, skipping weekends and the
++  2026-10-12 company holiday) puts the end of the Release phase — the actual
++  launch date — on 2026-10-23. The stated date of 2026-10-22 corresponds to
++  the end of the QA phase, not Release. This brief uses the recomputed date
++  (2026-10-23).
++
++The security packet's resolution rate (76 of 80 resolved = 95.0%) was
++verified and matches the source; no discrepancy there.

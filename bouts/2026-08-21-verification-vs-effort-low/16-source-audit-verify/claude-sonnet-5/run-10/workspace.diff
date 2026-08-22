@@ -1,0 +1,29 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..c25483b
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,23 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with $720,000 in revenue against $464,000 in spend, producing a healthy operating surplus. Support handled a high volume of tickets with a strong close rate, and the security team resolved the large majority of detected incidents. The delivery plan for the next project is on track, with a launch date in late October. Three figures in the source packets did not match their own underlying data and are called out below; leadership should confirm which values are authoritative before these numbers are used externally.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance packet discrepancy**: the packet states total Q3 spend as $463,250, but the listed spend categories (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, a $750 difference. The table above uses the recomputed $464,000 and the operating surplus ($256,000) reflects that figure; finance should confirm which number is correct.
++- **Support packet discrepancy**: the packet labels the Q3 close rate as 96.4%, but 1,171 closed / 1,250 opened recomputes to 93.7%. The table above uses the recomputed 93.7%; support should confirm the source of the 96.4% figure.
++- **Delivery packet discrepancy**: the packet states the launch date as 2026-10-22, but recomputing the phase schedule from the 2026-10-05 start date (Discovery 3d, Build 6d, QA 4d, Release 1d, each phase's business days inclusive, next phase starting the next business day, skipping weekends and the 2026-10-12 company holiday) yields 2026-10-23. The table above uses the recomputed 2026-10-23; delivery should confirm the schedule.
++- Security incident resolution (76/80 = 95.0%) matches the packet's stated figure with no discrepancy.

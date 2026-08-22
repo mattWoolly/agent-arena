@@ -1,0 +1,63 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..b0b69f9
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,57 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with revenue of $720,000 against recomputed
++spend of $464,000, leaving an operating surplus of $256,000 (a ~35.6% margin).
++Support handled a high volume of tickets (1,250 opened) but closed 93.7% of
++them, leaving 79 open at quarter end. Security held steady, resolving 95.0% of
++detected incidents (76 of 80). The next delivery project is slated to kick off
++in October, with a recomputed launch date of 2026-10-23. Three of the four
++source packets contained summary figures that did not match their own
++underlying data; those conflicts are detailed in Notes below, along with the
++figure this brief used in each case.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++**Finance — spend total doesn't foot.** The line items (Payroll $286,400 +
++Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to
++$464,000, but the finance packet's own summary states total Q3 spend as
++$463,250 — a $750 shortfall. This brief uses the recomputed line-item sum
++($464,000) for Q3 spend and Operating surplus, since it is directly verifiable
++from the underlying data. Finance should confirm which figure is correct and
++correct the source of the $750 gap.
++
++**Support — close rate is materially overstated.** The support dashboard
++labels the Q3 close rate as 96.4%, but the underlying counts (1,171 closed of
++1,250 opened) compute to 93.7% — a 2.7-point gap that doesn't correspond to
++any obvious alternate calculation (96.4% would require 1,205 closed tickets,
++not 1,171). This brief uses the recomputed rate (93.7%). Given the size of the
++gap, this is worth escalating: either the dashboard is drawing from stale or
++mismatched data, or ticket counts were miscategorized.
++
++**Delivery — stated launch date is one business day early.** Applying the
++stated conventions (inclusive business-day phase durations, next phase starts
++the next business day, weekends and the 2026-10-12 company holiday excluded)
++to the given start date (2026-10-05) and phase durations (Discovery 3, Build
++6, QA 4, Release 1) produces a launch date of 2026-10-23, not the packet's
++stated 2026-10-22. Notably, 2026-10-22 is the end date of the QA phase, which
++suggests the 1-day Release phase was omitted when the summary was written.
++This brief uses the recomputed date (2026-10-23). Recommend confirming the
++corrected date with the delivery team before it's communicated externally.
++
++**Security — rate is accurate, but unresolved count is worth watching.** The
++95.0% resolution rate checks out exactly against the raw counts (76 of 80). No
++correction needed, but the 4 unresolved incidents warrant a status check with
++the security team to confirm none are aging or high-severity.

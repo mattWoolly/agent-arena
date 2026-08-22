@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 101.3,
+  "agent_exit": 0,
+  "assistant_messages": 17,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 9,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.2458626,
+  "num_turns": 10,
+  "duration_ms": 98454,
+  "duration_api_ms": 98879,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 14,
+  "output_tokens": 10384,
+  "cache_read_tokens": 262863,
+  "final_message": "I wrote `BRIEF.md`. Key finding worth highlighting: three of the four source packets have a stated \"summary\" figure that doesn't match their own raw data, so I computed from raw data instead:\n\n- **Finance:** spend line items sum to $464,000, not the stated $463,250 (off by $750)\n- **Support:** 1,171/1,250 closed = 93.7%, not the stated 96.4%\n- **Delivery:** walking the phase durations + Oct 12 holiday gives a launch date of 2026-10-23, not the stated 2026-10-22\n- **Security:** 76/80 = 95.0% \u2014 this one actually matches its stated figure\n\nI flagged all of this in the Notes section as a data-integrity item worth escalating, since the dashboards appear to be drifting from source data in three out of four cases.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:52:43Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 54 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

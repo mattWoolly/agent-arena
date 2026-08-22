@@ -1,0 +1,29 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..f107ae7
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,23 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 2026 closed with $720,000 in revenue against $464,000 in spend, producing an operating surplus of $256,000. Support fielded 1,250 tickets and closed 1,171 of them, a 93.7% close rate, leaving 79 tickets open at quarter end. The delivery plan starting 2026-10-05 runs through Discovery, Build, QA, and Release; accounting for weekends and the October 12 company holiday, the Release phase — and the launch — lands on 2026-10-23. Security detected 80 incidents and resolved 76, a 95.0% resolution rate, with 4 still open. Three of the four source packets contain a mismatch between their itemized/raw data and their narrative summary line (see Notes); the figures below use the recomputed values.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance — spend total mismatch.** The itemized spend categories (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but the packet's narrative summary states total Q3 spend as $463,250 — a $750 gap. We used the recomputed $464,000 (and the resulting $256,000 surplus) since it is directly verifiable from the line items. Recommend finance reconcile the $750 difference and confirm which figure is authoritative.
++- **Support — close rate mismatch.** The dashboard labels the Q3 close rate as 96.4%, but recomputing from the raw counts (1,171 closed / 1,250 opened) gives 93.7%, a 2.7-point gap. We used the recomputed 93.7% in Key figures. Recommend confirming whether the dashboard rate uses a different denominator (e.g., a rolling window) or is simply stale. Separately, 79 tickets remained open at quarter end and are worth tracking.
++- **Delivery — launch date mismatch.** The packet's summary states the launch date as 2026-10-22, but recomputing the phase schedule (Discovery 3d → Build 6d → QA 4d → Release 1d, each phase starting the next business day after the prior one ends, skipping weekends and the October 12 company holiday) puts the end of QA on 2026-10-22 and the Release day — the actual launch — on 2026-10-23. It appears the stated date reflects the end of QA rather than the end of Release. We used the recomputed 2026-10-23. Recommend confirming with the delivery team whether the public-facing launch date needs to move.
++- **Security — consistent, minor open item.** The 95.0% resolution rate in the packet matches the recomputed value (76/80) with no discrepancy. 4 incidents remain unresolved at quarter end and should be tracked to closure.

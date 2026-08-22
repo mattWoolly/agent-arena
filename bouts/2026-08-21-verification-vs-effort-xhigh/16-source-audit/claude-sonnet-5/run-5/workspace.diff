@@ -1,0 +1,31 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..58060fe
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,25 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 2026 closed with $720,000 in revenue against $464,000 in spend, for an operating surplus of $256,000. Support closed 93.7% of the 1,250 tickets opened during the quarter, and Security resolved 95.0% of the 80 incidents it detected. The Q3 delivery project kicked off October 5 and, following the standard phase sequence (Discovery, Build, QA, Release) and accounting for the October 12 company holiday, is on track to launch October 23. In preparing this brief, three of the four source packets were found to contain a summary figure that did not match their own underlying data; each was recalculated from the underlying data for this report and is flagged in Notes for reconciliation.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three discrepancies between packet-reported summary figures and their own underlying data were found and corrected in this brief. Recommend leadership confirm the correct figures with the owning teams:
++
++- **Finance:** The packet states total Q3 spend as $463,250, but the itemized categories (payroll $286,400, infrastructure $81,750, contractors $64,200, facilities $31,650) sum to $464,000 — a $750 gap. This brief uses the itemized total, which also flows into the operating surplus figure above.
++- **Support:** The packet labels the Q3 close rate as 96.4%, but 1,171 closed tickets out of 1,250 opened computes to 93.7%. This brief uses the computed rate.
++- **Delivery:** The packet records the launch date as 2026-10-22. Applying the stated phase durations (Discovery 3, Build 6, QA 4, Release 1 business days) from the October 5 start date, and treating both weekends and the October 12 company holiday as non-business days, the Release phase completes on 2026-10-23 — one business day later than the packet states. This brief uses the recalculated date.
++- **Security:** No discrepancy found — the packet's stated 95.0% resolution rate matches 76 of 80 incidents resolved.

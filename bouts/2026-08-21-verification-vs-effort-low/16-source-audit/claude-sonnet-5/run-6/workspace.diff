@@ -1,0 +1,50 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..34ee998
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,44 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with revenue of $720,000 against spend of
++$464,000, producing an operating surplus of $256,000. Support held a strong
++close rate of 93.7% on 1,250 opened tickets, and security resolved 95.0% of
++detected incidents. The Q3 delivery plan, kicked off October 5, is on track
++to launch October 23, accounting for weekends and the company planning-day
++holiday on October 12.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Two figures in the source packets do not match their underlying data and
++should be corrected in the source dashboards:
++
++- **Finance:** the packet's stated total spend of $463,250 does not match
++  the sum of its own line items (Payroll $286,400 + Infrastructure $81,750 +
++  Contractors $64,200 + Facilities $31,650 = $464,000). The figures above use
++  the correct summed total, which also shifts the operating surplus to
++  $256,000.
++- **Support:** the packet's stated close rate of 96.4% does not match
++  1,171 closed / 1,250 opened, which computes to 93.7%. The figure above
++  uses the correct computed rate.
++- **Delivery:** the packet's stated launch date of 2026-10-22 undercounts
++  the Release phase. Walking the plan day-by-day from the October 5 start
++  (3 business days Discovery, 6 Build, 4 QA, 1 Release, skipping weekends
++  and the October 12 holiday) puts QA's end on October 22 and Release
++  landing the next business day, October 23. The figure above uses the
++  corrected launch date.
++
++Security's reported 95.0% resolution rate (76 of 80 incidents) checks out
++and needs no correction.

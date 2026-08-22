@@ -1,0 +1,32 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..2d2b2ec
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,26 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with revenue of $720,000 against total spend of $464,000, producing an operating surplus of $256,000. Support held a strong close rate on ticket volume, and security kept pace with incident resolution at 95.0%. The delivery plan that started October 5, 2026 is on track, with launch landing October 23, 2026 after accounting for the Discovery, Build, QA, and Release phases and the company holiday on October 12.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Two figures in the source packets do not match their own underlying data and should be corrected before wider distribution:
++
++- **Finance packet spend total**: the packet states total Q3 spend as $463,250, but the listed spend categories (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000. This brief uses the recomputed figure, which also shifts the operating surplus from the packet's implied $256,750 to $256,000.
++- **Support packet close rate**: the packet states a 96.4% close rate, but 1,171 closed of 1,250 opened tickets computes to 93.7%. This brief uses the recomputed figure.
++- **Delivery packet launch date**: the packet states a launch date of 2026-10-22, but summing the phase durations (Discovery 3, Build 6, QA 4, Release 1 business days) from the October 5 start, skipping weekends and the October 12 company holiday, lands the Release phase's single business day on 2026-10-23, not the QA end date of 2026-10-22. This brief uses the recomputed launch date.
++
++Recommend leadership flag these packet discrepancies to finance, support, and delivery owners so the source dashboards are corrected at the root.

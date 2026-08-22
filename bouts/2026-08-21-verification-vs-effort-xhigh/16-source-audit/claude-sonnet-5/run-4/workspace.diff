@@ -1,0 +1,29 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..998d700
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,23 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter operationally and financially. Revenue reached $720,000 against total spend of $464,000, leaving an operating surplus of $256,000. Support fielded 1,250 tickets and closed 1,171 of them, a 93.7% close rate. The security team resolved 76 of 80 detected incidents, a 95.0% resolution rate, holding steady with expectations. The delivery team's plan, kicked off October 5, works through Discovery, Build, QA, and Release phases around the mid-quarter company holiday and is on track to launch October 23. Three source packets contain a labeled summary figure that does not match its own underlying data; see Notes for details, as leadership should be aware before these numbers circulate further.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance spend total is misstated.** The finance packet's category table (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sums to $464,000, but the packet's own summary line labels Q3 spend as $463,250 — a $750 understatement. The figures above use the line-item sum. Worth a quick reconciliation with finance to confirm which number is correct before it's reported externally.
++- **Support close rate label is significantly off.** The support packet reports 1,250 tickets opened and 1,171 closed, which computes to 93.7%, but the packet's dashboard label states 96.4%. That's a material gap (would imply ~1,205 closed tickets), so it's worth checking whether the dashboard is pulling from a different, possibly stale, data set.
++- **Delivery launch date is off by one business day.** Applying the stated phase durations (Discovery 3, Build 6, QA 4, Release 1 business days, each phase starting the next business day after the prior one ends) from the October 5 start date, and excluding weekends plus the October 12 company holiday, the Release phase falls on October 23 — not October 22 as the delivery summary states. October 22 is actually the last day of QA. Recommend confirming the intended launch date with the delivery team.
++- **Security figures check out.** The 95.0% resolution rate (76 of 80 incidents) matches the source data exactly — no action needed there.

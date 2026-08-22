@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 66.8,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 9,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.19015200000000002,
+  "num_turns": 10,
+  "duration_ms": 63965,
+  "duration_api_ms": 64416,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 14,
+  "output_tokens": 6612,
+  "cache_read_tokens": 249750,
+  "final_message": "Headings match exactly, and `BRIEF.md` is untracked (no commit made).\n\n**Verification found three internal inconsistencies** between each packet's raw data and its own summary line:\n\n| Item | Raw data implies | Packet states | Used in brief |\n|---|---|---|---|\n| Q3 spend | $464,000 (itemized sum) | $463,250 | $464,000 (verifiable from line items) |\n| Support close rate | 93.7% (1,171/1,250) | 96.4% | 93.7% (verifiable from raw counts) |\n| Launch date | 2026-10-23 (full phase plan incl. Release) | 2026-10-22 | 2026-10-23 (matches full stated plan; packet's date equals QA-end, missing the Release day) |\n\nSecurity's 95.0% resolution rate was the one figure that checked out exactly. All three conflicts are flagged in the brief's Notes section with the reasoning for which value was used, so leadership can trace and correct the source dashboards if needed.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:57:06Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 57 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

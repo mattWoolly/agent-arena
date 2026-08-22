@@ -1,0 +1,57 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..afa8b6a
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,51 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter: revenue of $720,000 against spend of
++$464,000 produced an operating surplus of $256,000. Support held a strong
++close rate of 93.7% on 1,250 opened tickets, and security resolved 95.0% of
++detected incidents (76 of 80), both healthy results. The delivery plan for
++the upcoming project (kickoff 2026-10-05) runs 14 business days through
++Discovery, Build, QA, and Release, landing a launch date of 2026-10-23. Three
++figures in the source packets did not match their own underlying data on
++recomputation — see Notes for details and the values used below.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three inconsistencies surfaced during verification; leadership should be
++aware the figures above reflect recomputed values, not the packets' own
++summary labels:
++
++- **Q3 spend**: the finance packet's line items (Payroll $286,400 +
++  Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to
++  $464,000, but the packet's narrative states total spend as $463,250 — a
++  $750 gap. The table above uses the itemized sum ($464,000), and operating
++  surplus ($256,000) is derived from it. If the narrative figure is instead
++  correct, surplus would be $256,750. Recommend finance reconcile the
++  category total against the reported figure.
++- **Support close rate**: 1,171 closed of 1,250 opened tickets computes to
++  93.7%, not the 96.4% the support dashboard reports (96.4% would imply
++  ~1,205 closed tickets). The table above uses the computed rate. Recommend
++  confirming whether the dashboard is using a different ticket count or
++  denominator.
++- **Launch date**: the delivery summary states 2026-10-22, but applying the
++  stated rules (inclusive business-day phase durations, next phase starts
++  the next business day, weekends and the 2026-10-12 company holiday
++  excluded) to the 14 total business days (Discovery 3 + Build 6 + QA 4 +
++  Release 1) from the 2026-10-05 start yields 2026-10-23. The one-day gap is
++  consistent with the original calculation not excluding the 10-12 company
++  holiday. The table above uses the recomputed date (2026-10-23).
++- Security's resolution rate (76/80 = 95.0%) matches the dashboard exactly;
++  no discrepancy and no action needed there.

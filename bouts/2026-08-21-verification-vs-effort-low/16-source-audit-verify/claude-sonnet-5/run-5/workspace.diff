@@ -1,0 +1,29 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..b8f61a6
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,23 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter: revenue of $720,000 against $464,000 in spend produced an operating surplus of $256,000. Support held a close rate just under 94%, and security resolved 95.0% of detected incidents, both healthy but with room to improve. The delivery plan for the project starting 2026-10-05 runs through Discovery, Build, QA, and Release, landing on a launch date of 2026-10-23 once the single company holiday (2026-10-12) is accounted for. Three figures in the source packets required recomputation because the packets' own prose summaries did not match their underlying data; see Notes for details and the interpretation used in this brief.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance packet discrepancy:** the itemized spend table (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sums to $464,000, but the packet's prose states total Q3 spend as $463,250 — a $750 gap. This brief uses the recomputed itemized total ($464,000) and the operating surplus above reflects it ($256,000 rather than $256,750 under the stated figure). Finance should reconcile which figure is authoritative.
++- **Support packet discrepancy:** 1,171 tickets closed of 1,250 opened computes to a 93.7% close rate, not the 96.4% stated in the packet's prose. This brief uses the recomputed rate. Worth confirming whether the stated rate used a different ticket population (e.g., excluding a subset) or is simply an error.
++- **Delivery packet discrepancy:** walking the phase durations (Discovery 3, Build 6, QA 4, Release 1 business day, each next phase starting the following business day) from the 2026-10-05 start, and excluding weekends plus the 2026-10-12 company holiday, the Release phase ends 2026-10-23 — one business day after the 2026-10-22 launch date stated in the packet. The stated date appears to match the QA phase's end rather than the Release phase's end. This brief uses the recomputed date (2026-10-23); delivery should confirm whether Release was inadvertently dropped from the stated calculation.
++- **Security figures were internally consistent:** 76 of 80 incidents resolved computes to exactly 95.0%, matching the packet's stated rate — no escalation needed there.

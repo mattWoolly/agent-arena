@@ -1,0 +1,60 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..f63118b
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,54 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially: revenue of $720,000 against spend of
++$464,000 produced an operating surplus of $256,000, a ~35.6% margin. Support
++closed 93.7% of the 1,250 tickets opened in the quarter, and security
++resolved 95.0% of the 80 incidents it detected. The delivery plan that
++kicked off October 5 is on track, with launch landing October 23 once
++weekends and the company holiday are correctly excluded from the business-day
++schedule. Three of the four source packets contained a stated summary figure
++that did not match its own underlying data; see Notes for details on each
++and which value this brief relies on.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++**Finance — spend total mismatch.** The itemized spend categories (Payroll
++$286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities
++$31,650) sum to $464,000, but the finance packet's own summary line states
++Q3 spend as $463,250 — a $750 gap. This brief uses the $464,000 line-item
++sum (and the corresponding $256,000 operating surplus) since it is directly
++verifiable from the reported figures; the $750 discrepancy should be
++reconciled with finance.
++
++**Support — close rate mismatch.** The support dashboard label states a
++96.4% close rate, but recomputing from the reported counts (1,171 closed /
++1,250 opened) gives 93.7%. This brief uses the recomputed 93.7% figure. The
++3-point-plus gap is large enough that it's worth confirming how the
++dashboard's stated rate was derived.
++
++**Delivery — launch date mismatch.** The delivery packet's summary states a
++launch date of 2026-10-22. Applying the stated scheduling rules (durations
++are inclusive business days, the next phase starts on the next business day,
++and both weekends and the October 12 company holiday are excluded) produces
++a launch date of 2026-10-23 — one business day later. The stated 10-22 date
++only reconciles if the October 12 holiday is disregarded in the schedule
++math, which suggests the holiday was left out of that calculation. This
++brief uses the recomputed 2026-10-23 date; leadership should confirm which
++date is being communicated externally.
++
++**Security — no discrepancy.** The security packet's resolution rate
++(76 resolved / 80 detected = 95.0%) matches its own stated dashboard figure
++exactly; no follow-up needed here.

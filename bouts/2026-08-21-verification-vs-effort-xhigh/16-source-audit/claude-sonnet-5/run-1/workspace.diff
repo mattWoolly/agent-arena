@@ -1,0 +1,32 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..f67908b
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,26 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with $720,000 in revenue against $464,000 in spend, producing an operating surplus of $256,000. Support held a strong close rate of 93.7% on 1,250 opened tickets. Security resolved 95.0% of the 80 incidents it detected, in line with expectations. The delivery team's next project is slated to begin October 5, 2026, and — accounting for all four planned phases and the company holiday on October 12 — is on track to launch October 23, 2026. Overall, the business is operating with a healthy margin, dependable support responsiveness, and a stable security posture heading into Q4.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++A few figures in the source packets don't reconcile with their own underlying data and are worth flagging before these numbers circulate further:
++
++- **Finance:** The spend line items (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but the finance packet's own summary states total spend as $463,250 — a $750 discrepancy. The figures above use the sum of the itemized categories; finance should confirm which number is correct.
++- **Support:** The support dashboard labels the Q3 close rate as 96.4%, but 1,171 closed of 1,250 opened tickets computes to 93.7%. The figures above use the computed rate; worth confirming the dashboard isn't misconfigured.
++- **Delivery:** The delivery packet's stated launch date of 2026-10-22 corresponds to the end of the QA phase, not the end of the final Release phase. Walking all four phases (Discovery 3d, Build 6d, QA 4d, Release 1d) from the October 5 start, and excluding weekends and the October 12 company holiday, the Release phase lands on 2026-10-23 — one business day later than the packet states. The figures above use the fully computed date; delivery should confirm the intended launch date before it's communicated externally.
++
++Security's reported resolution rate (95.0%) checks out against the underlying incident counts and needs no correction.

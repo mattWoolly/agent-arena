@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 32.2,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.11830299999999999,
+  "num_turns": 8,
+  "duration_ms": 29411,
+  "duration_api_ms": 29950,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 2706,
+  "cache_read_tokens": 167670,
+  "final_message": "Wrote `BRIEF.md`. While verifying each packet's figures against its raw data, I found three discrepancies (finance spend total, support close rate, delivery launch date) and used the recomputed values in Key figures, flagging all of them \u2014 plus the one figure that checked out (security) \u2014 in Notes.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:36:23Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 44 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

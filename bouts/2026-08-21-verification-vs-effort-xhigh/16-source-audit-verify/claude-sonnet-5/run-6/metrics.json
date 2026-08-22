@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 94.6,
+  "agent_exit": 0,
+  "assistant_messages": 16,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.2207684,
+  "num_turns": 9,
+  "duration_ms": 91838,
+  "duration_api_ms": 92314,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 9393,
+  "cache_read_tokens": 208272,
+  "final_message": "`BRIEF.md` is written. Quality check summary: security's 95.0% figure verified exactly against raw counts; finance spend, support close rate, and the delivery launch date each conflicted with their packets' stated summaries, so I recomputed from raw data (spend $464,000 vs. stated $463,250; close rate 93.7% vs. stated 96.4%; launch date 2026-10-23 vs. stated 2026-10-22) and documented each conflict and my chosen interpretation in the Notes section.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T07:07:38Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 53 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

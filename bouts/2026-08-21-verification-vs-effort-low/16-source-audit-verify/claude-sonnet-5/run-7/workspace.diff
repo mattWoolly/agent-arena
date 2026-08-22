@@ -1,0 +1,56 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..31978b6
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,50 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter, with revenue of $720,000 against spend of
++$464,000, leaving a healthy operating surplus of $256,000. Security held up
++well, resolving 95.0% of detected incidents. Support performance was weaker
++than the team's own dashboard suggests: based on the raw ticket counts in the
++packet, the close rate was 93.7%, not the 96.4% the dashboard reports (see
++Notes). The delivery plan for the quarter's flagship project is on track,
++with a recomputed launch date of 2026-10-23 — one business day later than the
++date recorded in the delivery summary, again due to an apparent packet error
++(see Notes).
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance packet discrepancy:** the itemized spend categories (Payroll
++  $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities
++  $31,650) sum to $464,000, but the packet's narrative total states
++  "$463,250" — a $750 shortfall against the line items. The table above uses
++  the itemized sum, since it is independently verifiable from the raw data;
++  operating surplus is computed accordingly ($720,000 − $464,000 =
++  $256,000). Finance should confirm which figure is correct.
++- **Support packet discrepancy:** the raw counts (1,171 closed of 1,250
++  opened) compute to a 93.7% close rate, materially below the 96.4% the
++  support dashboard reports in the same packet. This is roughly a 3-point
++  gap and worth escalating — either the dashboard figure is wrong, or the
++  ticket counts used here are incomplete (e.g. excluding tickets closed
++  after the quarter but attributed to it). The table above uses the
++  recomputed rate from raw counts.
++- **Delivery packet discrepancy:** walking the phase durations as inclusive
++  business days from the 2026-10-05 start date, skipping weekends and the
++  2026-10-12 company holiday, the Release phase's single business day lands
++  on 2026-10-23, not the 2026-10-22 stated in the delivery summary. The
++  stated date corresponds to the last day of the QA phase, one day short of
++  Release. The table above uses the recomputed date; delivery should confirm
++  whether the launch date quoted to stakeholders needs correcting.
++- **Security:** no discrepancy — the stated 95.0% resolution rate matches
++  the raw incident counts (76 of 80 resolved).

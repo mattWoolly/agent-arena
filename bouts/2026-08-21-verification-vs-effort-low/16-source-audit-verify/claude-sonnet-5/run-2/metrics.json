@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 33.5,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.12469000000000001,
+  "num_turns": 8,
+  "duration_ms": 30745,
+  "duration_api_ms": 31331,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 3122,
+  "cache_read_tokens": 167780,
+  "final_message": "I wrote `BRIEF.md`. While cross-checking the source packets against their own headline claims, I found three inconsistencies and used the recomputed values (documented in Notes):\n\n- **Finance:** stated total spend ($463,250) doesn't match the category sum ($464,000) \u2014 used $464,000, giving a $256,000 surplus.\n- **Support:** stated close rate (96.4%) doesn't match 1,171/1,250 (93.7%) \u2014 used 93.7%.\n- **Delivery:** stated launch date (2026-10-22) is actually the end of QA, not Release \u2014 recomputed the full phase chain against the start date and holiday and got 2026-10-23.\n- **Security:** stated 95.0% checked out against 76/80 \u2014 no change.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T07:05:35Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 27 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

@@ -1,0 +1,54 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..2591115
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,48 @@
++# Q3 2026 operating brief
++
++## Executive summary
++
++Q3 was a financially solid quarter: revenue of $720,000 against spend of
++$464,000 produced an operating surplus of $256,000. Support handled a high
++volume of tickets, closing 93.7% of the 1,250 opened during the quarter.
++The Q3 delivery plan kicked off on 2026-10-05 and, accounting for the
++company holiday on 2026-10-12, is on track to launch 2026-10-23. Security
++resolved 95.0% of the 80 incidents detected, holding steady against
++target. Overall, a healthy quarter across finance, support, delivery, and
++security — see Notes below for data-quality issues surfaced while
++compiling this brief.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++While compiling this brief, the headline figures quoted in three of the
++four source packets did not match their own underlying tabulated data.
++This brief uses the figures recomputed from source data; leadership may
++want to flag the discrepancy to the owning teams as a possible reporting
++pipeline issue:
++
++- **Finance**: the itemized spend table (payroll, infrastructure,
++  contractors, facilities) sums to $464,000, which is $750 higher than the
++  $463,250 figure stated in the finance packet's summary sentence.
++- **Support**: ticket counts (1,171 closed of 1,250 opened) compute to a
++  93.7% close rate, versus the 96.4% quoted on the support dashboard.
++- **Delivery**: walking the phase durations as inclusive business days from
++  the 2026-10-05 start — and correctly excluding the 2026-10-12 company
++  holiday from the Build phase — yields a launch date of 2026-10-23, one
++  business day later than the 2026-10-22 date quoted in the delivery
++  summary.
++- **Security**: the quoted 95.0% resolution rate (76 of 80 incidents) does
++  check out against the underlying counts — no discrepancy found here.
++
++Given three out of four packets had summary/data mismatches, it may be
++worth a quick audit of how these dashboard summaries are generated.

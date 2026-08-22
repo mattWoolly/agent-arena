@@ -1,0 +1,64 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..4816719
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,58 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter: revenue of $720,000 against total spend of
++$464,000 produced an operating surplus of $256,000, a surplus margin of
++roughly 35.6%. Support handled a heavy ticket load (1,250 opened) and closed
++93.7% of them. Security kept pace with threat volume, resolving 95.0% of the
++80 incidents detected. The active delivery project, kicked off October 5,
++is tracking to a launch on 2026-10-23 once all four phases (Discovery, Build,
++QA, Release) run their course around the mid-plan company holiday. Three
++figures quoted in the source packets' own summary lines do not match the
++underlying line-item data (spend total, support close rate, and launch date);
++see Notes for the discrepancies and which figures were used below.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++The source packets contained three internal inconsistencies between a
++stated "summary" figure and the underlying data. In each case the
++underlying itemized data (which can be independently recomputed) was
++treated as authoritative and the summary sentence as the error worth
++escalating:
++
++- **Finance:** The four spend line items (Payroll $286,400 + Infrastructure
++  $81,750 + Contractors $64,200 + Facilities $31,650) sum to $464,000, but
++  the finance packet's summary sentence states total Q3 spend as $463,250 —
++  a $750 shortfall. Q3 spend and Operating surplus above use the computed
++  $464,000 figure; if the packet's $463,250 figure is instead correct,
++  Operating surplus would be $256,750.
++- **Support:** 1,171 closed / 1,250 opened computes to a 93.7% close rate,
++  but the support dashboard sentence states 96.4%. The figure above uses the
++  computed 93.7%. Worth confirming which number the dashboard is actually
++  reporting off of, since it does not appear to be derivable from the
++  opened/closed counts given.
++- **Delivery:** Applying the stated phase durations (Discovery 3 + Build 6 +
++  QA 4 + Release 1 = 14 inclusive business days, next phase starting the
++  next business day, weekends and the 2026-10-12 company holiday excluded)
++  to the 2026-10-05 start date computes to a launch date of 2026-10-23. The
++  delivery packet's summary sentence instead states 2026-10-22 — that date
++  only results if the October 12 company holiday is *not* excluded from the
++  count. The figure above uses the computed 2026-10-23 per the stated
++  business-day convention; leadership should confirm whether the holiday is
++  actually being honored in the working plan, since a one-day slip either
++  way affects the committed launch date.
++
++No inconsistency was found in the security packet: 76 resolved / 80 detected
++computes to exactly 95.0%, matching the stated figure.

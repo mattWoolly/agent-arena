@@ -1,0 +1,35 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..54fdb55
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,29 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter operationally and financially. Revenue reached $720,000 against spend of $464,000, producing an operating surplus of $256,000. Support held a strong close rate of 93.7% on 1,250 opened tickets, though 79 tickets remained open at quarter close. The delivery plan that begins in October is on track, with a computed launch date of 2026-10-23 across four phases (Discovery, Build, QA, Release). Security resolved 95.0% of the 80 incidents detected, closing 76 and leaving 4 open. Overall the business is operating with a healthy margin and stable execution across support and security functions, with a small number of data conflicts (detailed below) worth resolving at the source.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++**Data conflicts found during verification** — three of the four source packets contain a stated summary figure that does not match the underlying data in the same packet. The figures above use the recomputed values; leadership should confirm which is correct at the source:
++
++- **Finance**: The itemized spend table (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sums to $464,000, but the packet's narrative states total Q3 spend as "$463,250" — a $750 gap. The table total was used above.
++- **Support**: 1,171 closed tickets out of 1,250 opened computes to a 93.7% close rate, but the packet's narrative states "96.4%" — a 2.7-point gap with no apparent basis in the given counts. The computed rate was used above.
++- **Delivery**: Walking the business-day calendar from the 2026-10-05 (Monday) start — Discovery (3 days: Oct 5–7), Build (6 days: Oct 8–9, 13–16), QA (4 days: Oct 19–22), Release (1 day: Oct 23) — and excluding weekends and the Oct 12 company holiday, the plan's 14 total business days land the Release phase, and thus launch, on **2026-10-23**. The packet's narrative states "2026-10-22," which corresponds to the end of QA and appears to omit the 1-day Release phase. The computed date was used above.
++
++**Other items worth escalating**:
++
++- Support still has 79 tickets open at quarter close (1,250 opened vs. 1,171 closed).
++- Security has 4 unresolved incidents at quarter close (80 detected vs. 76 resolved).

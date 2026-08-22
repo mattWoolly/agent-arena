@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 90.6,
+  "agent_exit": 0,
+  "assistant_messages": 12,
+  "tool_calls": {
+    "Bash": 1,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 6,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.20516099999999998,
+  "num_turns": 7,
+  "duration_ms": 87746,
+  "duration_api_ms": 88716,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 9535,
+  "cache_read_tokens": 130845,
+  "final_message": "`BRIEF.md` is written. Summary of what I found and did:\n\n- **Verified all four packets independently** by recomputing from raw data rather than trusting the prose summaries.\n- **Finance**: itemized spend sums to $464,000, not the stated $463,250 (off by $750) \u2192 used $464,000, surplus = $256,000.\n- **Support**: 1,171/1,250 = 93.7%, not the stated 96.4% \u2192 used 93.7%.\n- **Delivery**: walking the business-day calendar (14 total business days, holiday Oct 12 excluded) puts launch on 2026-10-23, not the stated 2026-10-22 (which omits the 1-day Release phase) \u2192 used 2026-10-23.\n- **Security**: 76/80 = 95.0% matched the stated figure exactly \u2014 no conflict.\n\nAll three conflicts are flagged explicitly in the Notes section along with which value was used, plus the outstanding-ticket and unresolved-incident counts as items worth escalating. No git commits were made, and all work stayed within the current directory.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T07:04:02Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 29 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

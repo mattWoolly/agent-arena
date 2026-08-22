@@ -1,0 +1,29 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..1e68803
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,23 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially solid quarter, with revenue of $720,000 against total spend of $464,000, producing an operating surplus of $256,000. Support held a high close rate on a growing ticket volume, and the security team resolved the large majority of detected incidents. The delivery team's new project kicked off in October, with a launch expected in the second half of the month. Several figures published in the source packets' own summaries did not match the underlying line-item data and have been recalculated below; see Notes for detail.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance spend discrepancy:** the finance packet's stated total spend ($463,250) does not match the sum of its own line items (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650 = $464,000, a $750 gap). The recalculated total ($464,000) is used above for spend and operating surplus; finance should confirm which figure is authoritative.
++- **Support close rate discrepancy:** the support packet's headline close rate (96.4%) does not match its own ticket counts (1,171 closed / 1,250 opened = 93.7%). The recalculated rate is used above; recommend the support dashboard's calculation be audited.
++- **Delivery launch date discrepancy:** the delivery packet's stated launch date (2026-10-22) does not match the plan when phase durations (Discovery 3, Build 6, QA 4, Release 1 business days, sequential, next phase starting the next business day) are applied against the 2026-10-05 start date and the 2026-10-12 company holiday. Recomputing the schedule yields a launch date of 2026-10-23, used above. Recommend confirming the plan with the delivery team before communicating a launch date externally.
++- **Security:** the stated resolution rate (95.0%) is consistent with the underlying incident counts (76/80) and required no correction.

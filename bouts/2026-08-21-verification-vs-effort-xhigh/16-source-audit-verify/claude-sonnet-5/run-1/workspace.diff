@@ -1,0 +1,62 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..fcf86f9
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,56 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a financially healthy quarter: revenue reached $720,000 against total
++spend of $464,000, producing an operating surplus of $256,000. Both
++customer-facing operations teams closed out the large majority of their
++queues — support closed 93.7% of tickets opened in the quarter, and security
++resolved 95.0% of detected incidents. The next delivery plan (Discovery
++through Release, kicking off 2026-10-05) runs 14 inclusive business days
++once the single company holiday is excluded, landing the launch on
++2026-10-23. During verification, three of the four source packets contained
++a narrative figure that did not match its own underlying data; see Notes for
++the specifics and which figure this brief relies on.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance — spend total discrepancy.** The itemized spend table (Payroll
++  $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities
++  $31,650) sums to $464,000, but the finance packet's narrative states total
++  Q3 spend as $463,250 — a $750 gap. This brief uses the recomputed itemized
++  total ($464,000) and the resulting operating surplus ($256,000); if the
++  narrative figure is instead authoritative, spend is $463,250 and surplus is
++  $256,750. Recommend finance reconcile the category table against the
++  reported total before this figure goes external.
++
++- **Support — close rate discrepancy.** Recomputing 1,171 closed / 1,250
++  opened gives 93.7%, not the 96.4% quoted in the support packet (96.4% would
++  require 1,205 closed tickets, 34 more than reported). This brief uses the
++  recomputed rate (93.7%). Recommend support verify which of the two ticket
++  counts or the rate itself is correct.
++
++- **Delivery — launch date discrepancy.** Applying the stated business-day
++  rules (3 + 6 + 4 + 1 = 14 inclusive business days from the 2026-10-05
++  start, treating the start date as day one of Discovery, skipping weekends
++  and the 2026-10-12 company holiday) yields a launch date of 2026-10-23
++  (Friday) — one business day later than the 2026-10-22 stated in the
++  delivery packet. This brief uses the recomputed date (2026-10-23).
++  Recommend delivery confirm the day-counting convention (e.g., whether
++  2026-10-05 is itself a working day of the plan or a separate kickoff date)
++  to resolve the one-day gap.
++
++- **Security — no discrepancy.** 76 resolved / 80 detected computes to
++  95.0%, matching the packet's stated resolution rate exactly; no adjustment
++  was needed.

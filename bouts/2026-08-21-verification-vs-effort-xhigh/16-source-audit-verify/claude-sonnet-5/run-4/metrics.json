@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 91.3,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.2259508,
+  "num_turns": 9,
+  "duration_ms": 88617,
+  "duration_api_ms": 89214,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 9671,
+  "cache_read_tokens": 218574,
+  "final_message": "I wrote `BRIEF.md`. During verification I recomputed every material figure against the raw source data and found three inconsistencies between the packets' narrative labels and their own underlying numbers:\n\n- **Spend total**: line items sum to $464,000, but the finance packet states $463,250 (used the itemized sum; surplus is $256,000 accordingly).\n- **Support close rate**: 1,171/1,250 computes to 93.7%, not the dashboard's stated 96.4% (used the computed rate).\n- **Launch date**: applying the stated business-day rules (including excluding the 10-12 holiday) to the 14 total business days gives 2026-10-23, not the packet's 2026-10-22 \u2014 the original figure appears to have missed the holiday exclusion (used the recomputed date).\n\nSecurity's 95.0% resolution rate checked out exactly. All three conflicts and the interpretation used are documented in the brief's Notes section.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:33:20Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 51 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

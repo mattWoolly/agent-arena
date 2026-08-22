@@ -1,0 +1,55 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..f9c9b98
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,49 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter operationally and financially. Revenue reached $720,000
++against $464,000 in spend, leaving an operating surplus of $256,000 (a 35.6%
++margin). Support held a strong close rate on ticket volume, and security
++resolved the large majority of detected incidents. A delivery project
++kicked off just after quarter-end, with build and QA proceeding through a
++mid-October company holiday; release is tracked for late October. Three of
++the four source packets contain a headline figure that does not reconcile
++with the underlying data in the same packet (see Notes) — the figures below
++are calculated from the raw data, not copied from those headline claims.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance packet discrepancy:** the packet's summary line states total Q3
++  spend as $463,250, but the itemized spend table (Payroll 286,400 +
++  Infrastructure 81,750 + Contractors 64,200 + Facilities 31,650) sums to
++  $464,000 — a $750 gap. The figure above uses the itemized total. Recommend
++  finance confirm which number is authoritative.
++- **Support packet discrepancy:** the dashboard label states a 96.4% close
++  rate, but 1,171 closed of 1,250 opened computes to 93.7%. The figure above
++  uses the computed rate. Worth confirming whether the dashboard is counting
++  a different ticket population (e.g., excluding late-quarter opens) or is
++  simply stale.
++- **Delivery packet discrepancy:** the plan's stated launch date is
++  2026-10-22, but walking the phase durations as inclusive business days
++  (start 2026-10-05, skipping weekends and the 2026-10-12 company holiday)
++  lands Release completion on 2026-10-23. 2026-10-22 is actually when QA
++  completes, not Release. Recommend confirming the external-facing launch
++  date before it's communicated further, since it may currently be
++  understated by one business day.
++- **Security packet:** no discrepancy — 76 of 80 incidents resolved computes
++  to exactly 95.0%, matching the dashboard label. No escalation needed here.
++- Note the delivery project's start date (2026-10-05) falls in Q4, not Q3;
++  it's included here as the only delivery packet provided, but leadership
++  should be aware it's a forward-looking plan rather than a Q3 retrospective.

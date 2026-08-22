@@ -1,0 +1,50 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..977c0d4
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,44 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with $720,000 in revenue against $464,000 in
++spend, leaving an operating surplus of $256,000. Support handled a heavy ticket
++load (1,250 opened) and closed the large majority of them, though the close
++rate came in below the level reported on the support dashboard. The delivery
++plan is on track, with a small schedule slip against the originally reported
++launch date once business-day math (including the mid-quarter company holiday)
++is applied. Security had a strong quarter, resolving 95.0% of detected
++incidents. Several source packets contain summary figures that do not match
++their own underlying data; these are called out below for leadership
++awareness.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++- **Finance packet discrepancy:** the packet states total Q3 spend as
++  $463,250, but the listed spend categories (Payroll $286,400 +
++  Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650) sum to
++  $464,000. The figures above use the recomputed total; finance should
++  reconcile the $750 gap.
++- **Support packet discrepancy:** the packet labels the close rate as 96.4%,
++  but 1,171 closed of 1,250 opened computes to 93.7%. Worth confirming
++  which tickets the dashboard's 96.4% figure is based on.
++- **Delivery packet discrepancy:** the packet reports a launch date of
++  2026-10-22, but summing the phase durations (Discovery 3, Build 6, QA 4,
++  Release 1 business days) from the 2026-10-05 start, skipping weekends and
++  the 2026-10-12 company holiday, puts the Release phase completion — and
++  therefore launch — on 2026-10-23. The 2026-10-22 date reported appears to
++  mark the end of QA rather than Release.
++- **Security packet:** the reported 95.0% resolution rate (76 of 80 incidents
++  resolved) checks out against the underlying data with no discrepancy.

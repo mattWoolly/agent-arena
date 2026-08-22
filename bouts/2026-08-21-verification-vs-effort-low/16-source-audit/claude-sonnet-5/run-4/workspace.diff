@@ -1,0 +1,32 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..67e65cc
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,26 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, closing with $720,000 in revenue against $464,000 in spend for an operating surplus of $256,000. Support held a strong close rate on ticket volume, and security resolved the large majority of detected incidents. Delivery progressed through Discovery, Build, QA, and Release, with the project launching in late October. Several figures published in the underlying source packets did not match the underlying data when recomputed; these are called out below for leadership awareness.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three figures in the source packets do not reconcile with their own underlying data and should be escalated:
++
++- **Finance:** The finance packet's stated total spend of $463,250 understates the sum of its own line items (Payroll $286,400 + Infrastructure $81,750 + Contractors $64,200 + Facilities $31,650 = $464,000), a $750 shortfall. The figures above use the recomputed total.
++- **Support:** The support packet labels the close rate as 96.4%, but 1,171 closed tickets out of 1,250 opened computes to 93.7%. The figures above use the recomputed rate.
++- **Delivery:** The delivery packet records the launch date as 2026-10-22. Recomputing the schedule from the 2026-10-05 start date, using inclusive business-day phase durations and skipping weekends and the 2026-10-12 company holiday, yields a launch date of 2026-10-23 (Discovery ends 10-07, Build ends 10-16, QA ends 10-22, Release completes 10-23). The figures above use the recomputed date.
++
++Security's reported 95.0% resolution rate (76 of 80 incidents) checks out against the underlying counts and required no correction.

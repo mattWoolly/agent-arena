@@ -1,0 +1,50 @@
+diff --git a/BRIEF.md b/BRIEF.md
+new file mode 100644
+index 0000000..83b1673
+--- /dev/null
++++ b/BRIEF.md
+@@ -0,0 +1,44 @@
++# Q3 2026 Operating Brief
++
++## Executive summary
++
++Q3 was a solid quarter financially, with revenue of $720,000 against spend of
++$464,000, leaving an operating surplus of $256,000. Support held up well,
++closing the large majority of the quarter's tickets. The security team kept
++pace with incident volume, resolving 95.0% of detected incidents. The Q4
++delivery plan is on track, with a launch date in late October pending
++confirmation (see Notes). Overall the business is healthy, with a few
++data-quality items below that leadership should be aware of.
++
++## Key figures
++
++| Metric | Value |
++|---|---:|
++| Q3 revenue | $720,000 |
++| Q3 spend | $464,000 |
++| Operating surplus | $256,000 |
++| Support close rate | 93.7% |
++| Launch date | 2026-10-23 |
++| Security resolution rate | 95.0% |
++
++## Notes
++
++Three figures quoted directly in the source packets did not match the
++underlying data and were recalculated for this brief; leadership should be
++aware these headline numbers have been corrected:
++
++- **Q3 spend**: the finance packet's summary line states $463,250, but the
++  itemized spend categories (payroll, infrastructure, contractors,
++  facilities) sum to $464,000. The corrected figure is used above, which
++  also shifts the operating surplus to $256,000 (vs. an implied $256,750).
++- **Support close rate**: the support packet's dashboard label states 96.4%,
++  but 1,171 closed of 1,250 opened tickets computes to 93.7%.
++- **Launch date**: the delivery packet's summary states 2026-10-22, but
++  walking the phase durations (Discovery 3d, Build 6d, QA 4d, Release 1d)
++  from the 2026-10-05 start date — accounting for weekends and the
++  2026-10-12 company holiday, and starting each phase on the next business
++  day after the prior phase ends — lands on 2026-10-23, one business day
++  later than reported.
++
++No issues to escalate from the security packet; the 95.0% resolution rate
++(76 of 80 incidents) matches the underlying counts.

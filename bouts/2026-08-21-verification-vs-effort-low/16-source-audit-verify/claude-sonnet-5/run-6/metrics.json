@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 32.8,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.12438199999999999,
+  "num_turns": 8,
+  "duration_ms": 30105,
+  "duration_api_ms": 30781,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 3163,
+  "cache_read_tokens": 167990,
+  "final_message": "Wrote `BRIEF.md` with the required structure and table.\n\nDuring verification I found three discrepancies between each packet's stated headline figure and its own underlying data:\n\n- **Spend**: itemized categories sum to $464,000, not the stated $463,250 ($750 off). Used $464,000.\n- **Support close rate**: 1,171/1,250 = 93.7%, not the stated 96.4%. Used 93.7%.\n- **Launch date**: recomputing the business-day schedule from the 2026-10-05 start (accounting for the 2026-10-12 holiday) gives 2026-10-23, not the stated 2026-10-22 \u2014 the stated date actually matches the end of the QA phase, not Release. Used 2026-10-23.\n\nSecurity's resolution rate (76/80 = 95.0%) checked out and matches the source. All conflicts and the interpretation used are documented in the Notes section.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:58:14Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 51 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

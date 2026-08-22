@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 36.0,
+  "agent_exit": 0,
+  "assistant_messages": 11,
+  "tool_calls": {
+    "Bash": 2,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 7,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.1218862,
+  "num_turns": 8,
+  "duration_ms": 33250,
+  "duration_api_ms": 33839,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 10,
+  "output_tokens": 2955,
+  "cache_read_tokens": 167501,
+  "final_message": "Created `BRIEF.md`. While verifying the source packets against their own underlying data, I found three of the four headline figures didn't reconcile with the line items, so I recalculated and flagged each in Notes:\n\n- **Finance**: stated total spend ($463,250) doesn't match the line-item sum ($464,000) \u2014 used $464,000, giving a $256,000 surplus.\n- **Support**: stated close rate (96.4%) doesn't match 1,171/1,250 tickets \u2014 recalculated to 93.7%.\n- **Delivery**: stated launch date (2026-10-22) doesn't match the phase-duration math against the 10/5 start and the 10/12 holiday \u2014 recalculated to 2026-10-23.\n- **Security**: stated 95.0% resolution rate checked out fine (76/80).",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T07:12:42Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 23 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

@@ -1,0 +1,15 @@
+GATE file OK BRIEF.md
+GATE headings OK
+GATE keyfig-table OK
+ITEM q3_revenue OK expected=720000 got=720000
+ITEM q3_spend OK expected=464000 got=464000
+ITEM operating_surplus OK expected=256000 got=256000
+ITEM support_close_rate OK expected=93.7 got=93.7
+ITEM launch_date OK expected=2026-10-23 got=2026-10-23
+ITEM security_resolution_rate OK expected=95.0 got=95.0
+BASIS finance detail
+BASIS support detail
+BASIS delivery detail
+CONTROL security correct
+NUMERIC: 6/6 correct
+SCORE: 3/3

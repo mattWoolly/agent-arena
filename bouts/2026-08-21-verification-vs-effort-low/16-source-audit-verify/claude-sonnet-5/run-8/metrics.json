@@ -1,0 +1,41 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 31.0,
+  "agent_exit": 0,
+  "assistant_messages": 7,
+  "tool_calls": {
+    "Bash": 2,
+    "Write": 1
+  },
+  "tool_calls_total": 3,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.1087984,
+  "num_turns": 4,
+  "duration_ms": 28289,
+  "duration_api_ms": 29132,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 8,
+  "output_tokens": 2617,
+  "cache_read_tokens": 131952,
+  "final_message": "Wrote `BRIEF.md`. Cross-checking the source packets against their own stated summaries turned up three internal inconsistencies, which I resolved in favor of the recomputed figures (noted in the Notes section):\n\n- **Finance spend**: itemized categories sum to $464,000, but the packet's summary claims $463,250 ($750 off).\n- **Support close rate**: 1,171/1,250 = 93.7%, not the 96.4% the dashboard line states.\n- **Delivery launch date**: walking the phase durations (business days, skipping weekends and the 2026-10-12 holiday) from the 2026-10-05 start lands Release on 2026-10-23, not the 2026-10-22 in the summary \u2014 that date matches the end of QA, not Release.\n\nSecurity's 95.0% resolution rate (76/80) checked out cleanly.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "low",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T07:10:50Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 26 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}

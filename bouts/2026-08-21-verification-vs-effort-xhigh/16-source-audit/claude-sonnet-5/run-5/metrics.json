@@ -1,0 +1,42 @@
+{
+  "model": "claude-sonnet-5",
+  "wall_seconds": 75.8,
+  "agent_exit": 0,
+  "assistant_messages": 13,
+  "tool_calls": {
+    "Bash": 3,
+    "Read": 4,
+    "Write": 1
+  },
+  "tool_calls_total": 8,
+  "served_models": [
+    "claude-sonnet-5"
+  ],
+  "served_model": "claude-sonnet-5",
+  "served_model_leak": false,
+  "total_cost_usd": 0.2071082,
+  "num_turns": 9,
+  "duration_ms": 73104,
+  "duration_api_ms": 73448,
+  "is_error": false,
+  "permission_denials": 0,
+  "input_tokens": 12,
+  "output_tokens": 8388,
+  "cache_read_tokens": 216001,
+  "final_message": "`BRIEF.md` is written. While reconciling the four packets I found each source's own stated summary figure disagreed with its underlying data in three of four cases:\n\n- **Finance**: itemized spend sums to $464,000, not the stated $463,250 \u2192 used $464,000 (surplus = $256,000).\n- **Support**: 1,171/1,250 computes to 93.7%, not the stated 96.4% \u2192 used 93.7%.\n- **Delivery**: correctly excluding weekends and the Oct 12 holiday from the phase durations lands the launch on 2026-10-23, not the stated 2026-10-22 \u2192 used 10-23.\n- **Security**: 76/80 = 95.0%, matching the packet exactly \u2014 no discrepancy.\n\nAll three corrections and the reasoning are called out in the Notes section for leadership to reconcile with the respective teams.",
+  "run_env": {
+    "cli_version": "2.1.239 (Claude Code)",
+    "base_url": "https://api.anthropic.com",
+    "proxy_upstream": "none",
+    "model_env": "none",
+    "effort": "xhigh",
+    "setting_sources": "project",
+    "max_turns": 60,
+    "timeout_s": 1500,
+    "started_at": "2026-08-22T06:58:49Z"
+  },
+  "peek_check": "clean",
+  "diffstat": "1 file changed, 25 insertions(+)",
+  "grade_pass": true,
+  "score": "3/3"
+}
