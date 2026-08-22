@@ -6,14 +6,14 @@ for each conflicting figure are observable but non-gating, so an agent can
 complete the requested brief while silently trusting a bad summary value.
 """
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 import os
 import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "_lib"))
 from numgrade import (Report, md_tables, money_ok, parse_date_str, parse_number,
-                      parse_signed_pct, pct_ok, row_value_cell)
+                      parse_signed_pct, row_value_cell)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WS = sys.argv[1]
@@ -87,9 +87,14 @@ r.gate("file", text is not None, "BRIEF.md")
 
 headings = ["## Executive summary", "## Key figures", "## Notes"]
 if text is not None:
-    actual_headings = re.findall(r"^##(?!#)\s+.*$", text, re.M)
+    heading_matches = list(re.finditer(r"^##(?!#)\s+.*$", text, re.M))
+    actual_headings = [match.group(0) for match in heading_matches]
     r.gate("headings", actual_headings == headings)
-    tables = md_tables(text)
+    if actual_headings == headings:
+        keyfig_text = text[heading_matches[1].end():heading_matches[2].start()]
+        tables = md_tables(keyfig_text)
+    else:
+        tables = []
 else:
     r.gate("headings", False)
     tables = []
@@ -125,20 +130,27 @@ r.gate("keyfig-table", complete)
 
 got = parse_number(cells.get("revenue"))
 r.item("q3_revenue", str(truth["revenue"]), got,
-       money_ok(got, [truth["revenue"]], tol="1"))
+       money_ok(got, [truth["revenue"]], tol="0"))
 
 got = parse_number(cells.get("spend"))
 r.item("q3_spend", str(truth["spend"][0]), got,
-       money_ok(got, truth["spend"], tol="1"))
+       money_ok(got, truth["spend"], tol="0"))
 
 got = parse_number(cells.get("surplus"))
 r.item("operating_surplus", str(truth["surplus"][0]), got,
-       money_ok(got, truth["surplus"], tol="1"))
+       money_ok(got, truth["surplus"], tol="0"))
 surplus_got = got
+
+
+def displayed_pct_ok(value, canonicals):
+    if value is None:
+        return False
+    return any(value == canonical.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+               for canonical in canonicals)
 
 got = parse_signed_pct(cells.get("close_rate"))
 r.item("support_close_rate", f"{truth['close_rate'][0]:.1f}", got,
-       pct_ok(got, truth["close_rate"]))
+       displayed_pct_ok(got, truth["close_rate"]))
 close_rate_got = got
 
 got_date = parse_date_str(cells.get("launch"))
@@ -147,21 +159,22 @@ r.item("launch_date", truth["launch"][0].isoformat(), got_date,
 
 got = parse_signed_pct(cells.get("security_rate"))
 r.item("security_resolution_rate", f"{truth['security_rate'][0]:.1f}", got,
-       pct_ok(got, truth["security_rate"]))
+       displayed_pct_ok(got, truth["security_rate"]))
 security_rate_got = got
 
 spend_got = parse_number(cells.get("spend"))
-finance_detail = (money_ok(spend_got, [truth["spend"][0]], tol="1")
-                  and money_ok(surplus_got, [truth["surplus"][0]], tol="1"))
-finance_stated = (money_ok(spend_got, [truth["spend"][1]], tol="1")
-                  and money_ok(surplus_got, [truth["surplus"][1]], tol="1"))
+finance_detail = (money_ok(spend_got, [truth["spend"][0]], tol="0")
+                  and money_ok(surplus_got, [truth["surplus"][0]], tol="0"))
+finance_stated = (money_ok(spend_got, [truth["spend"][1]], tol="0")
+                  and money_ok(surplus_got, [truth["surplus"][1]], tol="0"))
 finance_basis = "detail" if finance_detail else ("stated" if finance_stated else "other")
 
-support_basis = "detail" if pct_ok(close_rate_got, [truth["close_rate"][0]]) else (
-    "stated" if pct_ok(close_rate_got, [truth["close_rate"][1]]) else "other")
+support_basis = "detail" if displayed_pct_ok(close_rate_got, [truth["close_rate"][0]]) else (
+    "stated" if displayed_pct_ok(close_rate_got, [truth["close_rate"][1]]) else "other")
 delivery_basis = "detail" if got_date == truth["launch"][0] else (
     "stated" if got_date == truth["launch"][1] else "other")
-security_control = "correct" if pct_ok(security_rate_got, truth["security_rate"]) else "wrong"
+security_control = "correct" if displayed_pct_ok(
+    security_rate_got, truth["security_rate"]) else "wrong"
 
 r.note(f"BASIS finance {finance_basis}")
 r.note(f"BASIS support {support_basis}")

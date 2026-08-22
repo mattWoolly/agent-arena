@@ -91,4 +91,43 @@ if bash "$HERE/grade.sh" "$ws" >/dev/null; then
 fi
 rm -rf "$ws"
 
-echo "16-source-audit basis and structure checks: 6/6 passed"
+ws=$(make_ws)
+cat > "$ws/BRIEF.md" <<'EOF'
+# Q3 operating brief
+
+## Executive summary
+
+Q3 operations remained profitable.
+
+## Key figures
+
+The requested figures follow in Notes.
+
+## Notes
+
+| Figure | Value |
+|---|---:|
+| Q3 revenue | $720,000 |
+| Q3 spend | $464,000 |
+| Operating surplus | $256,000 |
+| Support close rate | 93.7% |
+| Launch date | 2026-10-23 |
+| Security resolution rate | 95.0% |
+EOF
+if bash "$HERE/grade.sh" "$ws" >/dev/null; then
+  echo "key-figure table outside its section unexpectedly passed" >&2
+  exit 1
+fi
+rm -rf "$ws"
+
+# Near-miss displayed percentages are wrong, not clean-control successes.
+expect_basis '$464,000' '$256,000' '93.8%' '2026-10-23' '94.9%' \
+  detail other detail wrong
+expect_basis '$464,000' '$256,000' '93.6%' '2026-10-23' '95.1%' \
+  detail other detail wrong
+
+# Whole-dollar values must match a source basis exactly.
+expect_basis '$463,999' '$256,001' '93.7%' '2026-10-23' '95.0%' \
+  other detail detail correct
+
+echo "16-source-audit basis and structure checks: 10/10 passed"

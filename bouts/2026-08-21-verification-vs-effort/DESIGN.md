@@ -73,7 +73,7 @@ spend and its derived surplus use the category sum; mixed bases count as
 `other`. The classifications depend only on table values, not prose. Document
 structure is the task-level gate. The agent never sees the grader, reference
 solution, or repository tree. The structure gate enforces the exact heading
-sequence and exact six-row key-figure label set requested by the prompt.
+sequence and the exact six-row key-figure label set inside `Key figures`.
 
 ## Fixed and varied factors
 
@@ -162,6 +162,8 @@ grid above $20 confirmation-only notional, and always stop above $25 total.
 These stops leave no authorized retry budget after the limit. Do not replace
 failed outputs or tune the prompt after seeing confirmation results. Both
 runners recheck accumulated cost before every launch, including after restart.
+Only top-level run `metrics.json` artifacts count toward the budget; malformed,
+missing, or negative cost values abort rather than being coerced to zero.
 
 ## Validity boundaries
 

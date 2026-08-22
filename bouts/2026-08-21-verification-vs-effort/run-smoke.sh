@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Four development-only smokes, one per factorial cell.
-set -eu
+set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 MODEL=claude-sonnet-5
 CLI_VERSION="2.1.239 (Claude Code)"
@@ -83,11 +83,27 @@ check_run() {
 }
 
 smoke_total() {
-  find "$ROOT/bouts/2026-08-21-verification-vs-effort-smoke-low" \
-       "$ROOT/bouts/2026-08-21-verification-vs-effort-smoke-xhigh" \
-       -type f -name metrics.json -print0 2>/dev/null \
-    | xargs -0 -r jq -r '.total_cost_usd // 0' \
-    | awk '{ total += $1 } END { printf "%.5f", total }'
+  local bout metrics cost total=0
+  for bout in \
+    "$ROOT/bouts/2026-08-21-verification-vs-effort-smoke-low" \
+    "$ROOT/bouts/2026-08-21-verification-vs-effort-smoke-xhigh"; do
+    [[ -d "$bout" ]] || { echo "missing bout directory: $bout" >&2; return 1; }
+    while IFS= read -r -d '' metrics; do
+      if ! cost=$(jq -er '
+        if ((.total_cost_usd | type) == "number" and .total_cost_usd >= 0)
+        then .total_cost_usd
+        else error("invalid total_cost_usd")
+        end
+      ' "$metrics"); then
+        echo "invalid cost artifact: $metrics" >&2
+        return 1
+      fi
+      total=$(awk -v total="$total" -v cost="$cost" \
+        'BEGIN { printf "%.17g", total + cost }')
+    done < <(find "$bout" -mindepth 4 -maxdepth 4 -type f \
+                    -name metrics.json -print0)
+  done
+  printf '%s\n' "$total"
 }
 
 enforce_budget() {

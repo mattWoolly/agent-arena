@@ -231,6 +231,8 @@ def load_smokes():
     for prompt, effort, task, bout_name in SMOKE_CASES:
         run_dir = ROOT / "bouts" / bout_name / task / MODEL / "run-1"
         rec = read_artifacts(run_dir, effort, "smoke")
+        if not rec["grade_pass"]:
+            raise SystemExit(f"failed prerequisite smoke in {run_dir}")
         rec.update({"prompt": prompt, "effort": effort, "task": task,
                     "model": MODEL, "run": "smoke"})
         rec.pop("items")

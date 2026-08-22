@@ -281,7 +281,8 @@ non-gating `BASIS <source> detail|stated|other` lines for the three conflicting
 sources and `CONTROL security correct|wrong` for the clean source. These are
 derived only from the key-figure values, so analysis does not depend on a
 semantic prose detector. Its task gate requires the exact three-heading
-sequence and exact six-row key-figure label set declared in the prompt.
+sequence and the exact six-row key-figure label set inside the declared
+`Key figures` section.
 
 ## What gets measured
 
