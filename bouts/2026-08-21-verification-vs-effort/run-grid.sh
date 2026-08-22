@@ -105,12 +105,59 @@ confirmation_total() {
     "$ROOT/bouts/2026-08-21-verification-vs-effort-xhigh"
 }
 
+smoke_total() {
+  sum_notional \
+    "$ROOT/bouts/2026-08-21-verification-vs-effort-smoke-low" \
+    "$ROOT/bouts/2026-08-21-verification-vs-effort-smoke-xhigh"
+}
+
 all_total() {
   sum_notional \
     "$ROOT/bouts/2026-08-21-verification-vs-effort-smoke-low" \
     "$ROOT/bouts/2026-08-21-verification-vs-effort-smoke-xhigh" \
     "$ROOT/bouts/2026-08-21-verification-vs-effort-low" \
     "$ROOT/bouts/2026-08-21-verification-vs-effort-xhigh"
+}
+
+enforce_budget() {
+  local smoke_cost confirmation_cost total_cost
+  smoke_cost=$(smoke_total)
+  confirmation_cost=$(confirmation_total)
+  total_cost=$(all_total)
+  if awk -v total="$smoke_cost" 'BEGIN { exit !(total > 5) }'; then
+    echo "smoke notional cost exceeded the USD 5 stop: $smoke_cost" >&2
+    return 1
+  fi
+  if awk -v total="$confirmation_cost" 'BEGIN { exit !(total > 20) }'; then
+    echo "confirmation notional cost exceeded the USD 20 stop: $confirmation_cost" >&2
+    return 1
+  fi
+  if awk -v total="$total_cost" 'BEGIN { exit !(total > 25) }'; then
+    echo "total notional cost exceeded the USD 25 hard stop: $total_cost" >&2
+    return 1
+  fi
+}
+
+check_smokes() {
+  local effort task bout out
+  while IFS=$'\t' read -r effort task bout; do
+    out="$ROOT/bouts/$bout/$task/$MODEL/run-1"
+    [[ -f "$out/metrics.json" && -f "$out/grade.txt" &&
+       -f "$out/grade_exit" && -f "$out/run_env.json" &&
+       -f "$out/peek_check" && -f "$out/auth_status.json" ]] || {
+      echo "required smoke is missing or incomplete: $out" >&2
+      return 1
+    }
+    "$HERE/run-smoke.sh" --check-artifacts "$effort" "$out" || {
+      echo "required smoke failed validation: $out" >&2
+      return 1
+    }
+  done <<'EOF'
+low	15-rollup	2026-08-21-verification-vs-effort-smoke-low
+low	15-rollup-verify	2026-08-21-verification-vs-effort-smoke-low
+xhigh	15-rollup	2026-08-21-verification-vs-effort-smoke-xhigh
+xhigh	15-rollup-verify	2026-08-21-verification-vs-effort-smoke-xhigh
+EOF
 }
 
 if [[ "${1:-}" == --check-artifacts ]]; then
@@ -121,13 +168,26 @@ if [[ "${1:-}" == --check-artifacts ]]; then
   check_run "$2" "$3" "$4"
   exit
 fi
-[[ "$#" -eq 0 ]] || { echo "usage: $0 [--check-artifacts ...]" >&2; exit 2; }
+if [[ "${1:-}" == --check-smokes ]]; then
+  [[ "$#" -eq 1 ]] || { echo "usage: $0 --check-smokes" >&2; exit 2; }
+  enforce_budget
+  check_smokes
+  exit
+fi
+[[ "$#" -eq 0 ]] || {
+  echo "usage: $0 [--check-artifacts ...|--check-smokes]" >&2
+  exit 2
+}
+
+enforce_budget
+check_smokes
 
 if [[ ! -f "$LOG" ]]; then
   printf 'timestamp\tsequence\teffort\ttask\tmodel\trepeat\tstatus\n' > "$LOG"
 fi
 
 tail -n +2 "$ORDER" | while IFS=$'\t' read -r sequence effort task model repeat; do
+  enforce_budget
   [[ "$model" == "$MODEL" ]]
   [[ "$effort" == low || "$effort" == xhigh ]]
   [[ "$task" == 16-source-audit || "$task" == 16-source-audit-verify ]]
@@ -159,16 +219,7 @@ tail -n +2 "$ORDER" | while IFS=$'\t' read -r sequence effort task model repeat;
     exit 3
   }
   check_run "$effort" "$model" "$out"
-  confirmation_cost=$(confirmation_total)
-  total_cost=$(all_total)
-  if awk -v total="$confirmation_cost" 'BEGIN { exit !(total > 20) }'; then
-    echo "confirmation notional cost exceeded the USD 20 stop: $confirmation_cost" >&2
-    exit 4
-  fi
-  if awk -v total="$total_cost" 'BEGIN { exit !(total > 25) }'; then
-    echo "total notional cost exceeded the USD 25 hard stop: $total_cost" >&2
-    exit 4
-  fi
+  enforce_budget
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$sequence" "$effort" "$task" \
     "$model" "$repeat" complete >> "$LOG"

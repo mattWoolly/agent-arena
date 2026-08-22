@@ -72,4 +72,23 @@ grep -qx "BASIS delivery detail" <<<"$out"
 grep -qx "CONTROL security correct" <<<"$out"
 rm -rf "$ws"
 
-echo "16-source-audit basis checks: 4/4 passed"
+# The exact-label contract is gating: fuzzy labels and extra data rows fail.
+ws=$(make_ws)
+write_brief "$ws" '$464,000' '$256,000' '93.7%' '2026-10-23' '95.0%'
+sed -i 's/| Q3 revenue |/| NOT-EXACT Q3 revenue EXTRA |/' "$ws/BRIEF.md"
+if bash "$HERE/grade.sh" "$ws" >/dev/null; then
+  echo "modified key-figure label unexpectedly passed" >&2
+  exit 1
+fi
+rm -rf "$ws"
+
+ws=$(make_ws)
+write_brief "$ws" '$464,000' '$256,000' '93.7%' '2026-10-23' '95.0%'
+sed -i '/| Q3 revenue |/a | Unrequested figure | 1 |' "$ws/BRIEF.md"
+if bash "$HERE/grade.sh" "$ws" >/dev/null; then
+  echo "extra key-figure row unexpectedly passed" >&2
+  exit 1
+fi
+rm -rf "$ws"
+
+echo "16-source-audit basis and structure checks: 6/6 passed"

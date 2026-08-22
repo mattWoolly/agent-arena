@@ -90,6 +90,15 @@ smoke_total() {
     | awk '{ total += $1 } END { printf "%.5f", total }'
 }
 
+enforce_budget() {
+  local cost
+  cost=$(smoke_total)
+  if awk -v total="$cost" 'BEGIN { exit !(total > 5) }'; then
+    echo "smoke notional cost exceeded the USD 5 stop: $cost" >&2
+    return 1
+  fi
+}
+
 if [[ "${1:-}" == --check-artifacts ]]; then
   [[ "$#" -eq 3 ]] || {
     echo "usage: $0 --check-artifacts <effort> <run-dir>" >&2
@@ -101,7 +110,8 @@ fi
 [[ "$#" -eq 0 ]] || { echo "usage: $0 [--check-artifacts ...]" >&2; exit 2; }
 
 run_one() {
-  local effort="$1" task="$2" bout="$3" out cost
+  local effort="$1" task="$2" bout="$3" out
+  enforce_budget
   out="$ROOT/bouts/$bout/$task/$MODEL/run-1"
   if [[ -f "$out/metrics.json" && -f "$out/grade.txt" &&
         -f "$out/grade_exit" && -f "$out/run_env.json" &&
@@ -118,11 +128,7 @@ run_one() {
     "$ROOT/bin/run-task.sh" "$ROOT/tasks/$task" "$MODEL" \
     "$ROOT/bouts/$bout" 1
   check_run "$effort" "$out"
-  cost=$(smoke_total)
-  if awk -v total="$cost" 'BEGIN { exit !(total > 5) }'; then
-    echo "smoke notional cost exceeded the USD 5 stop: $cost" >&2
-    exit 4
-  fi
+  enforce_budget
 }
 
 run_one low   15-rollup        2026-08-21-verification-vs-effort-smoke-low

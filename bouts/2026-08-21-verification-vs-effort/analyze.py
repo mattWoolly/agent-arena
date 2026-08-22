@@ -163,6 +163,19 @@ def read_artifacts(run_dir, expected_effort, kind):
         and run_env.get("timeout_s") == 1500
         and run_env.get("cli_version") == CLI_VERSION
     )
+    integrity_failures = []
+    for label, ok in (
+        ("served-model", served_ok),
+        ("effort", effort_ok),
+        ("authentication", auth_ok),
+        ("runtime", runtime_ok),
+        ("peek/leak", clean),
+    ):
+        if not ok:
+            integrity_failures.append(label)
+    if integrity_failures:
+        raise SystemExit(f"integrity failure {integrity_failures} in {run_dir}")
+
     return {
         "grade_pass": grade_pass,
         "score": grade["score"],
@@ -175,7 +188,7 @@ def read_artifacts(run_dir, expected_effort, kind):
         "auth_ok": auth_ok,
         "runtime_ok": runtime_ok,
         "peek_clean": clean,
-        "integrity_ok": served_ok and effort_ok and auth_ok and runtime_ok and clean,
+        "integrity_ok": True,
         "cost_usd": metrics["total_cost_usd"],
         "cost_source": metrics.get("cost_source", "cli-reported"),
         "output_tokens": metrics["output_tokens"],

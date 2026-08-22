@@ -12,8 +12,8 @@ import re
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "_lib"))
-from numgrade import (Report, find_row, md_tables, money_ok, parse_date_str,
-                      parse_number, parse_signed_pct, pct_ok, row_value_cell)
+from numgrade import (Report, md_tables, money_ok, parse_date_str, parse_number,
+                      parse_signed_pct, pct_ok, row_value_cell)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 WS = sys.argv[1]
@@ -95,20 +95,31 @@ else:
     tables = []
 
 labels = {
-    "revenue": ["q3", "revenue"],
-    "spend": ["q3", "spend"],
-    "surplus": ["operating", "surplus"],
-    "close_rate": ["support", "close", "rate"],
-    "launch": ["launch", "date"],
-    "security_rate": ["security", "resolution", "rate"],
+    "revenue": "Q3 revenue",
+    "spend": "Q3 spend",
+    "surplus": "Operating surplus",
+    "close_rate": "Support close rate",
+    "launch": "Launch date",
+    "security_rate": "Security resolution rate",
 }
-cells = {}
-complete = True
-for item, words in labels.items():
-    row = find_row(tables, words)
-    cells[item] = row_value_cell(row) if row else None
+expected_labels = set(labels.values())
+keyfig_tables = []
+for table in tables:
+    data_rows = table[1:]
+    first_cells = [row[0].strip() for row in data_rows if row]
+    if len(data_rows) == len(expected_labels) and set(first_cells) == expected_labels:
+        keyfig_tables.append(data_rows)
+
+cells = {item: None for item in labels}
+if len(keyfig_tables) == 1:
+    rows_by_label = {row[0].strip(): row for row in keyfig_tables[0]}
+    for item, label in labels.items():
+        cells[item] = row_value_cell(rows_by_label[label])
+
+complete = len(keyfig_tables) == 1
+for item, cell in cells.items():
     parser = parse_date_str if item == "launch" else parse_number
-    if cells[item] is None or parser(cells[item]) is None:
+    if cell is None or parser(cell) is None:
         complete = False
 r.gate("keyfig-table", complete)
 

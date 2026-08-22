@@ -48,6 +48,8 @@ The confirmatory grid may begin only if each smoke has the requested effort in
 subscription authentication, a clean `peek_check`, complete metrics, a passing
 task grade, and a parseable discrepancy FLAG. Any instrument change after a
 smoke requires a numbered amendment committed and pushed before confirmation.
+The confirmation runner independently revalidates all four smoke artifact sets
+before it can launch its first grid cell.
 
 ## Confirmatory task
 
@@ -70,7 +72,8 @@ reports six key-figure verdicts, emits three deterministic non-gating
 spend and its derived surplus use the category sum; mixed bases count as
 `other`. The classifications depend only on table values, not prose. Document
 structure is the task-level gate. The agent never sees the grader, reference
-solution, or repository tree.
+solution, or repository tree. The structure gate enforces the exact heading
+sequence and exact six-row key-figure label set requested by the prompt.
 
 ## Fixed and varied factors
 
@@ -141,6 +144,8 @@ setting.
   subscription authentication, with zero peek or secret leak flags.
 
 Misses are reported before hits.
+Analysis aborts without estimating any causal contrast if a run has the wrong
+served model, effort, runtime, authentication route, or peek/leak state.
 
 ## Budget and stop rules
 
@@ -155,7 +160,8 @@ or authentication route; missing telemetry; a grader failure; a peek or secret
 warning; or an unparseable FLAG. Stop the smoke phase above $5 notional and the
 grid above $20 confirmation-only notional, and always stop above $25 total.
 These stops leave no authorized retry budget after the limit. Do not replace
-failed outputs or tune the prompt after seeing confirmation results.
+failed outputs or tune the prompt after seeing confirmation results. Both
+runners recheck accumulated cost before every launch, including after restart.
 
 ## Validity boundaries
 
