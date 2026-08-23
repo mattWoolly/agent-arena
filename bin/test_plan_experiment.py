@@ -503,10 +503,10 @@ class PromptAndManifestTests(unittest.TestCase):
                 synced_modes.append(os.fstat(descriptor).st_mode)
                 return real_fsync(descriptor)
 
-            def contender(_index):
+            def contender(index):
                 barrier.wait()
                 try:
-                    return ("won", make_manifest(temp)[1])
+                    return ("won", make_manifest(temp, seed=1000 + index)[1])
                 except FileExistsError:
                     return ("lost", None)
 

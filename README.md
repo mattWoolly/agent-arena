@@ -309,7 +309,8 @@ Confirmatory execution requires `--approval <exact-freeze-id>` and is blocked
 without it. The manifest fixes the exact prompt, condition versions, native
 effort behavior, randomized complete-block schedule, exclusions, and analysis
 inputs. Smoke has its own manifest/bout and cannot enter blinding or analysis.
-Manifest publication uses an atomically no-clobber same-directory operation;
+Manifest publication verifies the completed bytes and inode, then uses an
+atomically no-clobber same-directory operation;
 the explicit `--replace-draft` flag works only on an unchanged safe draft
 before any claim, intent, ledger, or run artifact exists.
 The post-smoke technical amendment preserves the original one-call smoke bout,

@@ -464,7 +464,7 @@ def _read_manifest_file_at(parent_fd: int, name: str) -> tuple[os.stat_result, b
         or stat.S_ISLNK(attached.st_mode)
         or attached.st_nlink != 1
         or attached.st_uid != os.getuid()
-        or stat.S_IMODE(attached.st_mode) & 0o002
+        or stat.S_IMODE(attached.st_mode) & 0o022
     ):
         raise ValueError("manifest publication target is unsafe")
     flags = os.O_RDONLY | os.O_CLOEXEC
@@ -558,7 +558,7 @@ def _publish_manifest_atomic(
                 )
         for _ in range(64):
             candidate = f".{absolute.name}.publish-{os.urandom(12).hex()}.tmp"
-            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
+            flags = os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
             if hasattr(os, "O_NOFOLLOW"):
                 flags |= os.O_NOFOLLOW
             try:
@@ -574,10 +574,21 @@ def _publish_manifest_atomic(
             offset += os.write(temporary_fd, payload[offset:])
         os.fsync(temporary_fd)
         written = os.fstat(temporary_fd)
-        if not stat.S_ISREG(written.st_mode) or written.st_nlink != 1 or written.st_size != len(payload):
+        attached = os.stat(
+            temporary_name, dir_fd=parent_fd, follow_symlinks=False
+        )
+        if (
+            not stat.S_ISREG(written.st_mode)
+            or written.st_nlink != 1
+            or written.st_uid != os.getuid()
+            or stat.S_IMODE(written.st_mode) & 0o022
+            or written.st_size != len(payload)
+            or (written.st_dev, written.st_ino)
+            != (attached.st_dev, attached.st_ino)
+            or _read_descriptor_bytes(temporary_fd, limit=16 * 1024 * 1024)
+            != payload
+        ):
             raise ValueError("manifest publication file changed before commit")
-        os.close(temporary_fd)
-        temporary_fd = None
         if replace_draft:
             os.replace(
                 temporary_name,
@@ -593,6 +604,14 @@ def _publish_manifest_atomic(
                 absolute.name,
                 label=f"frozen manifest: {path}",
             )
+        published = os.stat(
+            absolute.name, dir_fd=parent_fd, follow_symlinks=False
+        )
+        if (published.st_dev, published.st_ino) != (
+            written.st_dev,
+            written.st_ino,
+        ):
+            raise ValueError("published manifest is not the completed publication file")
         temporary_name = None
         os.fsync(parent_fd)
     finally:
