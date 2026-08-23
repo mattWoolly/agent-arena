@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import ctypes
 import errno
+import fcntl
 import hashlib
 import hmac
 import itertools
@@ -66,21 +67,52 @@ PROMPT_REL = f"{TASK_REL}/PROMPT.md"
 FROZEN_PROMPT_SHA256 = "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0"
 EXPERIMENT_ID = "2026-08-22-pre-requirements-planning"
 CONFIG_LOCK_REL = f"bouts/{EXPERIMENT_ID}/CONFIGURATION.json"
-AMENDMENT_ID = "smoke-technical-001"
-AMENDMENT_REL = f"bouts/{EXPERIMENT_ID}-amendment-1/AMENDMENT.md"
-AMENDED_RUNBOOK_REL = f"bouts/{EXPERIMENT_ID}-amendment-1/RUNBOOK.md"
-AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-1"
+AMENDMENT_1_ID = "smoke-technical-001"
+AMENDMENT_1_REL = f"bouts/{EXPERIMENT_ID}-amendment-1/AMENDMENT.md"
+AMENDED_RUNBOOK_1_REL = f"bouts/{EXPERIMENT_ID}-amendment-1/RUNBOOK.md"
+AMENDMENT_2_ID = "smoke-technical-002"
+AMENDMENT_2_REL = f"bouts/{EXPERIMENT_ID}-amendment-2/AMENDMENT.md"
+AMENDED_RUNBOOK_2_REL = f"bouts/{EXPERIMENT_ID}-amendment-2/RUNBOOK.md"
+AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-2"
 INITIAL_SMOKE_MANIFEST_REL = f"bouts/{EXPERIMENT_ID}-smoke/MANIFEST.json"
 INITIAL_SMOKE_FREEZE_ID = "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e"
-SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-1"
+SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-2"
+ATTEMPT_INTENT_DIRECTORY = "ATTEMPT_INTENTS"
+ATTEMPT_INTENT_CONTRACT = {
+    "schema_version": 1,
+    "directory": ATTEMPT_INTENT_DIRECTORY,
+    "serialization": "nonblocking exclusive advisory lock on the bout directory for the complete runner transaction",
+    "claim": "exclusive regular-file creation plus file and directory fsync before driver process launch",
+    "resolution": "immutable intent retained and bound by exact path and SHA-256 in one durable execution-ledger row",
+    "unresolved_policy": "block every subsequent execution without retry",
+}
+ATTEMPT_INTENT_FIELDS = {
+    "schema_version",
+    "record_kind",
+    "experiment_id",
+    "manifest_freeze_id",
+    "phase",
+    "slot_id",
+    "condition_id",
+    "kind",
+    "run_dir",
+    "replacement_for",
+    "exclusion_reason",
+    "created_at",
+    "preflight_sha256",
+    "harness_commit",
+    "command_sha256",
+}
 FROZEN_CORE_RELATIVE = [
     PROMPT_REL,
     f"{TASK_REL}/SCORING.md",
     f"{TASK_REL}/review.schema.json",
     f"{TASK_REL}/adjudication.schema.json",
     f"bouts/{EXPERIMENT_ID}/DESIGN.md",
-    AMENDMENT_REL,
-    AMENDED_RUNBOOK_REL,
+    AMENDMENT_1_REL,
+    AMENDED_RUNBOOK_1_REL,
+    AMENDMENT_2_REL,
+    AMENDED_RUNBOOK_2_REL,
     CONFIG_LOCK_REL,
     f"analysis/{EXPERIMENT_ID}/analyze.py",
     f"analysis/{EXPERIMENT_ID}/REPORT_TEMPLATE.md",
@@ -272,6 +304,28 @@ class OperatorTermination(KeyboardInterrupt):
         super().__init__(f"operator termination signal {signum}")
 
 
+class SyntheticAttemptCrash(BaseException):
+    """Offline-only exception used to prove uncatchable crash boundaries."""
+
+
+SYNTHETIC_CRASH_CHECKPOINTS = {
+    "pre_claim",
+    "post_claim_pre_spawn",
+    "post_spawn",
+    "post_cleanup",
+    "post_recovery",
+    "pre_ledger",
+}
+
+
+def synthetic_crash_checkpoint(requested: str | None, current: str) -> None:
+    if requested != current:
+        return
+    if os.environ.get("ARENA_SYNTHETIC_ONLY") != "1":
+        raise PermissionError("attempt crash injection is restricted to offline synthetic tests")
+    raise SyntheticAttemptCrash(current)
+
+
 def process_dumpable(value: int | None = None) -> int:
     """Get or set Linux dumpability so a target cannot read the runner's cwd, fds, or environment."""
     libc = ctypes.CDLL(None, use_errno=True)
@@ -371,6 +425,281 @@ def file_record(path: Path) -> dict[str, Any]:
     return {"path": relative(path), "sha256": sha256_bytes(data), "bytes": len(data)}
 
 
+def attempt_intent_enabled(manifest: dict[str, Any]) -> bool:
+    return manifest.get("attempt_intent_contract") == ATTEMPT_INTENT_CONTRACT
+
+
+def attempt_intent_directory(manifest: dict[str, Any]) -> Path:
+    return ROOT / str(manifest.get("bout_dir", "")) / ATTEMPT_INTENT_DIRECTORY
+
+
+def attempt_intent_path(manifest: dict[str, Any], slot_id: str) -> Path:
+    return attempt_intent_directory(manifest) / f"{_safe_path_component(slot_id, 'attempt-intent slot ID')}.json"
+
+
+def _open_attempt_intent_directory(
+    manifest: dict[str, Any], *, create: bool
+) -> int | None:
+    """Open the repository intent directory without following its final entries."""
+    bout = Path(os.path.abspath(ROOT / str(manifest.get("bout_dir", ""))))
+    try:
+        bout.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise ValueError("attempt-intent bout directory escapes the repository") from exc
+    _reject_symlink_components(bout, "attempt-intent bout directory")
+    if create:
+        bout.mkdir(parents=True, exist_ok=True)
+    if not path_entry_exists(bout):
+        return None
+    _reject_symlink_components(bout, "attempt-intent bout directory")
+    metadata = bout.lstat()
+    if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+        raise ValueError("attempt-intent bout path is not a real directory")
+    bout_fd = os.open(bout, _directory_open_flags())
+    try:
+        if create:
+            try:
+                os.mkdir(ATTEMPT_INTENT_DIRECTORY, mode=0o700, dir_fd=bout_fd)
+            except FileExistsError:
+                pass
+            else:
+                os.fsync(bout_fd)
+        try:
+            attached = os.stat(
+                ATTEMPT_INTENT_DIRECTORY, dir_fd=bout_fd, follow_symlinks=False
+            )
+        except FileNotFoundError:
+            return None
+        if not stat.S_ISDIR(attached.st_mode) or stat.S_ISLNK(attached.st_mode):
+            raise ValueError("attempt-intent path is not a real directory")
+        if attached.st_uid != os.getuid() or stat.S_IMODE(attached.st_mode) & 0o022:
+            raise ValueError("attempt-intent directory ownership or permissions are unsafe")
+        directory_fd = os.open(
+            ATTEMPT_INTENT_DIRECTORY, _directory_open_flags(), dir_fd=bout_fd
+        )
+        opened = os.fstat(directory_fd)
+        if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
+            os.close(directory_fd)
+            raise ValueError("attempt-intent directory changed while it was opened")
+        return directory_fd
+    finally:
+        os.close(bout_fd)
+
+
+def _read_regular_file_at(directory_fd: int, name: str, *, limit: int = 65536) -> bytes:
+    flags = os.O_RDONLY | os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    attached = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+    if not stat.S_ISREG(attached.st_mode) or stat.S_ISLNK(attached.st_mode):
+        raise ValueError("entry is not a regular file")
+    if attached.st_nlink != 1:
+        raise ValueError("entry must have exactly one hard link")
+    if attached.st_uid != os.getuid() or stat.S_IMODE(attached.st_mode) & 0o022:
+        raise ValueError("entry ownership or permissions are unsafe")
+    descriptor = os.open(name, flags, dir_fd=directory_fd)
+    try:
+        opened = os.fstat(descriptor)
+        if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
+            raise ValueError("entry changed while it was opened")
+        chunks: list[bytes] = []
+        length = 0
+        while True:
+            chunk = os.read(descriptor, min(8192, limit + 1 - length))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            length += len(chunk)
+            if length > limit:
+                raise ValueError("entry exceeds the size limit")
+        return b"".join(chunks)
+    finally:
+        os.close(descriptor)
+
+
+def read_attempt_intents(
+    manifest: dict[str, Any],
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Read only exact, immutable slot claims; malformed state fails closed."""
+    if not attempt_intent_enabled(manifest):
+        return {}, []
+    errors: list[str] = []
+    records: dict[str, dict[str, Any]] = {}
+    all_slots = {
+        slot["slot_id"]: slot
+        for slot in [*(manifest.get("schedule") or []), *(manifest.get("reserve_slots") or [])]
+    }
+    try:
+        directory_fd = _open_attempt_intent_directory(manifest, create=False)
+    except (OSError, ValueError) as exc:
+        return {}, [f"attempt-intent directory is unsafe: {type(exc).__name__}: {exc}"]
+    if directory_fd is None:
+        return {}, []
+    try:
+        try:
+            names = sorted(os.listdir(directory_fd))
+        except OSError as exc:
+            return {}, [f"attempt-intent directory is unreadable: {type(exc).__name__}"]
+        if len(names) > len(all_slots):
+            errors.append("attempt-intent directory contains more entries than frozen slots")
+        for name in names:
+            if not name.endswith(".json"):
+                errors.append(f"unexpected attempt-intent entry: {name}")
+                continue
+            slot_id = name[:-5]
+            slot = all_slots.get(slot_id)
+            if slot is None or name != f"{slot_id}.json":
+                errors.append(f"attempt intent references non-frozen slot: {name}")
+                continue
+            try:
+                data = _read_regular_file_at(directory_fd, name)
+                record = json.loads(data)
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                errors.append(f"attempt intent for {slot_id} is unsafe or malformed: {type(exc).__name__}")
+                continue
+            if not isinstance(record, dict):
+                errors.append(f"attempt intent for {slot_id} is not an object")
+                continue
+            record_errors: list[str] = []
+            if set(record) != ATTEMPT_INTENT_FIELDS:
+                record_errors.append("field set differs from the frozen schema")
+            for good, label in (
+                (record.get("schema_version") == 1, "schema version"),
+                (record.get("record_kind") == "target-attempt-intent", "record kind"),
+                (record.get("experiment_id") == manifest.get("experiment_id"), "experiment ID"),
+                (record.get("manifest_freeze_id") == manifest.get("freeze_id"), "freeze ID"),
+                (record.get("phase") == manifest.get("phase"), "phase"),
+                (record.get("slot_id") == slot_id, "slot ID"),
+                (record.get("condition_id") == slot.get("condition_id"), "condition ID"),
+                (record.get("kind") == slot.get("kind", "primary"), "slot kind"),
+                (
+                    record.get("run_dir") == relative(output_dir_for(manifest, slot)),
+                    "run directory",
+                ),
+            ):
+                if not good:
+                    record_errors.append(f"{label} mismatch")
+            if not re.fullmatch(r"[0-9a-f]{64}", str(record.get("preflight_sha256") or "")):
+                record_errors.append("preflight hash is invalid")
+            if not re.fullmatch(r"[0-9a-f]{40}", str(record.get("harness_commit") or "")):
+                record_errors.append("harness commit is invalid")
+            if not re.fullmatch(r"[0-9a-f]{64}", str(record.get("command_sha256") or "")):
+                record_errors.append("command hash is invalid")
+            try:
+                datetime.fromisoformat(str(record.get("created_at") or "").replace("Z", "+00:00"))
+            except ValueError:
+                record_errors.append("creation timestamp is invalid")
+            if slot.get("kind", "primary") == "primary" and (
+                record.get("replacement_for") is not None
+                or record.get("exclusion_reason") is not None
+            ):
+                record_errors.append("primary intent contains replacement metadata")
+            if record_errors:
+                errors.extend(f"attempt intent for {slot_id}: {issue}" for issue in record_errors)
+                continue
+            records[slot_id] = {
+                "record": record,
+                "path": str(
+                    Path(manifest["bout_dir"])
+                    / ATTEMPT_INTENT_DIRECTORY
+                    / name
+                ),
+                "sha256": sha256_bytes(data),
+            }
+    finally:
+        os.close(directory_fd)
+    return records, errors
+
+
+def claim_attempt_intent(
+    manifest: dict[str, Any],
+    slot: dict[str, Any],
+    preflight: dict[str, Any],
+    command: list[str],
+) -> tuple[str, str]:
+    """Durably acquire a frozen target slot before any driver process launch."""
+    if not attempt_intent_enabled(manifest):
+        raise ValueError("attempt-intent contract is not enabled")
+    if not re.fullmatch(r"[0-9a-f]{64}", str(preflight.get("sha256") or "")):
+        raise ValueError("attempt-intent preflight hash is invalid")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(preflight.get("harness_commit") or "")):
+        raise ValueError("attempt-intent harness commit is invalid")
+    if not command or not all(isinstance(value, str) and value for value in command):
+        raise ValueError("attempt-intent command is invalid")
+    record = {
+        "schema_version": 1,
+        "record_kind": "target-attempt-intent",
+        "experiment_id": manifest["experiment_id"],
+        "manifest_freeze_id": manifest["freeze_id"],
+        "phase": manifest["phase"],
+        "slot_id": slot["slot_id"],
+        "condition_id": slot["condition_id"],
+        "kind": slot.get("kind", "primary"),
+        "run_dir": relative(output_dir_for(manifest, slot)),
+        "replacement_for": slot.get("replacement_for"),
+        "exclusion_reason": slot.get("exclusion_reason"),
+        "created_at": utc_now(),
+        "preflight_sha256": preflight["sha256"],
+        "harness_commit": preflight["harness_commit"],
+        "command_sha256": sha256_bytes(canonical_json(command)),
+    }
+    payload = json.dumps(record, indent=2, ensure_ascii=False).encode() + b"\n"
+    directory_fd = _open_attempt_intent_directory(manifest, create=True)
+    assert directory_fd is not None
+    name = f"{_safe_path_component(slot['slot_id'], 'attempt-intent slot ID')}.json"
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(name, flags, 0o600, dir_fd=directory_fd)
+        offset = 0
+        while offset < len(payload):
+            offset += os.write(descriptor, payload[offset:])
+        os.fsync(descriptor)
+        os.fsync(directory_fd)
+        written = os.fstat(descriptor)
+        attached = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+        if (
+            not stat.S_ISREG(written.st_mode)
+            or written.st_nlink != 1
+            or written.st_size != len(payload)
+            or (written.st_dev, written.st_ino) != (attached.st_dev, attached.st_ino)
+        ):
+            raise ValueError("attempt intent changed before process-launch authorization")
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        os.close(directory_fd)
+    path = str(Path(manifest["bout_dir"]) / ATTEMPT_INTENT_DIRECTORY / name)
+    return path, sha256_bytes(payload)
+
+
+def acquire_execution_lock(manifest: dict[str, Any]) -> int:
+    """Serialize compliant runners on the frozen bout directory inode."""
+    bout = Path(os.path.abspath(ROOT / str(manifest.get("bout_dir", ""))))
+    try:
+        bout.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise ValueError("execution-lock bout directory escapes the repository") from exc
+    _reject_symlink_components(bout, "execution-lock bout directory")
+    bout.mkdir(parents=True, exist_ok=True)
+    _reject_symlink_components(bout, "execution-lock bout directory")
+    descriptor = os.open(bout, _directory_open_flags())
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISDIR(metadata.st_mode):
+            raise ValueError("execution-lock bout path is not a directory")
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError("another runner holds the experiment execution lock") from exc
+        return descriptor
+    except BaseException:
+        os.close(descriptor)
+        raise
+
+
 def default_conditions() -> list[dict[str, Any]]:
     """The convenience sample frozen for this experiment."""
     return [
@@ -433,18 +762,26 @@ def default_conditions() -> list[dict[str, Any]]:
 
 
 def current_amendments() -> list[dict[str, Any]]:
-    documentation = ROOT / AMENDMENT_REL
-    if not documentation.is_file() or documentation.is_symlink():
-        raise ValueError(f"required amendment record is missing or unsafe: {AMENDMENT_REL}")
-    return [
-        {
-            "amendment_id": AMENDMENT_ID,
-            "kind": "technical_harness_compatibility",
-            "target_prompt_changed": False,
-            "target_prompt_sha256": FROZEN_PROMPT_SHA256,
-            "documentation": file_record(documentation),
-        }
-    ]
+    records = []
+    for amendment_id, kind, documentation_relative in (
+        (AMENDMENT_1_ID, "technical_harness_compatibility", AMENDMENT_1_REL),
+        (AMENDMENT_2_ID, "technical_crash_durability", AMENDMENT_2_REL),
+    ):
+        documentation = ROOT / documentation_relative
+        if not documentation.is_file() or documentation.is_symlink():
+            raise ValueError(
+                f"required amendment record is missing or unsafe: {documentation_relative}"
+            )
+        records.append(
+            {
+                "amendment_id": amendment_id,
+                "kind": kind,
+                "target_prompt_changed": False,
+                "target_prompt_sha256": FROZEN_PROMPT_SHA256,
+                "documentation": file_record(documentation),
+            }
+        )
+    return records
 
 
 def _validated_bout_dir(value: str) -> str:
@@ -625,11 +962,25 @@ def validate_smoke_call_budget(
         str(slot_id).partition("--")[2]
         for slot_id in continuation.get("consumed_slot_ids") or []
     }
-    continuation_conditions = [
-        str(row.get("condition_id"))
-        for row in ledger
-        if isinstance(row, dict) and row.get("kind") == "primary"
-    ]
+    if attempt_intent_enabled(manifest):
+        intent_records, intent_errors = read_attempt_intents(manifest)
+        errors.extend(intent_errors)
+        claimed_slot_ids = set(intent_records) | {
+            str(row.get("slot_id"))
+            for row in ledger
+            if isinstance(row, dict) and row.get("kind") == "primary"
+        }
+        continuation_conditions = [
+            str(slot.get("condition_id"))
+            for slot in manifest.get("schedule") or []
+            if slot["slot_id"] in claimed_slot_ids
+        ]
+    else:
+        continuation_conditions = [
+            str(row.get("condition_id"))
+            for row in ledger
+            if isinstance(row, dict) and row.get("kind") == "primary"
+        ]
     all_attempted = [*sorted(consumed_conditions), *continuation_conditions]
     if len(all_attempted) != len(set(all_attempted)):
         errors.append("cumulative smoke attempts contain a retried condition")
@@ -830,6 +1181,8 @@ def build_manifest(
         },
         "frozen_inputs": [file_record(path) for path in frozen_files],
     }
+    if not test_only_allow_noncanonical_paths:
+        manifest["attempt_intent_contract"] = dict(ATTEMPT_INTENT_CONTRACT)
     if continuation is not None:
         manifest["smoke_continuation"] = continuation
         manifest["sampling"].update(
@@ -858,6 +1211,7 @@ def build_manifest(
         prior_bout = ROOT / str(prior.get("bout_dir", ""))
         runtime_paths = (
             prior_bout / "EXECUTION.jsonl",
+            prior_bout / ATTEMPT_INTENT_DIRECTORY,
             prior_bout / "ATTEMPT_FAILURES",
             prior_bout / "QUARANTINE",
             prior_bout / Path(TASK_REL).name,
@@ -912,6 +1266,12 @@ def validate_manifest(
         else:
             if manifest.get("amendments") != expected_amendments:
                 errors.append("manifest does not contain the exact current technical amendment record")
+    intent_contract = manifest.get("attempt_intent_contract")
+    if intent_contract is None:
+        if not allow_historical and not test_only_noncanonical:
+            errors.append("production manifest lacks the crash-durable attempt-intent contract")
+    elif intent_contract != ATTEMPT_INTENT_CONTRACT:
+        errors.append("attempt-intent contract differs from the frozen crash-durability contract")
     task = manifest.get("task") or {}
     prompt_path = ROOT / str(task.get("path", "")) / "PROMPT.md"
     if task.get("prompt_sha256") != FROZEN_PROMPT_SHA256:
@@ -2554,6 +2914,99 @@ def eligible_exclusion_reasons(record: dict[str, Any]) -> list[str]:
     return sorted(reasons)
 
 
+def validate_attempt_intents(
+    manifest: dict[str, Any], ledger: list[dict[str, Any]]
+) -> list[str]:
+    """Bind every production ledger row to one durable pre-launch slot claim."""
+    if not attempt_intent_enabled(manifest):
+        return []
+    records, errors = read_attempt_intents(manifest)
+    all_slots = {
+        slot["slot_id"]: slot
+        for slot in [*(manifest.get("schedule") or []), *(manifest.get("reserve_slots") or [])]
+    }
+    ledger_by_slot = {
+        str(row.get("slot_id")): row
+        for row in ledger
+        if isinstance(row, dict) and row.get("slot_id") in all_slots
+    }
+    for slot_id, row in ledger_by_slot.items():
+        intent = records.get(slot_id)
+        location = f"execution ledger row for {slot_id}"
+        if intent is None:
+            errors.append(f"{location} lacks its durable attempt intent")
+            continue
+        expected_path = str(
+            Path(manifest["bout_dir"])
+            / ATTEMPT_INTENT_DIRECTORY
+            / f"{slot_id}.json"
+        )
+        if row.get("attempt_intent") != expected_path:
+            errors.append(f"{location} attempt-intent path mismatch")
+        if row.get("attempt_intent_sha256") != intent["sha256"]:
+            errors.append(f"{location} attempt-intent hash mismatch")
+        record = intent["record"]
+        preflight = row.get("preflight") or {}
+        for good, label in (
+            (record.get("preflight_sha256") == preflight.get("sha256"), "preflight hash"),
+            (record.get("harness_commit") == preflight.get("harness_commit"), "harness commit"),
+            (record.get("replacement_for") == row.get("replacement_for"), "replacement parent"),
+            (record.get("exclusion_reason") == row.get("exclusion_reason"), "exclusion reason"),
+        ):
+            if not good:
+                errors.append(f"{location} and attempt intent have different {label}")
+    primary_claims = [
+        slot["slot_id"]
+        for slot in manifest.get("schedule") or []
+        if slot["slot_id"] in records
+    ]
+    expected_primaries = [slot["slot_id"] for slot in manifest.get("schedule") or []]
+    if set(primary_claims) != set(expected_primaries[: len(primary_claims)]):
+        errors.append("attempt-intent primary claims are not a prefix of frozen sequence order")
+    for condition_id in condition_map(manifest):
+        reserve_claims = [
+            slot["slot_id"]
+            for slot in manifest.get("reserve_slots") or []
+            if slot.get("condition_id") == condition_id and slot["slot_id"] in records
+        ]
+        expected_reserves = [
+            slot["slot_id"]
+            for slot in manifest.get("reserve_slots") or []
+            if slot.get("condition_id") == condition_id
+        ]
+        if set(reserve_claims) != set(expected_reserves[: len(reserve_claims)]):
+            errors.append(
+                f"attempt-intent reserve claims for {condition_id} are not in frozen reserve-index order"
+            )
+    allowed_reasons = set((manifest.get("exclusions") or {}).get("replace_only") or [])
+    for slot_id, intent in records.items():
+        slot = all_slots[slot_id]
+        record = intent["record"]
+        if slot.get("kind") != "reserve":
+            continue
+        parent = ledger_by_slot.get(str(record.get("replacement_for")))
+        reason = record.get("exclusion_reason")
+        if parent is None:
+            errors.append(f"attempt intent for {slot_id} lacks an earlier ledgered replacement parent")
+        else:
+            if parent.get("condition_id") != record.get("condition_id"):
+                errors.append(f"attempt intent for {slot_id} has a cross-condition replacement parent")
+            if parent.get("analysis_eligible") is not False:
+                errors.append(f"attempt intent for {slot_id} may replace only an ineligible attempt")
+            if reason not in set(parent.get("eligible_exclusion_reasons") or []):
+                errors.append(f"attempt intent for {slot_id} has an unsupported exclusion reason")
+        if reason not in allowed_reasons:
+            errors.append(f"attempt intent for {slot_id} has a non-preregistered exclusion reason")
+    unresolved = sorted(set(records) - set(ledger_by_slot))
+    if len(unresolved) > 1:
+        errors.append("multiple unresolved attempt intents violate serial execution")
+    for slot_id in unresolved:
+        errors.append(
+            f"unresolved attempt intent for {slot_id} blocks every subsequent execution without retry"
+        )
+    return errors
+
+
 def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, Any]]) -> list[str]:
     errors: list[str] = []
     all_slots = {
@@ -2698,6 +3151,7 @@ def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, A
         ]
         if attempted_reserves != expected_reserves[: len(attempted_reserves)]:
             errors.append(f"reserve attempts for {condition_id} are not in frozen reserve-index order")
+    errors.extend(validate_attempt_intents(manifest, ledger))
     return errors
 
 
@@ -3162,17 +3616,67 @@ def preflight_manifest(manifest: dict[str, Any], condition_ids: set[str], env: d
 
 
 def append_ledger(path: Path, row: dict[str, Any]) -> None:
-    existing = []
-    if path.is_file():
-        existing, malformed = iter_jsonl(path)
+    """Append one row under an advisory lock, then sync the file and directory."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _reject_symlink_components(path.parent, "execution-ledger parent")
+    parent_fd = os.open(path.parent, _directory_open_flags())
+    flags = os.O_RDWR | os.O_APPEND | os.O_CREAT | os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path.name, flags, 0o600, dir_fd=parent_fd)
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ValueError("execution ledger is not a regular file")
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        chunks: list[bytes] = []
+        length = 0
+        while True:
+            chunk = os.read(descriptor, 65536)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            length += len(chunk)
+            if length > 16 * 1024 * 1024:
+                raise ValueError("execution ledger exceeds the safety size limit")
+        existing: list[dict[str, Any]] = []
+        malformed: list[int] = []
+        try:
+            lines = b"".join(chunks).decode().splitlines()
+        except UnicodeDecodeError as exc:
+            raise ValueError("execution ledger is not UTF-8") from exc
+        for number, line in enumerate(lines, start=1):
+            if not line.strip():
+                continue
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError:
+                malformed.append(number)
+                continue
+            if isinstance(value, dict):
+                existing.append(value)
+            else:
+                malformed.append(number)
         if malformed:
             raise ValueError(f"execution ledger is malformed at lines {malformed}")
-    slot_id = row["slot_id"]
-    if any(item.get("slot_id") == slot_id for item in existing):
-        raise ValueError(f"execution ledger already contains {slot_id}")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a") as handle:
-        handle.write(json.dumps(row, sort_keys=True) + "\n")
+        slot_id = row["slot_id"]
+        if any(item.get("slot_id") == slot_id for item in existing):
+            raise ValueError(f"execution ledger already contains {slot_id}")
+        payload = (json.dumps(row, sort_keys=True) + "\n").encode()
+        offset = 0
+        while offset < len(payload):
+            offset += os.write(descriptor, payload[offset:])
+        os.fsync(descriptor)
+        os.fsync(parent_fd)
+    finally:
+        if descriptor is not None:
+            try:
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+            finally:
+                os.close(descriptor)
+        os.close(parent_fd)
 
 
 def write_attempt_failure(manifest: dict[str, Any], slot: dict[str, Any], value: dict[str, Any]) -> str:
@@ -4375,7 +4879,48 @@ def run_slots(
     reserve_slot: str | None = None,
     replacement_for: str | None = None,
     exclusion_reason: str | None = None,
+    test_only_crash_checkpoint: str | None = None,
 ) -> None:
+    """Run under one bout-wide lock when crash-durable intents are frozen."""
+    manifest = load_json(manifest_path)
+    lock_fd: int | None = None
+    if attempt_intent_enabled(manifest):
+        lock_fd = acquire_execution_lock(manifest)
+    try:
+        _run_slots_locked(
+            manifest_path,
+            approval=approval,
+            requested_slots=requested_slots,
+            dry_run=dry_run,
+            reserve_slot=reserve_slot,
+            replacement_for=replacement_for,
+            exclusion_reason=exclusion_reason,
+            test_only_crash_checkpoint=test_only_crash_checkpoint,
+        )
+    finally:
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            finally:
+                os.close(lock_fd)
+
+
+def _run_slots_locked(
+    manifest_path: Path,
+    *,
+    approval: str | None,
+    requested_slots: set[str] | None,
+    dry_run: bool,
+    reserve_slot: str | None = None,
+    replacement_for: str | None = None,
+    exclusion_reason: str | None = None,
+    test_only_crash_checkpoint: str | None = None,
+) -> None:
+    if test_only_crash_checkpoint is not None:
+        if test_only_crash_checkpoint not in SYNTHETIC_CRASH_CHECKPOINTS:
+            raise ValueError("unknown synthetic attempt-crash checkpoint")
+        if os.environ.get("ARENA_SYNTHETIC_ONLY") != "1":
+            raise PermissionError("attempt crash injection is restricted to offline synthetic tests")
     manifest = load_json(manifest_path)
     errors = validate_manifest(manifest)
     if errors:
@@ -4531,6 +5076,10 @@ def run_slots(
                 close_quarantine(quarantine_handle)
             raise
         started = utc_now()
+        intent_required = attempt_intent_enabled(manifest)
+        attempt_intent_relative: str | None = None
+        attempt_intent_sha256: str | None = None
+        attempt_intent_claimed = not intent_required
         record: dict[str, Any] | None = None
         driver_exit: int | None = None
         driver_process_spawned = False
@@ -4540,6 +5089,7 @@ def run_slots(
         process_group_cleaned = False
         staged_attempt_retained = False
         caught: BaseException | None = None
+        synthetic_crash: SyntheticAttemptCrash | None = None
         quarantine: dict[str, Any] | None = None
         stage_quarantine: dict[str, Any] | None = None
         attributable_activity: bool | None = None
@@ -4563,6 +5113,18 @@ def run_slots(
         try:
             process_dumpable(0)
             dumpability_lowered = True
+            if intent_required:
+                synthetic_crash_checkpoint(test_only_crash_checkpoint, "pre_claim")
+                attempt_intent_relative, attempt_intent_sha256 = claim_attempt_intent(
+                    manifest,
+                    slot,
+                    current_preflight,
+                    command,
+                )
+                attempt_intent_claimed = True
+                synthetic_crash_checkpoint(
+                    test_only_crash_checkpoint, "post_claim_pre_spawn"
+                )
             try:
                 process = subprocess.Popen(
                     command,
@@ -4578,10 +5140,13 @@ def run_slots(
                     os.close(process_scope["attach_fd"])
                     process_scope["attach_fd"] = None
             driver_process_spawned = True
+            synthetic_crash_checkpoint(test_only_crash_checkpoint, "post_spawn")
             driver_exit = process.wait()
             terminate_process_scope(process, process_scope)
             process_group_cleaned = True
+            synthetic_crash_checkpoint(test_only_crash_checkpoint, "post_cleanup")
             recover_and_remove_staged_driver(attempt_root, staged_run_dir, run_dir)
+            synthetic_crash_checkpoint(test_only_crash_checkpoint, "post_recovery")
             target_process_started = (run_dir / "target_started").is_file()
             target_process_returned = (run_dir / "target_returned").is_file()
             scan_run_credentials(
@@ -4601,6 +5166,8 @@ def run_slots(
                 expected_policy_signature=expected_policy_signature,
                 finalize_artifact_manifest=False,
             )
+        except SyntheticAttemptCrash as exc:
+            synthetic_crash = exc
         except BaseException as exc:  # ledger preservation also covers operator interruption
             caught = exc
         finally:
@@ -4723,6 +5290,17 @@ def run_slots(
                                 "receipt": None,
                                 "receipt_error_type": type(receipt_exc).__name__,
                             }
+        if synthetic_crash is not None or not attempt_intent_claimed:
+            for signum, prior_handler in previous_signal_handlers.items():
+                signal.signal(signum, prior_handler)
+            close_process_scope(process_scope)
+            dispose_quarantine(emergency_quarantine_handle)
+            close_quarantine(quarantine_handle)
+            if synthetic_crash is not None:
+                raise synthetic_crash
+            if caught is not None:
+                raise caught
+            raise RuntimeError("attempt-intent claim failed before driver process launch")
         if record is not None:
             validity_state = record["validity"]["state"]
             analysis_eligible = record["validity"]["confirmatory_analysis_eligible"]
@@ -4799,6 +5377,7 @@ def run_slots(
                 },
             )
         try:
+            synthetic_crash_checkpoint(test_only_crash_checkpoint, "pre_ledger")
             append_ledger(
                 ledger_path,
                 {
@@ -4823,6 +5402,8 @@ def run_slots(
                     "smoke_excluded": smoke_excluded,
                     "objective_issues": objective_issues,
                     "eligible_exclusion_reasons": eligible_reasons,
+                    "attempt_intent": attempt_intent_relative,
+                    "attempt_intent_sha256": attempt_intent_sha256,
                     "preflight": current_preflight,
                     "failure_receipt": failure_receipt,
                     "failure_receipt_sha256": sha256_path(ROOT / failure_receipt) if failure_receipt else None,

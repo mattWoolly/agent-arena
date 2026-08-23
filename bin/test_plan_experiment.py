@@ -13,8 +13,10 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import threading
 import time
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from unittest import mock
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -56,6 +58,65 @@ def make_manifest(temp: Path, phase: str = "confirmatory", repeats: int | None =
         test_only_allow_noncanonical_paths=True,
     )
     return path, manifest
+
+
+def enable_attempt_intents(path: Path, manifest: dict) -> dict:
+    manifest["attempt_intent_contract"] = copy.deepcopy(probe.ATTEMPT_INTENT_CONTRACT)
+    manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+    path.write_text(json.dumps(manifest, indent=2) + "\n")
+    return manifest
+
+
+def synthetic_preflight(slot: dict) -> dict:
+    value = {
+        "condition_id": slot["condition_id"],
+        "harness_commit": "a" * 40,
+    }
+    value["sha256"] = probe.sha256_bytes(probe.canonical_json(value))
+    return value
+
+
+def intent_ledger_row(
+    manifest: dict,
+    slot: dict,
+    preflight: dict,
+    intent_path: str,
+    intent_sha256: str,
+    *,
+    replacement_for: str | None = None,
+    exclusion_reason: str | None = None,
+    eligible_exclusion_reasons: list[str] | None = None,
+) -> dict:
+    return {
+        "schema_version": 1,
+        "slot_id": slot["slot_id"],
+        "phase": manifest["phase"],
+        "condition_id": slot["condition_id"],
+        "kind": slot.get("kind", "primary"),
+        "replacement_for": replacement_for,
+        "exclusion_reason": exclusion_reason,
+        "run_dir": probe.relative(probe.output_dir_for(manifest, slot)),
+        "process_group_cleaned": True,
+        "staged_attempt_retained": False,
+        "staged_attempt_path": None,
+        "analysis_eligible": False,
+        "smoke_excluded": manifest["phase"] == "smoke",
+        "eligible_exclusion_reasons": eligible_exclusion_reasons or [],
+        "attempt_intent": intent_path,
+        "attempt_intent_sha256": intent_sha256,
+        "preflight": preflight,
+    }
+
+
+def synthetic_process_scope() -> dict:
+    return {"attach_fd": os.open(os.devnull, os.O_RDONLY)}
+
+
+def close_synthetic_process_scope(handle: dict) -> None:
+    descriptor = handle.get("attach_fd")
+    if descriptor is not None:
+        os.close(descriptor)
+        handle["attach_fd"] = None
 
 
 def jsonl(path: Path, events):
@@ -410,6 +471,33 @@ class PromptAndManifestTests(unittest.TestCase):
             make_manifest(temp)
             with self.assertRaisesRegex(FileExistsError, "refusing to overwrite frozen manifest"):
                 make_manifest(temp)
+
+    def test_current_manifests_freeze_crash_durable_intents_and_preserve_prior_freezes(self):
+        current_paths = (
+            probe.ROOT / probe.AMENDED_CONFIRMATORY_BOUT_REL / "MANIFEST.json",
+            probe.ROOT / probe.SMOKE_CONTINUATION_BOUT_REL / "MANIFEST.json",
+        )
+        for path in current_paths:
+            manifest = json.loads(path.read_text())
+            self.assertEqual(
+                manifest["attempt_intent_contract"], probe.ATTEMPT_INTENT_CONTRACT
+            )
+            self.assertEqual(probe.validate_manifest(manifest), [])
+            missing = copy.deepcopy(manifest)
+            missing.pop("attempt_intent_contract")
+            missing["freeze_id"] = probe.compute_freeze_id(missing)
+            self.assertIn(
+                "production manifest lacks the crash-durable attempt-intent contract",
+                probe.validate_manifest(missing),
+            )
+        immutable_hashes = {
+            "bouts/2026-08-22-pre-requirements-planning-amendment-1/AMENDMENT.md": "713be9ffe97c00017eb015ba9739c75fb95d723f1dd7b129fa45995af1b19a01",
+            "bouts/2026-08-22-pre-requirements-planning-amendment-1/RUNBOOK.md": "5e07776c0ad752e41c028904a9dd6028563662a56f88d732d6698e9b35247c33",
+            "bouts/2026-08-22-pre-requirements-planning-amendment-1/MANIFEST.json": "8e3799e3d4be461ee709af051ddc0aac5b30e45758b7cdb4cb731aed27d2b368",
+            "bouts/2026-08-22-pre-requirements-planning-smoke-amendment-1/MANIFEST.json": "27a25e756cf24d3d0c53d263b0dd49ecef3d6592fc5959ee0566caaa6c651e59",
+        }
+        for relative_path, expected_hash in immutable_hashes.items():
+            self.assertEqual(probe.sha256_path(probe.ROOT / relative_path), expected_hash)
 
     def test_smoke_continuation_is_exact_inherited_suffix_and_call_capped(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
@@ -1004,6 +1092,418 @@ class TraceAndArtifactTests(unittest.TestCase):
                 [row(manifest["schedule"][1]), row(manifest["schedule"][0])],
             )
             self.assertTrue(any("prefix of frozen sequence" in error for error in errors))
+
+    def test_attempt_intent_claim_is_durable_exclusive_and_race_safe(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            slot = manifest["schedule"][0]
+            preflight = synthetic_preflight(slot)
+            command = ["synthetic-driver", "--slot", slot["slot_id"]]
+            barrier = threading.Barrier(6)
+            real_fsync = os.fsync
+            synced_modes: list[int] = []
+
+            def tracking_fsync(descriptor):
+                synced_modes.append(os.fstat(descriptor).st_mode)
+                return real_fsync(descriptor)
+
+            def contender(_index):
+                barrier.wait()
+                try:
+                    return ("won", probe.claim_attempt_intent(manifest, slot, preflight, command))
+                except FileExistsError:
+                    return ("lost", None)
+
+            with mock.patch.object(probe.os, "fsync", side_effect=tracking_fsync):
+                with ThreadPoolExecutor(max_workers=6) as executor:
+                    results = list(executor.map(contender, range(6)))
+            winners = [result for result in results if result[0] == "won"]
+            self.assertEqual(len(winners), 1)
+            self.assertEqual(sum(result[0] == "lost" for result in results), 5)
+            intent_path, intent_hash = winners[0][1]
+            intent_file = probe.ROOT / intent_path
+            self.assertEqual(probe.sha256_path(intent_file), intent_hash)
+            self.assertTrue(any(probe.stat.S_ISREG(mode) for mode in synced_modes))
+            self.assertGreaterEqual(
+                sum(probe.stat.S_ISDIR(mode) for mode in synced_modes), 2
+            )
+            records, read_errors = probe.read_attempt_intents(manifest)
+            self.assertEqual(read_errors, [])
+            self.assertEqual(set(records), {slot["slot_id"]})
+            with self.assertRaises(FileExistsError):
+                probe.claim_attempt_intent(manifest, slot, preflight, command)
+            lock_fd = probe.acquire_execution_lock(manifest)
+            try:
+                with self.assertRaisesRegex(RuntimeError, "another runner"):
+                    probe.acquire_execution_lock(manifest)
+            finally:
+                probe.fcntl.flock(lock_fd, probe.fcntl.LOCK_UN)
+                os.close(lock_fd)
+
+    def test_orphan_intent_consumes_smoke_budget_and_blocks_dry_and_live_resume(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT / "bouts") as raw:
+            temp = Path(raw)
+            path = temp / "continuation.json"
+            manifest = probe.build_manifest(
+                phase="smoke",
+                output=path,
+                design=DESIGN,
+                analysis_script=ANALYZE_PATH,
+                report_template=REPORT_TEMPLATE,
+                repeats=1,
+                seed=2808222027,
+                frozen_at="2026-08-23T18:00:00Z",
+                reserve_per_condition=0,
+                bout_dir_override=str(temp.relative_to(probe.ROOT)),
+                smoke_continuation_from=probe.ROOT / probe.INITIAL_SMOKE_MANIFEST_REL,
+                test_only_allow_noncanonical_paths=True,
+            )
+            enable_attempt_intents(path, manifest)
+            claimed, final_slot = manifest["schedule"]
+            preflight = synthetic_preflight(claimed)
+            probe.claim_attempt_intent(
+                manifest, claimed, preflight, ["synthetic-driver", claimed["slot_id"]]
+            )
+            errors = probe.validate_execution_ledger(manifest, [])
+            self.assertTrue(any("unresolved attempt intent" in error for error in errors))
+            self.assertEqual(
+                probe.validate_smoke_call_budget(
+                    manifest, [], next_slot=final_slot
+                ),
+                [],
+            )
+            retry_errors = probe.validate_smoke_call_budget(
+                manifest, [], next_slot=claimed
+            )
+            self.assertTrue(any("retry" in error for error in retry_errors))
+            with mock.patch.object(probe.subprocess, "Popen") as popen, mock.patch.object(
+                probe, "preflight_manifest"
+            ) as preflight_call:
+                for dry_run in (True, False):
+                    with self.assertRaisesRegex(ValueError, "unresolved attempt intent"):
+                        probe.run_slots(
+                            path,
+                            approval=None,
+                            requested_slots=None,
+                            dry_run=dry_run,
+                        )
+                popen.assert_not_called()
+                preflight_call.assert_not_called()
+
+    def test_claim_loss_never_spawns_or_appends_a_competing_failure_row(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            slot = manifest["schedule"][0]
+            snapshot = {slot["condition_id"]: synthetic_preflight(slot)}
+            attempt_root = Path(
+                tempfile.mkdtemp(prefix="arena-plan-attempt.", dir=probe.SAFE_TEMP_ROOT)
+            )
+            staged_run = attempt_root / "unrecovered-run"
+            scope = synthetic_process_scope()
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+            ), mock.patch.object(
+                probe, "preflight_manifest", return_value=snapshot
+            ), mock.patch.object(
+                probe,
+                "prepare_staged_driver",
+                return_value=(attempt_root, staged_run, ["synthetic-driver"], {}),
+            ), mock.patch.object(
+                probe, "prepare_process_scope", return_value=scope
+            ), mock.patch.object(
+                probe, "terminate_process_scope"
+            ), mock.patch.object(
+                probe,
+                "close_process_scope",
+                side_effect=close_synthetic_process_scope,
+            ), mock.patch.object(
+                probe, "claim_attempt_intent", side_effect=FileExistsError("lost race")
+            ), mock.patch.object(
+                probe.subprocess, "Popen"
+            ) as popen, mock.patch.object(
+                probe, "append_ledger"
+            ) as append:
+                with self.assertRaisesRegex(FileExistsError, "lost race"):
+                    probe.run_slots(
+                        path,
+                        approval=None,
+                        requested_slots={slot["slot_id"]},
+                        dry_run=False,
+                    )
+            popen.assert_not_called()
+            append.assert_not_called()
+            self.assertFalse(attempt_root.exists())
+            self.assertFalse((probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl").exists())
+
+    def test_every_attempt_crash_boundary_has_non_retryable_state(self):
+        class SyntheticProcess:
+            pid = 999999
+            returncode = 7
+
+            def wait(self, timeout=None):
+                return self.returncode
+
+            def poll(self):
+                return self.returncode
+
+        for checkpoint in sorted(probe.SYNTHETIC_CRASH_CHECKPOINTS):
+            with self.subTest(checkpoint=checkpoint), tempfile.TemporaryDirectory(
+                dir=probe.ROOT
+            ) as raw, tempfile.TemporaryDirectory(
+                prefix="arena-quarantine-test-"
+            ) as quarantine:
+                temp = Path(raw)
+                path, manifest = make_manifest(temp / "manifest", phase="smoke")
+                manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+                enable_attempt_intents(path, manifest)
+                slot = manifest["schedule"][0]
+                snapshot = {slot["condition_id"]: synthetic_preflight(slot)}
+                scope = synthetic_process_scope()
+                with mock.patch.dict(
+                    os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+                ), mock.patch.object(
+                    probe, "preflight_manifest", return_value=snapshot
+                ), mock.patch.object(
+                    probe, "prepare_process_scope", return_value=scope
+                ), mock.patch.object(
+                    probe, "terminate_process_scope"
+                ), mock.patch.object(
+                    probe,
+                    "close_process_scope",
+                    side_effect=close_synthetic_process_scope,
+                ), mock.patch.object(
+                    probe.subprocess, "Popen", return_value=SyntheticProcess()
+                ) as popen:
+                    with self.assertRaises(probe.SyntheticAttemptCrash):
+                        probe.run_slots(
+                            path,
+                            approval=None,
+                            requested_slots={slot["slot_id"]},
+                            dry_run=False,
+                            test_only_crash_checkpoint=checkpoint,
+                        )
+                ledger_path = probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+                self.assertFalse(ledger_path.exists())
+                records, record_errors = probe.read_attempt_intents(manifest)
+                self.assertEqual(record_errors, [])
+                if checkpoint == "pre_claim":
+                    self.assertEqual(records, {})
+                    self.assertEqual(popen.call_count, 0)
+                    with mock.patch("builtins.print"):
+                        probe.run_slots(
+                            path,
+                            approval=None,
+                            requested_slots={slot["slot_id"]},
+                            dry_run=True,
+                        )
+                else:
+                    self.assertEqual(set(records), {slot["slot_id"]})
+                    self.assertEqual(
+                        popen.call_count,
+                        0 if checkpoint == "post_claim_pre_spawn" else 1,
+                    )
+                    with mock.patch.object(probe.subprocess, "Popen") as retry_popen:
+                        with self.assertRaisesRegex(ValueError, "unresolved attempt intent"):
+                            probe.run_slots(
+                                path,
+                                approval=None,
+                                requested_slots=None,
+                                dry_run=False,
+                            )
+                        retry_popen.assert_not_called()
+
+    def test_intent_precedes_spawn_and_matching_durable_ledger_advances_once(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            slot = manifest["schedule"][0]
+            snapshot = {slot["condition_id"]: synthetic_preflight(slot)}
+            scope = synthetic_process_scope()
+            seen_before_spawn = []
+
+            def failed_spawn(*_args, **_kwargs):
+                records, errors = probe.read_attempt_intents(manifest)
+                self.assertEqual(errors, [])
+                seen_before_spawn.append(slot["slot_id"] in records)
+                raise OSError("synthetic driver unavailable")
+
+            real_fsync = os.fsync
+            synced_modes: list[int] = []
+
+            def tracking_fsync(descriptor):
+                synced_modes.append(os.fstat(descriptor).st_mode)
+                return real_fsync(descriptor)
+
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+            ), mock.patch.object(
+                probe, "preflight_manifest", return_value=snapshot
+            ), mock.patch.object(
+                probe, "prepare_process_scope", return_value=scope
+            ), mock.patch.object(
+                probe, "terminate_process_scope"
+            ), mock.patch.object(
+                probe,
+                "close_process_scope",
+                side_effect=close_synthetic_process_scope,
+            ), mock.patch.object(
+                probe.subprocess, "Popen", side_effect=failed_spawn
+            ), mock.patch.object(
+                probe.os, "fsync", side_effect=tracking_fsync
+            ):
+                with self.assertRaisesRegex(RuntimeError, "ledger row was preserved"):
+                    probe.run_slots(
+                        path,
+                        approval=None,
+                        requested_slots={slot["slot_id"]},
+                        dry_run=False,
+                    )
+            self.assertEqual(seen_before_spawn, [True])
+            ledger_path = probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+            ledger, malformed = probe.iter_jsonl(ledger_path)
+            self.assertEqual(malformed, [])
+            self.assertEqual(len(ledger), 1)
+            intent_file = probe.ROOT / ledger[0]["attempt_intent"]
+            self.assertEqual(
+                ledger[0]["attempt_intent_sha256"], probe.sha256_path(intent_file)
+            )
+            self.assertEqual(probe.validate_execution_ledger(manifest, ledger), [])
+            self.assertEqual(probe.validate_prior_attempt_provenance(manifest, ledger), [])
+            self.assertTrue(any(probe.stat.S_ISREG(mode) for mode in synced_modes))
+            self.assertTrue(any(probe.stat.S_ISDIR(mode) for mode in synced_modes))
+            next_slot = manifest["schedule"][1]
+            with mock.patch("builtins.print"):
+                probe.run_slots(
+                    path,
+                    approval=None,
+                    requested_slots={next_slot["slot_id"]},
+                    dry_run=True,
+                )
+
+    def test_attempt_intent_tampering_symlinks_and_missing_pairs_fail_closed(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            slot = manifest["schedule"][0]
+            preflight = synthetic_preflight(slot)
+            intent_path, intent_hash = probe.claim_attempt_intent(
+                manifest, slot, preflight, ["synthetic-driver"]
+            )
+            row = intent_ledger_row(
+                manifest, slot, preflight, intent_path, intent_hash
+            )
+            self.assertEqual(probe.validate_execution_ledger(manifest, [row]), [])
+            intent_file = probe.ROOT / intent_path
+            tampered = json.loads(intent_file.read_text())
+            tampered["condition_id"] = "not-the-frozen-condition"
+            intent_file.write_text(json.dumps(tampered, indent=2) + "\n")
+            row["attempt_intent_sha256"] = probe.sha256_path(intent_file)
+            semantic_errors = probe.validate_execution_ledger(manifest, [row])
+            self.assertTrue(any("condition ID mismatch" in error for error in semantic_errors))
+            intent_file.unlink()
+            external = temp / "external.json"
+            external.write_text("{}\n")
+            intent_file.symlink_to(external)
+            symlink_errors = probe.validate_execution_ledger(manifest, [row])
+            self.assertTrue(any("unsafe or malformed" in error for error in symlink_errors))
+
+            second_path, second = make_manifest(temp / "second", phase="smoke")
+            second["bout_dir"] = str((temp / "second-bout").relative_to(probe.ROOT))
+            enable_attempt_intents(second_path, second)
+            second_slot = second["schedule"][0]
+            missing_row = intent_ledger_row(
+                second,
+                second_slot,
+                synthetic_preflight(second_slot),
+                str(
+                    Path(second["bout_dir"])
+                    / probe.ATTEMPT_INTENT_DIRECTORY
+                    / f"{second_slot['slot_id']}.json"
+                ),
+                "0" * 64,
+            )
+            missing_errors = probe.validate_execution_ledger(second, [missing_row])
+            self.assertTrue(any("lacks its durable attempt intent" in error for error in missing_errors))
+
+    def test_reserve_attempt_intent_binds_runtime_replacement_context(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            primary = manifest["schedule"][0]
+            primary_preflight = synthetic_preflight(primary)
+            primary_path, primary_hash = probe.claim_attempt_intent(
+                manifest, primary, primary_preflight, ["synthetic-primary"]
+            )
+            reason = "prompt_hash_mismatch"
+            primary_row = intent_ledger_row(
+                manifest,
+                primary,
+                primary_preflight,
+                primary_path,
+                primary_hash,
+                eligible_exclusion_reasons=[reason],
+            )
+            reserve = next(
+                slot
+                for slot in manifest["reserve_slots"]
+                if slot["condition_id"] == primary["condition_id"]
+            )
+            runtime_reserve = dict(reserve)
+            runtime_reserve["replacement_for"] = primary["slot_id"]
+            runtime_reserve["exclusion_reason"] = reason
+            reserve_preflight = synthetic_preflight(runtime_reserve)
+            reserve_path, reserve_hash = probe.claim_attempt_intent(
+                manifest,
+                runtime_reserve,
+                reserve_preflight,
+                ["synthetic-reserve"],
+            )
+            reserve_row = intent_ledger_row(
+                manifest,
+                runtime_reserve,
+                reserve_preflight,
+                reserve_path,
+                reserve_hash,
+                replacement_for=primary["slot_id"],
+                exclusion_reason=reason,
+            )
+            self.assertEqual(
+                probe.validate_execution_ledger(
+                    manifest, [primary_row, reserve_row]
+                ),
+                [],
+            )
+            reserve_file = probe.ROOT / reserve_path
+            changed = json.loads(reserve_file.read_text())
+            changed["replacement_for"] = "copied-from-another-slot"
+            reserve_file.write_text(json.dumps(changed, indent=2) + "\n")
+            reserve_row["attempt_intent_sha256"] = probe.sha256_path(reserve_file)
+            errors = probe.validate_execution_ledger(
+                manifest, [primary_row, reserve_row]
+            )
+            self.assertTrue(
+                any(
+                    "replacement parent" in error
+                    or "lacks an earlier ledgered replacement parent" in error
+                    for error in errors
+                )
+            )
 
     def test_resume_rechecks_prior_artifact_anchors_before_dry_or_paid_execution(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:

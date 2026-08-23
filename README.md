@@ -298,11 +298,11 @@ Task `16-pre-requirements-plan` uses a committed manifest instead of
 is observable response behavior rather than workspace correctness:
 
 ```
-python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-amendment-1/MANIFEST.json
-python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke-amendment-1/MANIFEST.json
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke-amendment-1/MANIFEST.json
-python3 bin/plan_experiment.py smoke-status bouts/2026-08-22-pre-requirements-planning-smoke-amendment-1/MANIFEST.json
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-amendment-1/MANIFEST.json --dry-run
+python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-amendment-2/MANIFEST.json
+python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke-amendment-2/MANIFEST.json
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke-amendment-2/MANIFEST.json
+python3 bin/plan_experiment.py smoke-status bouts/2026-08-22-pre-requirements-planning-smoke-amendment-2/MANIFEST.json
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-amendment-2/MANIFEST.json --dry-run
 ```
 
 Confirmatory execution requires `--approval <exact-freeze-id>` and is blocked
@@ -315,7 +315,11 @@ The post-smoke technical amendment preserves the original one-call smoke bout,
 anchors it to its recorded Git commit, and permits exactly one canonical
 two-condition continuation without retrying the consumed Codex slot. The
 response-free `smoke-status` view is the only supported technical inspection
-surface for those excluded outputs.
+surface for those excluded outputs. Before launching a target, the current
+runner holds a bout-wide execution lock and durably creates an exclusive,
+slot-bound attempt intent. Every ledger row binds that immutable intent by path
+and hash. An intent without a matching durable row blocks all execution, so an
+uncertain crash cannot turn into a retry or exceed the frozen call budget.
 Preregistered reserves require `--reserve`, `--replacement-for`, and one exact
 `--exclusion-reason` from the manifest; the runner accepts them only when that
 reason is supported by a same-condition ineligible attempt's recorded evidence.
