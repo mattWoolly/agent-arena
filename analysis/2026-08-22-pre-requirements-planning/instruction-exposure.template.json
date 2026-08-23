@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "coded_before_semantic_outputs_unblinded": true,
+  "coding_reviewers": ["[configuration-reviewer-1]", "[configuration-reviewer-2]"],
+  "conditions": [
+    {
+      "condition_id": "claude-code--claude-opus-5",
+      "orchestration": {"status": "[not_mentioned|optional_or_encouraged|required]", "rationale": "[configuration-only rationale]", "evidence": []},
+      "independent_qa": {"status": "[not_mentioned|optional_or_encouraged|required]", "rationale": "[configuration-only rationale]", "evidence": []},
+      "artifacts": [{"path": "[run/instruction_context.json]", "sha256": "[64 hex characters]"}],
+      "limitations": ["Full native system text is not exposed by Claude Code stream-json."]
+    },
+    {
+      "condition_id": "codex--gpt-5.6-sol",
+      "orchestration": {"status": "[not_mentioned|optional_or_encouraged|required]", "rationale": "[configuration-only rationale]", "evidence": []},
+      "independent_qa": {"status": "[not_mentioned|optional_or_encouraged|required]", "rationale": "[configuration-only rationale]", "evidence": []},
+      "artifacts": [{"path": "[run/instruction_context.json]", "sha256": "[64 hex characters]"}],
+      "limitations": ["API-served identity and complete native tool schema may be opaque."]
+    },
+    {
+      "condition_id": "kimi-code--kimi-k3",
+      "orchestration": {"status": "[not_mentioned|optional_or_encouraged|required]", "rationale": "[configuration-only rationale]", "evidence": []},
+      "independent_qa": {"status": "[not_mentioned|optional_or_encouraged|required]", "rationale": "[configuration-only rationale]", "evidence": []},
+      "artifacts": [{"path": "[run/instruction_context.json]", "sha256": "[64 hex characters]"}],
+      "limitations": []
+    }
+  ]
+}

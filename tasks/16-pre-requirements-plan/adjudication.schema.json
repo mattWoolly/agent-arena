@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-arena.local/schemas/pre-requirements-plan-adjudication-v1.json",
+  "type": "object",
+  "required": ["schema_version", "adjudicator_id", "resolutions"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "adjudicator_id": {"type": "string", "minLength": 1},
+    "resolutions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["blind_id", "field", "value", "rationale", "evidence"],
+        "properties": {
+          "blind_id": {"type": "string", "minLength": 1},
+          "field": {"type": "string", "minLength": 1},
+          "value": {"oneOf": [{"type": "boolean"}, {"type": "integer", "minimum": 0, "maximum": 3}]},
+          "rationale": {"type": "string", "minLength": 1},
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["quote", "start", "end"],
+              "properties": {
+                "quote": {"type": "string", "minLength": 1},
+                "start": {"type": "integer", "minimum": 0},
+                "end": {"type": "integer", "minimum": 1}
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

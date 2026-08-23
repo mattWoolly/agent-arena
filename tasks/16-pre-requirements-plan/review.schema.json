@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-arena.local/schemas/pre-requirements-plan-review-v1.json",
+  "title": "Blinded pre-requirements plan review",
+  "type": "object",
+  "required": ["schema_version", "reviewer_id", "reviews"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "reviewer_id": {"type": "string", "minLength": 1},
+    "independent_of": {"type": "array", "items": {"type": "string"}},
+    "reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["blind_id", "output_sha256", "A", "B", "C", "D", "E", "F"],
+        "properties": {
+          "blind_id": {"type": "string", "minLength": 1},
+          "output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "A": {"$ref": "#/$defs/ordinal"},
+          "B": {"$ref": "#/$defs/ordinal"},
+          "C": {"$ref": "#/$defs/ordinal"},
+          "D": {"$ref": "#/$defs/ordinal"},
+          "E": {
+            "type": "object",
+            "required": ["acceptance_before_implementation", "ordered_sequence", "integration_strategy", "observability_before_release", "evidence_release_gate", "rollback_strategy", "post_release_verification", "planning_to_implementation", "implementation_to_integration", "integration_to_release"],
+            "additionalProperties": false,
+            "properties": {
+              "acceptance_before_implementation": {"$ref": "#/$defs/binaryFinding"},
+              "ordered_sequence": {"$ref": "#/$defs/binaryFinding"},
+              "integration_strategy": {"$ref": "#/$defs/binaryFinding"},
+              "observability_before_release": {"$ref": "#/$defs/binaryFinding"},
+              "evidence_release_gate": {"$ref": "#/$defs/binaryFinding"},
+              "rollback_strategy": {"$ref": "#/$defs/binaryFinding"},
+              "post_release_verification": {"$ref": "#/$defs/binaryFinding"},
+              "planning_to_implementation": {"$ref": "#/$defs/binaryFinding"},
+              "implementation_to_integration": {"$ref": "#/$defs/binaryFinding"},
+              "integration_to_release": {"$ref": "#/$defs/binaryFinding"}
+            }
+          },
+          "F": {
+            "type": "object",
+            "required": ["invented_product_or_domain_requirement", "asked_followup_now", "claimed_completed_prohibited_action", "non_outline_prose", "uses_explicit_placeholders", "separates_assumptions_from_facts"],
+            "additionalProperties": false,
+            "properties": {
+              "invented_product_or_domain_requirement": {"$ref": "#/$defs/binaryFinding"},
+              "asked_followup_now": {"$ref": "#/$defs/binaryFinding"},
+              "claimed_completed_prohibited_action": {"$ref": "#/$defs/binaryFinding"},
+              "non_outline_prose": {"$ref": "#/$defs/binaryFinding"},
+              "uses_explicit_placeholders": {"$ref": "#/$defs/binaryFinding"},
+              "separates_assumptions_from_facts": {"$ref": "#/$defs/binaryFinding"}
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "required": ["quote", "start", "end"],
+      "properties": {
+        "quote": {"type": "string", "minLength": 1},
+        "start": {"type": "integer", "minimum": 0},
+        "end": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": false
+    },
+    "ordinal": {
+      "type": "object",
+      "required": ["score", "rationale", "evidence"],
+      "properties": {
+        "score": {"type": "integer", "minimum": 0, "maximum": 3},
+        "rationale": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
+      },
+      "additionalProperties": false
+    },
+    "binaryFinding": {
+      "type": "object",
+      "required": ["value", "rationale", "evidence"],
+      "properties": {
+        "value": {"type": "boolean"},
+        "rationale": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
+      },
+      "additionalProperties": false
+    }
+  }
+}

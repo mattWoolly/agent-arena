@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "experiment_id": "2026-08-22-pre-requirements-planning",
+  "phase": "smoke",
+  "status": "excluded-smoke",
+  "frozen_at": "2026-08-22T18:00:00Z",
+  "bout_dir": "bouts/2026-08-22-pre-requirements-planning-smoke",
+  "task": {
+    "path": "tasks/16-pre-requirements-plan",
+    "target_prompt": "A large software project will begin soon, but its product and domain details are intentionally withheld for now.\n\nProduce the reusable execution-plan outline you would want in place before work begins. Use placeholders rather than inventing requirements. You may describe actions you would take\nafter the details arrive, but do not perform any of them now: do not inspect files, call tools, research, implement, or ask follow-up questions.\n\nReturn only the plan outline.\n",
+    "prompt_sha256": "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0",
+    "prompt_bytes": 471,
+    "compatibility_amendments": []
+  },
+  "conditions": [
+    {
+      "condition_id": "claude-code--claude-opus-5",
+      "driver": "claude",
+      "requested_model": "claude-opus-5",
+      "model_argument": "claude-opus-5",
+      "output_label": "claude-opus-5",
+      "expected_model_substring": "claude-opus-5",
+      "expected_cli_version": "2.1.241 (Claude Code)",
+      "effort": {
+        "mode": "native_default",
+        "cli_argument": null,
+        "observed_value": "not_exposed"
+      },
+      "instruction_configuration": "project setting source in a neutral scratch repository",
+      "tool_configuration": "native default tools enabled"
+    },
+    {
+      "condition_id": "codex--gpt-5.6-sol",
+      "driver": "codex",
+      "requested_model": "gpt-5.6-sol",
+      "model_argument": "gpt-5.6-sol",
+      "output_label": "gpt-5.6-sol-codex",
+      "expected_model_substring": "gpt-5.6-sol",
+      "expected_cli_version": "codex-cli 0.149.0",
+      "effort": {
+        "mode": "native_default",
+        "cli_argument": null,
+        "observed_value": "not_exposed"
+      },
+      "instruction_configuration": "isolated CODEX_HOME with --ignore-user-config",
+      "tool_configuration": "native default tools enabled; schemas opaque unless present in session rollout"
+    },
+    {
+      "condition_id": "kimi-code--kimi-k3",
+      "driver": "kimi",
+      "requested_model": "kimi-k3",
+      "model_argument": "arena/k3",
+      "output_label": "kimi-k3-kimicode",
+      "expected_model_substring": "kimi-k3",
+      "expected_cli_version": "kimi-code 0.27.0",
+      "effort": {
+        "mode": "native_default",
+        "cli_argument": null,
+        "observed_value": "max"
+      },
+      "instruction_configuration": "isolated Kimi arena HOME and config.toml",
+      "tool_configuration": "native default tools enabled"
+    }
+  ],
+  "sampling": {
+    "valid_runs_per_condition": 1,
+    "fresh_process_and_session_per_slot": true,
+    "serial_execution": true,
+    "smoke_excluded_from_confirmatory": true,
+    "reserve_slots_per_condition": 0,
+    "adaptive_stopping": false
+  },
+  "randomization": {
+    "algorithm": "Python random.Random MT19937; complete blocks; position-balanced permutation selection",
+    "seed": 2808222027,
+    "unit": "within-replicate condition order"
+  },
+  "schedule": [
+    {
+      "slot_id": "primary-01--codex--gpt-5.6-sol",
+      "kind": "primary",
+      "block": 1,
+      "position": 1,
+      "sequence": 1,
+      "replicate": 1,
+      "condition_id": "codex--gpt-5.6-sol"
+    },
+    {
+      "slot_id": "primary-01--kimi-code--kimi-k3",
+      "kind": "primary",
+      "block": 1,
+      "position": 2,
+      "sequence": 2,
+      "replicate": 1,
+      "condition_id": "kimi-code--kimi-k3"
+    },
+    {
+      "slot_id": "primary-01--claude-code--claude-opus-5",
+      "kind": "primary",
+      "block": 1,
+      "position": 3,
+      "sequence": 3,
+      "replicate": 1,
+      "condition_id": "claude-code--claude-opus-5"
+    }
+  ],
+  "reserve_slots": [],
+  "exclusions": {
+    "replace_only": [
+      "transport_or_service_failure_before_request_acceptance",
+      "harness_crash_before_target_execution",
+      "prompt_hash_mismatch",
+      "wrong_model_or_frozen_configuration",
+      "corrupted_or_missing_raw_artifact_due_to_harness",
+      "external_termination_before_attributable_target_completion"
+    ],
+    "never_exclude": [
+      "tool_or_subagent_call",
+      "refusal_or_empty_target_output",
+      "question_or_non_outline_prose",
+      "invented_requirement_or_implementation_content",
+      "normal_truncation",
+      "target_driven_tool_loop_or_timeout"
+    ]
+  },
+  "analysis": {
+    "semantic_reviewers": 2,
+    "third_adjudicator_for_every_disagreement": true,
+    "primary_endpoints": [
+      "A_ge_2",
+      "B_ge_2",
+      "C_eq_3",
+      "D_ge_2",
+      "full_gate_chain",
+      "restraint_pass",
+      "embargo_pass"
+    ],
+    "interval": "two-sided 95% Wilson score interval",
+    "no_omnibus_score_or_confirmatory_pairwise_ranking": true,
+    "hidden_reasoning_scored": false
+  },
+  "artifact_contract": {
+    "raw_outputs_immutable": true,
+    "required_common": [
+      "agent_exit",
+      "metrics.json",
+      "peek_check",
+      "prompt.txt",
+      "run_env.json",
+      "stderr.log",
+      "wall_seconds",
+      "workspace.diff",
+      "workspace.diffstat"
+    ],
+    "required_by_driver": {
+      "claude": [
+        "transcript.jsonl",
+        "result.json"
+      ],
+      "codex": [
+        "transcript.jsonl",
+        "last_message.txt",
+        "session.jsonl"
+      ],
+      "kimi": [
+        "transcript.jsonl",
+        "wire.jsonl"
+      ]
+    },
+    "derived": [
+      "final_output.txt",
+      "embargo.json",
+      "instruction_context.json",
+      "run_record.json",
+      "artifact_manifest.json"
+    ]
+  },
+  "frozen_inputs": [
+    {
+      "path": "tasks/16-pre-requirements-plan/PROMPT.md",
+      "sha256": "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0",
+      "bytes": 471
+    },
+    {
+      "path": "tasks/16-pre-requirements-plan/SCORING.md",
+      "sha256": "c675bea171b8d780958a22f8570b3f39360722eb54d5bc4527b1c3c0cf102f10",
+      "bytes": 5391
+    },
+    {
+      "path": "tasks/16-pre-requirements-plan/review.schema.json",
+      "sha256": "c3ff8058e9cd90134c824f9d5e193d3034d23510107ac4d8b0fb9282f5cd9fa1",
+      "bytes": 4159
+    },
+    {
+      "path": "tasks/16-pre-requirements-plan/adjudication.schema.json",
+      "sha256": "8142d38b308871353176aa327039dd80381bb91aae13b87274c80907454dc850",
+      "bytes": 1371
+    },
+    {
+      "path": "bouts/2026-08-22-pre-requirements-planning/DESIGN.md",
+      "sha256": "0e9a6e1552d15d25a85ca9651d80cf71c4e9e045d4ef4977c734bae1d1fbee88",
+      "bytes": 13808
+    },
+    {
+      "path": "analysis/2026-08-22-pre-requirements-planning/analyze.py",
+      "sha256": "4d28421656e9a1c52398bcd76ecd385061c001bfbca5872406d755d3c1aaa5f5",
+      "bytes": 31306
+    },
+    {
+      "path": "analysis/2026-08-22-pre-requirements-planning/REPORT_TEMPLATE.md",
+      "sha256": "0a728e3243333f2b67773143b7348ba3bf3260c848c850e5a19a0f553e8d55a2",
+      "bytes": 3283
+    },
+    {
+      "path": "bin/plan_experiment.py",
+      "sha256": "9b17f92d7c120d2bbefb7d3da877eaf72ca97b41507c9c76873a31df230a02cc",
+      "bytes": 56123
+    },
+    {
+      "path": "bin/run-task.sh",
+      "sha256": "1ca3f8db3c15b447dfb5e4bffa245dc0bb4b9bdf334d98867905df4a1fc11760",
+      "bytes": 7286
+    },
+    {
+      "path": "bin/run-task-codex.sh",
+      "sha256": "e65f3a941be509e1ff7a0507983bf99bf7851b5540844f917be22889e03b45a5",
+      "bytes": 5653
+    },
+    {
+      "path": "bin/run-task-kimi.sh",
+      "sha256": "ece35269b90f7b232b443f76f1a922b75077b352f2b40c127db2362a33770f41",
+      "bytes": 6889
+    },
+    {
+      "path": "env/prices.json",
+      "sha256": "17be3bc18f7e681cb2e0a1c0dd25f51ef18210215f1d97d3851d13e59b85a2ef",
+      "bytes": 1033
+    }
+  ],
+  "freeze_id": "9dcac2911b3f1e4f5ab874a9c1c9ffeeb466c7cffcbc83b07b32119b844d6553"
+}

@@ -17,7 +17,11 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
 OUT_DIR="$BOUT_DIR/$TASK_NAME/$MODEL"
 [[ -n "$RUN_IDX" ]] && OUT_DIR="$OUT_DIR/run-$RUN_IDX"
-mkdir -p "$OUT_DIR"
+mkdir -p "$(dirname "$OUT_DIR")"
+if ! mkdir "$OUT_DIR"; then
+  echo "refusing to overwrite existing run artifact directory: $OUT_DIR" >&2
+  exit 2
+fi
 LABEL="$TASK_NAME/$MODEL${RUN_IDX:+ run-$RUN_IDX}"
 
 # Optional per-model environment: env/<model>.env holds endpoint/auth vars
@@ -45,7 +49,10 @@ git -C "$WS" add -A
 git -C "$WS" -c user.email=arena@local -c user.name=arena \
   -c commit.gpgsign=false commit -qm baseline
 
-PROMPT=$(cat "$TASK_DIR/PROMPT.md")
+# Append a non-newline sentinel before command substitution, then remove it,
+# so Bash does not strip PROMPT.md's trailing newlines.
+PROMPT=$(cat "$TASK_DIR/PROMPT.md"; printf '\034')
+PROMPT=${PROMPT%$'\034'}
 
 # Pinned run configuration — overridable, but always explicit and recorded,
 # so a run never silently inherits this machine's user-level Claude config.
@@ -53,15 +60,34 @@ MAX_TURNS="${ARENA_MAX_TURNS:-60}"
 TIMEOUT_S="${ARENA_TIMEOUT_S:-1500}"
 EFFORT="${ARENA_EFFORT:-xhigh}"
 SETTING_SOURCES="${ARENA_SETTING_SOURCES:-project}"
+EFFORT_ARGS=(--effort "$EFFORT")
+EFFORT_REC="$EFFORT"
+if [[ "$EFFORT" == "native-default" ]]; then
+  EFFORT_ARGS=()
+  EFFORT_REC="native-default (flag omitted)"
+fi
+
+# Preserve the exact bytes passed as the positional prompt.
+printf '%s' "$PROMPT" > "$OUT_DIR/prompt.txt"
+PROMPT_SHA=$(sha256sum "$OUT_DIR/prompt.txt" | awk '{print $1}')
+PRICE_SHA=$(sha256sum "$ROOT/env/prices.json" | awk '{print $1}')
+HARNESS_COMMIT=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)
+HARNESS_DIRTY=false
+git -C "$ROOT" diff --quiet && git -C "$ROOT" diff --cached --quiet || HARNESS_DIRTY=true
 
 CLI_VERSION=$(claude --version 2>/dev/null | head -1)
 cat > "$OUT_DIR/run_env.json" <<EOF
 {
   "cli_version": "$CLI_VERSION",
+  "driver": "claude -p --output-format stream-json",
+  "harness_commit": "$HARNESS_COMMIT",
+  "harness_tracked_dirty": $HARNESS_DIRTY,
+  "prompt_sha256": "$PROMPT_SHA",
+  "price_sheet_sha256": "$PRICE_SHA",
   "base_url": "${ANTHROPIC_BASE_URL:-https://api.anthropic.com}",
   "proxy_upstream": "${ARENA_PROXY_UPSTREAM:-none}",
   "model_env": "$MODEL_ENV_REC",
-  "effort": "$EFFORT",
+  "effort": "$EFFORT_REC",
   "setting_sources": "$SETTING_SOURCES",
   "max_turns": $MAX_TURNS,
   "timeout_s": $TIMEOUT_S,
@@ -79,7 +105,7 @@ START=$(date +%s.%N)
 (
   cd "$WS" && timeout "$TIMEOUT_S" claude -p "$PROMPT" \
     --model "$MODEL" \
-    --effort "$EFFORT" \
+    "${EFFORT_ARGS[@]}" \
     --setting-sources "$SETTING_SOURCES" \
     --dangerously-skip-permissions \
     --max-turns "$MAX_TURNS" \

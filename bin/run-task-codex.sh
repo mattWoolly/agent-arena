@@ -21,7 +21,11 @@ LABEL_MODEL="$MODEL-codex"
 
 OUT_DIR="$BOUT_DIR/$TASK_NAME/$LABEL_MODEL"
 [[ -n "$RUN_IDX" ]] && OUT_DIR="$OUT_DIR/run-$RUN_IDX"
-mkdir -p "$OUT_DIR"
+mkdir -p "$(dirname "$OUT_DIR")"
+if ! mkdir "$OUT_DIR"; then
+  echo "refusing to overwrite existing run artifact directory: $OUT_DIR" >&2
+  exit 2
+fi
 LABEL="$TASK_NAME/$LABEL_MODEL${RUN_IDX:+ run-$RUN_IDX}"
 
 WS=$(mktemp -d "${TMPDIR:-/tmp}/arena-ws.XXXXXX")
@@ -35,17 +39,30 @@ git -C "$WS" add -A
 git -C "$WS" -c user.email=arena@local -c user.name=arena \
   -c commit.gpgsign=false commit -qm baseline
 
-PROMPT=$(cat "$TASK_DIR/PROMPT.md")
+PROMPT=$(cat "$TASK_DIR/PROMPT.md"; printf '\034')
+PROMPT=${PROMPT%$'\034'}
 
 MAX_TURNS="${ARENA_MAX_TURNS:-60}"
 TIMEOUT_S="${ARENA_TIMEOUT_S:-1500}"
-export CODEX_HOME="$ROOT/.codex-arena"
+export CODEX_HOME="${ARENA_CODEX_HOME:-$ROOT/.codex-arena}"
+
+# Preserve the exact bytes passed as the positional prompt.
+printf '%s' "$PROMPT" > "$OUT_DIR/prompt.txt"
+PROMPT_SHA=$(sha256sum "$OUT_DIR/prompt.txt" | awk '{print $1}')
+PRICE_SHA=$(sha256sum "$ROOT/env/prices.json" | awk '{print $1}')
+HARNESS_COMMIT=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)
+HARNESS_DIRTY=false
+git -C "$ROOT" diff --quiet && git -C "$ROOT" diff --cached --quiet || HARNESS_DIRTY=true
 
 CLI_VERSION=$(codex --version 2>/dev/null | head -1)
 cat > "$OUT_DIR/run_env.json" <<EOF
 {
   "cli_version": "$CLI_VERSION",
   "driver": "codex exec --json -s workspace-write --dangerously-bypass-approvals-and-sandbox",
+  "harness_commit": "$HARNESS_COMMIT",
+  "harness_tracked_dirty": $HARNESS_DIRTY,
+  "prompt_sha256": "$PROMPT_SHA",
+  "price_sheet_sha256": "$PRICE_SHA",
   "base_url": "https://api.openai.com (native)",
   "proxy_upstream": "none",
   "model_env": "none",
@@ -75,6 +92,17 @@ END=$(date +%s.%N)
 echo "$AGENT_EXIT" > "$OUT_DIR/agent_exit"
 python3 -c "print(f'{$END - $START:.1f}')" > "$OUT_DIR/wall_seconds"
 
+# Codex's public JSON stream omits the exact base/developer instruction stack.
+# Its session rollout contains that context. Associate it by the thread id
+# emitted in transcript.jsonl, never by timestamps, and preserve it raw.
+THREAD_ID=$(jq -r 'select(.type == "thread.started") | .thread_id' \
+  "$OUT_DIR/transcript.jsonl" 2>/dev/null | head -1)
+if [[ -n "$THREAD_ID" && "$THREAD_ID" != "null" ]]; then
+  SESSION_FILE=$(find "$CODEX_HOME/sessions" -type f -name "*$THREAD_ID.jsonl" \
+    -print -quit 2>/dev/null)
+  [[ -n "$SESSION_FILE" ]] && cp "$SESSION_FILE" "$OUT_DIR/session.jsonl"
+fi
+
 # Peek check, same contract as run-task.sh.
 PEEK=$(grep -o -e "$ROOT" -e "grade\.sh" -e "hidden_tests" -e "check-grader" \
   "$OUT_DIR/transcript.jsonl" | sort -u | tr '\n' ' ')
@@ -90,7 +118,8 @@ fi
 if [[ -f "$ROOT/env/$LABEL_MODEL.leakscan" ]]; then
   while IFS= read -r _sec; do
     [[ -z "$_sec" ]] && continue
-    if grep -qF "$_sec" "$OUT_DIR/transcript.jsonl" || grep -rqF "$_sec" "$WS" 2>/dev/null; then
+    if grep -qF "$_sec" "$OUT_DIR/transcript.jsonl" \
+         "$OUT_DIR/session.jsonl" 2>/dev/null || grep -rqF "$_sec" "$WS" 2>/dev/null; then
       echo "SECRET LEAK: leakscan value appears in transcript or workspace" >> "$OUT_DIR/peek_check"
       echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
     fi
