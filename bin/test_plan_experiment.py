@@ -570,8 +570,10 @@ class PromptAndManifestTests(unittest.TestCase):
 
     def test_v2_claim_contract_is_current_and_amendment_2_freezes_remain_readable(self):
         legacy_paths = (
-            probe.ROOT / probe.AMENDED_CONFIRMATORY_BOUT_REL / "MANIFEST.json",
-            probe.ROOT / probe.SMOKE_CONTINUATION_BOUT_REL / "MANIFEST.json",
+            probe.ROOT
+            / "bouts/2026-08-22-pre-requirements-planning-amendment-2/MANIFEST.json",
+            probe.ROOT
+            / "bouts/2026-08-22-pre-requirements-planning-smoke-amendment-2/MANIFEST.json",
         )
         for path in legacy_paths:
             manifest = json.loads(path.read_text())
@@ -580,7 +582,10 @@ class PromptAndManifestTests(unittest.TestCase):
                 probe.LEGACY_ATTEMPT_INTENT_CONTRACT,
             )
             self.assertEqual(
-                probe.validate_manifest(manifest, check_files=False), []
+                probe.validate_manifest(
+                    manifest, check_files=False, allow_historical=True
+                ),
+                [],
             )
             missing = copy.deepcopy(manifest)
             missing.pop("attempt_intent_contract")
@@ -602,6 +607,10 @@ class PromptAndManifestTests(unittest.TestCase):
             "bouts/2026-08-22-pre-requirements-planning-amendment-1/RUNBOOK.md": "5e07776c0ad752e41c028904a9dd6028563662a56f88d732d6698e9b35247c33",
             "bouts/2026-08-22-pre-requirements-planning-amendment-1/MANIFEST.json": "8e3799e3d4be461ee709af051ddc0aac5b30e45758b7cdb4cb731aed27d2b368",
             "bouts/2026-08-22-pre-requirements-planning-smoke-amendment-1/MANIFEST.json": "27a25e756cf24d3d0c53d263b0dd49ecef3d6592fc5959ee0566caaa6c651e59",
+            "bouts/2026-08-22-pre-requirements-planning-amendment-2/AMENDMENT.md": "7e0a93da2685301af842b9bdb7fd051d828fd6fa9cd03c9eecaf8311a801386b",
+            "bouts/2026-08-22-pre-requirements-planning-amendment-2/RUNBOOK.md": "0f79dc8bdd998341ddecc01b07189ad2a2750df17400fc87159813eed77dd15e",
+            "bouts/2026-08-22-pre-requirements-planning-amendment-2/MANIFEST.json": "b087f165779c8c055aa8355aa951306cdd3033c83bfd1a439a18025056dad965",
+            "bouts/2026-08-22-pre-requirements-planning-smoke-amendment-2/MANIFEST.json": "f24d0141de549b8dd77d83cf04c1dd0bbd9d9fe5df538e93673160f0fe84fac3",
         }
         for relative_path, expected_hash in immutable_hashes.items():
             self.assertEqual(probe.sha256_path(probe.ROOT / relative_path), expected_hash)

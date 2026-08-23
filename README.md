@@ -317,8 +317,9 @@ anchors it to its recorded Git commit, and permits exactly one canonical
 two-condition continuation without retrying the consumed Codex slot. The
 response-free `smoke-status` view is the only supported technical inspection
 surface for those excluded outputs. Before launching a target, the current
-runner holds a bout-wide execution lock, durably appends a slot-bound row to
-`ATTEMPT_CLAIMS.jsonl`, then creates its exclusive immutable intent and
+runner holds a bout-wide execution lock, follows the version-2 claim contract,
+durably appends a slot-bound row to `ATTEMPT_CLAIMS.jsonl`, then creates its
+exclusive immutable intent and
 revalidates both witnesses. Every ledger row binds the exact claim and intent.
 Any journal-only, intent-only, or mismatched state consumes the slot and blocks
 all execution, so an uncertain crash or partial witness loss cannot turn into a

@@ -73,10 +73,13 @@ AMENDED_RUNBOOK_1_REL = f"bouts/{EXPERIMENT_ID}-amendment-1/RUNBOOK.md"
 AMENDMENT_2_ID = "smoke-technical-002"
 AMENDMENT_2_REL = f"bouts/{EXPERIMENT_ID}-amendment-2/AMENDMENT.md"
 AMENDED_RUNBOOK_2_REL = f"bouts/{EXPERIMENT_ID}-amendment-2/RUNBOOK.md"
-AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-2"
+AMENDMENT_3_ID = "smoke-technical-003"
+AMENDMENT_3_REL = f"bouts/{EXPERIMENT_ID}-amendment-3/AMENDMENT.md"
+AMENDED_RUNBOOK_3_REL = f"bouts/{EXPERIMENT_ID}-amendment-3/RUNBOOK.md"
+AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-3"
 INITIAL_SMOKE_MANIFEST_REL = f"bouts/{EXPERIMENT_ID}-smoke/MANIFEST.json"
 INITIAL_SMOKE_FREEZE_ID = "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e"
-SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-2"
+SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-3"
 ATTEMPT_INTENT_DIRECTORY = "ATTEMPT_INTENTS"
 ATTEMPT_CLAIM_JOURNAL = "ATTEMPT_CLAIMS.jsonl"
 LEGACY_ATTEMPT_INTENT_CONTRACT = {
@@ -134,6 +137,8 @@ FROZEN_CORE_RELATIVE = [
     AMENDED_RUNBOOK_1_REL,
     AMENDMENT_2_REL,
     AMENDED_RUNBOOK_2_REL,
+    AMENDMENT_3_REL,
+    AMENDED_RUNBOOK_3_REL,
     CONFIG_LOCK_REL,
     f"analysis/{EXPERIMENT_ID}/analyze.py",
     f"analysis/{EXPERIMENT_ID}/REPORT_TEMPLATE.md",
@@ -1362,6 +1367,7 @@ def current_amendments() -> list[dict[str, Any]]:
     for amendment_id, kind, documentation_relative in (
         (AMENDMENT_1_ID, "technical_harness_compatibility", AMENDMENT_1_REL),
         (AMENDMENT_2_ID, "technical_crash_durability", AMENDMENT_2_REL),
+        (AMENDMENT_3_ID, "technical_atomic_claims", AMENDMENT_3_REL),
     ):
         documentation = ROOT / documentation_relative
         if not documentation.is_file() or documentation.is_symlink():
