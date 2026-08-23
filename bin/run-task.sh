@@ -24,6 +24,20 @@ if ! mkdir "$OUT_DIR"; then
 fi
 LABEL="$TASK_NAME/$MODEL${RUN_IDX:+ run-$RUN_IDX}"
 
+RUN_AUTH_HOME=""
+TARGET_ENV=()
+if [[ "${ARENA_PLAN_PROBE:-0}" == "1" ]]; then
+  if [[ -z "${ARENA_CLAUDE_HOME:-}" || ! -f "$ARENA_CLAUDE_HOME/.credentials.json" ]]; then
+    echo "ARENA_CLAUDE_HOME must be an external auth-only source" > "$OUT_DIR/stderr.log"
+    exit 1
+  fi
+  RUN_AUTH_HOME=$(mktemp -d "${TMPDIR:-/tmp}/arena-claude-home.XXXXXX")
+  chmod 700 "$RUN_AUTH_HOME"
+  cp "$ARENA_CLAUDE_HOME/.credentials.json" "$RUN_AUTH_HOME/.credentials.json"
+  chmod 600 "$RUN_AUTH_HOME/.credentials.json"
+  TARGET_ENV=(env -u ARENA_CLAUDE_HOME HOME="$RUN_AUTH_HOME" CLAUDE_CONFIG_DIR="$RUN_AUTH_HOME")
+fi
+
 # Optional per-model environment: env/<model>.env holds endpoint/auth vars
 # (e.g. ANTHROPIC_BASE_URL + ANTHROPIC_AUTH_TOKEN for models served through
 # an Anthropic-compatible endpoint). Sourced with allexport so it applies to
@@ -39,7 +53,7 @@ fi
 
 # Seed an isolated workspace from the fixture, apply optional mutations, baseline it.
 WS=$(mktemp -d "${TMPDIR:-/tmp}/arena-ws.XXXXXX")
-trap 'rm -rf "$WS"' EXIT
+trap 'rm -rf "$WS" ${RUN_AUTH_HOME:+"$RUN_AUTH_HOME"}' EXIT
 cp -a "$TASK_DIR/fixture/." "$WS/"
 if [[ -f "$TASK_DIR/setup.sh" ]]; then
   (cd "$WS" && bash "$TASK_DIR/setup.sh")
@@ -60,6 +74,7 @@ MAX_TURNS="${ARENA_MAX_TURNS:-60}"
 TIMEOUT_S="${ARENA_TIMEOUT_S:-1500}"
 EFFORT="${ARENA_EFFORT:-xhigh}"
 SETTING_SOURCES="${ARENA_SETTING_SOURCES:-project}"
+SETTING_SOURCES_REC="${ARENA_SETTING_SOURCES_RECORD:-$SETTING_SOURCES}"
 EFFORT_ARGS=(--effort "$EFFORT")
 EFFORT_REC="$EFFORT"
 if [[ "$EFFORT" == "native-default" ]]; then
@@ -88,7 +103,7 @@ cat > "$OUT_DIR/run_env.json" <<EOF
   "proxy_upstream": "${ARENA_PROXY_UPSTREAM:-none}",
   "model_env": "$MODEL_ENV_REC",
   "effort": "$EFFORT_REC",
-  "setting_sources": "$SETTING_SOURCES",
+  "setting_sources": "$SETTING_SOURCES_REC",
   "max_turns": $MAX_TURNS,
   "timeout_s": $TIMEOUT_S,
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -102,17 +117,19 @@ USAGE_OFF=$(stat -c%s "$USAGE_LOG" 2>/dev/null || echo 0)
 
 echo "[$LABEL] starting"
 START=$(date +%s.%N)
+date -u +%Y-%m-%dT%H:%M:%SZ > "$OUT_DIR/target_started"
 (
-  cd "$WS" && timeout "$TIMEOUT_S" claude -p "$PROMPT" \
+  cd "$WS" && "${TARGET_ENV[@]}" timeout "$TIMEOUT_S" claude -p "$PROMPT" \
     --model "$MODEL" \
     "${EFFORT_ARGS[@]}" \
     --setting-sources "$SETTING_SOURCES" \
     --dangerously-skip-permissions \
     --max-turns "$MAX_TURNS" \
-    --output-format stream-json --verbose \
+    --output-format stream-json --verbose < /dev/null \
     > "$OUT_DIR/transcript.jsonl" 2> "$OUT_DIR/stderr.log"
 )
 AGENT_EXIT=$?
+date -u +%Y-%m-%dT%H:%M:%SZ > "$OUT_DIR/target_returned"
 END=$(date +%s.%N)
 echo "$AGENT_EXIT" > "$OUT_DIR/agent_exit"
 python3 -c "print(f'{$END - $START:.1f}')" > "$OUT_DIR/wall_seconds"
@@ -131,30 +148,33 @@ else
   echo "clean" > "$OUT_DIR/peek_check"
 fi
 
-# Secret-leak check: transcripts and workspaces are published, and the agent
-# can read its own environment. If the auth token, or any value emitted by
-# the model's optional env/<model>.leakscan script (run here in a subshell,
-# never exported to the agent), appears in anything we publish, flag it
-# loudly before it leaves this machine.
-leak_scan() {
-  local sec="$1" what="$2"
-  [[ -z "$sec" ]] && return 0
-  if grep -qF "$sec" "$OUT_DIR/transcript.jsonl" || \
-     grep -rqF "$sec" "$WS" 2>/dev/null; then
-    echo "SECRET LEAK: $what appears in transcript or workspace" >> "$OUT_DIR/peek_check"
-    echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
+# Ordinary bouts retain the established environment/leakscan checks. The
+# planning probe is guarded by the wrapper's exact parsed-credential scanner,
+# full-artifact rescan, and mandatory external quarantine.
+if [[ "${ARENA_PLAN_PROBE:-0}" != "1" ]]; then
+  leak_scan() {
+    local sec="$1" what="$2"
+    [[ -z "$sec" ]] && return 0
+    if grep -qF "$sec" "$OUT_DIR/transcript.jsonl" || \
+       grep -rqF "$sec" "$WS" 2>/dev/null; then
+      echo "SECRET LEAK: $what appears in transcript or workspace" >> "$OUT_DIR/peek_check"
+      echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
+    fi
+  }
+  leak_scan "${ANTHROPIC_AUTH_TOKEN:-}" "auth token"
+  leak_scan "${ANTHROPIC_API_KEY:-}" "api key"
+  if [[ -f "$ROOT/env/$MODEL.leakscan" ]]; then
+    while IFS= read -r _sec; do
+      leak_scan "$_sec" "leakscan value"
+    done < <(bash "$ROOT/env/$MODEL.leakscan" 2>/dev/null)
   fi
-}
-leak_scan "${ANTHROPIC_AUTH_TOKEN:-}" "auth token"
-leak_scan "${ANTHROPIC_API_KEY:-}" "api key"
-if [[ -f "$ROOT/env/$MODEL.leakscan" ]]; then
-  while IFS= read -r _sec; do
-    leak_scan "$_sec" "leakscan value"
-  done < <(bash "$ROOT/env/$MODEL.leakscan" 2>/dev/null)
 fi
 
 # Capture exactly what the agent changed.
-git -C "$WS" add -A
+if ! git -C "$WS" add -A; then
+  echo "workspace capture failed" >> "$OUT_DIR/stderr.log"
+  exit 3
+fi
 git -C "$WS" diff --cached > "$OUT_DIR/workspace.diff"
 git -C "$WS" diff --cached --stat > "$OUT_DIR/workspace.diffstat"
 
@@ -179,22 +199,5 @@ fi
 
 # Metrics from transcript + result envelope (+ run_env.json + peek_check).
 python3 "$ROOT/bin/metrics.py" "$OUT_DIR" "$MODEL" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"
-
-# Repeat the leak scan after every publishable raw artifact has been written.
-leak_scan_all() {
-  local sec="$1" what="$2"
-  [[ -z "$sec" ]] && return 0
-  if grep -rqF "$sec" "$OUT_DIR" "$WS" 2>/dev/null; then
-    echo "SECRET LEAK: $what appears in published artifacts" >> "$OUT_DIR/peek_check"
-    echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; quarantine this run" >&2
-  fi
-}
-leak_scan_all "${ANTHROPIC_AUTH_TOKEN:-}" "auth token"
-leak_scan_all "${ANTHROPIC_API_KEY:-}" "api key"
-if [[ -f "$ROOT/env/$MODEL.leakscan" ]]; then
-  while IFS= read -r _sec; do
-    leak_scan_all "$_sec" "leakscan value"
-  done < <(bash "$ROOT/env/$MODEL.leakscan" 2>/dev/null)
-fi
 
 echo "[$LABEL] done: agent_exit=$AGENT_EXIT grade_exit=$(cat "$OUT_DIR/grade_exit" 2>/dev/null || echo n/a) wall=$(cat "$OUT_DIR/wall_seconds")s"

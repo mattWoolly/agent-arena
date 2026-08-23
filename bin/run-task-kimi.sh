@@ -5,18 +5,9 @@
 # Cross-driver counterpart of run-task.sh / run-task-codex.sh: same fixture
 # seeding, throwaway workspace outside the repo, same hidden graders,
 # byte-identical PROMPT.md. Cells are labeled "<alias>-kimicode". Kimi Code
-# runs with HOME pointed at the isolated ~/.kimi-arena/ (OUTSIDE the repo
-# tree; override with ARENA_KIMI_HOME), whose config uses the metered
-# Moonshot platform API key, never the user's ~/.kimi-code device-code
-# login. An in-repo home is refused: it made every transcript reference
-# $ROOT (peek-check false positives) and, because Python derives user-site
-# from HOME, it hid ~/.local packages and planted an unplanted pytest fault
-# in 9/24 runs of the 2026-07-18 home bout (see analysis/
-# 2026-07-25-terminal-walkthrough). PYTHONUSERBASE is pinned to the real
-# user's ~/.local so the agent's python sees the same packages as the other
-# drivers. Prompt mode auto-approves (no --yolo needed; the CLI rejects it
-# alongside -p). Per-turn usage comes from the session's wire.jsonl, which
-# is copied into the run dir.
+# runs in a fresh HOME copied from an exact external config-only source.
+# PYTHONUSERBASE remains pinned to the real user's package directory. Prompt
+# mode auto-approves; per-turn usage comes from the emitted session wire log.
 set -u
 
 TASK_DIR=$(cd "$1" && pwd)
@@ -28,7 +19,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 LABEL_MODEL="${ARENA_KIMI_LABEL:-kimi-k3-kimicode}"   # per-arm cells (e.g. effort ladder) override this
 EFFORT_NOTE="${ARENA_KIMI_EFFORT:-max (kimi-code default for k3)}"
 KIMI_BIN="$HOME/.kimi-code/bin/kimi"
-ARENA_HOME="${ARENA_KIMI_HOME:-$HOME/.kimi-arena}"
+SOURCE_ARENA_HOME="${ARENA_KIMI_HOME:-$HOME/.kimi-arena}"
 USER_SITE_BASE="$HOME/.local"
 OUT_DIR="$BOUT_DIR/$TASK_NAME/$LABEL_MODEL"
 [[ -n "$RUN_IDX" ]] && OUT_DIR="$OUT_DIR/run-$RUN_IDX"
@@ -39,20 +30,39 @@ if ! mkdir "$OUT_DIR"; then
 fi
 LABEL="$TASK_NAME/$LABEL_MODEL${RUN_IDX:+ run-$RUN_IDX}"
 
-case "$ARENA_HOME" in
+case "$SOURCE_ARENA_HOME" in
   "$ROOT"/*|"$ROOT")
     echo "refusing to run: isolated Kimi home is inside the repository" > "$OUT_DIR/stderr.log"
     echo "refusing in-repository Kimi home" >&2
     exit 1;;
 esac
-if [[ ! -f "$ARENA_HOME/.kimi-code/config.toml" ]]; then
+if [[ ! -f "$SOURCE_ARENA_HOME/.kimi-code/config.toml" ]]; then
   echo "isolated Kimi config.toml is missing" > "$OUT_DIR/stderr.log"
   echo "missing isolated Kimi configuration" >&2
   exit 1
 fi
 
+RUN_AUTH_HOME=""
+ARENA_HOME="$SOURCE_ARENA_HOME"
+TARGET_ENV=(env HOME="$ARENA_HOME" PYTHONUSERBASE="$USER_SITE_BASE")
+SKILLS_ARGS=()
+MODEL_ENV_REC="none (isolated HOME=$ARENA_HOME, outside repo; PYTHONUSERBASE=$USER_SITE_BASE)"
+SETTING_SOURCES_REC="arena config.toml only"
+if [[ "${ARENA_PLAN_PROBE:-0}" == "1" ]]; then
+  RUN_AUTH_HOME=$(mktemp -d "${TMPDIR:-/tmp}/arena-kimi-home.XXXXXX")
+  chmod 700 "$RUN_AUTH_HOME"
+  mkdir -p "$RUN_AUTH_HOME/.kimi-code" "$RUN_AUTH_HOME/empty-skills"
+  cp "$SOURCE_ARENA_HOME/.kimi-code/config.toml" "$RUN_AUTH_HOME/.kimi-code/config.toml"
+  chmod 600 "$RUN_AUTH_HOME/.kimi-code/config.toml"
+  ARENA_HOME="$RUN_AUTH_HOME"
+  TARGET_ENV=(env -u ARENA_KIMI_HOME -u KIMI_API_KEY HOME="$ARENA_HOME" PYTHONUSERBASE="$USER_SITE_BASE")
+  SKILLS_ARGS=(--skills-dir "$ARENA_HOME/empty-skills")
+  MODEL_ENV_REC="none (fresh config-only HOME; isolated PYTHONUSERBASE)"
+  SETTING_SOURCES_REC="arena config.toml plus explicit empty skills directory"
+fi
+
 WS=$(mktemp -d "${TMPDIR:-/tmp}/arena-ws.XXXXXX")
-trap 'rm -rf "$WS"' EXIT
+trap 'rm -rf "$WS" ${RUN_AUTH_HOME:+"$RUN_AUTH_HOME"}' EXIT
 cp -a "$TASK_DIR/fixture/." "$WS/"
 if [[ -f "$TASK_DIR/setup.sh" ]]; then
   (cd "$WS" && bash "$TASK_DIR/setup.sh")
@@ -85,10 +95,10 @@ cat > "$OUT_DIR/run_env.json" <<EOF
   "price_sheet_sha256": "$PRICE_SHA",
   "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
   "proxy_upstream": "none",
-  "model_env": "none (isolated HOME=$ARENA_HOME, outside repo; PYTHONUSERBASE=$USER_SITE_BASE)",
+  "model_env": "$MODEL_ENV_REC",
   "model_alias": "$ALIAS",
   "effort": "$EFFORT_NOTE",
-  "setting_sources": "arena config.toml only",
+  "setting_sources": "$SETTING_SOURCES_REC",
   "timeout_s": $TIMEOUT_S,
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
@@ -96,15 +106,19 @@ EOF
 
 echo "[$LABEL] starting"
 START=$(date +%s.%N)
+date -u +%Y-%m-%dT%H:%M:%SZ > "$OUT_DIR/target_started"
 (
-  cd "$WS" && HOME="$ARENA_HOME" PYTHONUSERBASE="$USER_SITE_BASE" \
+  cd "$WS" && "${TARGET_ENV[@]}" \
     timeout "$TIMEOUT_S" "$KIMI_BIN" \
     -p "$PROMPT" \
     -m "$ALIAS" \
+    "${SKILLS_ARGS[@]}" \
     --output-format stream-json \
+    < /dev/null \
     > "$OUT_DIR/transcript.jsonl" 2> "$OUT_DIR/stderr.log"
 )
 AGENT_EXIT=$?
+date -u +%Y-%m-%dT%H:%M:%SZ > "$OUT_DIR/target_returned"
 END=$(date +%s.%N)
 echo "$AGENT_EXIT" > "$OUT_DIR/agent_exit"
 python3 -c "print(f'{$END - $START:.1f}')" > "$OUT_DIR/wall_seconds"
@@ -129,23 +143,28 @@ else
   echo "clean" > "$OUT_DIR/peek_check"
 fi
 
-# Secret-leak check: the platform key sits in the arena config the agent's
-# shell can read (its HOME points there), so scan everything we publish.
-# Per-arm labels fall back to the base kimi-k3-kimicode scan (same key).
-LEAKSCAN="$ROOT/env/$LABEL_MODEL.leakscan"
-[[ -f "$LEAKSCAN" ]] || LEAKSCAN="$ROOT/env/kimi-k3-kimicode.leakscan"
-if [[ -f "$LEAKSCAN" ]]; then
-  while IFS= read -r _sec; do
-    [[ -z "$_sec" ]] && continue
-    if grep -qF "$_sec" "$OUT_DIR/transcript.jsonl" "$OUT_DIR/wire.jsonl" 2>/dev/null || \
-       grep -rqF "$_sec" "$WS" 2>/dev/null; then
-      echo "SECRET LEAK: leakscan value appears in published artifacts" >> "$OUT_DIR/peek_check"
-      echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
-    fi
-  done < <(bash "$LEAKSCAN" 2>/dev/null)
+# Ordinary bouts retain the established config-key leakscan. The planning
+# probe uses the wrapper's exact TOML parser, whole-artifact rescans, and
+# mandatory external quarantine instead.
+if [[ "${ARENA_PLAN_PROBE:-0}" != "1" ]]; then
+  LEAKSCAN="$ROOT/env/$LABEL_MODEL.leakscan"
+  [[ -f "$LEAKSCAN" ]] || LEAKSCAN="$ROOT/env/kimi-k3-kimicode.leakscan"
+  if [[ -f "$LEAKSCAN" ]]; then
+    while IFS= read -r _sec; do
+      [[ -z "$_sec" ]] && continue
+      if grep -qF "$_sec" "$OUT_DIR/transcript.jsonl" "$OUT_DIR/wire.jsonl" 2>/dev/null || \
+         grep -rqF "$_sec" "$WS" 2>/dev/null; then
+        echo "SECRET LEAK: leakscan value appears in published artifacts" >> "$OUT_DIR/peek_check"
+        echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
+      fi
+    done < <(bash "$LEAKSCAN" 2>/dev/null)
+  fi
 fi
 
-git -C "$WS" add -A
+if ! git -C "$WS" add -A; then
+  echo "workspace capture failed" >> "$OUT_DIR/stderr.log"
+  exit 3
+fi
 git -C "$WS" diff --cached > "$OUT_DIR/workspace.diff"
 git -C "$WS" diff --cached --stat > "$OUT_DIR/workspace.diffstat"
 
@@ -160,16 +179,5 @@ cp -a "$WS/." "$OUT_DIR/workspace/"
 rm -rf "$OUT_DIR/workspace/.git"
 
 python3 "$ROOT/bin/metrics_kimi.py" "$OUT_DIR" "$LABEL_MODEL" "${ARENA_KIMI_PRICE_KEY:-kimi-k3}" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"
-
-# Repeat the leak scan after every publishable raw artifact has been written.
-if [[ -f "$LEAKSCAN" ]]; then
-  while IFS= read -r _sec; do
-    [[ -z "$_sec" ]] && continue
-    if grep -rqF "$_sec" "$OUT_DIR" "$WS" 2>/dev/null; then
-      echo "SECRET LEAK: leakscan value appears in published artifacts" >> "$OUT_DIR/peek_check"
-      echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; quarantine this run" >&2
-    fi
-  done < <(bash "$LEAKSCAN" 2>/dev/null)
-fi
 
 echo "[$LABEL] done: agent_exit=$AGENT_EXIT grade_exit=$(cat "$OUT_DIR/grade_exit" 2>/dev/null || echo n/a) wall=$(cat "$OUT_DIR/wall_seconds")s"

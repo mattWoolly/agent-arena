@@ -6,9 +6,8 @@
 # same throwaway workspace outside the repo, same hidden graders, byte-
 # identical PROMPT.md. Only the driver differs, which is the variable under
 # test. The output-dir label is "<model>-codex" so cells never collide with
-# Claude-Code-driven runs of the same model. Auth comes from the isolated
-# CODEX_HOME in .codex-arena/ (API-key login, gitignored), never the user's
-# ~/.codex ChatGPT session.
+# Claude-Code-driven runs of the same model. A fresh CODEX_HOME is created for
+# every plan-probe slot from an exact external auth-only source.
 set -u
 
 TASK_DIR=$(cd "$1" && pwd)
@@ -28,8 +27,45 @@ if ! mkdir "$OUT_DIR"; then
 fi
 LABEL="$TASK_NAME/$LABEL_MODEL${RUN_IDX:+ run-$RUN_IDX}"
 
+MAX_TURNS="${ARENA_MAX_TURNS:-60}"
+TIMEOUT_S="${ARENA_TIMEOUT_S:-1500}"
+RUN_AUTH_HOME=""
+RULE_ARGS=()
+SETTING_SOURCES_REC="none (--ignore-user-config, isolated CODEX_HOME)"
+if [[ "${ARENA_PLAN_PROBE:-0}" == "1" ]]; then
+  if [[ -z "${ARENA_CODEX_HOME:-}" ]]; then
+    echo "ARENA_CODEX_HOME is required and must point to an isolated home outside the repository" > "$OUT_DIR/stderr.log"
+    echo "missing external ARENA_CODEX_HOME" >&2
+    exit 1
+  fi
+  SOURCE_CODEX_HOME=$(cd "$ARENA_CODEX_HOME" 2>/dev/null && pwd) || {
+    echo "ARENA_CODEX_HOME is not an accessible directory" > "$OUT_DIR/stderr.log"
+    exit 1
+  }
+  case "$SOURCE_CODEX_HOME" in
+    "$ROOT"|"$ROOT"/*)
+      echo "ARENA_CODEX_HOME must be outside the repository" > "$OUT_DIR/stderr.log"
+      echo "refusing in-repository CODEX_HOME" >&2
+      exit 1;;
+  esac
+  if [[ ! -f "$SOURCE_CODEX_HOME/auth.json" ]]; then
+    echo "isolated CODEX_HOME has no auth.json" > "$OUT_DIR/stderr.log"
+    exit 1
+  fi
+  RUN_AUTH_HOME=$(mktemp -d "${TMPDIR:-/tmp}/arena-codex-home.XXXXXX")
+  chmod 700 "$RUN_AUTH_HOME"
+  cp "$SOURCE_CODEX_HOME/auth.json" "$RUN_AUTH_HOME/auth.json"
+  chmod 600 "$RUN_AUTH_HOME/auth.json"
+  CODEX_HOME="$RUN_AUTH_HOME"
+  RULE_ARGS=(--ignore-rules)
+  SETTING_SOURCES_REC="none (--ignore-user-config, --ignore-rules, fresh auth-only CODEX_HOME)"
+else
+  CODEX_HOME="${ARENA_CODEX_HOME:-$ROOT/.codex-arena}"
+fi
+export CODEX_HOME
+
 WS=$(mktemp -d "${TMPDIR:-/tmp}/arena-ws.XXXXXX")
-trap 'rm -rf "$WS"' EXIT
+trap 'rm -rf "$WS" ${RUN_AUTH_HOME:+"$RUN_AUTH_HOME"}' EXIT
 cp -a "$TASK_DIR/fixture/." "$WS/"
 if [[ -f "$TASK_DIR/setup.sh" ]]; then
   (cd "$WS" && bash "$TASK_DIR/setup.sh")
@@ -41,37 +77,6 @@ git -C "$WS" -c user.email=arena@local -c user.name=arena \
 
 PROMPT=$(cat "$TASK_DIR/PROMPT.md"; printf '\034')
 PROMPT=${PROMPT%$'\034'}
-
-MAX_TURNS="${ARENA_MAX_TURNS:-60}"
-TIMEOUT_S="${ARENA_TIMEOUT_S:-1500}"
-if [[ "${ARENA_PLAN_PROBE:-0}" == "1" ]]; then
-  if [[ -z "${ARENA_CODEX_HOME:-}" ]]; then
-    echo "ARENA_CODEX_HOME is required and must point to an isolated home outside the repository" > "$OUT_DIR/stderr.log"
-    echo "missing external ARENA_CODEX_HOME" >&2
-    exit 1
-  fi
-  CODEX_HOME=$(cd "$ARENA_CODEX_HOME" 2>/dev/null && pwd) || {
-    echo "ARENA_CODEX_HOME is not an accessible directory" > "$OUT_DIR/stderr.log"
-    exit 1
-  }
-  case "$CODEX_HOME" in
-    "$ROOT"|"$ROOT"/*)
-      echo "ARENA_CODEX_HOME must be outside the repository" > "$OUT_DIR/stderr.log"
-      echo "refusing in-repository CODEX_HOME" >&2
-      exit 1;;
-  esac
-  if [[ ! -f "$CODEX_HOME/auth.json" ]]; then
-    echo "isolated CODEX_HOME has no auth.json" > "$OUT_DIR/stderr.log"
-    exit 1
-  fi
-  if [[ -e "$CODEX_HOME/AGENTS.md" || -e "$CODEX_HOME/instructions.md" || -e "$CODEX_HOME/config.toml" ]]; then
-    echo "isolated CODEX_HOME contains a config or user instruction file" > "$OUT_DIR/stderr.log"
-    exit 1
-  fi
-else
-  CODEX_HOME="${ARENA_CODEX_HOME:-$ROOT/.codex-arena}"
-fi
-export CODEX_HOME
 
 # Preserve the exact bytes passed as the positional prompt.
 printf '%s' "$PROMPT" > "$OUT_DIR/prompt.txt"
@@ -94,7 +99,7 @@ cat > "$OUT_DIR/run_env.json" <<EOF
   "proxy_upstream": "none",
   "model_env": "none",
   "effort": "codex-default",
-  "setting_sources": "none (--ignore-user-config, isolated CODEX_HOME)",
+  "setting_sources": "$SETTING_SOURCES_REC",
   "max_turns": $MAX_TURNS,
   "timeout_s": $TIMEOUT_S,
   "started_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -104,18 +109,21 @@ EOF
 echo "[$LABEL] starting"
 START=$(date +%s.%N)
 : > "$OUT_DIR/last_message.txt"
+date -u +%Y-%m-%dT%H:%M:%SZ > "$OUT_DIR/target_started"
 (
-  cd "$WS" && timeout "$TIMEOUT_S" codex exec --json \
+  cd "$WS" && env -u ARENA_CODEX_HOME CODEX_HOME="$CODEX_HOME" timeout "$TIMEOUT_S" codex exec --json \
     -m "$MODEL" \
     -s workspace-write \
     --dangerously-bypass-approvals-and-sandbox \
     --ignore-user-config \
+    "${RULE_ARGS[@]}" \
     --skip-git-repo-check \
     -o "$OUT_DIR/last_message.txt" \
-    "$PROMPT" \
+    "$PROMPT" < /dev/null \
     > "$OUT_DIR/transcript.jsonl" 2> "$OUT_DIR/stderr.log"
 )
 AGENT_EXIT=$?
+date -u +%Y-%m-%dT%H:%M:%SZ > "$OUT_DIR/target_returned"
 END=$(date +%s.%N)
 echo "$AGENT_EXIT" > "$OUT_DIR/agent_exit"
 python3 -c "print(f'{$END - $START:.1f}')" > "$OUT_DIR/wall_seconds"
@@ -141,20 +149,23 @@ else
   echo "clean" > "$OUT_DIR/peek_check"
 fi
 
-# Secret-leak check via the model label's leakscan (the OpenAI key is in the
-# codex process env, so published artifacts must be scanned for it).
-if [[ -f "$ROOT/env/$LABEL_MODEL.leakscan" ]]; then
+# Preserve the established leakscan behavior for ordinary bouts. The planning
+# probe instead uses the wrapper's exact parsed-credential scanner and
+# quarantine path, which also covers session.jsonl and every published entry.
+if [[ "${ARENA_PLAN_PROBE:-0}" != "1" && -f "$ROOT/env/$LABEL_MODEL.leakscan" ]]; then
   while IFS= read -r _sec; do
     [[ -z "$_sec" ]] && continue
-    if grep -qF "$_sec" "$OUT_DIR/transcript.jsonl" \
-         "$OUT_DIR/session.jsonl" 2>/dev/null || grep -rqF "$_sec" "$WS" 2>/dev/null; then
+    if grep -qF "$_sec" "$OUT_DIR/transcript.jsonl" || grep -rqF "$_sec" "$WS" 2>/dev/null; then
       echo "SECRET LEAK: leakscan value appears in transcript or workspace" >> "$OUT_DIR/peek_check"
       echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; do not publish this run" >&2
     fi
   done < <(bash "$ROOT/env/$LABEL_MODEL.leakscan" 2>/dev/null)
 fi
 
-git -C "$WS" add -A
+if ! git -C "$WS" add -A; then
+  echo "workspace capture failed" >> "$OUT_DIR/stderr.log"
+  exit 3
+fi
 git -C "$WS" diff --cached > "$OUT_DIR/workspace.diff"
 git -C "$WS" diff --cached --stat > "$OUT_DIR/workspace.diffstat"
 
@@ -169,16 +180,5 @@ cp -a "$WS/." "$OUT_DIR/workspace/"
 rm -rf "$OUT_DIR/workspace/.git"
 
 python3 "$ROOT/bin/metrics_codex.py" "$OUT_DIR" "$LABEL_MODEL" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"
-
-# Repeat the leak scan after every publishable raw artifact has been written.
-if [[ -f "$ROOT/env/$LABEL_MODEL.leakscan" ]]; then
-  while IFS= read -r _sec; do
-    [[ -z "$_sec" ]] && continue
-    if grep -rqF "$_sec" "$OUT_DIR" "$WS" 2>/dev/null; then
-      echo "SECRET LEAK: leakscan value appears in published artifacts" >> "$OUT_DIR/peek_check"
-      echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; quarantine this run" >&2
-    fi
-  done < <(bash "$ROOT/env/$LABEL_MODEL.leakscan" 2>/dev/null)
-fi
 
 echo "[$LABEL] done: agent_exit=$AGENT_EXIT grade_exit=$(cat "$OUT_DIR/grade_exit" 2>/dev/null || echo n/a) wall=$(cat "$OUT_DIR/wall_seconds")s"

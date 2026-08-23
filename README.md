@@ -18,6 +18,7 @@ bin/
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
   numcheck.py    # numeric-reliability analysis for tasks 13/14/15: per-item verdicts joined with tool-derivation evidence from the transcript; per-run silent-error flag; per-(task, model) aggregates
   plan_experiment.py # frozen-manifest runner + observable output/embargo evidence for task 16
+  credential_guard.py # exact auth/config allowlists + fail-closed aggregate-only leak receipts for task 16
   served_model.py# read the model that ACTUALLY served a run from transcript response tags
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
   test_*.py      # unit tests (served_model, summarize integrity) — run `python3 bin/test_<x>.py`
@@ -185,6 +186,13 @@ an `env/<model>.leakscan` script (tracked; contains no secrets) that prints
 extra secret values, one per line; run-task.sh executes it in a subshell
 after the agent finishes and scans published artifacts for each value, so
 secrets that never enter the agent's environment are still checked.
+Task 16 replaces those legacy string hooks with `credential_guard.py`: it
+parses an exact auth/config-only source, rejects unknown or empty credential
+coverage, scans every raw and normalized artifact without following symlinks,
+and quarantines an unsafe attempt outside the repository. Its standalone
+`--environment-secret-var NAME` option adds an environment value to scan
+coverage without putting that value in output or command arguments. Ordinary
+bouts retain the established leakscan behavior.
 
 ### Models with no Anthropic-compatible endpoint (translation proxy)
 
@@ -237,10 +245,12 @@ compare effort across drivers on tool calls, tokens, wall, and cost, not
 turn counts.
 For the response-only planning probe, `ARENA_CODEX_HOME` is required and must
 name an isolated auth-only home outside the repository; in-repository homes and
-homes containing user instruction or config files are refused. Other tasks
-retain the driver's existing `.codex-arena/` default. Each run also copies the session
-rollout associated by its emitted thread ID to `session.jsonl`; this preserves
-the exposed base/developer instruction stack omitted by the public event stream.
+homes containing user instruction or config files are refused. The probe copies
+only `auth.json` into a fresh `0700` home per slot and uses both
+`--ignore-user-config` and `--ignore-rules`; other tasks retain the driver's
+existing `.codex-arena/` behavior. Each run also copies the session rollout
+associated by its emitted thread ID to `session.jsonl`; this preserves the
+exposed base/developer instruction stack omitted by the public event stream.
 
 `bin/run-task-kimi.sh` does the same for Kimi Code (`kimi -p`, stream-json;
 prompt mode auto-approves), labeling cells `kimi-k3-kimicode`. It runs with
@@ -270,6 +280,10 @@ measured reasoning volume per run.
 The driver associates `wire.jsonl` by the session ID emitted in the transcript,
 so nearby or concurrent sessions cannot silently attach the wrong instruction,
 effort, tool, or usage journal.
+For Task 16 only, the external Kimi home is an exact config-only source. Each
+slot copies that config into a fresh `0700` home, supplies an explicit empty
+skills directory, and removes inherited credential variables. Ordinary Kimi
+bouts keep the established reusable arena-home behavior.
 
 ## Response-only planning experiment
 
@@ -279,6 +293,7 @@ is observable response behavior rather than workspace correctness:
 
 ```
 python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning/MANIFEST.json
+python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke/MANIFEST.json
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke/MANIFEST.json
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --dry-run
 ```
@@ -287,6 +302,8 @@ Confirmatory execution requires `--approval <exact-freeze-id>` and is blocked
 without it. The manifest fixes the exact prompt, condition versions, native
 effort behavior, randomized complete-block schedule, exclusions, and analysis
 inputs. Smoke has its own manifest/bout and cannot enter blinding or analysis.
+Manifest construction is no-clobber by default; the explicit
+`--replace-draft` flag works only before any ledger or run artifact exists.
 Preregistered reserves require `--reserve`, `--replacement-for`, and one exact
 `--exclusion-reason` from the manifest; the runner accepts them only when that
 reason is supported by a same-condition ineligible attempt's recorded evidence.
@@ -297,8 +314,10 @@ Before any model call, the executor validates every selected condition's CLI,
 external-home isolation, endpoint/config surface, exact neutral fixture
 inventory, and all content-addressed harness inputs. It repeats that preflight
 before each slot and halts the matrix on drift or run-integrity failure. The
-experiment's `CONFIGURATION.json` freezes non-secret expectations and only a
-secret-redacted hash of external Kimi configuration.
+experiment's `CONFIGURATION.json` freezes only non-secret expectations: exact
+credential schemas and recognized-field counts, secret-redacted structural
+digests for all three sources, the minimal environment policy, and credential
+environment-field names without values.
 
 Each normalized run adds:
 
@@ -308,6 +327,8 @@ Each normalized run adds:
   trace-integrity status;
 - `instruction_context.json` — exposed system/developer/tool context, without
   hidden reasoning;
+- `credential_scan.raw.json` and `credential_scan.json` — aggregate-only
+  before/after leak-scan receipts;
 - `run_record.json` — slot, condition, model/effort evidence, metrics, and
   technical eligibility; and
 - `artifact_manifest.json` — byte size and SHA-256 for every raw and normalized
@@ -320,7 +341,9 @@ must all agree before analysis. The analyzer requires two distinct reviewers,
 exact quote/offset evidence for every positive score, and a distinct adjudicator
 for every disagreement. It reports per-run results, Wilson intervals, complete
 rubric/component rates, run accounting, and inter-rater agreement without
-reading hidden reasoning. See the bout `RUNBOOK.md` for the full gated workflow.
+reading hidden reasoning. Machine and human outputs are no-clobber and are
+bound with every analysis input in `ANALYSIS_MANIFEST.json`. See the bout
+`RUNBOOK.md` for the full gated workflow.
 
 ## Rubric judging (depth qualities)
 

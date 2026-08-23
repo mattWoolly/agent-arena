@@ -38,8 +38,8 @@
         "observed_value": "not_exposed"
       },
       "expected_effort_record": "native-default (flag omitted)",
-      "expected_setting_sources": "project",
-      "instruction_configuration": "project setting source in a neutral scratch repository",
+      "expected_setting_sources": "project (fresh auth-only per-run home)",
+      "instruction_configuration": "fresh auth-only per-run home; project setting source in a neutral scratch repository",
       "instruction_text_observability": "partial",
       "tool_configuration": "native default tools enabled"
     },
@@ -58,8 +58,8 @@
         "observed_value": "not_exposed"
       },
       "expected_effort_record": "codex-default",
-      "expected_setting_sources": "none (--ignore-user-config, isolated CODEX_HOME)",
-      "instruction_configuration": "isolated CODEX_HOME with --ignore-user-config",
+      "expected_setting_sources": "none (--ignore-user-config, --ignore-rules, fresh auth-only CODEX_HOME)",
+      "instruction_configuration": "fresh auth-only per-run CODEX_HOME with user config and rules disabled",
       "instruction_text_observability": "partial",
       "tool_configuration": "native default tools enabled; schemas opaque unless present in session rollout"
     },
@@ -78,8 +78,8 @@
         "observed_value": "max"
       },
       "expected_effort_record": "native-default (observed in wire journal)",
-      "expected_setting_sources": "arena config.toml only",
-      "instruction_configuration": "isolated Kimi arena HOME and config.toml",
+      "expected_setting_sources": "arena config.toml plus explicit empty skills directory",
+      "instruction_configuration": "fresh per-run HOME copied from an exact config-only source; skills discovery overridden empty",
       "instruction_text_observability": "complete",
       "tool_configuration": "native default tools enabled"
     }
@@ -802,11 +802,14 @@
     "raw_outputs_immutable": true,
     "required_common": [
       "agent_exit",
+      "credential_scan.raw.json",
       "metrics.json",
       "peek_check",
       "prompt.txt",
       "run_env.json",
       "stderr.log",
+      "target_returned",
+      "target_started",
       "wall_seconds",
       "workspace.diff",
       "workspace.diffstat"
@@ -827,6 +830,7 @@
       ]
     },
     "derived": [
+      "credential_scan.json",
       "final_output.txt",
       "embargo.json",
       "instruction_context.json",
@@ -847,8 +851,8 @@
     },
     {
       "path": "tasks/16-pre-requirements-plan/review.schema.json",
-      "sha256": "3f16ce523e7b102a99c8087bce08b0b76bc4e4f60bb147643338957f06f34767",
-      "bytes": 4284
+      "sha256": "ed7dd9f50a391b887f2dc73a86cef5e3b26bbc87e96992557aefc73359e2eb60",
+      "bytes": 4354
     },
     {
       "path": "tasks/16-pre-requirements-plan/adjudication.schema.json",
@@ -857,43 +861,68 @@
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/DESIGN.md",
-      "sha256": "07449ebb35cc9ee6aa9df5f4a96df03debf452eda72ead96d431b36fb32cc3e4",
-      "bytes": 16052
+      "sha256": "8bc9d34d96437240baf1e11655e3405d6fd916f9ab97655e9f69f5660e5c886b",
+      "bytes": 18675
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/CONFIGURATION.json",
-      "sha256": "975021a3b51337ee2f32a27c4d9eff267bf452b1c3496ac4fcfdb2898fcbfb90",
-      "bytes": 700
+      "sha256": "7eda52ec58271dc1df74b0033946a18bd0627745674d5efba15604a6ed7aed32",
+      "bytes": 1621
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/analyze.py",
-      "sha256": "29ff1595a5771eab35131a1c5d15de29ad5bb13f80b8495d5458d8c14f72dcde",
-      "bytes": 48750
+      "sha256": "7a313bac59fb026eea89376c2391abc39e1c8872264e99901f3ae9b8a0170769",
+      "bytes": 56865
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/REPORT_TEMPLATE.md",
-      "sha256": "79df1e0faa03f60d282ad114ddc1ce7803a6843d797f4f90d7952aa93e02256a",
-      "bytes": 3578
+      "sha256": "ba284839f6d2c2e8ea67e8a1a982e760f58d7ad62bbad1782d3c8df4331384f4",
+      "bytes": 4078
+    },
+    {
+      "path": "analysis/2026-08-22-pre-requirements-planning/adjudications.template.json",
+      "sha256": "ed052fcd2a786dc6fc75588a75fe6e1030e506668362989fb40fc813479b623f",
+      "bytes": 96
+    },
+    {
+      "path": "analysis/2026-08-22-pre-requirements-planning/instruction-exposure.template.json",
+      "sha256": "05571219b431b54c8ec537e34939e97ec79c17e33eadb3a4e53a6245a03c67db",
+      "bytes": 1889
+    },
+    {
+      "path": "analysis/2026-08-22-pre-requirements-planning/reviewer-a.template.json",
+      "sha256": "18faa5356bd8db788560c2307c513b914d86b17556e08aa39dd5bea2af2f1d6b",
+      "bytes": 120
+    },
+    {
+      "path": "analysis/2026-08-22-pre-requirements-planning/reviewer-b.template.json",
+      "sha256": "cddb858d3b3ecd19ee678d7811fa26bc31becee6c09e47be1c6177daddb3aa93",
+      "bytes": 120
     },
     {
       "path": "bin/plan_experiment.py",
-      "sha256": "cb7ff6741ca4f6c3bbf50820169bfb73c174a7c4d0f8c40de28667f764662b4a",
-      "bytes": 97285
+      "sha256": "83c7552ff71d404101bc023f0b4eaa4c30e94d39e6049779fb057bb4640a8d6b",
+      "bytes": 122711
+    },
+    {
+      "path": "bin/credential_guard.py",
+      "sha256": "529366a03b03ab02037ff30f1d44352b764638ec07f0363b06fd2165af487416",
+      "bytes": 11149
     },
     {
       "path": "bin/run-task.sh",
-      "sha256": "4b78198a4ef787d7bcf37ebd99082ea7e54a49509bff62ae2ee74fe227482591",
-      "bytes": 7966
+      "sha256": "e8847ca83cb876708fb73f009fc40c506507fcb3180ed88fdd5c649980acb208",
+      "bytes": 8179
     },
     {
       "path": "bin/run-task-codex.sh",
-      "sha256": "48f5a9795c916052b3ff6809fc6bed0efe7c48ff35a6b88329cb8345598a8491",
-      "bytes": 7229
+      "sha256": "bfe71caa6ad5c7a2cb483958f68684aa998113eba0b646d4c19b34727cfc9dd5",
+      "bytes": 7284
     },
     {
       "path": "bin/run-task-kimi.sh",
-      "sha256": "016366b7b2378f44ba66f6785abbc7e9e738608b860dc2bb0afd245efd924bdd",
-      "bytes": 7345
+      "sha256": "37902ff6feb3ba88d29d37e9a76c82a772397135d49c62b426829fc97a8add42",
+      "bytes": 7488
     },
     {
       "path": "bin/metrics.py",
@@ -926,5 +955,5 @@
       "bytes": 1
     }
   ],
-  "freeze_id": "a5dcd105ec1ab8c37ae391459a35ae3bd0861ccfc35284f3688331b13937fc1b"
+  "freeze_id": "4777b35b8e9aabbbf3ecef5bcfba6905cec49dd84eeb567137504aa0677f346c"
 }

@@ -61,15 +61,23 @@ cannot support a “not mentioned anywhere” claim.
 Name or pseudonymize two distinct independent reviewers and the third
 adjudicator. Report pre-adjudication exact agreement and linearly weighted
 Cohen's kappa for A-D, plus exact agreement and unweighted kappa for binary E/F
-flags. Report `NA` when kappa is undefined and preserve every original decision,
-exact quote, offset, output hash, and adjudication.
+flags. Require reciprocal independence declarations. Report `NA` when kappa is
+undefined and preserve every original decision, exact quote, offset, output
+hash, and adjudication in the machine-readable per-run provenance.
 
 ## Secondary outcomes
 
 Report token use, elapsed time, and notional cost descriptively as median, IQR,
-and range. Report duplicate-output hashes, refusals, truncation, missing outputs,
-invalid attempts, and replacement counts. These are secondary and do not rank
-agents.
+and range. Report duplicate-output hashes, truncation, missing outputs, invalid
+attempts, replacement counts, and every scorable-output sensitivity rate. If a
+cross-driver structured refusal field does not exist, label refusal prevalence
+not estimable rather than inferring it from prose. These are secondary and do
+not rank agents.
+
+Generate `analysis.json`, `REPORT.md`, and `ANALYSIS_MANIFEST.json` once with
+no-clobber semantics. The bundle manifest must content-address every review,
+adjudication, instruction-exposure input, blinded packet/map, and both generated
+outputs.
 
 ## Limitations
 

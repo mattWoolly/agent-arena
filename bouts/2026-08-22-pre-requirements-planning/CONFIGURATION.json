@@ -5,19 +5,36 @@
     "claude-code--claude-opus-5": {
       "driver": "claude",
       "cli_version": "2.1.241 (Claude Code)",
+      "environment_policy": "minimal-allowlist-v1",
+      "credential_environment_fields_present": [
+        "ANTHROPIC_API_KEY"
+      ],
       "base_url": "https://api.anthropic.com",
-      "model_env_present": false
+      "model_env_present": false,
+      "credential_source_schema": "json",
+      "credential_secret_field_count": 5,
+      "redacted_home_inventory_sha256": "9f7201e02bf7c8ac0ca07475353ab468d657eb728403f7c4ab988361ff929d01"
     },
     "codex--gpt-5.6-sol": {
       "driver": "codex",
       "cli_version": "codex-cli 0.149.0",
+      "environment_policy": "minimal-allowlist-v1",
+      "credential_environment_fields_present": [],
       "auth_present": true,
-      "isolated_home_policy": "outside-repository auth-only; no config or instruction files"
+      "credential_source_schema": "json",
+      "credential_secret_field_count": 1,
+      "redacted_home_inventory_sha256": "dc03fba434a6000a96950819b8c59bc921b1881bb395012b4cfe045df3f61a9e",
+      "isolated_home_policy": "outside-repository exact auth-only source; fresh home per run"
     },
     "kimi-code--kimi-k3": {
       "driver": "kimi",
       "cli_version": "kimi-code 0.27.0",
-      "redacted_config_sha256": "0788171a5f2e2c5e7fb7510407a996ff07195beea1afd7054cc38fc999a48e16"
+      "environment_policy": "minimal-allowlist-v1",
+      "credential_environment_fields_present": [],
+      "credential_source_schema": "toml",
+      "credential_secret_field_count": 1,
+      "redacted_config_sha256": "a77c55e0ecb6e029f120f696db129543ff491ef61e2404d0590faa8354d297da",
+      "redacted_home_inventory_sha256": "a77c55e0ecb6e029f120f696db129543ff491ef61e2404d0590faa8354d297da"
     }
   }
 }

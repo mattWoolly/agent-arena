@@ -51,8 +51,23 @@ def load(path: Path) -> Any:
 
 
 def write(path: Path, value: Any) -> None:
+    if path.exists() or path.is_symlink():
+        raise FileExistsError(f"refusing to overwrite immutable analysis artifact: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
+    with path.open("x") as handle:
+        handle.write(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
+
+
+def bundle_record(role: str, path: Path) -> dict[str, Any]:
+    resolved = path.resolve()
+    if path.is_symlink() or not resolved.is_file():
+        raise ValueError(f"analysis bundle input/output is not a regular file: {path}")
+    return {
+        "role": role,
+        "path": probe.relative(resolved),
+        "sha256": probe.sha256_path(resolved),
+        "bytes": resolved.stat().st_size,
+    }
 
 
 def get_finding(review: dict[str, Any], field: str) -> dict[str, Any]:
@@ -86,6 +101,8 @@ def validate_evidence(
         if not isinstance(item, dict):
             errors.append(f"{where}: evidence must be an object")
             continue
+        if set(item) != {"quote", "start", "end"}:
+            errors.append(f"{where}: evidence fields differ from the frozen schema")
         quote, start, end = item.get("quote"), item.get("start"), item.get("end")
         if not isinstance(quote, str) or not quote:
             errors.append(f"{where}: quote must be nonempty")
@@ -110,10 +127,20 @@ def validate_review_file(
     document: dict[str, Any], packets: dict[str, dict[str, Any]], label: str
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     errors = []
+    if set(document) != {"schema_version", "reviewer_id", "independent_of", "reviews"}:
+        errors.append(f"{label}: document fields differ from the frozen schema")
     if document.get("schema_version") != 1:
         errors.append(f"{label}: unsupported schema_version")
     if not isinstance(document.get("reviewer_id"), str) or not document["reviewer_id"].strip():
         errors.append(f"{label}: reviewer_id missing")
+    independent_of = document.get("independent_of")
+    if (
+        not isinstance(independent_of, list)
+        or not independent_of
+        or any(not isinstance(value, str) or not value.strip() for value in independent_of)
+        or len(independent_of) != len(set(independent_of))
+    ):
+        errors.append(f"{label}: independent_of must list distinct nonempty reviewer IDs")
     reviews = document.get("reviews")
     if not isinstance(reviews, list):
         return {}, errors + [f"{label}: reviews must be a list"]
@@ -123,6 +150,8 @@ def validate_review_file(
         if not isinstance(review, dict):
             errors.append(f"{location}: review must be an object")
             continue
+        if set(review) != {"blind_id", "output_sha256", "A", "B", "C", "D", "E", "F"}:
+            errors.append(f"{location}: review fields differ from the frozen schema")
         blind_id = review.get("blind_id")
         if blind_id in indexed:
             errors.append(f"{location}: duplicate blind_id {blind_id}")
@@ -141,6 +170,8 @@ def validate_review_file(
             if not isinstance(finding, dict):
                 errors.append(f"{location}.{field}: missing finding")
                 continue
+            if set(finding) != {"score", "rationale", "evidence"}:
+                errors.append(f"{location}.{field}: ordinal fields differ from the frozen schema")
             score = finding.get("score")
             if not isinstance(score, int) or isinstance(score, bool) or not 0 <= score <= 3:
                 errors.append(f"{location}.{field}: score must be integer 0-3")
@@ -166,6 +197,8 @@ def validate_review_file(
                 if not isinstance(finding, dict):
                     errors.append(f"{location}.{group}.{field}: missing finding")
                     continue
+                if set(finding) != {"value", "rationale", "evidence"}:
+                    errors.append(f"{location}.{group}.{field}: finding fields differ from the frozen schema")
                 value = finding.get("value")
                 if not isinstance(value, bool):
                     errors.append(f"{location}.{group}.{field}: value must be boolean")
@@ -203,6 +236,8 @@ def validate_adjudications(
     reviewer_ids: set[str],
 ) -> tuple[dict[tuple[str, str], dict[str, Any]], list[str]]:
     errors = []
+    if set(document) != {"schema_version", "adjudicator_id", "resolutions"}:
+        errors.append("adjudication: document fields differ from the frozen schema")
     if document.get("schema_version") != 1:
         errors.append("adjudication: unsupported schema_version")
     adjudicator_id = document.get("adjudicator_id")
@@ -218,6 +253,15 @@ def validate_adjudications(
         if not isinstance(resolution, dict):
             errors.append(f"adjudication.resolutions[{index}]: resolution must be an object")
             continue
+        if set(resolution) != {
+            "blind_id",
+            "field",
+            "value",
+            "output_sha256",
+            "rationale",
+            "evidence",
+        }:
+            errors.append(f"adjudication.resolutions[{index}]: fields differ from the frozen schema")
         key = (resolution.get("blind_id"), resolution.get("field"))
         location = f"adjudication.resolutions[{index}]"
         if key in indexed:
@@ -263,12 +307,24 @@ def validate_instruction_exposure(
     expected_observability: dict[str, str] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], list[str]]:
     errors = []
+    if set(document) != {
+        "schema_version",
+        "coded_before_semantic_outputs_unblinded",
+        "coding_reviewers",
+        "conditions",
+    }:
+        errors.append("instruction exposure: document fields differ from the frozen schema")
     if document.get("schema_version") != 1:
         errors.append("instruction exposure: unsupported schema_version")
     if document.get("coded_before_semantic_outputs_unblinded") is not True:
         errors.append("instruction exposure was not locked before semantic unblinding")
     reviewers = document.get("coding_reviewers")
-    if not isinstance(reviewers, list) or len(set(reviewers)) < 2:
+    if (
+        not isinstance(reviewers, list)
+        or any(not isinstance(value, str) or not value.strip() for value in reviewers)
+        or len(set(reviewers)) < 2
+        or len(reviewers) != len(set(reviewers))
+    ):
         errors.append("instruction exposure requires two distinct configuration reviewers")
     records = document.get("conditions")
     if not isinstance(records, list):
@@ -278,6 +334,18 @@ def validate_instruction_exposure(
         errors.append("instruction exposure does not cover frozen conditions exactly once")
     allowed = {"not_mentioned", "optional_or_encouraged", "required", "unknown_or_unobservable"}
     for condition_id, record in indexed.items():
+        if set(record) != {
+            "condition_id",
+            "coverage",
+            "orchestration",
+            "independent_qa",
+            "artifacts",
+            "limitations",
+        }:
+            errors.append(f"instruction exposure {condition_id}: condition fields differ from the frozen schema")
+        limitations = record.get("limitations")
+        if not isinstance(limitations, list) or any(not isinstance(value, str) for value in limitations):
+            errors.append(f"instruction exposure {condition_id}: limitations must be a string array")
         coverage = record.get("coverage")
         expected_coverage = (expected_observability or {}).get(condition_id)
         if coverage not in {"complete", "partial"}:
@@ -290,12 +358,23 @@ def validate_instruction_exposure(
             artifacts = []
         artifact_text: dict[str, tuple[str, str]] = {}
         for item in artifacts:
-            if not isinstance(item, dict) or not isinstance(item.get("path"), str):
+            if (
+                not isinstance(item, dict)
+                or set(item) != {"path", "sha256"}
+                or not isinstance(item.get("path"), str)
+            ):
                 errors.append(f"instruction exposure {condition_id}: malformed artifact reference")
                 continue
-            path = ROOT / item["path"]
-            if not path.is_file():
+            supplied = Path(item["path"])
+            if supplied.is_absolute() or ".." in supplied.parts:
+                errors.append(f"instruction exposure {condition_id}: unsafe artifact path")
+                continue
+            path = ROOT / supplied
+            if path.is_symlink() or not path.is_file():
                 errors.append(f"instruction exposure {condition_id}: artifact missing: {item['path']}")
+                continue
+            if item["path"] in artifact_text:
+                errors.append(f"instruction exposure {condition_id}: duplicate artifact path: {item['path']}")
                 continue
             data = path.read_bytes()
             text = data.decode(errors="replace")
@@ -309,7 +388,11 @@ def validate_instruction_exposure(
             errors.append(f"instruction exposure {condition_id}: artifact inventory differs from effective runs")
         for dimension in ("orchestration", "independent_qa"):
             finding = record.get(dimension)
-            if not isinstance(finding, dict) or finding.get("status") not in allowed:
+            if (
+                not isinstance(finding, dict)
+                or set(finding) != {"status", "rationale", "evidence"}
+                or finding.get("status") not in allowed
+            ):
                 errors.append(f"instruction exposure {condition_id}.{dimension}: invalid status")
                 continue
             if not isinstance(finding.get("rationale"), str) or not finding["rationale"].strip():
@@ -330,6 +413,16 @@ def validate_instruction_exposure(
                 errors.append(f"instruction exposure {condition_id}.{dimension}: mentioned policy requires evidence")
             for index, item in enumerate(evidence):
                 location = f"instruction exposure {condition_id}.{dimension}.evidence[{index}]"
+                if not isinstance(item, dict) or set(item) != {
+                    "artifact_path",
+                    "artifact_sha256",
+                    "precedence",
+                    "quote",
+                    "start",
+                    "end",
+                }:
+                    errors.append(f"{location}: evidence fields differ from the frozen schema")
+                    continue
                 path = item.get("artifact_path") if isinstance(item, dict) else None
                 if path not in artifact_text:
                     errors.append(f"{location}: artifact_path is not in the inventory")
@@ -404,14 +497,29 @@ def percentile(values: list[float], quantile: float) -> float | None:
 def describe(values: list[Any]) -> dict[str, Any]:
     numbers = [float(value) for value in values if isinstance(value, (int, float)) and not isinstance(value, bool)]
     if not numbers:
-        return {"n": 0, "median": None, "q1": None, "q3": None, "min": None, "max": None}
+        return {
+            "n": 0,
+            "median": None,
+            "q1": None,
+            "q3": None,
+            "iqr": None,
+            "min": None,
+            "max": None,
+            "range": None,
+        }
+    q1 = percentile(numbers, 0.25)
+    q3 = percentile(numbers, 0.75)
+    minimum = min(numbers)
+    maximum = max(numbers)
     return {
         "n": len(numbers),
         "median": statistics.median(numbers),
-        "q1": percentile(numbers, 0.25),
-        "q3": percentile(numbers, 0.75),
-        "min": min(numbers),
-        "max": max(numbers),
+        "q1": q1,
+        "q3": q3,
+        "iqr": q3 - q1 if q1 is not None and q3 is not None else None,
+        "min": minimum,
+        "max": maximum,
+        "range": maximum - minimum,
     }
 
 
@@ -579,6 +687,7 @@ def validate_analysis_provenance(
         errors.append("blind map reuses a run directory")
 
     records: dict[str, dict[str, Any]] = {}
+    emitted_run_identities: list[tuple[str, str]] = []
     expected_instruction_artifacts: dict[str, dict[str, str]] = {
         condition_id: {} for condition_id in probe.condition_map(manifest)
     }
@@ -606,6 +715,17 @@ def validate_analysis_provenance(
         if record is None:
             continue
         records[blind_id] = record
+        driver = (record.get("condition") or {}).get("driver")
+        identifier_key = {"claude": "session_id", "codex": "thread_id", "kimi": "session_id"}.get(driver)
+        identifiers = (
+            ((record.get("configuration") or {}).get("run_identifiers") or {}).get(identifier_key) or []
+            if identifier_key
+            else []
+        )
+        if len(identifiers) != 1:
+            errors.append(f"{blind_id}: run identifier is not singular and phase-bound")
+        else:
+            emitted_run_identities.append((str(driver), str(identifiers[0])))
         if record.get("phase") != "confirmatory" or (record.get("validity") or {}).get("smoke_excluded") is not False:
             errors.append(f"{blind_id}: smoke or non-confirmatory run entered analysis")
         if (record.get("validity") or {}).get("confirmatory_analysis_eligible") is not True:
@@ -629,6 +749,8 @@ def validate_analysis_provenance(
             )
     if set(records) != set(packets):
         errors.append("not every packet has a validated frozen run record")
+    if len(emitted_run_identities) != len(set(emitted_run_identities)):
+        errors.append("confirmatory analysis reuses an emitted run/session identifier")
     return packets, mappings, records, ledger, expected_instruction_artifacts, errors
 
 
@@ -659,6 +781,11 @@ def aggregate(
     reviewer_ids = {reviewer_a_doc.get("reviewer_id"), reviewer_b_doc.get("reviewer_id")}
     if len(reviewer_ids) != 2:
         errors.append("semantic reviewers must have distinct reviewer_id values")
+    else:
+        if set(reviewer_a_doc.get("independent_of") or []) != {reviewer_b_doc.get("reviewer_id")}:
+            errors.append("reviewer_a must declare independence from reviewer_b exactly")
+        if set(reviewer_b_doc.get("independent_of") or []) != {reviewer_a_doc.get("reviewer_id")}:
+            errors.append("reviewer_b must declare independence from reviewer_a exactly")
     differences = disagreements(reviewer_a, reviewer_b) if not (review_a_errors or review_b_errors) else []
     adjudications, adjudication_errors = validate_adjudications(
         load(adjudications_path), differences, packets, {str(value) for value in reviewer_ids}
@@ -685,7 +812,21 @@ def aggregate(
             final_values[blind_id][field] = first if first == second else adjudications[(blind_id, field)]["value"]
     rows = []
     for blind_id, mapping in mappings.items():
-        rows.append(derive_row(blind_id, final_values[blind_id], mapping, run_records[blind_id]))
+        row = derive_row(blind_id, final_values[blind_id], mapping, run_records[blind_id])
+        row["semantic_review_provenance"] = {
+            "reviewer_a_id": reviewer_a_doc["reviewer_id"],
+            "reviewer_a": reviewer_a[blind_id],
+            "reviewer_b_id": reviewer_b_doc["reviewer_id"],
+            "reviewer_b": reviewer_b[blind_id],
+            "adjudicator_id": load(adjudications_path)["adjudicator_id"],
+            "resolutions": [
+                resolution
+                for (resolved_blind_id, _), resolution in sorted(adjudications.items())
+                if resolved_blind_id == blind_id
+            ],
+            "resolved_values": final_values[blind_id],
+        }
+        rows.append(row)
     for condition_id in probe.condition_map(manifest):
         hashes = {
             run_records[blind_id]["configuration"]["instruction_policy_signature"]["sha256"]
@@ -915,6 +1056,10 @@ def render_report(analysis: dict[str, Any]) -> str:
             f"| {condition_id} | scorable-output sensitivity denominator | {sensitivity['n']} "
             f"(empty excluded: {sensitivity['excluded_empty_outputs']}) |"
         )
+        for endpoint, rate in sensitivity["endpoint_rates"].items():
+            lines.append(
+                f"| {condition_id} | scorable-output sensitivity.{endpoint} | {interval_text(rate)} |"
+            )
     lines.extend(["", "## Instruction-stack attribution", ""])
     for condition_id, result in analysis["conditions"].items():
         exposure = result["instruction_exposure"]
@@ -949,15 +1094,15 @@ def render_report(analysis: dict[str, Any]) -> str:
             f"{row['C']} | {row['D']} | {row['E_total']} | {row['full_gate_chain']} | {row['restraint_pass']} | "
             f"{row['embargo_pass']} | {row['format_pass']} | {row['full_compliance']} | `{row['output_sha256']}` |"
         )
-    lines.extend(["", "## Descriptive secondary outcomes", "", "| condition | metric | n | median | Q1 | Q3 | min | max |", "|---|---|---:|---:|---:|---:|---:|---:|"])
+    lines.extend(["", "## Descriptive secondary outcomes", "", "| condition | metric | n | median | Q1 | Q3 | IQR | min | max | range |", "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|"])
     for condition_id, result in analysis["conditions"].items():
         for metric, values in result["descriptive_secondary"].items():
             lines.append(
                 f"| {condition_id} | {metric} | {values['n']} | {values['median']} | {values['q1']} | "
-                f"{values['q3']} | {values['min']} | {values['max']} |"
+                f"{values['q3']} | {values['iqr']} | {values['min']} | {values['max']} | {values['range']} |"
             )
         lines.append(
-            f"| {condition_id} | duplicate output hashes | — | {md(result['duplicate_output_hashes'] or 'none')} | — | — | — | — |"
+            f"| {condition_id} | duplicate output hashes | — | {md(result['duplicate_output_hashes'] or 'none')} | — | — | — | — | — | — |"
         )
     lines.extend(
         [
@@ -973,6 +1118,7 @@ def render_report(analysis: dict[str, Any]) -> str:
             "- Some vendor-owned system or served-model details are not exposed by every CLI; the per-run provenance records those gaps.",
             "- N=20 estimates prevalence coarsely and is not powered for small pairwise differences.",
             "- Semantic scores use observable final output only; hidden reasoning was neither requested nor scored.",
+            "- No cross-driver structured refusal field exists; structured-refusal estimates are therefore reported as not estimable rather than inferred from prose.",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -989,7 +1135,11 @@ def main() -> None:
     parser.add_argument("--instruction-exposure", required=True, type=Path)
     parser.add_argument("--output-json", required=True, type=Path)
     parser.add_argument("--output-report", required=True, type=Path)
+    parser.add_argument("--output-manifest", required=True, type=Path)
     args = parser.parse_args()
+    for output in (args.output_json, args.output_report, args.output_manifest):
+        if output.exists() or output.is_symlink():
+            raise SystemExit(f"ERROR: refusing to overwrite immutable analysis artifact: {output}")
     analysis, errors = aggregate(
         manifest_path=args.manifest,
         packets_path=args.packets,
@@ -1003,7 +1153,31 @@ def main() -> None:
         print("\n".join(f"ERROR: {error}" for error in errors), file=sys.stderr)
         raise SystemExit(1)
     write(args.output_json, analysis)
-    args.output_report.write_text(render_report(analysis))
+    args.output_report.parent.mkdir(parents=True, exist_ok=True)
+    with args.output_report.open("x") as handle:
+        handle.write(render_report(analysis))
+    bundle = {
+        "schema_version": 1,
+        "experiment_id": analysis["experiment_id"],
+        "manifest_freeze_id": analysis["manifest_freeze_id"],
+        "inputs": [
+            bundle_record(role, path)
+            for role, path in (
+                ("frozen_manifest", args.manifest),
+                ("blinded_packets", args.packets),
+                ("custodian_blind_map", args.blind_map),
+                ("reviewer_a", args.reviewer_a),
+                ("reviewer_b", args.reviewer_b),
+                ("adjudications", args.adjudications),
+                ("instruction_exposure", args.instruction_exposure),
+            )
+        ],
+        "outputs": [
+            bundle_record("machine_readable_analysis", args.output_json),
+            bundle_record("human_readable_report", args.output_report),
+        ],
+    }
+    write(args.output_manifest, bundle)
 
 
 if __name__ == "__main__":

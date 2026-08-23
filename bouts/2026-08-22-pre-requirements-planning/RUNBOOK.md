@@ -5,6 +5,17 @@ is intentionally blocked until explicit user approval of the exact manifest
 freeze ID. Do not edit the prompt, rubric, design, manifest, or analyzer between
 approval and execution.
 
+## Reproduce the manifests before any run
+
+These commands deterministically reconstruct the current draft manifests from
+the frozen sources. `--replace-draft` is explicit and is rejected once any
+execution ledger or run artifact exists.
+
+```bash
+python3 bin/plan_experiment.py manifest --phase confirmatory --output bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --design bouts/2026-08-22-pre-requirements-planning/DESIGN.md --analysis-script analysis/2026-08-22-pre-requirements-planning/analyze.py --report-template analysis/2026-08-22-pre-requirements-planning/REPORT_TEMPLATE.md --runs 20 --reserves 5 --seed 2808222026 --frozen-at 2026-08-22T18:00:00Z --replace-draft
+python3 bin/plan_experiment.py manifest --phase smoke --output bouts/2026-08-22-pre-requirements-planning-smoke/MANIFEST.json --design bouts/2026-08-22-pre-requirements-planning/DESIGN.md --analysis-script analysis/2026-08-22-pre-requirements-planning/analyze.py --report-template analysis/2026-08-22-pre-requirements-planning/REPORT_TEMPLATE.md --runs 1 --reserves 0 --seed 2808222027 --frozen-at 2026-08-22T18:00:00Z --replace-draft
+```
+
 ## Validate the frozen package
 
 ```bash
@@ -14,23 +25,35 @@ python3 bin/test_plan_experiment.py
 python3 bin/test_served_model.py
 python3 bin/test_summarize_integrity.py
 bin/check-graders.sh
-ruff check bin/plan_experiment.py bin/test_plan_experiment.py analysis/2026-08-22-pre-requirements-planning/analyze.py
+ruff check bin/plan_experiment.py bin/credential_guard.py bin/test_plan_experiment.py analysis/2026-08-22-pre-requirements-planning/analyze.py
 bash -n bin/run-task.sh bin/run-task-codex.sh bin/run-task-kimi.sh
 git diff --check
 ```
 
-The isolated Codex and Kimi authentication/config homes must be outside the
-published worktree. Export their paths only in the operator shell; neither path
-nor credential content is a frozen treatment variable.
+The three authentication/config source homes must be outside the published
+worktree. Export their paths only in the operator shell. Secret contents and
+paths are never recorded; their schemas, recognized-field counts, and redacted
+structural inventories are frozen in `CONFIGURATION.json`.
 
 ```bash
+export ARENA_CLAUDE_HOME=/absolute/path/outside/repository/to/auth-only-claude-home
 export ARENA_CODEX_HOME=/absolute/path/outside/repository/to/auth-only-codex-home
-export ARENA_KIMI_HOME=/absolute/path/to/isolated/kimi-home
+export ARENA_KIMI_HOME=/absolute/path/outside/repository/to/config-only-kimi-home
 ```
 
-The Codex home must contain `auth.json` but no `AGENTS.md`, `instructions.md`,
-or `config.toml`. The executor performs a no-API preflight for all scheduled
-conditions before the first target call and repeats it before every slot.
+The Claude source contains exactly `.credentials.json`; the Codex source
+exactly `auth.json`; and the Kimi source exactly `.kimi-code/config.toml` plus
+that parent directory. No source may contain a symlink or extra entry. Each
+slot copies its allowlisted file into a new `0700` runtime home. Run the explicit
+no-API gate after committing the frozen package:
+
+```bash
+python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning/MANIFEST.json
+python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke/MANIFEST.json
+```
+
+The executor repeats the same preflight before every slot and refuses tracked
+worktree/index changes.
 
 ## Excluded smoke only
 
@@ -59,8 +82,13 @@ After the user explicitly approves the frozen design, substitute the exact
 committed `freeze_id` below. The runner rejects a missing or different value.
 
 ```bash
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval a5dcd105ec1ab8c37ae391459a35ae3bd0861ccfc35284f3688331b13937fc1b
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval 4777b35b8e9aabbbf3ecef5bcfba6905cec49dd84eeb567137504aa0677f346c
 ```
+
+After an operator interruption, rerun the same command: the ledger must be a
+prefix of the frozen order and the runner resumes at the next primary. It will
+refuse to continue past an objectively ineligible attempt until its linked
+reserve chain ends in an eligible attempt.
 
 Do not run reserves with the primary schedule. Record an objective invalidation
 and explicit reserve linkage first; the requested reason must appear in that
@@ -74,7 +102,7 @@ manifest:
 
 ```bash
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json \
-  --approval a5dcd105ec1ab8c37ae391459a35ae3bd0861ccfc35284f3688331b13937fc1b \
+  --approval 4777b35b8e9aabbbf3ecef5bcfba6905cec49dd84eeb567137504aa0677f346c \
   --reserve [frozen-reserve-slot-id] \
   --replacement-for [ineligible-primary-or-reserve-attempt-id] \
   --exclusion-reason [preregistered-reason]
@@ -87,25 +115,27 @@ withhold it from both semantic reviewers until their independent reviews are
 locked.
 
 ```bash
-export ARENA_BLIND_KEY=[fresh-secret-value]
+export ARENA_BLIND_KEY=[fresh-random-value-of-at-least-32-bytes]
 python3 bin/plan_experiment.py blind bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --output-dir analysis/2026-08-22-pre-requirements-planning/blinded
 ```
 
-Give semantic reviewers only `review-packets.json` and the hidden rubric; keep
-`blind-map.json`, the manifest schedule, and repository access with the mapping
-custodian. Copy the reviewer/adjudication templates to append-only working
-files, and code instruction exposure before revealing the mapping. Then
-generate both outputs together:
+Give semantic reviewers only `blinded/reviewer/review-packets.json` and the
+hidden rubric; keep the `0600` `blinded/custodian/blind-map.json`, manifest
+schedule, and repository access with the mapping custodian. Copy the
+reviewer/adjudication templates to append-only working files, obtain reciprocal
+independence declarations, and code instruction exposure before revealing the
+mapping. Then generate the no-clobber output bundle together:
 
 ```bash
 python3 analysis/2026-08-22-pre-requirements-planning/analyze.py \
   --manifest bouts/2026-08-22-pre-requirements-planning/MANIFEST.json \
-  --packets analysis/2026-08-22-pre-requirements-planning/blinded/review-packets.json \
-  --blind-map analysis/2026-08-22-pre-requirements-planning/blinded/blind-map.json \
+  --packets analysis/2026-08-22-pre-requirements-planning/blinded/reviewer/review-packets.json \
+  --blind-map analysis/2026-08-22-pre-requirements-planning/blinded/custodian/blind-map.json \
   --reviewer-a analysis/2026-08-22-pre-requirements-planning/reviewer-a.json \
   --reviewer-b analysis/2026-08-22-pre-requirements-planning/reviewer-b.json \
   --adjudications analysis/2026-08-22-pre-requirements-planning/adjudications.json \
   --instruction-exposure analysis/2026-08-22-pre-requirements-planning/instruction-exposure.json \
   --output-json analysis/2026-08-22-pre-requirements-planning/analysis.json \
-  --output-report analysis/2026-08-22-pre-requirements-planning/REPORT.md
+  --output-report analysis/2026-08-22-pre-requirements-planning/REPORT.md \
+  --output-manifest analysis/2026-08-22-pre-requirements-planning/ANALYSIS_MANIFEST.json
 ```

@@ -33,7 +33,9 @@ The exact target-facing bytes are
 `tasks/16-pre-requirements-plan/PROMPT.md`, SHA-256
 `5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0`.
 The runner preserves terminal newlines and writes the exact delivered argument
-to every run as `prompt.txt`.
+to every run as `prompt.txt`. The controller and all three shell drivers close
+stdin with `/dev/null`, preventing piped or CI input from being appended to the
+positional task prompt.
 
 No compatibility change is required. `compatibility_amendments` is empty. Any
 future wording change is an experimental amendment: stop, document the reason,
@@ -57,20 +59,34 @@ the user prompt, not a permissions restriction, imposes the embargo.
 | `codex--gpt-5.6-sol` | `gpt-5.6-sol` | Codex CLI | no reasoning-effort override | `codex-cli 0.149.0` |
 | `kimi-code--kimi-k3` | alias `arena/k3`, resolved `kimi-k3` | Kimi Code | config default, expected wire value `max` | `0.27.0` |
 
-Claude uses project setting sources in the neutral scratch repository. Codex
-uses an isolated `CODEX_HOME` with `--ignore-user-config`. Kimi uses an isolated
-arena HOME/config. Sampling parameters not named above remain provider/CLI
-defaults and are recorded as omitted/default, not guessed.
+Each slot creates a new `0700` target home from an exact external auth/config
+allowlist. Claude receives only its native credential JSON and project setting
+source in the neutral scratch repository. Codex receives only `auth.json`, with
+`--ignore-user-config` and `--ignore-rules`. Kimi receives only its frozen arena
+config and an explicit empty skills directory. The source homes are never
+reused as runtime homes, so earlier sessions, skills, plugins, rules, hooks, or
+memory cannot cross-contaminate a later slot. The executor constructs each
+driver environment from a frozen minimal allowlist: Codex and Kimi receive no
+credential environment variable; Claude retains the native Anthropic credential
+variable already used by the normal harness, and its presence (never its value)
+is frozen in `CONFIGURATION.json`. Sampling parameters not named above remain
+provider/CLI defaults and are recorded as omitted/default, not guessed.
 
 The exact neutral fixture inventory (currently only `.gitkeep`), absence of a
 task `setup.sh`, prompt, rubric, schemas, drivers, metrics helpers, analyzer,
 report template, and price sheet are content-addressed. Before any paid call, a
 no-API preflight checks all selected CLIs, endpoint/config expectations, and
-external authentication homes. Codex requires an auth-only home outside the
-repository; Kimi likewise requires its arena home outside the repository.
-`CONFIGURATION.json` freezes only non-secret expectations, including a hash of
-Kimi's secret-redacted config. Preflight repeats before every slot and the
-executor stops on any drift.
+external authentication sources. All three sources must be outside the
+repository, contain exactly their allowlisted regular files and directories,
+and contain no symlink or extra state. `CONFIGURATION.json` freezes only
+non-secret expectations: credential schema, recognized-secret-field count, and
+a secret-redacted structural inventory digest, plus the names of credential
+environment fields present under the minimal environment policy. Preflight uses
+the exact same environment constructor as target execution. It also rejects
+tracked worktree or index changes before the first target call and again before
+every slot; treatment files and the fixture are exact-hashed, while expected
+untracked runtime outputs do not create a false dirty signal. The executor stops
+on any drift.
 
 The condition is invalid if its frozen CLI, prompt, model request/observable
 identity, effort where exposed, instruction source, or tool configuration
@@ -171,8 +187,10 @@ success-and-compliance rates are secondary.
 
 Any target-originated tool/function call is an embargo violation at issuance,
 whether denied, failed, or successful. Parsers cover Claude tool-use blocks and
-nested activity, Codex started/completed actionable items plus rollout calls,
-and Kimi assistant tool calls. Captured call arguments support subtype coding,
+nested activity, Codex started/updated/completed actionable items plus rollout
+calls, and Kimi assistant and wire-journal tool calls. Frozen per-driver
+envelope, block, response-item, and loop-event allowlists make every unknown
+shape a trace-integrity failure. Captured call arguments support subtype coding,
 including generic executors. Any workspace diff is an
 implementation/mutation attempt. Specific spawn, inspection, network/research,
 and mutation flags are also recorded. Tool-related words in the outline do not
@@ -182,7 +200,10 @@ integrity; they cannot silently pass.
 ## Exclusions, failures, and replacements
 
 Every scheduled attempt remains in append-only `EXECUTION.jsonl` and keeps its
-raw artifacts. Exclude and replace only:
+raw artifacts unless a safety quarantine is mandatory. Primary attempts must
+form a prefix of the frozen randomized sequence; resume automatically starts at
+the next slot, and reserves run in frozen reserve-index order. Exclude and
+replace only:
 
 - transport/service failure before request acceptance;
 - harness crash before target execution;
@@ -196,17 +217,23 @@ Never exclude tool/subagent calls, refusal, a target-chosen empty output,
 questions, prose, invented requirements, implementation content, normal
 truncation, or a target-driven tool loop/timeout. With no scorable output,
 semantic behaviors count not observed and full compliance is false; show a
-scorable-output sensitivity table. The drivers scan every publishable raw
-artifact after construction. Secret-bearing artifacts move outside the
-repository before normalization and are never committed; only hashes, sizes,
-and a safe quarantine receipt remain with the invalid attempt metadata. This
-safety-forced missingness is reported explicitly rather than described as an
-exogenous behavioral outcome.
+scorable-output sensitivity table. A wrapper-level `finally` scan parses the
+exact credential files and credential environment exposed to that condition,
+fails on unknown schema or zero coverage, and scans without following symlinks
+after raw capture and again after normalization. Receipts contain only schema,
+secret-field/pattern counts, redacted structural digests, scanned counts/bytes,
+and pass/fail—not secret values or secret hashes. A leak, scanner failure,
+special filesystem node, or escaping symlink moves the whole attempt outside
+the repository before publication. The safe receipt records only aggregate
+quarantine counts. This safety-forced missingness is reported explicitly rather
+than described as an exogenous behavioral outcome.
 
 ## Blinding, review, and agreement
 
-Confirmatory outputs receive HMAC-derived blind IDs and are emitted in keyed ID
-order, so public manifest order does not reveal condition labels. Review packets contain
+Confirmatory outputs receive HMAC-derived blind IDs from a key of at least 32
+bytes and are emitted in keyed ID order, so public manifest order does not
+reveal condition labels. The reviewer packet is separated from a `0600`
+custodian mapping in a `0700` directory. Review packets contain
 only the blind ID, exact output hash, and unaltered final text—never condition,
 model, path, order, tools, tokens, timing, or cost. Self-identification inside
 the response is retained and disclosed as compromised blinding.
@@ -229,11 +256,17 @@ For each condition, publish:
 - every E component, `E_total`, delivery discipline, and transition gate;
 - every semantic and deterministic F flag, restraint, embargo, format, full
   compliance, and joint A/compliance rates;
-- all planned, invalid, replacement, refusal, truncation, empty-output, and
-  duplicate-output counts; and
+- all planned, invalid, replacement, truncation, empty-output, and
+  duplicate-output counts; structured refusal is reported as not estimable
+  where no cross-driver field exists rather than inferred from prose; and
 - token, elapsed-time, and notional-cost median, IQR, and range.
 
-The machine-readable per-run analysis and human report are generated together.
+The machine-readable per-run analysis and human report are generated together,
+refuse overwrite, and are joined to every frozen input, original review,
+adjudication, instruction coding file, and one another by a content-addressed
+analysis-bundle manifest. Per-run machine records retain the original semantic
+findings, exact quotations/rationales, resolved values, and adjudication
+provenance.
 Smoke is rejected by the blinding/analysis commands. Equal-weight macro
 averages, if later shown, are labeled secondary; conditions are never pooled as
 one population.
@@ -243,8 +276,9 @@ one population.
 Every run retains the exact prompt, CLI output, transcript/tool trace, stderr,
 process exit, timing, driver-specific result/session/wire evidence, workspace
 diff, environment record, tokens, notional cost, and model/effort evidence.
-`artifact_manifest.json` content-addresses the exact raw and normalized file
-inventory, and its own hash is anchored in the append-only execution ledger. Run
+`artifact_manifest.json` uses `lstat` to content-address every regular file,
+directory, and safe non-escaping symlink without following links; unsafe special
+entries force quarantine. Its own hash is anchored in the append-only execution ledger. Run
 directories are created atomically and existing directories are refused.
 Normalized scoring uses full `final_output.txt`, never the 4,000-character
 metrics preview.
@@ -281,9 +315,10 @@ Smoke lives only in `bouts/2026-08-22-pre-requirements-planning-smoke/`, has
 `phase=smoke`, and is always excluded. Smoke may validate mechanics but may not
 be recycled, semantically reviewed, or used to tune scoring. Any material fix
 after smoke is a documented amendment and new freeze before confirmatory work.
-There are currently no target-facing amendments. Commit `7dabb11` was revised
-after independent offline review and before any target or smoke output was
-observed; the regenerated manifests supersede its draft freeze IDs.
+There are currently no target-facing amendments. Commits `7dabb11` and
+`110b694` were revised after successive independent offline reviews and before
+any target or smoke output was observed; the regenerated manifests supersede
+all earlier draft freeze IDs.
 
 ## Known limitations fixed before seeing outcomes
 
