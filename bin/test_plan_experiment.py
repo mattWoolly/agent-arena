@@ -6,6 +6,7 @@ No model, network, or paid run is invoked.
 from __future__ import annotations
 
 import copy
+import contextlib
 import importlib.util
 import json
 import os
@@ -137,6 +138,151 @@ def close_synthetic_process_scope(handle: dict) -> None:
     if descriptor is not None:
         os.close(descriptor)
         handle["attach_fd"] = None
+
+
+@contextlib.contextmanager
+def synthetic_live_flow(manifest: dict, outcomes: list[bool]):
+    """Exercise the real serial runner while replacing every target boundary."""
+    remaining = iter(outcomes)
+    attempt_roots: list[Path] = []
+
+    class SyntheticProcess:
+        pid = 999999
+        returncode = 0
+
+        def wait(self, timeout=None):
+            return self.returncode
+
+        def poll(self):
+            return self.returncode
+
+    def preflight(_manifest, condition_ids, _env):
+        slots = [
+            *(_manifest.get("schedule") or []),
+            *(_manifest.get("reserve_slots") or []),
+        ]
+        return {
+            condition_id: synthetic_preflight(
+                next(
+                    slot
+                    for slot in slots
+                    if slot["condition_id"] == condition_id
+                )
+            )
+            for condition_id in condition_ids
+        }
+
+    def staged(_manifest, slot, env):
+        attempt_root = Path(
+            tempfile.mkdtemp(prefix="arena-plan-live-test.", dir=probe.SAFE_TEMP_ROOT)
+        )
+        attempt_roots.append(attempt_root)
+        return (
+            attempt_root,
+            attempt_root / "staged-run",
+            ["synthetic-driver", slot["slot_id"]],
+            dict(env),
+        )
+
+    def recover(attempt_root, _staged_run_dir, run_dir):
+        shutil.rmtree(attempt_root)
+        run_dir.mkdir(parents=True)
+        (run_dir / "target_started").write_text("synthetic\n")
+        (run_dir / "target_returned").write_text("synthetic\n")
+
+    def observe(_manifest, _slot, _run_dir, **_kwargs):
+        eligible = next(remaining)
+        return {
+            "validity": {
+                "state": "valid" if eligible else "valid_with_exclusion",
+                "confirmatory_analysis_eligible": eligible,
+                "technical_issues": [] if eligible else ["prompt mismatch"],
+                "smoke_excluded": _manifest["phase"] == "smoke",
+            },
+            "configuration": {
+                "instruction_policy_signature": {"sha256": "b" * 64}
+            },
+        }
+
+    def write_artifacts(_manifest, slot, run_dir, **_kwargs):
+        value = {"schema_version": 1, "slot_id": slot["slot_id"]}
+        (run_dir / "artifact_manifest.json").write_text(
+            json.dumps(value, sort_keys=True) + "\n"
+        )
+        return value
+
+    with contextlib.ExitStack() as stack:
+        popen = stack.enter_context(
+            mock.patch.object(
+                probe.subprocess,
+                "Popen",
+                side_effect=lambda *_args, **_kwargs: SyntheticProcess(),
+            )
+        )
+        stack.enter_context(
+            mock.patch.object(probe, "preflight_manifest", side_effect=preflight)
+        )
+        stack.enter_context(
+            mock.patch.object(
+                probe,
+                "driver_command",
+                side_effect=lambda _manifest, slot: (
+                    ["synthetic-driver", slot["slot_id"]],
+                    {},
+                ),
+            )
+        )
+        stack.enter_context(
+            mock.patch.object(probe, "prepare_staged_driver", side_effect=staged)
+        )
+        stack.enter_context(
+            mock.patch.object(probe, "recover_and_remove_staged_driver", side_effect=recover)
+        )
+        stack.enter_context(
+            mock.patch.object(probe, "prepare_quarantine", return_value={})
+        )
+        stack.enter_context(
+            mock.patch.object(probe, "prepare_emergency_quarantine", return_value={})
+        )
+        stack.enter_context(mock.patch.object(probe, "close_quarantine"))
+        stack.enter_context(mock.patch.object(probe, "dispose_quarantine"))
+        stack.enter_context(
+            mock.patch.object(
+                probe,
+                "prepare_process_scope",
+                side_effect=lambda _slot: synthetic_process_scope(),
+            )
+        )
+        stack.enter_context(mock.patch.object(probe, "terminate_process_scope"))
+        stack.enter_context(
+            mock.patch.object(
+                probe,
+                "close_process_scope",
+                side_effect=close_synthetic_process_scope,
+            )
+        )
+        stack.enter_context(
+            mock.patch.object(
+                probe, "process_dumpable", side_effect=lambda _value=None: 1
+            )
+        )
+        stack.enter_context(mock.patch.object(probe, "scan_run_credentials"))
+        stack.enter_context(
+            mock.patch.object(probe, "credential_receipt_issues", return_value=[])
+        )
+        stack.enter_context(mock.patch.object(probe, "observe_run", side_effect=observe))
+        stack.enter_context(
+            mock.patch.object(probe, "write_artifact_manifest", side_effect=write_artifacts)
+        )
+        stack.enter_context(
+            mock.patch.object(probe, "validate_prior_attempt_provenance", return_value=[])
+        )
+        try:
+            yield popen
+        finally:
+            for attempt_root in attempt_roots:
+                if attempt_root.exists():
+                    shutil.rmtree(attempt_root)
 
 
 def jsonl(path: Path, events):
@@ -567,6 +713,92 @@ class PromptAndManifestTests(unittest.TestCase):
             self.assertEqual(len(winners), 1)
             self.assertEqual(json.loads(path.read_text()), winners[0])
             self.assertNotEqual(json.loads(path.read_text()), original)
+
+    def test_manifest_command_preserves_lexical_final_symlink_path(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            referent = temp / "referent.json"
+            referent.write_text("sentinel\n")
+            output = temp / "MANIFEST.json"
+            output.symlink_to(referent)
+            args = mock.Mock(
+                phase="confirmatory",
+                output=str(output),
+                design=str(DESIGN),
+                analysis_script=str(ANALYZE_PATH),
+                report_template=str(REPORT_TEMPLATE),
+                runs=10,
+                seed=1,
+                frozen_at="2026-08-22T00:00:00Z",
+                reserves=5,
+                replace_draft=False,
+                bout_dir=None,
+                smoke_continuation_from=None,
+            )
+            with mock.patch.object(
+                probe, "build_manifest", return_value={"freeze_id": "frozen"}
+            ) as build, mock.patch("builtins.print"):
+                probe.command_manifest(args)
+            passed = build.call_args.kwargs["output"]
+            self.assertEqual(passed, Path(os.path.abspath(output)))
+            self.assertNotEqual(passed, referent.resolve())
+
+    def test_canonical_manifest_final_symlink_is_not_followed_or_overwritten(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT / "bouts") as raw:
+            temp = Path(raw)
+            canonical = temp / "canonical"
+            canonical.mkdir()
+            referent = temp / "outside.json"
+            referent.write_bytes(b"do not overwrite\n")
+            output = canonical / "MANIFEST.json"
+            output.symlink_to(referent)
+            bout_rel = str(canonical.relative_to(probe.ROOT))
+            with mock.patch.object(
+                probe, "AMENDED_CONFIRMATORY_BOUT_REL", bout_rel
+            ):
+                with self.assertRaisesRegex(FileExistsError, "refusing to overwrite"):
+                    probe.build_manifest(
+                        phase="confirmatory",
+                        output=output,
+                        design=DESIGN,
+                        analysis_script=ANALYZE_PATH,
+                        report_template=REPORT_TEMPLATE,
+                        repeats=10,
+                        seed=1,
+                        frozen_at="2026-08-22T00:00:00Z",
+                        bout_dir_override=bout_rel,
+                    )
+            self.assertEqual(referent.read_bytes(), b"do not overwrite\n")
+
+    def test_publication_and_live_execution_require_strict_restored_umask(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            original = os.umask(0o077)
+            try:
+                path, manifest = make_manifest(temp / "strict", phase="smoke")
+                os.umask(0o002)
+                with self.assertRaisesRegex(PermissionError, "0022-or-stricter"):
+                    make_manifest(temp / "permissive", phase="smoke")
+                self.assertEqual(probe._current_process_umask(), 0o002)
+                with mock.patch.object(
+                    probe.Path, "read_text", side_effect=OSError("no procfs")
+                ):
+                    self.assertEqual(probe._current_process_umask(), 0o002)
+                self.assertEqual(probe._current_process_umask(), 0o002)
+                with mock.patch.object(probe.subprocess, "Popen") as popen:
+                    with self.assertRaisesRegex(
+                        PermissionError, "0022-or-stricter"
+                    ):
+                        probe.run_slots(
+                            path,
+                            approval=None,
+                            requested_slots={manifest["schedule"][0]["slot_id"]},
+                            dry_run=False,
+                        )
+                    popen.assert_not_called()
+                self.assertEqual(probe._current_process_umask(), 0o002)
+            finally:
+                os.umask(original)
 
     def test_v2_claim_contract_is_current_and_amendment_2_freezes_remain_readable(self):
         legacy_paths = (
@@ -1541,6 +1773,157 @@ class TraceAndArtifactTests(unittest.TestCase):
             self.assertEqual(set(intents), {slot["slot_id"]})
             self.assertFalse(attempt_root.exists())
 
+    def test_pre_spawn_authorization_rejects_exact_ledger_creation_race(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            slot = manifest["schedule"][0]
+            ledger_path = probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+            real_claim = probe.claim_attempt_intent
+
+            def claim_then_create_ledger(*args, **kwargs):
+                result = real_claim(*args, **kwargs)
+                ledger_path.write_bytes(b"")
+                ledger_path.chmod(0o600)
+                return result
+
+            with synthetic_live_flow(manifest, [True]) as popen, mock.patch.object(
+                probe,
+                "claim_attempt_intent",
+                side_effect=claim_then_create_ledger,
+            ):
+                with self.assertRaisesRegex(ValueError, "execution ledger changed"):
+                    probe.run_slots(
+                        path,
+                        approval=None,
+                        requested_slots={slot["slot_id"]},
+                        dry_run=False,
+                    )
+            popen.assert_not_called()
+            rows, snapshot = probe.read_execution_ledger(ledger_path)
+            self.assertEqual(rows, [])
+            self.assertTrue(snapshot["exists"])
+            claims, claim_errors = probe.read_attempt_claims(manifest)
+            intents, intent_errors = probe.read_attempt_intents(manifest)
+            self.assertEqual(claim_errors, [])
+            self.assertEqual(intent_errors, [])
+            self.assertEqual(len(claims), 1)
+            self.assertEqual(set(intents), {slot["slot_id"]})
+
+    def test_live_confirmatory_pause_reserve_chain_and_primary_resume(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            first, second = manifest["schedule"][:2]
+            reserves = [
+                slot
+                for slot in manifest["reserve_slots"]
+                if slot["condition_id"] == first["condition_id"]
+            ][:2]
+            reason = "prompt_hash_mismatch"
+            ledger_path = probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+
+            def witness_counts():
+                ledger, _snapshot = probe.read_execution_ledger(ledger_path)
+                claims, claim_errors = probe.read_attempt_claims(manifest)
+                intents, intent_errors = probe.read_attempt_intents(manifest)
+                self.assertEqual(claim_errors, [])
+                self.assertEqual(intent_errors, [])
+                return ledger, claims, intents
+
+            with synthetic_live_flow(
+                manifest, [False, False, True, True]
+            ) as popen:
+                with self.assertRaisesRegex(RuntimeError, "analysis-ineligible"):
+                    probe.run_slots(
+                        path,
+                        approval=manifest["freeze_id"],
+                        requested_slots={first["slot_id"], second["slot_id"]},
+                        dry_run=False,
+                    )
+                ledger, claims, intents = witness_counts()
+                self.assertEqual(popen.call_count, 1)
+                self.assertEqual([row["slot_id"] for row in ledger], [first["slot_id"]])
+                self.assertEqual((len(claims), len(intents)), (1, 1))
+
+                with self.assertRaisesRegex(RuntimeError, "analysis-ineligible"):
+                    probe.run_slots(
+                        path,
+                        approval=manifest["freeze_id"],
+                        requested_slots=None,
+                        dry_run=False,
+                        reserve_slot=reserves[0]["slot_id"],
+                        replacement_for=first["slot_id"],
+                        exclusion_reason=reason,
+                    )
+                ledger, claims, intents = witness_counts()
+                self.assertEqual(popen.call_count, 2)
+                self.assertEqual(ledger[-1]["slot_id"], reserves[0]["slot_id"])
+                self.assertEqual((len(claims), len(intents)), (2, 2))
+
+                probe.run_slots(
+                    path,
+                    approval=manifest["freeze_id"],
+                    requested_slots=None,
+                    dry_run=False,
+                    reserve_slot=reserves[1]["slot_id"],
+                    replacement_for=reserves[0]["slot_id"],
+                    exclusion_reason=reason,
+                )
+                ledger, claims, intents = witness_counts()
+                self.assertEqual(popen.call_count, 3)
+                self.assertTrue(ledger[-1]["analysis_eligible"])
+                self.assertEqual((len(claims), len(intents)), (3, 3))
+
+                probe.run_slots(
+                    path,
+                    approval=manifest["freeze_id"],
+                    requested_slots={second["slot_id"]},
+                    dry_run=False,
+                )
+                ledger, claims, intents = witness_counts()
+                self.assertEqual(popen.call_count, 4)
+                self.assertEqual(ledger[-1]["slot_id"], second["slot_id"])
+                self.assertEqual((len(claims), len(intents)), (4, 4))
+
+    def test_live_smoke_ineligibility_does_not_pause_kimi_to_claude(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            path, manifest = make_manifest(
+                temp / "manifest", phase="smoke", seed=13
+            )
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            kimi, claude = manifest["schedule"][:2]
+            self.assertEqual(kimi["condition_id"], "kimi-code--kimi-k3")
+            self.assertEqual(
+                claude["condition_id"], "claude-code--claude-opus-5"
+            )
+            with synthetic_live_flow(manifest, [False, False]) as popen:
+                probe.run_slots(
+                    path,
+                    approval=None,
+                    requested_slots={kimi["slot_id"], claude["slot_id"]},
+                    dry_run=False,
+                )
+            ledger_path = probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+            ledger, _snapshot = probe.read_execution_ledger(ledger_path)
+            claims, claim_errors = probe.read_attempt_claims(manifest)
+            intents, intent_errors = probe.read_attempt_intents(manifest)
+            self.assertEqual(claim_errors, [])
+            self.assertEqual(intent_errors, [])
+            self.assertEqual(popen.call_count, 2)
+            self.assertEqual(
+                [row["slot_id"] for row in ledger],
+                [kimi["slot_id"], claude["slot_id"]],
+            )
+            self.assertTrue(all(row["analysis_eligible"] is False for row in ledger))
+            self.assertEqual((len(claims), len(intents)), (2, 2))
+
     def test_every_attempt_crash_boundary_has_non_retryable_state(self):
         class SyntheticProcess:
             pid = 999999
@@ -1818,6 +2201,250 @@ class TraceAndArtifactTests(unittest.TestCase):
                     for error in mismatch_errors
                 )
             )
+
+    def test_strict_execution_ledger_reader_rejects_unsafe_files_and_bytes(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            bout = Path(raw) / "bout"
+            bout.mkdir()
+            ledger_path = bout / "EXECUTION.jsonl"
+
+            def reset(payload=b"{}\n"):
+                if ledger_path.exists() or ledger_path.is_symlink():
+                    ledger_path.unlink()
+                ledger_path.write_bytes(payload)
+                ledger_path.chmod(0o600)
+
+            reset()
+            rows, snapshot = probe.read_execution_ledger(ledger_path)
+            self.assertEqual(rows, [{}])
+            self.assertTrue(snapshot["exists"])
+
+            for mode in (0o664, 0o602):
+                with self.subTest(mode=oct(mode)):
+                    ledger_path.chmod(mode)
+                    with self.assertRaisesRegex(
+                        ValueError, "group- or world-writable"
+                    ):
+                        probe.read_execution_ledger(ledger_path)
+                    ledger_path.chmod(0o600)
+
+            bout.chmod(0o775)
+            with self.assertRaisesRegex(ValueError, "group- or world-writable"):
+                probe.read_execution_ledger(ledger_path)
+            bout.chmod(0o700)
+
+            hardlink = bout / "ledger-hardlink"
+            os.link(ledger_path, hardlink)
+            with self.assertRaisesRegex(ValueError, "exactly one hard link"):
+                probe.read_execution_ledger(ledger_path)
+            hardlink.unlink()
+
+            external = Path(raw) / "external.jsonl"
+            external.write_bytes(b"{}\n")
+            external.chmod(0o600)
+            ledger_path.unlink()
+            ledger_path.symlink_to(external)
+            with self.assertRaisesRegex(ValueError, "not a regular file"):
+                probe.read_execution_ledger(ledger_path)
+
+            malformed = (
+                (b'{"bad":"\xff"}\n', "not UTF-8"),
+                (b"{}", "incomplete row"),
+                (b"{}\n\n", "incomplete or blank"),
+                (b"[]\n", "not an object"),
+            )
+            for payload, message in malformed:
+                with self.subTest(message=message):
+                    reset(payload)
+                    with self.assertRaisesRegex(ValueError, message):
+                        probe.read_execution_ledger(ledger_path)
+
+    def test_claim_and_intent_witnesses_share_strict_permissions_contract(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            slot = manifest["schedule"][0]
+            intent_path, _intent_hash = probe.claim_attempt_intent(
+                manifest,
+                slot,
+                synthetic_preflight(slot),
+                ["synthetic-driver", slot["slot_id"]],
+            )
+            journal = probe.attempt_claim_journal_path(manifest)
+            intent = probe.ROOT / intent_path
+            intent_dir = intent.parent
+            self.assertEqual(probe.read_attempt_claims(manifest)[1], [])
+            self.assertEqual(probe.read_attempt_intents(manifest)[1], [])
+
+            journal.chmod(0o664)
+            self.assertTrue(
+                any(
+                    "group- or world-writable" in error
+                    for error in probe.read_attempt_claims(manifest)[1]
+                )
+            )
+            second = manifest["schedule"][1]
+            with self.assertRaisesRegex(ValueError, "group- or world-writable"):
+                probe.claim_attempt_intent(
+                    manifest,
+                    second,
+                    synthetic_preflight(second),
+                    ["synthetic-driver", second["slot_id"]],
+                )
+            journal.chmod(0o600)
+
+            intent.chmod(0o602)
+            self.assertTrue(
+                any(
+                    "group- or world-writable" in error
+                    for error in probe.read_attempt_intents(manifest)[1]
+                )
+            )
+            intent.chmod(0o600)
+
+            intent_dir.chmod(0o775)
+            self.assertTrue(
+                any(
+                    "group- or world-writable" in error
+                    for error in probe.read_attempt_intents(manifest)[1]
+                )
+            )
+            intent_dir.chmod(0o700)
+
+            journal_link = temp / "journal-hardlink"
+            os.link(journal, journal_link)
+            self.assertTrue(
+                any(
+                    "exactly one hard link" in error
+                    for error in probe.read_attempt_claims(manifest)[1]
+                )
+            )
+
+    def test_append_ledger_revalidates_inode_links_permissions_and_parent(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            bout = Path(raw) / "bout"
+            bout.mkdir()
+            ledger_path = bout / "EXECUTION.jsonl"
+            row = {"slot_id": "synthetic-slot"}
+
+            external = Path(raw) / "external.jsonl"
+            external.write_bytes(b"")
+            external.chmod(0o600)
+            ledger_path.symlink_to(external)
+            with self.assertRaises((OSError, ValueError)):
+                probe.append_ledger(ledger_path, row)
+            self.assertEqual(external.read_bytes(), b"")
+
+            ledger_path.unlink()
+            ledger_path.write_bytes(b"")
+            ledger_path.chmod(0o600)
+            hardlink = bout / "ledger-hardlink"
+            os.link(ledger_path, hardlink)
+            with self.assertRaisesRegex(ValueError, "exactly one hard link"):
+                probe.append_ledger(ledger_path, row)
+            hardlink.unlink()
+
+            for mode in (0o664, 0o602):
+                with self.subTest(mode=oct(mode)):
+                    ledger_path.chmod(mode)
+                    with self.assertRaisesRegex(
+                        ValueError, "group- or world-writable"
+                    ):
+                        probe.append_ledger(ledger_path, row)
+            ledger_path.chmod(0o600)
+            bout.chmod(0o775)
+            with self.assertRaisesRegex(ValueError, "group- or world-writable"):
+                probe.append_ledger(ledger_path, row)
+
+    def test_strict_witness_reader_rejects_access_and_default_acl_xattrs(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            bout = Path(raw) / "bout"
+            bout.mkdir()
+            ledger_path = bout / "EXECUTION.jsonl"
+            ledger_path.write_bytes(b"{}\n")
+            ledger_path.chmod(0o600)
+            bout_identity = (bout.stat().st_dev, bout.stat().st_ino)
+            ledger_identity = (ledger_path.stat().st_dev, ledger_path.stat().st_ino)
+
+            def xattrs_for(identity, acl_name):
+                def listxattr(descriptor):
+                    metadata = os.fstat(descriptor)
+                    if (metadata.st_dev, metadata.st_ino) == identity:
+                        return [acl_name]
+                    return []
+
+                return listxattr
+
+            with mock.patch.object(
+                probe.os,
+                "listxattr",
+                side_effect=xattrs_for(
+                    ledger_identity, "system.posix_acl_access"
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "POSIX ACL"):
+                    probe.read_execution_ledger(ledger_path)
+            with mock.patch.object(
+                probe.os,
+                "listxattr",
+                side_effect=xattrs_for(
+                    bout_identity, "system.posix_acl_default"
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "POSIX ACL"):
+                    probe.read_execution_ledger(ledger_path)
+            with mock.patch.object(
+                probe.os, "listxattr", side_effect=OSError("synthetic xattr failure")
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "ACL safety cannot be established"
+                ):
+                    probe.read_execution_ledger(ledger_path)
+
+    def test_strict_reader_validates_root_and_bouts_trust_anchors(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            fake_root = Path(raw) / "repository"
+            bout = fake_root / "bouts" / "synthetic-bout"
+            bout.mkdir(parents=True)
+            ledger_path = bout / "EXECUTION.jsonl"
+            ledger_path.write_bytes(b"{}\n")
+            ledger_path.chmod(0o600)
+            with mock.patch.object(probe, "ROOT", fake_root):
+                self.assertEqual(probe.read_execution_ledger(ledger_path)[0], [{}])
+                fake_root.chmod(0o775)
+                with self.assertRaisesRegex(
+                    ValueError, "repository trust anchor.*group- or world-writable"
+                ):
+                    probe.read_execution_ledger(ledger_path)
+                fake_root.chmod(0o700)
+                (fake_root / "bouts").chmod(0o775)
+                with self.assertRaisesRegex(
+                    ValueError, "component bouts.*group- or world-writable"
+                ):
+                    probe.read_execution_ledger(ledger_path)
+
+    def test_real_posix_acl_is_rejected_when_platform_supports_it(self):
+        setfacl = shutil.which("setfacl")
+        if setfacl is None:
+            self.skipTest("setfacl is unavailable; mocked ACL-path coverage ran")
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            bout = Path(raw) / "bout"
+            bout.mkdir()
+            ledger_path = bout / "EXECUTION.jsonl"
+            ledger_path.write_bytes(b"{}\n")
+            ledger_path.chmod(0o600)
+            completed = subprocess.run(
+                [setfacl, "-m", "u:65534:r", str(ledger_path)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            if completed.returncode != 0:
+                self.skipTest("filesystem POSIX ACL support is unavailable")
+            with self.assertRaisesRegex(ValueError, "POSIX ACL"):
+                probe.read_execution_ledger(ledger_path)
 
     def test_reserve_attempt_intent_binds_runtime_replacement_context(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
