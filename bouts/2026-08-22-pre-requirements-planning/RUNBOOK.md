@@ -14,6 +14,9 @@ python3 bin/test_plan_experiment.py
 python3 bin/test_served_model.py
 python3 bin/test_summarize_integrity.py
 bin/check-graders.sh
+ruff check bin/plan_experiment.py bin/test_plan_experiment.py analysis/2026-08-22-pre-requirements-planning/analyze.py
+bash -n bin/run-task.sh bin/run-task-codex.sh bin/run-task-kimi.sh
+git diff --check
 ```
 
 The isolated Codex and Kimi authentication/config homes must be outside the
@@ -21,9 +24,13 @@ published worktree. Export their paths only in the operator shell; neither path
 nor credential content is a frozen treatment variable.
 
 ```bash
-export ARENA_CODEX_HOME=/absolute/path/to/isolated/codex-home
+export ARENA_CODEX_HOME=/absolute/path/outside/repository/to/auth-only-codex-home
 export ARENA_KIMI_HOME=/absolute/path/to/isolated/kimi-home
 ```
+
+The Codex home must contain `auth.json` but no `AGENTS.md`, `instructions.md`,
+or `config.toml`. The executor performs a no-API preflight for all scheduled
+conditions before the first target call and repeats it before every slot.
 
 ## Excluded smoke only
 
@@ -52,11 +59,13 @@ After the user explicitly approves the frozen design, substitute the exact
 committed `freeze_id` below. The runner rejects a missing or different value.
 
 ```bash
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval 99bd98a1b21bb62e09f3758b9830e06b947b59a29fbc240173c16ddcca83072b
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval a5dcd105ec1ab8c37ae391459a35ae3bd0861ccfc35284f3688331b13937fc1b
 ```
 
 Do not run reserves with the primary schedule. Record an objective invalidation
-and explicit reserve linkage first; if the five reserves for a condition are
+and explicit reserve linkage first; the requested reason must appear in that
+attempt's `eligible_exclusion_reasons`. If a reserve is also ineligible, link the
+next reserve to that failed reserve. If all five reserves for a condition are
 exhausted, stop and amend.
 
 One reserve is run explicitly and only for an ineligible primary of the same
@@ -65,9 +74,9 @@ manifest:
 
 ```bash
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json \
-  --approval 99bd98a1b21bb62e09f3758b9830e06b947b59a29fbc240173c16ddcca83072b \
+  --approval a5dcd105ec1ab8c37ae391459a35ae3bd0861ccfc35284f3688331b13937fc1b \
   --reserve [frozen-reserve-slot-id] \
-  --replacement-for [ineligible-primary-slot-id] \
+  --replacement-for [ineligible-primary-or-reserve-attempt-id] \
   --exclusion-reason [preregistered-reason]
 ```
 
@@ -82,10 +91,11 @@ export ARENA_BLIND_KEY=[fresh-secret-value]
 python3 bin/plan_experiment.py blind bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --output-dir analysis/2026-08-22-pre-requirements-planning/blinded
 ```
 
-Copy the reviewer/adjudication templates to append-only working files, fill
-them against only `review-packets.json` and the hidden rubric, and code the
-instruction exposure before revealing `blind-map.json`. Then generate both
-outputs together:
+Give semantic reviewers only `review-packets.json` and the hidden rubric; keep
+`blind-map.json`, the manifest schedule, and repository access with the mapping
+custodian. Copy the reviewer/adjudication templates to append-only working
+files, and code instruction exposure before revealing the mapping. Then
+generate both outputs together:
 
 ```bash
 python3 analysis/2026-08-22-pre-requirements-planning/analyze.py \

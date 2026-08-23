@@ -177,11 +177,10 @@ The base URL and env-file name (never its contents) are recorded in
 `run_env.json`. Real `.env` files are gitignored; only `.env.example`
 templates are tracked.
 
-Because the agent can read its own environment and transcripts/workspaces are
-published, every run also gets a secret-leak check: if the auth token or the
-`ANTHROPIC_API_KEY` (native-run auth) appears in `transcript.jsonl` or the
-finished workspace, `peek_check` records `SECRET LEAK` and the run is
-flagged as unpublishable. A model may also ship
+Because the agent can read its own environment and run artifacts are
+published, every driver scans the complete output directory and finished
+workspace after artifact construction. If an auth value appears, `peek_check`
+records `SECRET LEAK` and the run is unpublishable. A model may also ship
 an `env/<model>.leakscan` script (tracked; contains no secrets) that prints
 extra secret values, one per line; run-task.sh executes it in a subshell
 after the agent finishes and scans published artifacts for each value, so
@@ -231,13 +230,15 @@ workspaces are fresh git repos so every change is diffable and attributable.
 `bin/run-task-codex.sh` runs a model under the Codex CLI against the same
 fixtures, byte-identical PROMPT.md, and the same hidden graders, labeling
 cells `<model>-codex` so they sit beside Claude-Code-driven cells in one
-results table. Auth uses an isolated API-key `CODEX_HOME` in `.codex-arena/`
-(gitignored), never the user's `~/.codex` session; the `env/<label>.leakscan`
-hook covers the key. Codex "turns" are whole prompt→completion cycles, so
+results table. Auth uses an isolated API-key `CODEX_HOME`, never the user's
+ordinary `~/.codex` session; the `env/<label>.leakscan` hook covers the key.
+Codex "turns" are whole prompt→completion cycles, so
 compare effort across drivers on tool calls, tokens, wall, and cost, not
 turn counts.
-Set `ARENA_CODEX_HOME` to use an isolated auth/config home outside the current
-worktree (the default remains `.codex-arena/`). Each run also copies the session
+For the response-only planning probe, `ARENA_CODEX_HOME` is required and must
+name an isolated auth-only home outside the repository; in-repository homes and
+homes containing user instruction or config files are refused. Other tasks
+retain the driver's existing `.codex-arena/` default. Each run also copies the session
 rollout associated by its emitted thread ID to `session.jsonl`; this preserves
 the exposed base/developer instruction stack omitted by the public event stream.
 
@@ -287,14 +288,24 @@ without it. The manifest fixes the exact prompt, condition versions, native
 effort behavior, randomized complete-block schedule, exclusions, and analysis
 inputs. Smoke has its own manifest/bout and cannot enter blinding or analysis.
 Preregistered reserves require `--reserve`, `--replacement-for`, and one exact
-`--exclusion-reason` from the manifest; the runner accepts them only for a
-same-condition primary already recorded as objectively ineligible.
+`--exclusion-reason` from the manifest; the runner accepts them only when that
+reason is supported by a same-condition ineligible attempt's recorded evidence.
+If a reserve itself fails exogenously, the next reserve links to that failed
+attempt, preserving the full replacement chain.
+
+Before any model call, the executor validates every selected condition's CLI,
+external-home isolation, endpoint/config surface, exact neutral fixture
+inventory, and all content-addressed harness inputs. It repeats that preflight
+before each slot and halts the matrix on drift or run-integrity failure. The
+experiment's `CONFIGURATION.json` freezes non-secret expectations and only a
+secret-redacted hash of external Kimi configuration.
 
 Each normalized run adds:
 
 - `final_output.txt` — complete final response, never the metrics preview;
-- `embargo.json` — issued tool events, workspace mutation, and specific
-  spawn/inspection/research/implementation flags;
+- `embargo.json` — issued tool events and arguments, workspace mutation,
+  specific spawn/inspection/research/implementation flags, and fail-closed
+  trace-integrity status;
 - `instruction_context.json` — exposed system/developer/tool context, without
   hidden reasoning;
 - `run_record.json` — slot, condition, model/effort evidence, metrics, and
@@ -302,12 +313,14 @@ Each normalized run adds:
 - `artifact_manifest.json` — byte size and SHA-256 for every raw and normalized
   run artifact.
 
-`bin/plan_experiment.py blind` emits label-free packets containing only blind
-ID, output hash, and exact final text. The frozen analyzer requires two distinct
-reviewers, exact quote/offset evidence for every positive score, and a distinct
-adjudicator for every disagreement. It reports Wilson intervals and inter-rater
-agreement without reading hidden reasoning. See the bout `RUNBOOK.md` for the
-full gated workflow.
+`bin/plan_experiment.py blind` emits HMAC-ordered label-free packets containing
+only blind ID, output hash, and exact final text. The withheld mapping, frozen
+ledger, run record, final-output hash, and ledger-anchored artifact manifest
+must all agree before analysis. The analyzer requires two distinct reviewers,
+exact quote/offset evidence for every positive score, and a distinct adjudicator
+for every disagreement. It reports per-run results, Wilson intervals, complete
+rubric/component rates, run accounting, and inter-rater agreement without
+reading hidden reasoning. See the bout `RUNBOOK.md` for the full gated workflow.
 
 ## Rubric judging (depth qualities)
 

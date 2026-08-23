@@ -15,8 +15,10 @@ import json
 import os
 import random
 import re
+import shutil
 import subprocess
 import sys
+import tomllib
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -28,6 +30,26 @@ TASK_REL = "tasks/16-pre-requirements-plan"
 PROMPT_REL = f"{TASK_REL}/PROMPT.md"
 FROZEN_PROMPT_SHA256 = "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0"
 EXPERIMENT_ID = "2026-08-22-pre-requirements-planning"
+CONFIG_LOCK_REL = f"bouts/{EXPERIMENT_ID}/CONFIGURATION.json"
+FROZEN_CORE_RELATIVE = [
+    PROMPT_REL,
+    f"{TASK_REL}/SCORING.md",
+    f"{TASK_REL}/review.schema.json",
+    f"{TASK_REL}/adjudication.schema.json",
+    f"bouts/{EXPERIMENT_ID}/DESIGN.md",
+    CONFIG_LOCK_REL,
+    f"analysis/{EXPERIMENT_ID}/analyze.py",
+    f"analysis/{EXPERIMENT_ID}/REPORT_TEMPLATE.md",
+    "bin/plan_experiment.py",
+    "bin/run-task.sh",
+    "bin/run-task-codex.sh",
+    "bin/run-task-kimi.sh",
+    "bin/metrics.py",
+    "bin/metrics_codex.py",
+    "bin/metrics_kimi.py",
+    "bin/served_model.py",
+    "env/prices.json",
+]
 RAW_ARTIFACTS = {
     "claude": ["transcript.jsonl", "result.json"],
     "codex": ["transcript.jsonl", "last_message.txt", "session.jsonl"],
@@ -44,6 +66,12 @@ COMMON_ARTIFACTS = [
     "workspace.diff",
     "workspace.diffstat",
 ]
+DERIVED_ARTIFACTS = [
+    "final_output.txt",
+    "embargo.json",
+    "instruction_context.json",
+    "run_record.json",
+]
 PASSIVE_CODEX_ITEMS = {"agent_message", "error", "reasoning", "plan"}
 CALL_SESSION_TYPES = {
     "computer_call",
@@ -53,6 +81,10 @@ CALL_SESSION_TYPES = {
     "mcp_tool_call",
     "web_search_call",
 }
+
+
+class SecretLeakError(RuntimeError):
+    """Raised before normalization when a driver marks publishable evidence unsafe."""
 
 
 def utc_now() -> str:
@@ -100,8 +132,13 @@ def default_conditions() -> list[dict[str, Any]]:
             "output_label": "claude-opus-5",
             "expected_model_substring": "claude-opus-5",
             "expected_cli_version": "2.1.241 (Claude Code)",
+            "expected_base_url": "https://api.anthropic.com",
+            "model_env_expected": "absent",
             "effort": {"mode": "native_default", "cli_argument": None, "observed_value": "not_exposed"},
+            "expected_effort_record": "native-default (flag omitted)",
+            "expected_setting_sources": "project",
             "instruction_configuration": "project setting source in a neutral scratch repository",
+            "instruction_text_observability": "partial",
             "tool_configuration": "native default tools enabled",
         },
         {
@@ -112,8 +149,12 @@ def default_conditions() -> list[dict[str, Any]]:
             "output_label": "gpt-5.6-sol-codex",
             "expected_model_substring": "gpt-5.6-sol",
             "expected_cli_version": "codex-cli 0.149.0",
+            "expected_base_url": "https://api.openai.com (native)",
             "effort": {"mode": "native_default", "cli_argument": None, "observed_value": "not_exposed"},
+            "expected_effort_record": "codex-default",
+            "expected_setting_sources": "none (--ignore-user-config, isolated CODEX_HOME)",
             "instruction_configuration": "isolated CODEX_HOME with --ignore-user-config",
+            "instruction_text_observability": "partial",
             "tool_configuration": "native default tools enabled; schemas opaque unless present in session rollout",
         },
         {
@@ -124,8 +165,12 @@ def default_conditions() -> list[dict[str, Any]]:
             "output_label": "kimi-k3-kimicode",
             "expected_model_substring": "kimi-k3",
             "expected_cli_version": "kimi-code 0.27.0",
+            "expected_base_url": "https://api.moonshot.ai/v1 (platform, metered)",
             "effort": {"mode": "native_default", "cli_argument": None, "observed_value": "max"},
+            "expected_effort_record": "native-default (observed in wire journal)",
+            "expected_setting_sources": "arena config.toml only",
             "instruction_configuration": "isolated Kimi arena HOME and config.toml",
+            "instruction_text_observability": "complete",
             "tool_configuration": "native default tools enabled",
         },
     ]
@@ -210,20 +255,20 @@ def build_manifest(
                         "replacement_for": None,
                     }
                 )
-    frozen_files = [
-        prompt,
-        ROOT / TASK_REL / "SCORING.md",
-        ROOT / TASK_REL / "review.schema.json",
-        ROOT / TASK_REL / "adjudication.schema.json",
-        design,
-        analysis_script,
-        report_template,
-        ROOT / "bin/plan_experiment.py",
-        ROOT / "bin/run-task.sh",
-        ROOT / "bin/run-task-codex.sh",
-        ROOT / "bin/run-task-kimi.sh",
-        ROOT / "env/prices.json",
-    ]
+    fixture_dir = ROOT / TASK_REL / "fixture"
+    fixture_files = sorted(path for path in fixture_dir.rglob("*") if path.is_file())
+    expected_fixture_path = (fixture_dir / ".gitkeep").resolve()
+    if [path.resolve() for path in fixture_files] != [expected_fixture_path]:
+        raise ValueError("neutral fixture must contain exactly its .gitkeep marker")
+    supplied_core = {design.resolve(), analysis_script.resolve(), report_template.resolve()}
+    expected_supplied = {
+        (ROOT / f"bouts/{EXPERIMENT_ID}/DESIGN.md").resolve(),
+        (ROOT / f"analysis/{EXPERIMENT_ID}/analyze.py").resolve(),
+        (ROOT / f"analysis/{EXPERIMENT_ID}/REPORT_TEMPLATE.md").resolve(),
+    }
+    if supplied_core != expected_supplied:
+        raise ValueError("manifest inputs must use the experiment's canonical design/analyzer/report paths")
+    frozen_files = [*(ROOT / path for path in FROZEN_CORE_RELATIVE), *fixture_files]
     missing = [str(path) for path in frozen_files if not path.is_file()]
     if missing:
         raise ValueError(f"missing frozen input files: {missing}")
@@ -234,6 +279,7 @@ def build_manifest(
         "phase": phase,
         "status": "excluded-smoke" if phase == "smoke" else "frozen-awaiting-explicit-user-approval",
         "frozen_at": frozen_at,
+        "amendments": [],
         "bout_dir": bout_dir,
         "task": {
             "path": TASK_REL,
@@ -241,6 +287,8 @@ def build_manifest(
             "prompt_sha256": sha256_path(prompt),
             "prompt_bytes": prompt.stat().st_size,
             "compatibility_amendments": [],
+            "fixture_inventory": [file_record(path) for path in fixture_files],
+            "setup_script": None,
         },
         "conditions": conditions,
         "sampling": {
@@ -266,6 +314,7 @@ def build_manifest(
                 "wrong_model_or_frozen_configuration",
                 "corrupted_or_missing_raw_artifact_due_to_harness",
                 "external_termination_before_attributable_target_completion",
+                "security_quarantine_after_secret_scan",
             ],
             "never_exclude": [
                 "tool_or_subagent_call",
@@ -279,7 +328,17 @@ def build_manifest(
         "analysis": {
             "semantic_reviewers": 2,
             "third_adjudicator_for_every_disagreement": True,
-            "primary_endpoints": ["A_ge_2", "B_ge_2", "C_eq_3", "D_ge_2", "full_gate_chain", "restraint_pass", "embargo_pass"],
+            "primary_endpoints": [
+                "A_ge_2",
+                "B_ge_2",
+                "C_eq_3",
+                "D_ge_2",
+                "full_gate_chain",
+                "restraint_pass",
+                "embargo_pass",
+                "format_pass",
+                "full_compliance",
+            ],
             "interval": "two-sided 95% Wilson score interval",
             "no_omnibus_score_or_confirmatory_pairwise_ranking": True,
             "hidden_reasoning_scored": False,
@@ -288,7 +347,7 @@ def build_manifest(
             "raw_outputs_immutable": True,
             "required_common": COMMON_ARTIFACTS,
             "required_by_driver": RAW_ARTIFACTS,
-            "derived": ["final_output.txt", "embargo.json", "instruction_context.json", "run_record.json", "artifact_manifest.json"],
+            "derived": [*DERIVED_ARTIFACTS, "artifact_manifest.json"],
         },
         "frozen_inputs": [file_record(path) for path in frozen_files],
     }
@@ -323,6 +382,8 @@ def validate_manifest(manifest: dict[str, Any], *, check_files: bool = True) -> 
         errors.append("manifest prompt hash is not the frozen target hash")
     if task.get("compatibility_amendments") != []:
         errors.append("target-prompt amendment present; freeze a new design version before running")
+    if task.get("setup_script") is not None:
+        errors.append("neutral response-only task must not have a setup script")
     if check_files:
         if not prompt_path.is_file():
             errors.append("target prompt file missing")
@@ -332,15 +393,54 @@ def validate_manifest(manifest: dict[str, Any], *, check_files: bool = True) -> 
                 errors.append("target prompt file hash mismatch")
             if data.decode() != task.get("target_prompt"):
                 errors.append("manifest target prompt text mismatch")
-        for rec in manifest.get("frozen_inputs") or []:
+        frozen_records = manifest.get("frozen_inputs") or []
+        frozen_paths = [rec.get("path") for rec in frozen_records if isinstance(rec, dict)]
+        expected_frozen_paths = set(FROZEN_CORE_RELATIVE) | {
+            item.get("path") for item in task.get("fixture_inventory") or [] if isinstance(item, dict)
+        }
+        if len(frozen_paths) != len(set(frozen_paths)) or set(frozen_paths) != expected_frozen_paths:
+            errors.append("frozen input inventory differs from the required treatment surface")
+        for rec in frozen_records:
+            if not isinstance(rec, dict):
+                errors.append("malformed frozen input record")
+                continue
             path = ROOT / rec.get("path", "")
             if not path.is_file():
                 errors.append(f"frozen input missing: {rec.get('path')}")
             elif sha256_path(path) != rec.get("sha256") or path.stat().st_size != rec.get("bytes"):
                 errors.append(f"frozen input drift: {rec.get('path')}")
+        fixture_dir = ROOT / str(task.get("path", "")) / "fixture"
+        actual_fixture = {
+            relative(path): (sha256_path(path), path.stat().st_size)
+            for path in fixture_dir.rglob("*")
+            if path.is_file()
+        } if fixture_dir.is_dir() else {}
+        frozen_fixture = {
+            item.get("path"): (item.get("sha256"), item.get("bytes"))
+            for item in task.get("fixture_inventory") or []
+            if isinstance(item, dict)
+        }
+        if actual_fixture != frozen_fixture:
+            errors.append("neutral fixture inventory or content drift")
+        if set(actual_fixture) != {f"{TASK_REL}/fixture/.gitkeep"}:
+            errors.append("neutral fixture must contain exactly .gitkeep and no instruction or product files")
+        setup_path = ROOT / str(task.get("path", "")) / "setup.sh"
+        if task.get("setup_script") is None and setup_path.exists():
+            errors.append("unexpected task setup.sh would change the frozen target workspace")
     conditions = condition_map(manifest) if manifest.get("conditions") else {}
     if len(conditions) != len(manifest.get("conditions") or []):
         errors.append("duplicate condition_id")
+    for condition_id, condition in conditions.items():
+        if condition.get("instruction_text_observability") not in {"complete", "partial"}:
+            errors.append(f"condition {condition_id} has invalid instruction-text observability")
+    if check_files:
+        try:
+            configuration_lock = load_json(ROOT / CONFIG_LOCK_REL)
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"configuration lock unreadable: {exc}")
+        else:
+            if configuration_lock.get("schema_version") != 1 or set(configuration_lock.get("conditions") or {}) != set(conditions):
+                errors.append("configuration lock does not cover frozen conditions")
     repeats = (manifest.get("sampling") or {}).get("valid_runs_per_condition")
     if not isinstance(repeats, int) or repeats < 1:
         errors.append("invalid valid_runs_per_condition")
@@ -458,6 +558,13 @@ def _event_name_from_input(item: dict[str, Any]) -> str:
     return str(item.get("type") or item.get("item_type") or "unknown_tool")
 
 
+def _call_arguments(value: Any) -> Any:
+    """Keep observable call arguments for deterministic subtype coding."""
+    if value is None or isinstance(value, (str, int, float, bool, list, dict)):
+        return value
+    return str(value)
+
+
 def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path) -> tuple[list[dict[str, Any]], list[str]]:
     calls: dict[str, dict[str, Any]] = {}
     unknown: list[str] = []
@@ -467,6 +574,7 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                 continue
             for index, block in enumerate((event.get("message") or {}).get("content") or []):
                 if not isinstance(block, dict):
+                    unknown.append(f"transcript.jsonl:{event['_line']}:malformed assistant content block")
                     continue
                 block_type = block.get("type")
                 if block_type in {"tool_use", "server_tool_use", "mcp_tool_use"}:
@@ -477,7 +585,12 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                         "line": event["_line"],
                         "name": str(block.get("name") or block_type),
                         "event_type": block_type,
+                        "arguments": _call_arguments(block.get("input")),
                     }
+                elif block_type not in {"text", "thinking", "redacted_thinking"}:
+                    unknown.append(
+                        f"transcript.jsonl:{event['_line']}:unknown assistant content type {block_type!r}"
+                    )
             parent = event.get("parent_tool_use_id")
             if parent and str(parent) not in calls:
                 calls[str(parent)] = {
@@ -486,6 +599,7 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                     "line": event["_line"],
                     "name": "nested_agent_activity",
                     "event_type": "parent_tool_use_id",
+                    "arguments": None,
                 }
     elif driver == "codex":
         for event in events:
@@ -505,6 +619,13 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                 "line": event["_line"],
                 "name": _event_name_from_input(item),
                 "event_type": str(item_type),
+                "arguments": _call_arguments(
+                    item.get("arguments")
+                    if item.get("arguments") is not None
+                    else item.get("command")
+                    if item.get("command") is not None
+                    else item.get("changes")
+                ),
             }
         session_path = run_dir / "session.jsonl"
         session_events, session_bad = iter_jsonl(session_path) if session_path.is_file() else ([], [])
@@ -524,6 +645,11 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                     "line": event["_line"],
                     "name": str(payload.get("name") or payload_type),
                     "event_type": str(payload_type),
+                    "arguments": _call_arguments(
+                        payload.get("arguments")
+                        if payload.get("arguments") is not None
+                        else payload.get("input")
+                    ),
                 }
     elif driver == "kimi":
         for event in events:
@@ -541,6 +667,7 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                     "line": event["_line"],
                     "name": str(function.get("name") or call.get("type") or "unknown_tool"),
                     "event_type": str(call.get("type") or "tool_call"),
+                    "arguments": _call_arguments(function.get("arguments")),
                 }
         wire_path = run_dir / "wire.jsonl"
         wire_events, wire_bad = iter_jsonl(wire_path) if wire_path.is_file() else ([], [])
@@ -559,6 +686,11 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                     "line": event["_line"],
                     "name": str(loop_event.get("name") or "tool.call"),
                     "event_type": "tool.call",
+                    "arguments": _call_arguments(
+                        loop_event.get("arguments")
+                        if loop_event.get("arguments") is not None
+                        else loop_event.get("input")
+                    ),
                 }
     else:
         raise ValueError(f"unknown driver: {driver}")
@@ -568,25 +700,45 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
 def classify_calls(calls: list[dict[str, Any]], workspace_changed: bool) -> dict[str, bool]:
     names = [call["name"].lower() for call in calls]
     types = [call["event_type"].lower() for call in calls]
+    arguments = [
+        json.dumps(call.get("arguments"), sort_keys=True, ensure_ascii=False).lower()
+        if not isinstance(call.get("arguments"), str)
+        else call["arguments"].lower()
+        for call in calls
+    ]
+    surfaces = [" ".join(parts) for parts in zip(names, types, arguments)]
     spawned = any(
         name in {"task", "agent", "agentswarm", "spawn_agent", "collaboration.spawn_agent"}
         or "spawn_agent" in name
         or "agent_swarm" in name
         or event_type in {"collab_agent_tool_call"}
-        for name, event_type in zip(names, types)
+        or "spawn_agent" in surface
+        or "collaboration.spawn_agent" in surface
+        for name, event_type, surface in zip(names, types, surfaces)
     )
     inspected = any(
-        name in {"read", "grep", "glob", "command_execution", "bash", "functions.exec", "exec_command"}
-        for name in names
+        name in {"read", "grep", "glob", "view_image", "read_file", "search_files"}
+        or any(token in surface for token in (
+            "tools.view_image", "tools.read", "tools.exec_command", " read ", " cat ", " sed -n", " head ",
+            " tail ", " grep ", " rg ", " find ", " ls ", " pwd", "git status", "git diff",
+        ))
+        for name, surface in zip(names, surfaces)
     )
     researched = any(
-        token in name
-        for name in names
-        for token in ("websearch", "web_search", "webfetch", "fetchurl", "fetch_url", "research")
+        any(token in surface for token in (
+            "websearch", "web_search", "webfetch", "web__run", "web.run", "fetchurl", "fetch_url",
+            "research", "curl ", "wget ", "http://", "https://",
+        ))
+        for surface in surfaces
     )
     mutated = workspace_changed or any(
-        name in {"write", "edit", "apply_patch", "file_change"} or event_type == "file_change"
-        for name, event_type in zip(names, types)
+        name in {"write", "edit", "apply_patch", "file_change", "write_file", "create_file", "delete_file"}
+        or event_type == "file_change"
+        or any(token in surface for token in (
+            "apply_patch", "tools.apply_patch", " sed -i", " tee ", "touch ", "mkdir ", "rm ", "mv ",
+            "cp ", "git commit", "npm install", "pip install", " > ", ">>",
+        ))
+        for name, event_type, surface in zip(names, types, surfaces)
     )
     return {
         "target_originated_tool_or_function_call": bool(calls),
@@ -662,7 +814,25 @@ def instruction_context(driver: str, events: list[dict[str, Any]], run_dir: Path
             elif event.get("type") == "llm.tools_snapshot":
                 tool_snapshots.append(clean)
             elif event.get("type") == "llm.request":
-                requests.append(clean)
+                requests.append(
+                    {
+                        key: clean.get(key)
+                        for key in (
+                            "type",
+                            "time",
+                            "maxTokens",
+                            "model",
+                            "modelAlias",
+                            "provider",
+                            "systemPromptHash",
+                            "thinkingEffort",
+                            "thinkingKeep",
+                            "toolSelect",
+                            "toolsHash",
+                        )
+                        if key in clean
+                    }
+                )
         if not any("systemPrompt" in event for event in config):
             issues.append("Kimi system prompt missing from wire journal")
         return {
@@ -809,17 +979,64 @@ def run_identifiers(driver: str, events: list[dict[str, Any]]) -> dict[str, list
 def artifact_records(run_dir: Path) -> list[dict[str, Any]]:
     excluded = {"artifact_manifest.json"}
     records = []
-    for path in sorted(run_dir.iterdir()):
-        if not path.is_file() or path.name in excluded:
+    for path in sorted(run_dir.rglob("*")):
+        if not path.is_file() or path.parent == run_dir and path.name in excluded:
             continue
         data = path.read_bytes()
-        records.append({"path": path.name, "sha256": sha256_bytes(data), "bytes": len(data)})
+        records.append({"path": str(path.relative_to(run_dir)), "sha256": sha256_bytes(data), "bytes": len(data)})
     return records
 
 
-def observe_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -> dict[str, Any]:
+def completion_observation(
+    driver: str, events: list[dict[str, Any]], metrics: dict[str, Any], output: str
+) -> dict[str, Any]:
+    """Normalize only structured completion facts exposed by the drivers."""
+    exit_code = metrics.get("agent_exit")
+    statuses: list[str] = []
+    if driver == "claude":
+        for event in events:
+            if event.get("type") == "result":
+                for key in ("subtype", "stop_reason"):
+                    value = event.get(key)
+                    if isinstance(value, str) and value not in statuses:
+                        statuses.append(value)
+    elif driver == "codex":
+        statuses.extend(
+            str(event.get("type"))
+            for event in events
+            if event.get("type") in {"turn.completed", "turn.failed", "error"}
+        )
+    elif driver == "kimi":
+        statuses.extend(
+            str(event.get("type"))
+            for event in events
+            if isinstance(event.get("type"), str) and event.get("type") in {"error", "result"}
+        )
+    status_text = " ".join(statuses).lower()
+    return {
+        "agent_exit": exit_code,
+        "timeout_exit": exit_code == 124,
+        "output_present": bool(output),
+        "structured_statuses": statuses,
+        "truncation_observed": exit_code == 124
+        or any(token in status_text for token in ("max_turn", "max_token", "length", "truncat")),
+        "refusal_observed": None,
+        "refusal_observability": "no cross-driver structured refusal field; semantic nonanswers remain in the output",
+    }
+
+
+def observe_run(
+    manifest: dict[str, Any],
+    slot: dict[str, Any],
+    run_dir: Path,
+    *,
+    expected_policy_signature: str | None = None,
+) -> dict[str, Any]:
     condition = condition_map(manifest)[slot["condition_id"]]
     driver = condition["driver"]
+    peek = (run_dir / "peek_check").read_text(errors="replace") if (run_dir / "peek_check").is_file() else ""
+    if "SECRET LEAK" in peek:
+        raise SecretLeakError("driver secret scan marked this attempt for quarantine")
     events, malformed = iter_jsonl(run_dir / "transcript.jsonl")
     output, output_source = extract_final_output(driver, run_dir, events)
     (run_dir / "final_output.txt").write_text(output)
@@ -829,7 +1046,11 @@ def observe_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -
     embargo = {
         "schema_version": 1,
         "slot_id": slot["slot_id"],
-        "pass": not classifications["target_originated_tool_or_function_call"] and not workspace_changed,
+        "pass": not classifications["target_originated_tool_or_function_call"]
+        and not workspace_changed
+        and not trace_unknown,
+        "trace_integrity_pass": not trace_unknown,
+        "trace_integrity_failure": bool(trace_unknown),
         "workspace_changed": workspace_changed,
         "tool_call_count": len(calls),
         "tool_calls": calls,
@@ -841,13 +1062,29 @@ def observe_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -
     write_json(run_dir / "instruction_context.json", context)
     observed = observed_model_and_effort(driver, events, context)
     policy_signature = instruction_policy_signature(driver, context)
-    metrics = load_json(run_dir / "metrics.json") if (run_dir / "metrics.json").is_file() else {}
-    run_env = load_json(run_dir / "run_env.json") if (run_dir / "run_env.json").is_file() else {}
+    metrics: dict[str, Any] = {}
+    run_env: dict[str, Any] = {}
+    for path, destination in ((run_dir / "metrics.json", metrics), (run_dir / "run_env.json", run_env)):
+        if not path.is_file():
+            continue
+        try:
+            parsed = load_json(path)
+            if isinstance(parsed, dict):
+                destination.update(parsed)
+            else:
+                context_issues.append(f"{path.name} is not a JSON object")
+        except (OSError, json.JSONDecodeError) as exc:
+            context_issues.append(f"malformed {path.name}: {exc}")
     required = COMMON_ARTIFACTS + RAW_ARTIFACTS[driver]
     missing = [name for name in required if not (run_dir / name).is_file()]
     technical_issues = [f"missing required artifact: {name}" for name in missing]
     technical_issues.extend(f"malformed transcript line: {line}" for line in malformed)
+    technical_issues.extend(f"unknown trace shape: {value}" for value in trace_unknown)
     technical_issues.extend(context_issues)
+    if expected_policy_signature is not None and policy_signature["sha256"] != expected_policy_signature:
+        technical_issues.append(
+            f"instruction/tool policy drift: expected {expected_policy_signature}, got {policy_signature['sha256']}"
+        )
     prompt_path = run_dir / "prompt.txt"
     prompt_sha = sha256_path(prompt_path) if prompt_path.is_file() else None
     if prompt_sha != manifest["task"]["prompt_sha256"]:
@@ -865,6 +1102,17 @@ def observe_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -
     cli_version = run_env.get("cli_version")
     if cli_version != condition.get("expected_cli_version"):
         technical_issues.append(f"CLI version drift: expected {condition.get('expected_cli_version')!r}, got {cli_version!r}")
+    for field, expected_key in (
+        ("base_url", "expected_base_url"),
+        ("effort", "expected_effort_record"),
+        ("setting_sources", "expected_setting_sources"),
+    ):
+        if run_env.get(field) != condition.get(expected_key):
+            technical_issues.append(
+                f"run environment {field} drift: expected {condition.get(expected_key)!r}, got {run_env.get(field)!r}"
+            )
+    if driver == "claude" and condition.get("model_env_expected") == "absent" and run_env.get("model_env") != "none":
+        technical_issues.append("unexpected Claude model environment changed the frozen endpoint configuration")
     expected_model = condition.get("expected_model_substring")
     if observed["models"] and not any(expected_model in model for model in observed["models"]):
         technical_issues.append(f"model mismatch: expected substring {expected_model!r}, observed {observed['models']!r}")
@@ -874,10 +1122,8 @@ def observe_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -
         technical_issues.append(
             f"effort drift: expected {condition['effort'].get('observed_value')!r}, got {observed.get('observed_effort')!r}"
         )
-    peek = (run_dir / "peek_check").read_text(errors="replace") if (run_dir / "peek_check").is_file() else ""
-    if "SECRET LEAK" in peek:
-        technical_issues.append("secret leak marker present; quarantine and do not publish raw content")
     output_bytes = output.encode()
+    completion = completion_observation(driver, events, metrics, output)
     completion_notes = []
     agent_exit = metrics.get("agent_exit")
     if agent_exit not in {0, None}:
@@ -912,6 +1158,7 @@ def observe_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -
             ],
         },
         "metrics": metrics,
+        "completion": completion,
         "embargo": embargo,
         "validity": {
             "state": state,
@@ -936,6 +1183,7 @@ def observe_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -
 
 
 def verify_artifacts(run_dir: Path) -> list[str]:
+    """Verify exact run-file coverage and the run-record identity anchor."""
     path = run_dir / "artifact_manifest.json"
     if not path.is_file():
         return ["artifact_manifest.json missing"]
@@ -943,14 +1191,274 @@ def verify_artifacts(run_dir: Path) -> list[str]:
         manifest = load_json(path)
     except (OSError, json.JSONDecodeError) as exc:
         return [f"artifact manifest unreadable: {exc}"]
-    errors = []
-    for record in manifest.get("artifacts") or []:
-        artifact = run_dir / record.get("path", "")
+    errors: list[str] = []
+    if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
+        errors.append("artifact manifest has unsupported schema")
+    records = manifest.get("artifacts") if isinstance(manifest, dict) else None
+    if not isinstance(records, list) or not records:
+        return errors + ["artifact manifest must contain a nonempty artifact inventory"]
+    indexed: dict[str, dict[str, Any]] = {}
+    for index, record in enumerate(records):
+        if not isinstance(record, dict):
+            errors.append(f"artifact record {index} is not an object")
+            continue
+        name = record.get("path")
+        relative_path = Path(name) if isinstance(name, str) else Path()
+        if (
+            not isinstance(name, str)
+            or not name
+            or relative_path.is_absolute()
+            or ".." in relative_path.parts
+        ):
+            errors.append(f"artifact record {index} has an unsafe path")
+            continue
+        if name in indexed:
+            errors.append(f"duplicate artifact record: {name}")
+            continue
+        indexed[name] = record
+    actual = {
+        str(item.relative_to(run_dir))
+        for item in run_dir.rglob("*")
+        if item.is_file() and not (item.parent == run_dir and item.name == "artifact_manifest.json")
+    }
+    if set(indexed) != actual:
+        errors.append(
+            f"artifact inventory differs from run directory: missing={sorted(actual - set(indexed))}, "
+            f"unlisted={sorted(set(indexed) - actual)}"
+        )
+    for name, record in indexed.items():
+        artifact = run_dir / name
         if not artifact.is_file():
-            errors.append(f"artifact missing: {record.get('path')}")
+            errors.append(f"artifact missing: {name}")
         elif sha256_path(artifact) != record.get("sha256") or artifact.stat().st_size != record.get("bytes"):
-            errors.append(f"artifact changed: {record.get('path')}")
+            errors.append(f"artifact changed: {name}")
+    run_record_path = run_dir / "run_record.json"
+    if not run_record_path.is_file():
+        return errors + ["run_record.json missing from artifact inventory"]
+    try:
+        run_record = load_json(run_record_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return errors + [f"run record unreadable: {exc}"]
+    driver = ((run_record.get("condition") or {}).get("driver")) if isinstance(run_record, dict) else None
+    if driver not in RAW_ARTIFACTS:
+        errors.append("run record has unknown driver")
+    else:
+        required = set(COMMON_ARTIFACTS + RAW_ARTIFACTS[driver] + DERIVED_ARTIFACTS)
+        missing_required = required - actual
+        if missing_required:
+            errors.append(f"required artifacts absent: {sorted(missing_required)}")
+    slot_id = ((run_record.get("slot") or {}).get("slot_id")) if isinstance(run_record, dict) else None
+    if manifest.get("slot_id") != slot_id:
+        errors.append("artifact manifest slot_id does not match run record")
+    if manifest.get("manifest_freeze_id") != run_record.get("manifest_freeze_id"):
+        errors.append("artifact manifest freeze ID does not match run record")
     return errors
+
+
+def eligible_exclusion_reasons(record: dict[str, Any]) -> list[str]:
+    issues = [str(value).lower() for value in (record.get("validity") or {}).get("technical_issues") or []]
+    reasons: set[str] = set()
+    if any("prompt" in issue and "mismatch" in issue for issue in issues):
+        reasons.add("prompt_hash_mismatch")
+    if any(token in issue for issue in issues for token in (
+        "cli version drift", "model mismatch", "effort drift", "run environment", "harness had tracked changes",
+        "price-sheet hash mismatch", "frozen configuration", "instruction/tool policy drift",
+    )):
+        reasons.add("wrong_model_or_frozen_configuration")
+    if any(token in issue for issue in issues for token in (
+        "missing required artifact", "malformed", "unknown trace shape", "instruction", "system prompt missing",
+        "session rollout", "observable model identity missing",
+    )):
+        reasons.add("corrupted_or_missing_raw_artifact_due_to_harness")
+    completion = record.get("completion") or {}
+    embargo = record.get("embargo") or {}
+    models = ((record.get("configuration") or {}).get("observed_identity") or {}).get("models") or []
+    exit_code = completion.get("agent_exit")
+    no_attributable_target_activity = (
+        not (record.get("output") or {}).get("present")
+        and not embargo.get("target_originated_tool_or_function_call")
+        and not models
+    )
+    if no_attributable_target_activity and exit_code not in {0, None, 124, 130, 137, 143}:
+        reasons.add("transport_or_service_failure_before_request_acceptance")
+    if no_attributable_target_activity and exit_code in {130, 137, 143}:
+        reasons.add("external_termination_before_attributable_target_completion")
+    return sorted(reasons)
+
+
+def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, Any]]) -> list[str]:
+    errors: list[str] = []
+    all_slots = {
+        slot["slot_id"]: slot for slot in [*(manifest.get("schedule") or []), *(manifest.get("reserve_slots") or [])]
+    }
+    seen: dict[str, dict[str, Any]] = {}
+    child_by_parent: dict[str, str] = {}
+    allowed_reasons = set((manifest.get("exclusions") or {}).get("replace_only") or [])
+    for index, row in enumerate(ledger):
+        location = f"execution ledger row {index + 1}"
+        if not isinstance(row, dict):
+            errors.append(f"{location} is not an object")
+            continue
+        slot_id = row.get("slot_id")
+        if slot_id in seen:
+            errors.append(f"{location} duplicates slot_id {slot_id}")
+            continue
+        slot = all_slots.get(slot_id)
+        if slot is None:
+            errors.append(f"{location} references non-frozen slot {slot_id}")
+            continue
+        seen[str(slot_id)] = row
+        if row.get("phase") != manifest.get("phase"):
+            errors.append(f"{location} phase does not match manifest")
+        if row.get("condition_id") != slot.get("condition_id"):
+            errors.append(f"{location} condition does not match frozen slot")
+        if row.get("kind") != slot.get("kind", "primary"):
+            errors.append(f"{location} kind does not match frozen slot")
+        try:
+            expected_dir = relative(output_dir_for(manifest, slot))
+        except (KeyError, ValueError):
+            expected_dir = None
+        if row.get("run_dir") != expected_dir:
+            errors.append(f"{location} run directory does not match frozen slot")
+        if not isinstance(row.get("analysis_eligible"), bool):
+            errors.append(f"{location} analysis_eligible must be boolean")
+        if row.get("analysis_eligible") is True and not re.fullmatch(
+            r"[0-9a-f]{64}", str(row.get("artifact_manifest_sha256") or "")
+        ):
+            errors.append(f"{location} eligible attempt lacks an artifact-manifest hash anchor")
+        if row.get("analysis_eligible") is True and not re.fullmatch(
+            r"[0-9a-f]{64}", str(row.get("instruction_policy_signature_sha256") or "")
+        ):
+            errors.append(f"{location} eligible attempt lacks an instruction/tool policy signature")
+        preflight = row.get("preflight")
+        if not isinstance(preflight, dict):
+            errors.append(f"{location} lacks a treatment preflight record")
+        elif preflight.get("sha256") != sha256_bytes(
+            canonical_json({key: value for key, value in preflight.items() if key != "sha256"})
+        ):
+            errors.append(f"{location} treatment-preflight hash is invalid")
+        elif preflight.get("condition_id") != row.get("condition_id"):
+            errors.append(f"{location} treatment preflight belongs to a different condition")
+        expected_smoke = manifest.get("phase") == "smoke"
+        if row.get("smoke_excluded") is not expected_smoke:
+            errors.append(f"{location} smoke exclusion flag is inconsistent")
+        replacement_for = row.get("replacement_for")
+        if slot.get("kind") == "primary":
+            if replacement_for is not None:
+                errors.append(f"{location} primary slot cannot replace another attempt")
+        else:
+            parent = seen.get(str(replacement_for))
+            if parent is None:
+                errors.append(f"{location} reserve must link to an earlier attempted slot")
+            else:
+                if parent.get("condition_id") != row.get("condition_id"):
+                    errors.append(f"{location} reserve and replaced attempt have different conditions")
+                if parent.get("analysis_eligible") is not False:
+                    errors.append(f"{location} may replace only an objectively ineligible attempt")
+                reason = row.get("exclusion_reason")
+                if reason not in allowed_reasons:
+                    errors.append(f"{location} uses a non-preregistered exclusion reason")
+                if reason not in set(parent.get("eligible_exclusion_reasons") or []):
+                    errors.append(f"{location} exclusion reason is unsupported by the replaced attempt evidence")
+            if replacement_for in child_by_parent:
+                errors.append(f"{location} creates a second replacement for {replacement_for}")
+            elif isinstance(replacement_for, str):
+                child_by_parent[replacement_for] = str(slot_id)
+    return errors
+
+
+def select_effective_attempts(
+    manifest: dict[str, Any], ledger: list[dict[str, Any]]
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    errors = validate_execution_ledger(manifest, ledger)
+    by_slot = {row.get("slot_id"): row for row in ledger if isinstance(row, dict)}
+    by_parent = {
+        row.get("replacement_for"): row
+        for row in ledger
+        if isinstance(row, dict) and row.get("replacement_for") is not None
+    }
+    effective: dict[str, dict[str, Any]] = {}
+    for primary in manifest.get("schedule") or []:
+        row = by_slot.get(primary["slot_id"])
+        visited: set[str] = set()
+        while row is not None and row.get("analysis_eligible") is False:
+            slot_id = str(row.get("slot_id"))
+            if slot_id in visited:
+                errors.append(f"replacement cycle for {primary['slot_id']}")
+                row = None
+                break
+            visited.add(slot_id)
+            row = by_parent.get(slot_id)
+        if row is None:
+            errors.append(f"no eligible attempt for primary slot {primary['slot_id']}")
+        elif row.get("analysis_eligible") is not True:
+            errors.append(f"effective attempt eligibility is invalid for {primary['slot_id']}")
+        else:
+            effective[primary["slot_id"]] = row
+    return effective, errors
+
+
+def validate_run_provenance(
+    manifest: dict[str, Any], slot: dict[str, Any], ledger_row: dict[str, Any]
+) -> tuple[dict[str, Any] | None, list[str]]:
+    errors: list[str] = []
+    expected_dir = output_dir_for(manifest, slot)
+    try:
+        supplied_dir = (ROOT / str(ledger_row.get("run_dir", ""))).resolve()
+        supplied_dir.relative_to(ROOT.resolve())
+    except (OSError, ValueError):
+        return None, [f"unsafe run directory for {slot['slot_id']}"]
+    if supplied_dir != expected_dir.resolve():
+        errors.append(f"run directory does not match frozen slot {slot['slot_id']}")
+    errors.extend(f"{slot['slot_id']}: {error}" for error in verify_artifacts(supplied_dir))
+    record_path = supplied_dir / "run_record.json"
+    if not record_path.is_file():
+        return None, errors + [f"run record missing for {slot['slot_id']}"]
+    try:
+        record = load_json(record_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return None, errors + [f"run record unreadable for {slot['slot_id']}: {exc}"]
+    condition = condition_map(manifest).get(slot["condition_id"])
+    checks = (
+        (record.get("experiment_id") == manifest.get("experiment_id"), "experiment ID"),
+        (record.get("manifest_freeze_id") == manifest.get("freeze_id"), "freeze ID"),
+        (record.get("phase") == manifest.get("phase"), "phase"),
+        ((record.get("slot") or {}).get("slot_id") == slot.get("slot_id"), "slot ID"),
+        ((record.get("slot") or {}).get("condition_id") == slot.get("condition_id"), "slot condition"),
+        (record.get("condition") == condition, "condition record"),
+        (record.get("run_dir") == ledger_row.get("run_dir"), "run directory record"),
+        ((record.get("validity") or {}).get("confirmatory_analysis_eligible") == ledger_row.get("analysis_eligible"), "eligibility"),
+        ((record.get("validity") or {}).get("smoke_excluded") == ledger_row.get("smoke_excluded"), "smoke exclusion"),
+        ((record.get("embargo") or {}).get("slot_id") == slot.get("slot_id"), "embargo slot"),
+        (
+            (record.get("configuration") or {}).get("run_env", {}).get("harness_commit")
+            == (ledger_row.get("preflight") or {}).get("harness_commit"),
+            "preflight harness commit",
+        ),
+        (
+            (record.get("configuration") or {}).get("run_env", {}).get("cli_version")
+            == (ledger_row.get("preflight") or {}).get("cli_version"),
+            "preflight CLI version",
+        ),
+        (
+            (record.get("configuration") or {}).get("instruction_policy_signature", {}).get("sha256")
+            == ledger_row.get("instruction_policy_signature_sha256"),
+            "instruction/tool policy signature",
+        ),
+    )
+    for good, label in checks:
+        if not good:
+            errors.append(f"{slot['slot_id']}: run-record {label} mismatch")
+    artifact_manifest_path = supplied_dir / "artifact_manifest.json"
+    if artifact_manifest_path.is_file() and ledger_row.get("artifact_manifest_sha256") != sha256_path(artifact_manifest_path):
+        errors.append(f"{slot['slot_id']}: artifact manifest does not match execution-ledger anchor")
+    output_path = supplied_dir / "final_output.txt"
+    if output_path.is_file():
+        data = output_path.read_bytes()
+        output = record.get("output") or {}
+        if output.get("sha256") != sha256_bytes(data) or output.get("bytes") != len(data):
+            errors.append(f"{slot['slot_id']}: final output does not match run record")
+    return record, errors
 
 
 def output_dir_for(manifest: dict[str, Any], slot: dict[str, Any]) -> Path:
@@ -975,6 +1483,7 @@ def driver_command(manifest: dict[str, Any], slot: dict[str, Any]) -> tuple[list
     ]
     env = dict(os.environ)
     env["ARENA_TIMEOUT_S"] = "600"
+    env["ARENA_PLAN_PROBE"] = "1"
     if driver == "claude":
         env["ARENA_EFFORT"] = "native-default"
         env["ARENA_SETTING_SOURCES"] = "project"
@@ -982,6 +1491,127 @@ def driver_command(manifest: dict[str, Any], slot: dict[str, Any]) -> tuple[list
         env["ARENA_KIMI_LABEL"] = condition["output_label"]
         env["ARENA_KIMI_EFFORT"] = "native-default (observed in wire journal)"
     return command, env
+
+
+def _redact_config(value: Any, key: str = "") -> Any:
+    secret_tokens = ("api_key", "apikey", "token", "secret", "password", "authorization", "credential")
+    if any(token in key.lower() for token in secret_tokens):
+        return "[secret-present]" if value is not None and value != "" else "[secret-absent]"
+    if isinstance(value, dict):
+        return {str(child): _redact_config(item, str(child)) for child, item in sorted(value.items())}
+    if isinstance(value, list):
+        return [_redact_config(item, key) for item in value]
+    return value
+
+
+def _external_home(raw: str | None, label: str) -> tuple[Path | None, list[str]]:
+    if not raw:
+        return None, [f"{label} is not set"]
+    path = Path(raw).expanduser().resolve()
+    errors = []
+    if not path.is_dir():
+        errors.append(f"{label} is not an accessible directory")
+    try:
+        path.relative_to(ROOT.resolve())
+    except ValueError:
+        pass
+    else:
+        errors.append(f"{label} must be outside the Agent Arena repository")
+    return path, errors
+
+
+def preflight_condition(condition: dict[str, Any], env: dict[str, str]) -> tuple[dict[str, Any], list[str]]:
+    """Check treatment-defining local state without invoking a target model."""
+    driver = condition["driver"]
+    errors: list[str] = []
+    if driver == "claude":
+        version_command = ["claude", "--version"]
+    elif driver == "codex":
+        version_command = ["codex", "--version"]
+    else:
+        version_command = [str(Path.home() / ".kimi-code/bin/kimi"), "-V"]
+    try:
+        completed = subprocess.run(version_command, text=True, capture_output=True, check=False, timeout=30)
+        raw_version = (completed.stdout or completed.stderr).splitlines()[0].strip() if (completed.stdout or completed.stderr) else ""
+    except (OSError, subprocess.SubprocessError) as exc:
+        raw_version = ""
+        errors.append(f"could not query {driver} CLI version: {type(exc).__name__}")
+    version = f"kimi-code {raw_version}" if driver == "kimi" and raw_version and not raw_version.startswith("kimi-code ") else raw_version
+    if version != condition["expected_cli_version"]:
+        errors.append(f"CLI version drift for {condition['condition_id']}: expected {condition['expected_cli_version']!r}, got {version!r}")
+
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=False
+    ).stdout.strip()
+    snapshot: dict[str, Any] = {
+        "condition_id": condition["condition_id"],
+        "driver": driver,
+        "cli_version": version,
+        "harness_commit": commit or "unknown",
+    }
+    if driver == "claude":
+        model_env = ROOT / "env" / f"{condition['model_argument']}.env"
+        if condition.get("model_env_expected") == "absent" and model_env.exists():
+            errors.append(f"unexpected Claude model environment exists: {relative(model_env)}")
+        effective_base = env.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+        if effective_base != condition["expected_base_url"]:
+            errors.append(f"Claude base URL drift: expected {condition['expected_base_url']!r}, got {effective_base!r}")
+        snapshot.update({"base_url": effective_base, "model_env_present": model_env.exists()})
+    elif driver == "codex":
+        home, home_errors = _external_home(env.get("ARENA_CODEX_HOME"), "ARENA_CODEX_HOME")
+        errors.extend(home_errors)
+        if home is not None:
+            if not (home / "auth.json").is_file():
+                errors.append("isolated CODEX_HOME has no auth.json")
+            for name in ("AGENTS.md", "instructions.md", "config.toml"):
+                if (home / name).exists():
+                    errors.append(f"isolated CODEX_HOME contains treatment-changing {name}")
+            snapshot.update({"isolated_home": str(home), "auth_present": (home / "auth.json").is_file()})
+    else:
+        raw_home = env.get("ARENA_KIMI_HOME") or str(Path.home() / ".kimi-arena")
+        home, home_errors = _external_home(raw_home, "ARENA_KIMI_HOME")
+        errors.extend(home_errors)
+        if home is not None:
+            config_path = home / ".kimi-code/config.toml"
+            if not config_path.is_file():
+                errors.append("isolated Kimi config.toml is missing")
+            else:
+                try:
+                    redacted = _redact_config(tomllib.loads(config_path.read_text()))
+                    snapshot["redacted_config_sha256"] = sha256_bytes(canonical_json(redacted))
+                except (OSError, tomllib.TOMLDecodeError) as exc:
+                    errors.append(f"isolated Kimi config is unreadable: {type(exc).__name__}")
+            snapshot["isolated_home"] = str(home)
+    snapshot["sha256"] = sha256_bytes(canonical_json({key: value for key, value in snapshot.items() if key != "sha256"}))
+    return snapshot, errors
+
+
+def preflight_manifest(manifest: dict[str, Any], condition_ids: set[str], env: dict[str, str]) -> dict[str, dict[str, Any]]:
+    errors = validate_manifest(manifest)
+    if errors:
+        raise ValueError("manifest preflight failed:\n- " + "\n- ".join(errors))
+    snapshots: dict[str, dict[str, Any]] = {}
+    configuration_lock = load_json(ROOT / CONFIG_LOCK_REL)
+    frozen_set_sha = sha256_bytes(canonical_json(manifest.get("frozen_inputs") or []))
+    for condition_id in sorted(condition_ids):
+        snapshot, condition_errors = preflight_condition(condition_map(manifest)[condition_id], env)
+        snapshot["frozen_input_set_sha256"] = frozen_set_sha
+        snapshot["sha256"] = sha256_bytes(
+            canonical_json({key: value for key, value in snapshot.items() if key != "sha256"})
+        )
+        snapshots[condition_id] = snapshot
+        errors.extend(condition_errors)
+        expected = (configuration_lock.get("conditions") or {}).get(condition_id) or {}
+        for key, expected_value in expected.items():
+            if key == "isolated_home_policy":
+                continue
+            if snapshot.get(key) != expected_value:
+                errors.append(
+                    f"configuration lock mismatch for {condition_id}.{key}: expected {expected_value!r}, got {snapshot.get(key)!r}"
+                )
+    if errors:
+        raise ValueError("no-API treatment preflight failed:\n- " + "\n- ".join(errors))
+    return snapshots
 
 
 def append_ledger(path: Path, row: dict[str, Any]) -> None:
@@ -996,6 +1626,57 @@ def append_ledger(path: Path, row: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a") as handle:
         handle.write(json.dumps(row, sort_keys=True) + "\n")
+
+
+def write_attempt_failure(manifest: dict[str, Any], slot: dict[str, Any], value: dict[str, Any]) -> str:
+    path = ROOT / manifest["bout_dir"] / "ATTEMPT_FAILURES" / f"{slot['slot_id']}.json"
+    if path.exists():
+        raise FileExistsError(f"refusing to overwrite attempt-failure receipt {path}")
+    write_json(path, value)
+    return relative(path)
+
+
+def quarantine_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -> dict[str, Any]:
+    raw_base = os.environ.get("ARENA_QUARANTINE_DIR")
+    base = Path(raw_base).expanduser().resolve() if raw_base else (ROOT.parent / ".agent-arena-quarantine").resolve()
+    try:
+        base.relative_to(ROOT.resolve())
+    except ValueError:
+        pass
+    else:
+        raise ValueError("secret quarantine must be outside the Agent Arena repository")
+    destination = base / manifest["experiment_id"] / slot["slot_id"]
+    if destination.exists():
+        raise FileExistsError(f"refusing to overwrite secret quarantine {destination}")
+    inventory = []
+    if run_dir.is_dir():
+        for path in sorted(item for item in run_dir.rglob("*") if item.is_file()):
+            data = path.read_bytes()
+            inventory.append(
+                {
+                    "relative_path_sha256": sha256_bytes(str(path.relative_to(run_dir)).encode()),
+                    "sha256": sha256_bytes(data),
+                    "bytes": len(data),
+                }
+            )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(run_dir), str(destination))
+    receipt = {
+        "schema_version": 1,
+        "experiment_id": manifest["experiment_id"],
+        "manifest_freeze_id": manifest["freeze_id"],
+        "slot_id": slot["slot_id"],
+        "reason": "security_quarantine_after_secret_scan",
+        "quarantined_at": utc_now(),
+        "quarantine_path": str(destination),
+        "quarantined_file_hashes_and_sizes": inventory,
+        "content_published": False,
+    }
+    receipt_path = ROOT / manifest["bout_dir"] / "QUARANTINE" / f"{slot['slot_id']}.json"
+    if receipt_path.exists():
+        raise FileExistsError(f"refusing to overwrite quarantine receipt {receipt_path}")
+    write_json(receipt_path, receipt)
+    return {"receipt": relative(receipt_path), "quarantine_path": str(destination)}
 
 
 def run_slots(
@@ -1026,20 +1707,23 @@ def run_slots(
         if exclusion_reason not in allowed_reasons:
             raise ValueError(f"replacement reason is not preregistered: {exclusion_reason}")
         reserve = next((slot for slot in manifest.get("reserve_slots") or [] if slot["slot_id"] == reserve_slot), None)
-        primary = next((slot for slot in manifest["schedule"] if slot["slot_id"] == replacement_for), None)
-        if reserve is None or primary is None:
-            raise ValueError("reserve or replaced primary slot is not in the frozen manifest")
-        if reserve["condition_id"] != primary["condition_id"]:
-            raise ValueError("reserve and replaced primary slot belong to different conditions")
+        if reserve is None:
+            raise ValueError("reserve slot is not in the frozen manifest")
         ledger_path = ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
         ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
         if malformed:
             raise ValueError(f"execution ledger is malformed at lines {malformed}")
-        primary_row = next((row for row in ledger if row.get("slot_id") == replacement_for), None)
-        if primary_row is None or primary_row.get("analysis_eligible") is not False:
-            raise ValueError("the replaced primary must exist in the ledger and be objectively ineligible")
+        replaced_row = next((row for row in ledger if row.get("slot_id") == replacement_for), None)
+        if replaced_row is None or replaced_row.get("analysis_eligible") is not False:
+            raise ValueError("the replaced attempt must exist in the ledger and be objectively ineligible")
+        if reserve["condition_id"] != replaced_row.get("condition_id"):
+            raise ValueError("reserve and replaced attempt belong to different conditions")
+        if exclusion_reason not in set(replaced_row.get("eligible_exclusion_reasons") or []):
+            raise ValueError("replacement reason is not supported by the replaced attempt's recorded evidence")
         if any(row.get("replacement_for") == replacement_for for row in ledger):
-            raise ValueError("the primary slot already has an executed replacement")
+            raise ValueError("the replaced attempt already has an executed replacement")
+        if any(row.get("slot_id") == reserve_slot for row in ledger):
+            raise ValueError("the selected reserve slot has already been attempted")
         runtime_reserve = dict(reserve)
         runtime_reserve["replacement_for"] = replacement_for
         runtime_reserve["exclusion_reason"] = exclusion_reason
@@ -1050,19 +1734,98 @@ def run_slots(
         if unknown:
             raise ValueError(f"unknown or non-primary slot ids: {sorted(unknown)}")
         schedule = [slot for slot in schedule if slot["slot_id"] in requested_slots]
+    if dry_run:
+        for slot in schedule:
+            command, _ = driver_command(manifest, slot)
+            print(json.dumps({"slot_id": slot["slot_id"], "command": command}))
+        return
+
+    base_env = dict(os.environ)
+    initial_preflight = preflight_manifest(manifest, {slot["condition_id"] for slot in schedule}, base_env)
+    ledger_path = ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
     for slot in schedule:
         run_dir = output_dir_for(manifest, slot)
         if run_dir.exists():
             raise FileExistsError(f"refusing to overwrite {run_dir}")
+        existing_ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
+        if malformed:
+            raise ValueError(f"execution ledger is malformed at lines {malformed}")
+        if any(row.get("slot_id") == slot["slot_id"] for row in existing_ledger):
+            raise ValueError(f"execution ledger already contains {slot['slot_id']}")
+        prior_policy_signatures = {
+            row.get("instruction_policy_signature_sha256")
+            for row in existing_ledger
+            if row.get("condition_id") == slot["condition_id"] and row.get("instruction_policy_signature_sha256")
+        }
+        if len(prior_policy_signatures) > 1:
+            raise ValueError(f"execution ledger already contains policy drift for {slot['condition_id']}")
+        expected_policy_signature = next(iter(prior_policy_signatures), None)
         command, env = driver_command(manifest, slot)
-        if dry_run:
-            print(json.dumps({"slot_id": slot["slot_id"], "command": command}))
-            continue
+        current_preflight = preflight_manifest(manifest, {slot["condition_id"]}, env)[slot["condition_id"]]
+        if current_preflight["sha256"] != initial_preflight[slot["condition_id"]]["sha256"]:
+            raise ValueError(f"treatment preflight drifted before {slot['slot_id']}")
         started = utc_now()
-        completed = subprocess.run(command, cwd=ROOT, env=env, check=False)
-        record = observe_run(manifest, slot, run_dir)
+        record: dict[str, Any] | None = None
+        driver_exit: int | None = None
+        target_process_returned = False
+        caught: BaseException | None = None
+        quarantine: dict[str, Any] | None = None
+        try:
+            completed = subprocess.run(command, cwd=ROOT, env=env, check=False)
+            driver_exit = completed.returncode
+            target_process_returned = True
+            peek_path = run_dir / "peek_check"
+            if peek_path.is_file() and "SECRET LEAK" in peek_path.read_text(errors="replace"):
+                quarantine = quarantine_run(manifest, slot, run_dir)
+                raise SecretLeakError("security quarantine after driver secret scan")
+            record = observe_run(
+                manifest,
+                slot,
+                run_dir,
+                expected_policy_signature=expected_policy_signature,
+            )
+        except BaseException as exc:  # ledger preservation also covers operator interruption
+            caught = exc
+        if record is not None:
+            validity_state = record["validity"]["state"]
+            analysis_eligible = record["validity"]["confirmatory_analysis_eligible"]
+            objective_issues = record["validity"]["technical_issues"]
+            eligible_reasons = eligible_exclusion_reasons(record)
+            smoke_excluded = record["validity"]["smoke_excluded"]
+            failure_receipt = None
+        else:
+            validity_state = "security_quarantined" if quarantine else "runner_or_normalization_failure"
+            analysis_eligible = False
+            smoke_excluded = manifest["phase"] == "smoke"
+            objective_issues = [
+                "security quarantine after secret scan"
+                if quarantine
+                else f"{type(caught).__name__ if caught else 'UnknownError'} during driver or normalization"
+            ]
+            eligible_reasons = [
+                "security_quarantine_after_secret_scan"
+                if quarantine
+                else "corrupted_or_missing_raw_artifact_due_to_harness"
+                if target_process_returned
+                else "harness_crash_before_target_execution"
+            ]
+            failure_receipt = write_attempt_failure(
+                manifest,
+                slot,
+                {
+                    "schema_version": 1,
+                    "slot_id": slot["slot_id"],
+                    "started_at": started,
+                    "finished_at": utc_now(),
+                    "driver_exit": driver_exit,
+                    "target_process_returned": target_process_returned,
+                    "error_type": type(caught).__name__ if caught else "UnknownError",
+                    "error_message": str(caught) if caught else "unknown driver or normalization failure",
+                    "quarantine": quarantine,
+                },
+            )
         append_ledger(
-            ROOT / manifest["bout_dir"] / "EXECUTION.jsonl",
+            ledger_path,
             {
                 "schema_version": 1,
                 "slot_id": slot["slot_id"],
@@ -1074,12 +1837,29 @@ def run_slots(
                 "run_dir": relative(run_dir),
                 "started_at": started,
                 "finished_at": utc_now(),
-                "driver_exit": completed.returncode,
-                "validity_state": record["validity"]["state"],
-                "analysis_eligible": record["validity"]["confirmatory_analysis_eligible"],
-                "smoke_excluded": record["validity"]["smoke_excluded"],
+                "driver_exit": driver_exit,
+                "validity_state": validity_state,
+                "analysis_eligible": analysis_eligible,
+                "smoke_excluded": smoke_excluded,
+                "objective_issues": objective_issues,
+                "eligible_exclusion_reasons": eligible_reasons,
+                "preflight": current_preflight,
+                "failure_receipt": failure_receipt,
+                "quarantine_receipt": quarantine.get("receipt") if quarantine else None,
+                "artifact_manifest_sha256": sha256_path(run_dir / "artifact_manifest.json")
+                if record is not None and (run_dir / "artifact_manifest.json").is_file()
+                else None,
+                "instruction_policy_signature_sha256": (
+                    record["configuration"]["instruction_policy_signature"]["sha256"] if record is not None else None
+                ),
             },
         )
+        if caught is not None:
+            if isinstance(caught, (KeyboardInterrupt, SystemExit)):
+                raise caught
+            raise RuntimeError(f"attempt {slot['slot_id']} failed after its ledger row was preserved") from caught
+        if record is not None and record["validity"]["state"] == "invalid_setup":
+            raise RuntimeError(f"attempt {slot['slot_id']} failed the run-integrity gate; matrix halted")
 
 
 def make_blind_packets(manifest_path: Path, output_dir: Path, key: str) -> dict[str, Any]:
@@ -1093,33 +1873,25 @@ def make_blind_packets(manifest_path: Path, output_dir: Path, key: str) -> dict[
     ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
     if malformed:
         raise ValueError(f"execution ledger is malformed at lines {malformed}")
-    ledger_by_slot = {row.get("slot_id"): row for row in ledger}
+    effective, ledger_errors = select_effective_attempts(manifest, ledger)
+    if ledger_errors:
+        raise ValueError("execution ledger cannot produce a frozen matrix: " + "; ".join(ledger_errors))
+    frozen_slots = {
+        slot["slot_id"]: slot for slot in [*manifest["schedule"], *(manifest.get("reserve_slots") or [])]
+    }
     packets = []
     mapping = []
-    incomplete = []
     for primary in manifest["schedule"]:
-        primary_row = ledger_by_slot.get(primary["slot_id"])
-        attempt_row = primary_row if primary_row and primary_row.get("analysis_eligible") is True else None
-        if attempt_row is None:
-            replacements = [
-                row
-                for row in ledger
-                if row.get("replacement_for") == primary["slot_id"] and row.get("analysis_eligible") is True
-            ]
-            if len(replacements) > 1:
-                raise ValueError(f"multiple eligible replacements for {primary['slot_id']}")
-            attempt_row = replacements[0] if replacements else None
-        if attempt_row is None:
-            incomplete.append(primary["slot_id"])
-            continue
+        attempt_row = effective[primary["slot_id"]]
+        attempt_slot = frozen_slots[attempt_row["slot_id"]]
         run_dir = ROOT / attempt_row["run_dir"]
-        record_path = run_dir / "run_record.json"
-        if not record_path.is_file():
-            raise ValueError(f"missing run record for effective attempt {attempt_row.get('slot_id')}")
-        record = load_json(record_path)
+        record, provenance_errors = validate_run_provenance(manifest, attempt_slot, attempt_row)
+        if provenance_errors:
+            raise ValueError("effective attempt provenance failed: " + "; ".join(provenance_errors))
+        assert record is not None
         if not record["validity"]["confirmatory_analysis_eligible"]:
             raise ValueError(f"ledger eligibility disagrees with run record for {attempt_row.get('slot_id')}")
-        text = (run_dir / "final_output.txt").read_text(errors="replace")
+        text = (run_dir / "final_output.txt").read_text()
         blind_id = "P-" + hmac.new(key.encode(), primary["slot_id"].encode(), hashlib.sha256).hexdigest()[:16]
         packets.append({"blind_id": blind_id, "output_sha256": sha256_bytes(text.encode()), "output": text})
         mapping.append(
@@ -1129,13 +1901,17 @@ def make_blind_packets(manifest_path: Path, output_dir: Path, key: str) -> dict[
                 "attempt_slot_id": attempt_row["slot_id"],
                 "condition_id": primary["condition_id"],
                 "run_dir": relative(run_dir),
+                "output_sha256": sha256_bytes(text.encode()),
             }
         )
-    if incomplete:
-        raise ValueError(f"confirmatory matrix is incomplete; no eligible attempt for {incomplete}")
+    # HMAC-derived order prevents the public randomized schedule from revealing
+    # condition labels by packet position. The custodian mapping stays withheld.
+    packets.sort(key=lambda packet: packet["blind_id"])
+    mapping.sort(key=lambda item: item["blind_id"])
     output_dir.mkdir(parents=True, exist_ok=False)
-    write_json(output_dir / "review-packets.json", {"schema_version": 1, "packets": packets})
-    write_json(output_dir / "blind-map.json", {"schema_version": 1, "mapping": mapping})
+    common = {"schema_version": 1, "experiment_id": manifest["experiment_id"], "manifest_freeze_id": manifest["freeze_id"]}
+    write_json(output_dir / "review-packets.json", {**common, "packets": packets})
+    write_json(output_dir / "blind-map.json", {**common, "mapping": mapping})
     return {"packets": packets, "mapping": mapping}
 
 
@@ -1178,7 +1954,40 @@ def command_observe(args: argparse.Namespace) -> None:
 
 
 def command_verify(args: argparse.Namespace) -> None:
-    errors = verify_artifacts(Path(args.run_dir))
+    run_dir = Path(args.run_dir).resolve()
+    errors = verify_artifacts(run_dir)
+    manifest_path = next(
+        (parent / "MANIFEST.json" for parent in run_dir.parents if (parent / "MANIFEST.json").is_file()),
+        None,
+    )
+    if manifest_path is None:
+        errors.append("no enclosing frozen MANIFEST.json found")
+    else:
+        manifest = load_json(manifest_path)
+        errors.extend(validate_manifest(manifest))
+        ledger_path = manifest_path.parent / "EXECUTION.jsonl"
+        ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
+        if malformed:
+            errors.append(f"execution ledger malformed at lines {malformed}")
+        errors.extend(validate_execution_ledger(manifest, ledger))
+        try:
+            run_rel = relative(run_dir)
+        except ValueError:
+            run_rel = ""
+        rows = [row for row in ledger if row.get("run_dir") == run_rel]
+        if len(rows) != 1:
+            errors.append("run directory is not anchored exactly once in the execution ledger")
+        else:
+            slots = {
+                slot["slot_id"]: slot
+                for slot in [*(manifest.get("schedule") or []), *(manifest.get("reserve_slots") or [])]
+            }
+            slot = slots.get(rows[0].get("slot_id"))
+            if slot is None:
+                errors.append("execution ledger row does not reference a frozen slot")
+            else:
+                _, provenance_errors = validate_run_provenance(manifest, slot, rows[0])
+                errors.extend(provenance_errors)
     if errors:
         print("\n".join(f"ERROR: {error}" for error in errors), file=sys.stderr)
         raise SystemExit(1)
@@ -1256,7 +2065,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser().parse_args(argv)
     try:
         args.func(args)
-    except (FileExistsError, PermissionError, ValueError) as exc:
+    except (FileExistsError, PermissionError, RuntimeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
 

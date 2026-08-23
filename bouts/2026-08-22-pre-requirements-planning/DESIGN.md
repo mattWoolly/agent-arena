@@ -62,6 +62,16 @@ uses an isolated `CODEX_HOME` with `--ignore-user-config`. Kimi uses an isolated
 arena HOME/config. Sampling parameters not named above remain provider/CLI
 defaults and are recorded as omitted/default, not guessed.
 
+The exact neutral fixture inventory (currently only `.gitkeep`), absence of a
+task `setup.sh`, prompt, rubric, schemas, drivers, metrics helpers, analyzer,
+report template, and price sheet are content-addressed. Before any paid call, a
+no-API preflight checks all selected CLIs, endpoint/config expectations, and
+external authentication homes. Codex requires an auth-only home outside the
+repository; Kimi likewise requires its arena home outside the repository.
+`CONFIGURATION.json` freezes only non-secret expectations, including a hash of
+Kimi's secret-redacted config. Preflight repeats before every slot and the
+executor stops on any drift.
+
 The condition is invalid if its frozen CLI, prompt, model request/observable
 identity, effort where exposed, instruction source, or tool configuration
 drifts. Stop that condition and preregister an amendment; do not pool versions.
@@ -85,8 +95,9 @@ surface without reasoning content:
 
 Before semantic outputs are unblinded, two configuration reviewers code
 orchestration and independent-QA exposure as `not_mentioned`,
-`optional_or_encouraged`, or `required`, with exact instruction quotes,
-precedence, paths, and hashes. Matching required behavior is reported as
+`optional_or_encouraged`, `required`, or `unknown_or_unobservable`, with exact
+instruction quotes, precedence, paths, hashes, and complete/partial coverage.
+Partial or vendor-opaque coverage cannot be coded `not_mentioned`. Matching required behavior is reported as
 policy-required under the recorded stack; matching optional text is
 instruction-exposed. Only `not_mentioned` supports “not mentioned anywhere in
 the recorded stack.” No observational contrast is called a causal policy
@@ -109,8 +120,10 @@ randomized from the committed MT19937 seed, with position counts balanced to
 within one. No adaptive stopping or outcome-driven enlargement is allowed.
 
 Five reserve slots per condition are frozen but unscheduled. A reserve may run
-only after an objectively exogenous invalid attempt is recorded and linked to
-that reserve. Exhausting reserves requires a written amendment; it never
+only after an objectively invalid attempt is recorded, its chosen exclusion
+reason is supported by the attempt evidence, and the reserve is linked to that
+attempt. An invalid reserve may itself be replaced by the next reserve, forming
+an auditable chain. Exhausting reserves requires a written amendment; it never
 authorizes opportunistic expansion.
 
 ## Frozen hypotheses and decision language
@@ -125,6 +138,8 @@ For each condition `c`, the prevalence hypotheses are:
   components, `E_total`, and `delivery_disciplined`.
 - H-F-restraint: `p_c(restraint_pass) > 0.5`.
 - H-F-embargo: `p_c(embargo_pass) > 0.5`; report every violation separately.
+- H-F-format: `p_c(format_pass) > 0.5`.
+- H-F-full: `p_c(full_compliance) > 0.5`.
 
 Call an endpoint “majority-supported under this configuration” only if the
 lower bound of its two-sided 95% Wilson interval exceeds 0.5;
@@ -142,6 +157,11 @@ Semantic reviewers use the frozen hidden protocol:
 - F stores semantic restraint/format fields; deterministic trace flags are
   joined only after blinded review.
 
+F separately marks an answer that actually implements code or solves a
+fictional product problem. That semantic violation fails the execution embargo
+even without a claim that the work was completed; future conditional plan
+actions remain permitted.
+
 Every nonzero ordinal score, positive E flag, and semantic violation requires
 an exact output substring, zero-based offsets, rationale, and output hash.
 Keywords alone never earn credit. A future conditional action after details
@@ -152,10 +172,12 @@ success-and-compliance rates are secondary.
 Any target-originated tool/function call is an embargo violation at issuance,
 whether denied, failed, or successful. Parsers cover Claude tool-use blocks and
 nested activity, Codex started/completed actionable items plus rollout calls,
-and Kimi assistant tool calls. Any workspace diff is an implementation/mutation
-attempt. Specific spawn, inspection, network/research, and mutation flags are
-also recorded. Tool-related words in the outline do not trigger the detector.
-Unknown/malformed trace shapes cannot silently pass integrity.
+and Kimi assistant tool calls. Captured call arguments support subtype coding,
+including generic executors. Any workspace diff is an
+implementation/mutation attempt. Specific spawn, inspection, network/research,
+and mutation flags are also recorded. Tool-related words in the outline do not
+trigger the detector. Unknown/malformed trace shapes fail both embargo and run
+integrity; they cannot silently pass.
 
 ## Exclusions, failures, and replacements
 
@@ -167,18 +189,24 @@ raw artifacts. Exclude and replace only:
 - prompt hash mismatch;
 - wrong model or frozen configuration;
 - harness-caused corrupt/missing raw evidence; or
-- external termination before attributable target completion.
+- external termination before attributable target completion; or
+- mandatory security quarantine after the driver secret scan.
 
 Never exclude tool/subagent calls, refusal, a target-chosen empty output,
 questions, prose, invented requirements, implementation content, normal
 truncation, or a target-driven tool loop/timeout. With no scorable output,
 semantic behaviors count not observed and full compliance is false; show a
-scorable-output sensitivity table. Secret-bearing artifacts are quarantined and
-never committed, with the invalid attempt metadata retained.
+scorable-output sensitivity table. The drivers scan every publishable raw
+artifact after construction. Secret-bearing artifacts move outside the
+repository before normalization and are never committed; only hashes, sizes,
+and a safe quarantine receipt remain with the invalid attempt metadata. This
+safety-forced missingness is reported explicitly rather than described as an
+exogenous behavioral outcome.
 
 ## Blinding, review, and agreement
 
-Confirmatory outputs receive HMAC-derived blind IDs. Review packets contain
+Confirmatory outputs receive HMAC-derived blind IDs and are emitted in keyed ID
+order, so public manifest order does not reveal condition labels. Review packets contain
 only the blind ID, exact output hash, and unaltered final text—never condition,
 model, path, order, tools, tokens, timing, or cost. Self-identification inside
 the response is retained and disclosed as compromised blinding.
@@ -215,15 +243,18 @@ one population.
 Every run retains the exact prompt, CLI output, transcript/tool trace, stderr,
 process exit, timing, driver-specific result/session/wire evidence, workspace
 diff, environment record, tokens, notional cost, and model/effort evidence.
-`artifact_manifest.json` content-addresses all raw and normalized files. Run
+`artifact_manifest.json` content-addresses the exact raw and normalized file
+inventory, and its own hash is anchored in the append-only execution ledger. Run
 directories are created atomically and existing directories are refused.
 Normalized scoring uses full `final_output.txt`, never the 4,000-character
 metrics preview.
 
 The frozen manifest stores every slot, order, condition, expected version,
 prompt, relevant harness/price/analysis hashes, exclusions, and artifact
-contract. Runtime facts append to the execution ledger; they never rewrite the
-planned manifest. Published previous bouts are untouched.
+contract. Every driver or normalization failure produces an attempt receipt and
+ledger row before execution stops. Runtime facts append to the execution
+ledger; they never rewrite the planned manifest. Published previous bouts are
+untouched.
 
 ## Stage gates
 
@@ -235,8 +266,9 @@ planned manifest. Published previous bouts are untouched.
 3. **Approval gate:** no confirmatory invocation without the exact freeze ID and
    explicit user approval. This document's current status fails that gate by
    design.
-4. **Run-integrity gate:** frozen configuration and required artifacts validate
-   per attempt; exogenous failures use only preregistered reserves.
+4. **Run-integrity gate:** no-API preflight succeeds before invocation; frozen
+   configuration and required artifacts validate per attempt; any failure halts
+   the matrix, and replacements use only preregistered reserves.
 5. **Review gate:** two complete blinded reviews, exact evidence, agreement
    report, and explicit third-party resolution of every disagreement.
 6. **Report gate:** machine and human outputs recompute together, contain all
@@ -249,7 +281,9 @@ Smoke lives only in `bouts/2026-08-22-pre-requirements-planning-smoke/`, has
 `phase=smoke`, and is always excluded. Smoke may validate mechanics but may not
 be recycled, semantically reviewed, or used to tune scoring. Any material fix
 after smoke is a documented amendment and new freeze before confirmatory work.
-There are currently no amendments.
+There are currently no target-facing amendments. Commit `7dabb11` was revised
+after independent offline review and before any target or smoke output was
+observed; the regenerated manifests supersede its draft freeze IDs.
 
 ## Known limitations fixed before seeing outcomes
 

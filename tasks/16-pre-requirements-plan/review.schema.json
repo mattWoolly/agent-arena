@@ -39,12 +39,13 @@
           },
           "F": {
             "type": "object",
-            "required": ["invented_product_or_domain_requirement", "asked_followup_now", "claimed_completed_prohibited_action", "non_outline_prose", "uses_explicit_placeholders", "separates_assumptions_from_facts"],
+            "required": ["invented_product_or_domain_requirement", "asked_followup_now", "claimed_completed_prohibited_action", "implementation_or_solution_content", "non_outline_prose", "uses_explicit_placeholders", "separates_assumptions_from_facts"],
             "additionalProperties": false,
             "properties": {
               "invented_product_or_domain_requirement": {"$ref": "#/$defs/binaryFinding"},
               "asked_followup_now": {"$ref": "#/$defs/binaryFinding"},
               "claimed_completed_prohibited_action": {"$ref": "#/$defs/binaryFinding"},
+              "implementation_or_solution_content": {"$ref": "#/$defs/binaryFinding"},
               "non_outline_prose": {"$ref": "#/$defs/binaryFinding"},
               "uses_explicit_placeholders": {"$ref": "#/$defs/binaryFinding"},
               "separates_assumptions_from_facts": {"$ref": "#/$defs/binaryFinding"}

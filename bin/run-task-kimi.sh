@@ -30,17 +30,6 @@ EFFORT_NOTE="${ARENA_KIMI_EFFORT:-max (kimi-code default for k3)}"
 KIMI_BIN="$HOME/.kimi-code/bin/kimi"
 ARENA_HOME="${ARENA_KIMI_HOME:-$HOME/.kimi-arena}"
 USER_SITE_BASE="$HOME/.local"
-case "$ARENA_HOME" in
-  "$ROOT"/*|"$ROOT")
-    echo "refusing to run: ARENA_HOME ($ARENA_HOME) is inside the repo tree." >&2
-    echo "In-repo homes cause peek-check false positives and hide user-site python packages." >&2
-    exit 1;;
-esac
-if [[ ! -f "$ARENA_HOME/.kimi-code/config.toml" ]]; then
-  echo "missing $ARENA_HOME/.kimi-code/config.toml (isolated arena config with the platform key)" >&2
-  exit 1
-fi
-
 OUT_DIR="$BOUT_DIR/$TASK_NAME/$LABEL_MODEL"
 [[ -n "$RUN_IDX" ]] && OUT_DIR="$OUT_DIR/run-$RUN_IDX"
 mkdir -p "$(dirname "$OUT_DIR")"
@@ -49,6 +38,18 @@ if ! mkdir "$OUT_DIR"; then
   exit 2
 fi
 LABEL="$TASK_NAME/$LABEL_MODEL${RUN_IDX:+ run-$RUN_IDX}"
+
+case "$ARENA_HOME" in
+  "$ROOT"/*|"$ROOT")
+    echo "refusing to run: isolated Kimi home is inside the repository" > "$OUT_DIR/stderr.log"
+    echo "refusing in-repository Kimi home" >&2
+    exit 1;;
+esac
+if [[ ! -f "$ARENA_HOME/.kimi-code/config.toml" ]]; then
+  echo "isolated Kimi config.toml is missing" > "$OUT_DIR/stderr.log"
+  echo "missing isolated Kimi configuration" >&2
+  exit 1
+fi
 
 WS=$(mktemp -d "${TMPDIR:-/tmp}/arena-ws.XXXXXX")
 trap 'rm -rf "$WS"' EXIT
@@ -159,5 +160,16 @@ cp -a "$WS/." "$OUT_DIR/workspace/"
 rm -rf "$OUT_DIR/workspace/.git"
 
 python3 "$ROOT/bin/metrics_kimi.py" "$OUT_DIR" "$LABEL_MODEL" "${ARENA_KIMI_PRICE_KEY:-kimi-k3}" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"
+
+# Repeat the leak scan after every publishable raw artifact has been written.
+if [[ -f "$LEAKSCAN" ]]; then
+  while IFS= read -r _sec; do
+    [[ -z "$_sec" ]] && continue
+    if grep -rqF "$_sec" "$OUT_DIR" "$WS" 2>/dev/null; then
+      echo "SECRET LEAK: leakscan value appears in published artifacts" >> "$OUT_DIR/peek_check"
+      echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; quarantine this run" >&2
+    fi
+  done < <(bash "$LEAKSCAN" 2>/dev/null)
+fi
 
 echo "[$LABEL] done: agent_exit=$AGENT_EXIT grade_exit=$(cat "$OUT_DIR/grade_exit" 2>/dev/null || echo n/a) wall=$(cat "$OUT_DIR/wall_seconds")s"

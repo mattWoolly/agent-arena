@@ -10,11 +10,12 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["blind_id", "field", "value", "rationale", "evidence"],
+        "required": ["blind_id", "field", "value", "output_sha256", "rationale", "evidence"],
         "properties": {
           "blind_id": {"type": "string", "minLength": 1},
           "field": {"type": "string", "minLength": 1},
           "value": {"oneOf": [{"type": "boolean"}, {"type": "integer", "minimum": 0, "maximum": 3}]},
+          "output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
           "rationale": {"type": "string", "minLength": 1},
           "evidence": {
             "type": "array",

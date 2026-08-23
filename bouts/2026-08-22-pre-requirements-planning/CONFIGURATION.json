@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "secret_values_recorded": false,
+  "conditions": {
+    "claude-code--claude-opus-5": {
+      "driver": "claude",
+      "cli_version": "2.1.241 (Claude Code)",
+      "base_url": "https://api.anthropic.com",
+      "model_env_present": false
+    },
+    "codex--gpt-5.6-sol": {
+      "driver": "codex",
+      "cli_version": "codex-cli 0.149.0",
+      "auth_present": true,
+      "isolated_home_policy": "outside-repository auth-only; no config or instruction files"
+    },
+    "kimi-code--kimi-k3": {
+      "driver": "kimi",
+      "cli_version": "kimi-code 0.27.0",
+      "redacted_config_sha256": "0788171a5f2e2c5e7fb7510407a996ff07195beea1afd7054cc38fc999a48e16"
+    }
+  }
+}

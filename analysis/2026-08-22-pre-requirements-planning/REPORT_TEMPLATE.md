@@ -41,8 +41,9 @@ checklist count for the preregistered conjunctive definitions.
 
 Report each semantic and deterministic F flag separately. Keep tool calls,
 subagent spawning, refusals, empty target outputs, questions, invented details,
-and non-outline prose in the behavioral denominator unless an objective
-exogenous exclusion applies.
+implementation/solution content, and non-outline prose in the behavioral
+denominator unless a preregistered objective exclusion applies. Report any
+security quarantine separately as safety-forced missingness.
 
 ## Instruction attribution
 
@@ -51,6 +52,9 @@ outputs were unblinded. Use `policy-required under the recorded stack`,
 `instruction-exposed`, or `not mentioned anywhere in the recorded stack` as
 applicable. Do not infer a policy effect without a randomized instruction
 intervention.
+Partial or opaque instruction coverage must be labeled
+`unknown_or_unobservable` when no stronger visible exposure is established; it
+cannot support a “not mentioned anywhere” claim.
 
 ## Review quality
 

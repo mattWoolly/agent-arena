@@ -180,4 +180,21 @@ fi
 # Metrics from transcript + result envelope (+ run_env.json + peek_check).
 python3 "$ROOT/bin/metrics.py" "$OUT_DIR" "$MODEL" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"
 
+# Repeat the leak scan after every publishable raw artifact has been written.
+leak_scan_all() {
+  local sec="$1" what="$2"
+  [[ -z "$sec" ]] && return 0
+  if grep -rqF "$sec" "$OUT_DIR" "$WS" 2>/dev/null; then
+    echo "SECRET LEAK: $what appears in published artifacts" >> "$OUT_DIR/peek_check"
+    echo "[$LABEL] WARNING: SECRET LEAKED into published artifacts; quarantine this run" >&2
+  fi
+}
+leak_scan_all "${ANTHROPIC_AUTH_TOKEN:-}" "auth token"
+leak_scan_all "${ANTHROPIC_API_KEY:-}" "api key"
+if [[ -f "$ROOT/env/$MODEL.leakscan" ]]; then
+  while IFS= read -r _sec; do
+    leak_scan_all "$_sec" "leakscan value"
+  done < <(bash "$ROOT/env/$MODEL.leakscan" 2>/dev/null)
+fi
+
 echo "[$LABEL] done: agent_exit=$AGENT_EXIT grade_exit=$(cat "$OUT_DIR/grade_exit" 2>/dev/null || echo n/a) wall=$(cat "$OUT_DIR/wall_seconds")s"
