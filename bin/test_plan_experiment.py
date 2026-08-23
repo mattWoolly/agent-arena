@@ -9,6 +9,7 @@ import copy
 import importlib.util
 import json
 import os
+import shutil
 import signal
 import subprocess
 import tempfile
@@ -157,8 +158,19 @@ def seed_run(run_dir: Path, condition: dict, *, output: str = "# Plan\n\n- Use `
                 {"type": "config.update", "systemPrompt": "base"},
                 {"type": "tools.set_active_tools", "names": ["Read"]},
                 {"type": "llm.tools_snapshot", "hash": "tools", "tools": []},
-                {"type": "llm.request", "model": condition["requested_model"], "thinkingEffort": "max"},
-                {"type": "llm.response", "model": condition["requested_model"]},
+                {
+                    "type": "llm.request",
+                    "model": condition["requested_model"],
+                    "modelAlias": condition["expected_model_aliases"][0],
+                    "provider": condition["expected_providers"][0],
+                    "thinkingEffort": "max",
+                },
+                {
+                    "type": "llm.response",
+                    "model": condition["requested_model"],
+                    "modelAlias": condition["expected_model_aliases"][0],
+                    "provider": condition["expected_providers"][0],
+                },
             ],
         )
 
@@ -227,6 +239,8 @@ def seed_confirmatory_matrix(temp: Path):
                 "started_at": "2026-08-22T00:00:00Z",
                 "finished_at": "2026-08-22T00:00:01Z",
                 "driver_exit": 0,
+                "process_group_cleaned": True,
+                "staged_attempt_retained": False,
                 "validity_state": record["validity"]["state"],
                 "analysis_eligible": True,
                 "smoke_excluded": False,
@@ -374,6 +388,13 @@ class PromptAndManifestTests(unittest.TestCase):
             self.assertIn("freeze_id does not match manifest content", probe.validate_manifest(changed, check_files=False))
             changed["freeze_id"] = probe.compute_freeze_id(changed)
             self.assertIn("manifest target prompt text mismatch", probe.validate_manifest(changed))
+            wrong_bytes = copy.deepcopy(manifest)
+            wrong_bytes["task"]["prompt_bytes"] += 1
+            wrong_bytes["freeze_id"] = probe.compute_freeze_id(wrong_bytes)
+            self.assertIn(
+                "manifest target prompt byte count mismatch",
+                probe.validate_manifest(wrong_bytes),
+            )
             reordered = copy.deepcopy(manifest)
             reordered["schedule"] = list(reversed(reordered["schedule"]))
             reordered["freeze_id"] = probe.compute_freeze_id(reordered)
@@ -428,6 +449,8 @@ class PromptAndManifestTests(unittest.TestCase):
                         "replacement_for": None,
                         "exclusion_reason": None,
                         "run_dir": probe.relative(probe.output_dir_for(manifest, primary)),
+                        "process_group_cleaned": True,
+                        "staged_attempt_retained": False,
                         "analysis_eligible": False,
                         "smoke_excluded": False,
                         "eligible_exclusion_reasons": ["prompt_hash_mismatch"],
@@ -694,6 +717,8 @@ class TraceAndArtifactTests(unittest.TestCase):
                     "replacement_for": replacement_for,
                     "exclusion_reason": "corrupted_or_missing_raw_artifact_due_to_harness" if replacement_for else None,
                     "run_dir": probe.relative(probe.output_dir_for(manifest, slot)),
+                    "process_group_cleaned": True,
+                    "staged_attempt_retained": False,
                     "analysis_eligible": eligible,
                     "smoke_excluded": False,
                     "eligible_exclusion_reasons": ["corrupted_or_missing_raw_artifact_due_to_harness"],
@@ -726,6 +751,8 @@ class TraceAndArtifactTests(unittest.TestCase):
                     "replacement_for": None,
                     "exclusion_reason": None,
                     "run_dir": probe.relative(probe.output_dir_for(manifest, slot)),
+                    "process_group_cleaned": True,
+                    "staged_attempt_retained": False,
                     "analysis_eligible": False,
                     "smoke_excluded": True,
                     "preflight": preflight,
@@ -781,6 +808,8 @@ class TraceAndArtifactTests(unittest.TestCase):
                 "exclusion_reason": None,
                 "run_dir": probe.relative(run_dir),
                 "validity_state": "runner_or_normalization_failure",
+                "process_group_cleaned": True,
+                "staged_attempt_retained": False,
                 "analysis_eligible": False,
                 "smoke_excluded": True,
                 "objective_issues": ["synthetic normalization failure"],
@@ -800,6 +829,36 @@ class TraceAndArtifactTests(unittest.TestCase):
             transcript.write_text('{"type":"error","message":"tampered"}\n')
             errors = probe.validate_prior_attempt_provenance(manifest, [row])
             self.assertTrue(any("artifact changed: transcript.jsonl" in error for error in errors))
+
+    def test_cleanup_and_stage_retention_evidence_is_mandatory(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            slot = manifest["schedule"][0]
+            preflight = {"condition_id": slot["condition_id"]}
+            preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
+            row = {
+                "slot_id": slot["slot_id"],
+                "phase": "smoke",
+                "condition_id": slot["condition_id"],
+                "kind": "primary",
+                "replacement_for": None,
+                "exclusion_reason": None,
+                "run_dir": probe.relative(probe.output_dir_for(manifest, slot)),
+                "analysis_eligible": False,
+                "smoke_excluded": True,
+                "preflight": preflight,
+            }
+            ledger_errors = probe.validate_execution_ledger(manifest, [row])
+            self.assertTrue(
+                any("process_group_cleaned must be boolean" in error for error in ledger_errors)
+            )
+            self.assertTrue(
+                any("staged_attempt_retained must be boolean" in error for error in ledger_errors)
+            )
+            provenance_errors = probe.validate_prior_attempt_provenance(manifest, [row])
+            self.assertTrue(any("process-scope cleanup" in error for error in provenance_errors))
+            self.assertTrue(any("staged-attempt evidence" in error for error in provenance_errors))
 
     def test_pre_directory_driver_failure_is_preserved_in_ledger(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
@@ -844,7 +903,9 @@ class TraceAndArtifactTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
             prefix="arena-quarantine-test-"
-        ) as quarantine:
+        ) as quarantine, tempfile.TemporaryDirectory(
+            prefix="arena-retained-stage-test-"
+        ) as external_stage:
             temp = Path(raw)
             path, manifest = make_manifest(temp / "manifest", phase="smoke")
             manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
@@ -857,7 +918,7 @@ class TraceAndArtifactTests(unittest.TestCase):
             }
             preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
             snapshot = {slot["condition_id"]: preflight}
-            attempt_root = temp / "retained-stage"
+            attempt_root = Path(external_stage) / "retained-stage"
             attempt_root.mkdir()
             staged_run = attempt_root / "unrecovered-run"
             process = UncleanableProcess()
@@ -873,8 +934,8 @@ class TraceAndArtifactTests(unittest.TestCase):
                 probe.subprocess, "Popen", return_value=process
             ) as popen, mock.patch.object(
                 probe,
-                "terminate_process_group",
-                side_effect=RuntimeError("process group survived SIGKILL"),
+                "terminate_process_scope",
+                side_effect=RuntimeError("process scope survived forced cleanup"),
             ), mock.patch.object(
                 probe, "recover_and_remove_staged_driver"
             ) as recover:
@@ -893,10 +954,13 @@ class TraceAndArtifactTests(unittest.TestCase):
                 self.assertEqual(malformed, [])
                 self.assertEqual(len(ledger), 1)
                 self.assertFalse(ledger[0]["process_group_cleaned"])
+                self.assertEqual(
+                    ledger[0]["staged_attempt_path"], str(attempt_root.resolve())
+                )
                 failure = json.loads((probe.ROOT / ledger[0]["failure_receipt"]).read_text())
                 self.assertFalse(failure["process_group_cleaned"])
                 self.assertTrue(failure["staged_attempt_retained"])
-                with self.assertRaisesRegex(ValueError, "unresolved process-group cleanup"):
+                with self.assertRaisesRegex(ValueError, "process-scope cleanup"):
                     probe.run_slots(
                         path,
                         approval=None,
@@ -904,6 +968,10 @@ class TraceAndArtifactTests(unittest.TestCase):
                         dry_run=False,
                     )
                 self.assertEqual(popen.call_count, 1)
+            scope_name = f"arena-plan-{probe.sha256_bytes(slot['slot_id'].encode())[:20]}"
+            scope_path = probe._current_cgroup_parent() / scope_name
+            if scope_path.is_dir():
+                scope_path.rmdir()
             attempt_root.rmdir()
 
     def test_post_start_driver_failure_is_content_addressed_before_ledger_append(self):
@@ -1010,9 +1078,169 @@ class TraceAndArtifactTests(unittest.TestCase):
                     probe.validate_prior_attempt_provenance(manifest, ledger)
                 )
 
+    def test_staged_recovery_uses_emergency_quarantine_and_anchors_receipt(self):
+        class FailedProcess:
+            pid = 999999
+            returncode = 7
+
+            def wait(self, timeout=None):
+                return self.returncode
+
+            def poll(self):
+                return self.returncode
+
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            path.write_text(json.dumps(manifest))
+            slot = manifest["schedule"][0]
+            preflight = {
+                "condition_id": slot["condition_id"],
+                "harness_commit": "test-harness-commit",
+            }
+            preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
+            snapshot = {slot["condition_id"]: preflight}
+            original_validate = probe._validate_quarantine_handle
+
+            def reject_primary(handle, destination_name):
+                if not handle.get("ephemeral"):
+                    raise ValueError("synthetic primary quarantine detachment")
+                return original_validate(handle, destination_name)
+
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+            ), mock.patch.object(
+                probe, "preflight_manifest", return_value=snapshot
+            ), mock.patch.object(
+                probe.subprocess, "Popen", return_value=FailedProcess()
+            ), mock.patch.object(
+                probe,
+                "recover_and_remove_staged_driver",
+                side_effect=RuntimeError("synthetic staged recovery failure"),
+            ), mock.patch.object(
+                probe, "_validate_quarantine_handle", side_effect=reject_primary
+            ):
+                with self.assertRaisesRegex(RuntimeError, "ledger row was preserved"):
+                    probe.run_slots(
+                        path,
+                        approval=None,
+                        requested_slots={slot["slot_id"]},
+                        dry_run=False,
+                    )
+            ledger, malformed = probe.iter_jsonl(
+                probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+            )
+            self.assertEqual(malformed, [])
+            self.assertEqual(len(ledger), 1)
+            self.assertTrue(ledger[0]["process_group_cleaned"])
+            self.assertFalse(ledger[0]["staged_attempt_retained"])
+            self.assertRegex(
+                ledger[0]["stage_quarantine_receipt_sha256"], r"^[0-9a-f]{64}$"
+            )
+            stage_receipt = json.loads(
+                (probe.ROOT / ledger[0]["stage_quarantine_receipt"]).read_text()
+            )
+            self.assertEqual(stage_receipt["destination_kind"], "stage")
+            self.assertTrue(stage_receipt["fallback_destination"])
+            quarantined_stage = Path(stage_receipt["quarantine_destination"])
+            self.assertTrue(quarantined_stage.is_dir())
+            self.assertEqual(probe.validate_prior_attempt_provenance(manifest, ledger), [])
+            (quarantined_stage / "post-receipt-tamper").write_text("changed")
+            self.assertTrue(
+                any(
+                    "quarantine destination entry count changed" in error
+                    for error in probe.validate_prior_attempt_provenance(manifest, ledger)
+                )
+            )
+            shutil.rmtree(quarantined_stage.parent.parent)
+
+    def test_retained_external_stage_blocks_resume_when_both_quarantines_fail(self):
+        class FailedProcess:
+            pid = 999999
+            returncode = 7
+
+            def wait(self, timeout=None):
+                return self.returncode
+
+            def poll(self):
+                return self.returncode
+
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine, tempfile.TemporaryDirectory(
+            prefix="arena-retained-stage-test-"
+        ) as external_stage:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            path.write_text(json.dumps(manifest))
+            slot = manifest["schedule"][0]
+            preflight = {
+                "condition_id": slot["condition_id"],
+                "harness_commit": "test-harness-commit",
+            }
+            preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
+            snapshot = {slot["condition_id"]: preflight}
+            attempt_root = Path(external_stage) / "attempt"
+            attempt_root.mkdir()
+            staged_run = attempt_root / "unrecovered-run"
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+            ), mock.patch.object(
+                probe, "preflight_manifest", return_value=snapshot
+            ), mock.patch.object(
+                probe,
+                "prepare_staged_driver",
+                return_value=(attempt_root, staged_run, ["synthetic-driver"], {}),
+            ), mock.patch.object(
+                probe.subprocess, "Popen", return_value=FailedProcess()
+            ), mock.patch.object(
+                probe,
+                "recover_and_remove_staged_driver",
+                side_effect=RuntimeError("synthetic staged recovery failure"),
+            ), mock.patch.object(
+                probe,
+                "_validate_quarantine_handle",
+                side_effect=ValueError("synthetic quarantine failure"),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "ledger row was preserved"):
+                    probe.run_slots(
+                        path,
+                        approval=None,
+                        requested_slots={slot["slot_id"]},
+                        dry_run=False,
+                    )
+            ledger, malformed = probe.iter_jsonl(
+                probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+            )
+            self.assertEqual(malformed, [])
+            self.assertTrue(ledger[0]["process_group_cleaned"])
+            self.assertTrue(ledger[0]["staged_attempt_retained"])
+            self.assertTrue(attempt_root.is_dir())
+            self.assertTrue(
+                any(
+                    "retained staged attempt" in error
+                    or "staged-attempt evidence" in error
+                    for error in probe.validate_prior_attempt_provenance(manifest, ledger)
+                )
+            )
+            with self.assertRaisesRegex(ValueError, "staged-attempt"):
+                probe.run_slots(
+                    path,
+                    approval=None,
+                    requested_slots=None,
+                    dry_run=True,
+                )
+            attempt_root.rmdir()
+
     def test_sigterm_during_active_driver_restores_handlers_and_preserves_ledger(self):
         class SignaledProcess:
-            pid = os.getpid()
+            pid = 999999
             returncode = -signal.SIGTERM
 
             def wait(self, timeout=None):
@@ -1053,6 +1281,8 @@ class TraceAndArtifactTests(unittest.TestCase):
             self.assertEqual(malformed, [])
             self.assertEqual(len(ledger), 1)
             self.assertEqual(ledger[0]["driver_exit"], -signal.SIGTERM)
+            self.assertTrue(ledger[0]["process_group_cleaned"])
+            self.assertFalse(ledger[0]["staged_attempt_retained"])
             self.assertRegex(ledger[0]["failure_receipt_sha256"], r"^[0-9a-f]{64}$")
             self.assertTrue((probe.ROOT / ledger[0]["failure_receipt"]).is_file())
 
@@ -1064,6 +1294,11 @@ class TraceAndArtifactTests(unittest.TestCase):
             for index, slot in enumerate(manifest["schedule"][:3]):
                 run_dir = temp / f"run-{index}"
                 seed_run(run_dir, conditions[slot["condition_id"]], output="")
+                self.assertTrue(
+                    probe.raw_attempt_has_attributable_activity(
+                        conditions[slot["condition_id"]]["driver"], run_dir
+                    )
+                )
                 record = probe.observe_run(manifest, slot, run_dir)
                 self.assertEqual(record["validity"]["technical_issues"], [], slot["condition_id"])
                 self.assertTrue(record["validity"]["confirmatory_analysis_eligible"])
@@ -1188,7 +1423,63 @@ class TraceAndArtifactTests(unittest.TestCase):
                     (driver, record["validity"]["technical_issues"]),
                 )
 
-    def test_pre_attributable_transport_failure_is_ineligible_and_replaceable(self):
+    def test_response_only_model_alias_and_provider_drift_is_rejected(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            conditions = probe.condition_map(manifest)
+            codex_slot = next(
+                slot for slot in manifest["schedule"] if slot["condition_id"].startswith("codex--")
+            )
+            codex_run = temp / "codex-response-model"
+            seed_run(codex_run, conditions[codex_slot["condition_id"]])
+            session, _ = probe.iter_jsonl(codex_run / "session.jsonl")
+            session.append(
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "message",
+                        "role": "assistant",
+                        "model": "unexpected-session-only-model",
+                        "content": [],
+                    },
+                }
+            )
+            jsonl(
+                codex_run / "session.jsonl",
+                [{key: value for key, value in event.items() if key != "_line"} for event in session],
+            )
+            codex_record = probe.observe_run(manifest, codex_slot, codex_run)
+            self.assertTrue(
+                any("model mismatch" in issue for issue in codex_record["validity"]["technical_issues"])
+            )
+
+            kimi_slot = next(
+                slot
+                for slot in manifest["schedule"]
+                if slot["condition_id"].startswith("kimi-code--")
+            )
+            for field, unexpected, expected_issue in (
+                ("modelAlias", "arena/unexpected", "model alias mismatch"),
+                ("provider", "unexpected-provider", "provider mismatch"),
+            ):
+                run_dir = temp / f"kimi-{field}"
+                seed_run(run_dir, conditions[kimi_slot["condition_id"]])
+                wire, _ = probe.iter_jsonl(run_dir / "wire.jsonl")
+                for event in wire:
+                    if event.get("type") == "llm.response":
+                        event[field] = unexpected
+                jsonl(
+                    run_dir / "wire.jsonl",
+                    [{key: value for key, value in event.items() if key != "_line"} for event in wire],
+                )
+                record = probe.observe_run(manifest, kimi_slot, run_dir)
+                self.assertTrue(
+                    any(expected_issue in issue for issue in record["validity"]["technical_issues"]),
+                    (field, record["validity"]["technical_issues"]),
+                )
+
+    def test_transport_exclusion_requires_explicit_pre_request_evidence(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             temp = Path(raw)
             _, manifest = make_manifest(temp / "manifest", repeats=10)
@@ -1199,17 +1490,62 @@ class TraceAndArtifactTests(unittest.TestCase):
             metrics["agent_exit"] = 1
             (run_dir / "metrics.json").write_text(json.dumps(metrics))
             record = probe.observe_run(manifest, slot, run_dir)
-            self.assertFalse(record["validity"]["confirmatory_analysis_eligible"])
-            self.assertEqual(record["validity"]["state"], "invalid_exogenous_pre_attribution")
-            self.assertIn(
+            self.assertTrue(record["validity"]["confirmatory_analysis_eligible"])
+            self.assertEqual(record["validity"]["state"], "review_required")
+            self.assertNotIn(
                 "transport_or_service_failure_before_request_acceptance",
                 probe.eligible_exclusion_reasons(record),
             )
             self.assertTrue(record["configuration"]["observed_identity"]["models"])
 
             record["completion"]["agent_exit"] = 143
+            self.assertNotIn(
+                "external_termination_before_attributable_target_completion",
+                probe.eligible_exclusion_reasons(record),
+            )
+            record["completion"]["target_response_activity_observed"] = False
             self.assertIn(
                 "external_termination_before_attributable_target_completion",
+                probe.eligible_exclusion_reasons(record),
+            )
+
+            explicit = probe.completion_observation(
+                "codex",
+                [
+                    {
+                        "type": "error",
+                        "request_accepted": False,
+                        "failure_phase": "before_request",
+                    }
+                ],
+                {"agent_exit": 1},
+                "",
+            )
+            record["completion"] = explicit
+            self.assertFalse(explicit["request_acceptance_observed"])
+            self.assertTrue(explicit["pre_request_transport_failure_observed"])
+            self.assertIn(
+                "transport_or_service_failure_before_request_acceptance",
+                probe.eligible_exclusion_reasons(record),
+            )
+
+            post_request = probe.completion_observation(
+                "codex",
+                [
+                    {
+                        "type": "turn.failed",
+                        "request_accepted": True,
+                        "failure_phase": "after_request",
+                    }
+                ],
+                {"agent_exit": 1},
+                "",
+            )
+            record["completion"] = post_request
+            self.assertTrue(post_request["request_acceptance_observed"])
+            self.assertFalse(post_request["pre_request_transport_failure_observed"])
+            self.assertNotIn(
+                "transport_or_service_failure_before_request_acceptance",
                 probe.eligible_exclusion_reasons(record),
             )
 
@@ -1517,6 +1853,129 @@ class CredentialGuardTests(unittest.TestCase):
             self.assertEqual((expected / "unsafe.txt").read_text(), "synthetic unsafe artifact")
             receipt = probe.ROOT / result["receipt"]
             self.assertTrue(receipt.is_file())
+            self.assertEqual(result["receipt_sha256"], probe.sha256_path(receipt))
+
+    def test_quarantine_root_swap_falls_back_to_preopened_emergency_destination(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-container-"
+        ) as container:
+            temp = Path(raw)
+            primary_path = Path(container) / "primary"
+            primary_path.mkdir(mode=0o700)
+            detached_path = Path(container) / "detached-primary"
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            slot = manifest["schedule"][0]
+            source = temp / "unsafe-run"
+            source.mkdir()
+            (source / "unsafe.txt").write_text("synthetic unsafe artifact")
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": str(primary_path)}
+            ):
+                primary = probe.prepare_quarantine(manifest, slot)
+                fallback = probe.prepare_emergency_quarantine(manifest, slot)
+                try:
+                    primary_path.rename(detached_path)
+                    primary_path.mkdir(mode=0o700)
+                    result = probe.quarantine_with_fallback(
+                        manifest,
+                        slot,
+                        source,
+                        primary=primary,
+                        fallback=fallback,
+                    )
+                    self.assertEqual(
+                        result["primary_destination_error_type"], "ValueError"
+                    )
+                    receipt = json.loads((probe.ROOT / result["receipt"]).read_text())
+                    self.assertTrue(receipt["fallback_destination"])
+                    destination = Path(receipt["quarantine_destination"])
+                    self.assertEqual(
+                        (destination / "unsafe.txt").read_text(),
+                        "synthetic unsafe artifact",
+                    )
+                    probe.close_quarantine(fallback)
+                    shutil.rmtree(destination.parent.parent)
+                finally:
+                    probe.dispose_quarantine(fallback)
+                    probe.close_quarantine(primary)
+
+    def test_atomic_quarantine_destination_race_never_replaces_competitor(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            slot = manifest["schedule"][0]
+            source = temp / "unsafe-run"
+            source.mkdir()
+            (source / "unsafe.txt").write_text("synthetic unsafe artifact")
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+            ):
+                primary = probe.prepare_quarantine(manifest, slot)
+                fallback = probe.prepare_emergency_quarantine(manifest, slot)
+                original_rename = probe._rename_noreplace
+                raced = False
+
+                def race_once(source_path, destination_fd, destination_name):
+                    nonlocal raced
+                    if not raced:
+                        raced = True
+                        os.mkdir(destination_name, dir_fd=destination_fd)
+                        competitor_fd = os.open(
+                            destination_name,
+                            probe._directory_open_flags(),
+                            dir_fd=destination_fd,
+                        )
+                        try:
+                            marker_fd = os.open(
+                                "competitor.txt",
+                                os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                                0o600,
+                                dir_fd=competitor_fd,
+                            )
+                            try:
+                                os.write(marker_fd, b"competitor")
+                            finally:
+                                os.close(marker_fd)
+                        finally:
+                            os.close(competitor_fd)
+                    return original_rename(source_path, destination_fd, destination_name)
+
+                try:
+                    with mock.patch.object(
+                        probe, "_rename_noreplace", side_effect=race_once
+                    ):
+                        result = probe.quarantine_with_fallback(
+                            manifest,
+                            slot,
+                            source,
+                            primary=primary,
+                            fallback=fallback,
+                        )
+                    competitor = (
+                        primary["base_path"]
+                        / primary["experiment_id"]
+                        / primary["slot_id"]
+                        / "competitor.txt"
+                    )
+                    self.assertEqual(competitor.read_text(), "competitor")
+                    receipt = json.loads((probe.ROOT / result["receipt"]).read_text())
+                    self.assertTrue(receipt["fallback_destination"])
+                    destination = Path(receipt["quarantine_destination"])
+                    self.assertEqual(
+                        (destination / "unsafe.txt").read_text(),
+                        "synthetic unsafe artifact",
+                    )
+                    probe.close_quarantine(fallback)
+                    shutil.rmtree(destination.parent.parent)
+                finally:
+                    probe.dispose_quarantine(fallback)
+                    probe.close_quarantine(primary)
 
     def test_quarantine_rejects_symlinked_experiment_directory(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
@@ -1529,6 +1988,24 @@ class CredentialGuardTests(unittest.TestCase):
             with mock.patch.dict(os.environ, {"ARENA_QUARANTINE_DIR": quarantine}):
                 with self.assertRaisesRegex(ValueError, "experiment directory must be a real directory"):
                     probe.quarantine_destination(manifest, manifest["schedule"][0])
+
+    def test_quarantine_rejects_symlink_ancestor_before_creating_through_it(self):
+        with tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-container-"
+        ) as container, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-redirect-"
+        ) as redirect, tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            link = Path(container) / "redirect"
+            link.symlink_to(redirect, target_is_directory=True)
+            configured = link / "must-not-be-created"
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": str(configured)}
+            ):
+                with self.assertRaisesRegex(ValueError, "symlink component"):
+                    probe.prepare_quarantine(manifest, manifest["schedule"][0])
+            self.assertFalse((Path(redirect) / "must-not-be-created").exists())
 
     def test_process_group_cleanup_kills_descendants_after_leader_exit(self):
         with tempfile.TemporaryDirectory(prefix="arena-process-group-test-") as raw:
@@ -1604,6 +2081,71 @@ class CredentialGuardTests(unittest.TestCase):
                     os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass
+
+    def test_process_scope_kills_descendant_that_detaches_into_a_new_session(self):
+        try:
+            probe.process_scope_capability()
+        except (OSError, RuntimeError, ValueError) as exc:
+            self.skipTest(f"cgroup-v2 process containment unavailable: {type(exc).__name__}")
+        with tempfile.TemporaryDirectory(prefix="arena-process-scope-test-") as raw:
+            ready = Path(raw) / "child.pid"
+            slot = {"slot_id": f"synthetic-detached-{Path(raw).name}"}
+            scope = probe.prepare_process_scope(slot)
+            child_pid = None
+            process = None
+            child_code = (
+                "import os,signal,sys,time;"
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN);"
+                "open(sys.argv[1], 'w').write(str(os.getpid()));"
+                "time.sleep(30)"
+            )
+            leader_code = (
+                "import subprocess,sys,time;"
+                "subprocess.Popen([sys.executable, '-c', sys.argv[2], sys.argv[1]], "
+                "start_new_session=True);"
+                "\nwhile True:\n"
+                " try:\n"
+                "  open(sys.argv[1]).read(); break\n"
+                " except OSError: time.sleep(0.01)\n"
+            )
+            try:
+                process = subprocess.Popen(
+                    [os.sys.executable, "-c", leader_code, str(ready), child_code],
+                    start_new_session=True,
+                    pass_fds=(scope["attach_fd"],),
+                    preexec_fn=lambda: probe.attach_process_scope(scope),
+                )
+                os.close(scope["attach_fd"])
+                scope["attach_fd"] = None
+                self.assertEqual(process.wait(timeout=5), 0)
+                child_pid = int(ready.read_text())
+                self.assertNotEqual(os.getpgid(child_pid), process.pid)
+                self.assertTrue(probe._process_scope_populated(scope))
+                probe.terminate_process_scope(
+                    process,
+                    scope,
+                    term_grace_seconds=0.1,
+                    kill_grace_seconds=2.0,
+                    poll_interval=0.01,
+                )
+                self.assertTrue(scope["removed"])
+            finally:
+                if child_pid is not None:
+                    try:
+                        os.kill(child_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                if not scope.get("removed"):
+                    try:
+                        probe.terminate_process_scope(
+                            process,
+                            scope,
+                            term_grace_seconds=0.1,
+                            kill_grace_seconds=2.0,
+                            poll_interval=0.01,
+                        )
+                    except BaseException:
+                        probe.close_process_scope(scope)
 
     def test_driver_discards_hostile_inherited_stdin_and_preserves_prompt_argument(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:

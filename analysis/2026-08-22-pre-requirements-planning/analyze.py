@@ -733,6 +733,7 @@ def validate_analysis_provenance(
         errors.append(f"execution ledger malformed at lines {malformed}")
     effective, effective_errors = probe.select_effective_attempts(manifest, ledger)
     errors.extend(effective_errors)
+    errors.extend(probe.validate_prior_attempt_provenance(manifest, ledger))
     primary_by_id = {slot["slot_id"]: slot for slot in manifest.get("schedule") or []}
     frozen_by_id = {
         slot["slot_id"]: slot
@@ -1055,8 +1056,13 @@ def aggregate(
                     "run_dir",
                     "objective_issues",
                     "eligible_exclusion_reasons",
+                    "process_group_cleaned",
+                    "staged_attempt_retained",
+                    "staged_attempt_path",
                     "failure_receipt",
                     "quarantine_receipt",
+                    "quarantine_failure_receipt",
+                    "stage_quarantine_receipt",
                 )
             }
             for row in ledger
@@ -1101,14 +1107,15 @@ def render_report(analysis: dict[str, Any]) -> str:
             f"reserve attempts: **{accounting['replacement_attempts']}**. Protocol amendments: "
             f"**{len(analysis['protocol_amendments'])}**.",
             "",
-            "| attempt | condition | kind | replaces | eligible | state | objective evidence |",
-            "|---|---|---|---|---:|---|---|",
+            "| attempt | condition | kind | replaces | eligible | scope clean | stage retained | state | objective evidence |",
+            "|---|---|---|---|---:|---:|---:|---|---|",
         ]
     )
     for row in accounting["audit_rows"]:
         lines.append(
             f"| {md(row.get('slot_id'))} | {md(row.get('condition_id'))} | {md(row.get('kind'))} | "
             f"{md(row.get('replacement_for') or '—')} | {row.get('analysis_eligible')} | "
+            f"{row.get('process_group_cleaned')} | {row.get('staged_attempt_retained')} | "
             f"{md(row.get('validity_state'))} | {md('; '.join(row.get('objective_issues') or []) or '—')} |"
         )
     lines.extend(

@@ -190,8 +190,11 @@ Task 16 replaces those legacy string hooks with `credential_guard.py`: it
 parses an exact auth/config-only source, rejects unknown or empty credential
 coverage, requires the runtime credential structure to match the frozen launch
 schema, scans every raw and normalized artifact and pathname without following
-symlinks, and atomically quarantines an unsafe attempt through a verified real
-directory outside the repository. Its standalone
+symlinks, and atomically quarantines an unsafe attempt through retained
+directory descriptors and `renameat2(RENAME_NOREPLACE)` outside the repository.
+A preopened randomized emergency destination covers configured-root detachment
+or destination races, and successful run/stage quarantine receipts are
+content-anchored in the execution ledger. Its standalone
 `--environment-secret-var NAME` option adds an environment value to scan
 coverage without putting that value in output or command arguments. Ordinary
 bouts retain the established leakscan behavior.
@@ -326,11 +329,15 @@ The response-only probe ignores inherited `TMPDIR` and uses a validated,
 same-filesystem `/tmp`. Live attempts receive a rubric-free staging tree with
 only the selected wrapper, required helpers, neutral task, and fixture; the
 parent is non-dumpable while the target runs, and output is atomically moved
-back before normalization. The runner terminates and verifies the entire target
-process group before recovery or scanning, including descendants left behind
-after the wrapper leader exits. If the runner cannot prove the group is gone
-even after `SIGKILL`, it leaves the staging tree untouched, records the cleanup
-failure, and blocks every later experiment call for operator recovery.
+back before normalization. The runner attaches each target to a dedicated
+cgroup-v2 child before `exec`, terminates the original group plus every process
+remaining in that cgroup, escalates with `cgroup.kill`, and requires both to be
+empty before recovery or scanning. This covers descendants that create a new
+session after the wrapper leader exits. If cleanup cannot be proved, it leaves
+the staging tree untouched, records its exact external path, and blocks every
+later experiment call for operator recovery.
+Continuing after such a catastrophic cleanup failure requires a documented new
+freeze; the append-only row is never edited in place.
 Experiment validation sets `ARENA_SYNTHETIC_ONLY=1` for the served-model helper
 tests so this package never opens an archived bout transcript.
 

@@ -19,6 +19,7 @@ independent QA.
 - Planned primary slots: `20 per condition`
 - Valid primary slots: `[x per condition]`
 - Invalid attempts and objective reasons: `[append-only ledger references]`
+- Process-scope cleanup, retained-stage, and quarantine evidence: `[per-attempt receipts]`
 - Preallocated replacements used: `[links from reserve slots]`
 - Smoke runs included in confirmatory denominators: `0`
 - Protocol amendments: `[none, or committed amendment identifiers]`

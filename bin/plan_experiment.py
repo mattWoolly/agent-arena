@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import ctypes
+import errno
 import hashlib
 import hmac
 import itertools
@@ -33,6 +34,9 @@ import credential_guard
 
 ROOT = Path(__file__).resolve().parent.parent
 SAFE_TEMP_ROOT = Path("/tmp")
+CGROUP_ROOT = Path("/sys/fs/cgroup")
+AT_FDCWD = -100
+RENAME_NOREPLACE = 1
 STAGED_DRIVER_FILES = {
     "claude": (
         "bin/run-task.sh",
@@ -267,8 +271,45 @@ def write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
 
 
+def write_json_exclusive(path: Path, value: Any) -> str:
+    """Create and directory-sync JSON without following or replacing an existing path."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    payload = json.dumps(value, indent=2, ensure_ascii=False).encode() + b"\n"
+    parent_fd = os.open(path.parent, _directory_open_flags())
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path.name, flags, 0o600, dir_fd=parent_fd)
+        offset = 0
+        while offset < len(payload):
+            offset += os.write(descriptor, payload[offset:])
+        os.fsync(descriptor)
+        os.fsync(parent_fd)
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        os.close(parent_fd)
+    return sha256_bytes(payload)
+
+
+def unlink_file_durable(path: Path) -> None:
+    """Remove one file and sync its parent without resolving through a swapped parent."""
+    parent_fd = os.open(path.parent, _directory_open_flags())
+    try:
+        os.unlink(path.name, dir_fd=parent_fd)
+        os.fsync(parent_fd)
+    finally:
+        os.close(parent_fd)
+
+
 def relative(path: Path) -> str:
     return str(path.resolve().relative_to(ROOT))
+
+
+def path_entry_exists(path: Path) -> bool:
+    return path.exists() or path.is_symlink()
 
 
 def file_record(path: Path) -> dict[str, Any]:
@@ -286,6 +327,8 @@ def default_conditions() -> list[dict[str, Any]]:
             "model_argument": "claude-opus-5",
             "output_label": "claude-opus-5",
             "expected_model_identities": ["claude-opus-5"],
+            "expected_model_aliases": [],
+            "expected_providers": [],
             "expected_cli_version": "2.1.241 (Claude Code)",
             "expected_base_url": "https://api.anthropic.com",
             "model_env_expected": "absent",
@@ -303,6 +346,8 @@ def default_conditions() -> list[dict[str, Any]]:
             "model_argument": "gpt-5.6-sol",
             "output_label": "gpt-5.6-sol-codex",
             "expected_model_identities": ["gpt-5.6-sol"],
+            "expected_model_aliases": [],
+            "expected_providers": [],
             "expected_cli_version": "codex-cli 0.149.0",
             "expected_base_url": "https://api.openai.com (native)",
             "effort": {"mode": "native_default", "cli_argument": None, "observed_value": "not_exposed"},
@@ -319,6 +364,8 @@ def default_conditions() -> list[dict[str, Any]]:
             "model_argument": "arena/k3",
             "output_label": "kimi-k3-kimicode",
             "expected_model_identities": ["kimi-k3"],
+            "expected_model_aliases": ["arena/k3"],
+            "expected_providers": ["moonshot-platform"],
             "expected_cli_version": "kimi-code 0.27.0",
             "expected_base_url": "https://api.moonshot.ai/v1 (platform, metered)",
             "effort": {"mode": "native_default", "cli_argument": None, "observed_value": "max"},
@@ -570,6 +617,8 @@ def validate_manifest(manifest: dict[str, Any], *, check_files: bool = True) -> 
                 errors.append("target prompt file hash mismatch")
             if data.decode() != task.get("target_prompt"):
                 errors.append("manifest target prompt text mismatch")
+            if len(data) != task.get("prompt_bytes"):
+                errors.append("manifest target prompt byte count mismatch")
         frozen_records = manifest.get("frozen_inputs") or []
         frozen_paths = [rec.get("path") for rec in frozen_records if isinstance(rec, dict)]
         expected_frozen_paths = set(FROZEN_CORE_RELATIVE) | {
@@ -1126,6 +1175,7 @@ def instruction_context(driver: str, events: list[dict[str, Any]], run_dir: Path
             issues.append("missing Codex session rollout")
         base = None
         messages: list[dict[str, Any]] = []
+        response_model_records: list[dict[str, Any]] = []
         turn_contexts: list[dict[str, Any]] = []
         world_states: list[dict[str, Any]] = []
         for event in session:
@@ -1134,6 +1184,18 @@ def instruction_context(driver: str, events: list[dict[str, Any]], run_dir: Path
                 base = payload.get("base_instructions")
             elif event.get("type") == "response_item" and payload.get("type") == "message" and payload.get("role") in {"system", "developer", "user"}:
                 messages.append({key: value for key, value in payload.items()})
+            elif (
+                event.get("type") == "response_item"
+                and payload.get("type") == "message"
+                and payload.get("role") == "assistant"
+            ):
+                record = {
+                    key: payload.get(key)
+                    for key in ("model", "model_id", "provider")
+                    if key in payload
+                }
+                if record:
+                    response_model_records.append(record)
             elif event.get("type") == "turn_context":
                 turn_contexts.append(payload)
             elif event.get("type") == "world_state":
@@ -1144,6 +1206,7 @@ def instruction_context(driver: str, events: list[dict[str, Any]], run_dir: Path
             "driver": driver,
             "base_instructions": base,
             "pre_response_messages": messages,
+            "response_model_records": response_model_records,
             "turn_contexts": turn_contexts,
             "world_states": world_states,
             "limitations": ["API-served model identity and the complete native tool schema are not independently exposed."],
@@ -1211,6 +1274,8 @@ def instruction_context(driver: str, events: list[dict[str, Any]], run_dir: Path
 
 def observed_model_and_effort(driver: str, events: list[dict[str, Any]], context: dict[str, Any]) -> dict[str, Any]:
     models: list[str] = []
+    model_aliases: list[str] = []
+    providers: list[str] = []
     evidence: list[dict[str, str]] = []
     effort: Any = None
     identity_kind = "served"
@@ -1242,6 +1307,22 @@ def observed_model_and_effort(driver: str, events: list[dict[str, Any]], context
                 if model not in models:
                     models.append(model)
                 evidence.append({"kind": "served_response_item_tag", "value": model})
+        for response in context.get("response_model_records") or []:
+            for key in ("model", "model_id"):
+                model = response.get(key)
+                if isinstance(model, str) and model:
+                    if model not in models:
+                        models.append(model)
+                    evidence.append(
+                        {"kind": f"served_session_response_{key}_tag", "value": model}
+                    )
+            provider = response.get("provider")
+            if isinstance(provider, str) and provider:
+                if provider not in providers:
+                    providers.append(provider)
+                evidence.append(
+                    {"kind": "served_session_response_provider_tag", "value": provider}
+                )
         identity_kind = "requested_turn_context_and_response_item_tags_when_exposed"
     elif driver == "kimi":
         for request in context.get("requests") or []:
@@ -1249,6 +1330,16 @@ def observed_model_and_effort(driver: str, events: list[dict[str, Any]], context
             if isinstance(model, str) and model not in models:
                 models.append(model)
                 evidence.append({"kind": "request_wire_record", "value": model})
+            alias = request.get("modelAlias")
+            if isinstance(alias, str) and alias:
+                if alias not in model_aliases:
+                    model_aliases.append(alias)
+                evidence.append({"kind": "request_wire_alias", "value": alias})
+            provider = request.get("provider")
+            if isinstance(provider, str) and provider:
+                if provider not in providers:
+                    providers.append(provider)
+                evidence.append({"kind": "request_wire_provider", "value": provider})
             if request.get("thinkingEffort") is not None:
                 effort = request["thinkingEffort"]
         for event in events:
@@ -1263,8 +1354,25 @@ def observed_model_and_effort(driver: str, events: list[dict[str, Any]], context
                 if model not in models:
                     models.append(model)
                 evidence.append({"kind": "served_wire_response_tag", "value": model})
+            alias = response.get("modelAlias")
+            if isinstance(alias, str) and alias:
+                if alias not in model_aliases:
+                    model_aliases.append(alias)
+                evidence.append({"kind": "served_wire_response_alias", "value": alias})
+            provider = response.get("provider")
+            if isinstance(provider, str) and provider:
+                if provider not in providers:
+                    providers.append(provider)
+                evidence.append({"kind": "served_wire_response_provider", "value": provider})
         identity_kind = "request_wire_record_and_served_response_tags_when_exposed"
-    return {"models": models, "model_evidence": evidence, "identity_kind": identity_kind, "observed_effort": effort}
+    return {
+        "models": models,
+        "model_aliases": model_aliases,
+        "providers": providers,
+        "model_evidence": evidence,
+        "identity_kind": identity_kind,
+        "observed_effort": effort,
+    }
 
 
 def _frozen_credential_structure_sha256(driver: str) -> str:
@@ -1499,6 +1607,52 @@ def completion_observation(
             if isinstance(event.get("type"), str) and event.get("type") in {"error", "result"}
         )
     status_text = " ".join(statuses).lower()
+    explicitly_rejected_before_request = False
+    request_acceptance_observed: bool | None = None
+    pre_request_phases = {
+        "before_request",
+        "pre_request",
+        "request_not_sent",
+        "before_request_acceptance",
+        "transport_before_request",
+    }
+    post_request_types = {
+        "assistant",
+        "result",
+        "item.completed",
+        "item.started",
+        "item.updated",
+        "turn.completed",
+        "turn.failed",
+        "turn.started",
+    }
+    target_response_activity_observed = False
+    for event in events:
+        accepted = event.get("request_accepted")
+        if accepted is None:
+            accepted = event.get("requestAccepted")
+        phase = event.get("failure_phase")
+        if phase is None:
+            phase = event.get("failurePhase")
+        normalized_phase = (
+            str(phase).strip().lower().replace("-", "_")
+            if phase is not None
+            else ""
+        )
+        if accepted is True:
+            request_acceptance_observed = True
+        elif accepted is False and normalized_phase in pre_request_phases:
+            explicitly_rejected_before_request = True
+            if request_acceptance_observed is None:
+                request_acceptance_observed = False
+        if event.get("type") in post_request_types or event.get("role") == "assistant":
+            request_acceptance_observed = True
+        if driver == "claude" and event.get("type") == "assistant":
+            target_response_activity_observed = True
+        elif driver == "codex" and isinstance(event.get("item"), dict):
+            target_response_activity_observed = True
+        elif driver == "kimi" and event.get("role") == "assistant":
+            target_response_activity_observed = True
     unavailable_metrics = [
         name
         for name in ("input_tokens", "output_tokens", "total_cost_usd")
@@ -1509,6 +1663,10 @@ def completion_observation(
         "timeout_exit": exit_code == 124,
         "output_present": bool(output),
         "structured_statuses": statuses,
+        "request_acceptance_observed": request_acceptance_observed,
+        "pre_request_transport_failure_observed": explicitly_rejected_before_request
+        and request_acceptance_observed is not True,
+        "target_response_activity_observed": target_response_activity_observed,
         "truncation_observed": exit_code == 124
         or any(token in status_text for token in ("max_turn", "max_token", "length", "truncat")),
         "descriptive_metrics_unavailable": unavailable_metrics,
@@ -1644,6 +1802,26 @@ def observe_run(
         )
     if not observed["models"]:
         technical_issues.append("observable model identity missing")
+    expected_aliases = set(condition.get("expected_model_aliases") or [])
+    if observed["model_aliases"] and any(
+        alias not in expected_aliases for alias in observed["model_aliases"]
+    ):
+        technical_issues.append(
+            f"model alias mismatch: expected only {sorted(expected_aliases)!r}, "
+            f"observed {observed['model_aliases']!r}"
+        )
+    if expected_aliases and not observed["model_aliases"]:
+        technical_issues.append("observable model alias missing")
+    expected_providers = set(condition.get("expected_providers") or [])
+    if observed["providers"] and any(
+        provider not in expected_providers for provider in observed["providers"]
+    ):
+        technical_issues.append(
+            f"provider mismatch: expected only {sorted(expected_providers)!r}, "
+            f"observed {observed['providers']!r}"
+        )
+    if expected_providers and not observed["providers"]:
+        technical_issues.append("observable provider missing")
     if driver == "kimi" and observed.get("observed_effort") != condition["effort"].get("observed_value"):
         technical_issues.append(
             f"effort drift: expected {condition['effort'].get('observed_value')!r}, got {observed.get('observed_effort')!r}"
@@ -1866,7 +2044,8 @@ def eligible_exclusion_reasons(record: dict[str, Any]) -> list[str]:
     if any("prompt" in issue and "mismatch" in issue for issue in issues):
         reasons.add("prompt_hash_mismatch")
     if any(token in issue for issue in issues for token in (
-        "cli version drift", "model mismatch", "effort drift", "run environment", "harness had tracked changes",
+        "cli version drift", "model mismatch", "model alias mismatch", "provider mismatch",
+        "effort drift", "run environment", "harness had tracked changes",
         "price-sheet hash mismatch", "frozen configuration", "instruction/tool policy drift",
     )):
         reasons.add("wrong_model_or_frozen_configuration")
@@ -1878,17 +2057,25 @@ def eligible_exclusion_reasons(record: dict[str, Any]) -> list[str]:
         "session rollout",
         "system prompt missing",
         "observable model identity missing",
+        "observable model alias missing",
+        "observable provider missing",
     )):
         reasons.add("corrupted_or_missing_raw_artifact_due_to_harness")
     completion = record.get("completion") or {}
     embargo = record.get("embargo") or {}
-    exit_code = completion.get("agent_exit")
     no_attributable_target_activity = (
         not (record.get("output") or {}).get("present")
         and not embargo.get("target_originated_tool_or_function_call")
+        and not embargo.get("workspace_changed")
+        and embargo.get("trace_integrity_pass") is True
+        and completion.get("target_response_activity_observed") is not True
     )
-    if no_attributable_target_activity and exit_code not in {0, None, 124, 130, 137, 143}:
+    if (
+        no_attributable_target_activity
+        and completion.get("pre_request_transport_failure_observed") is True
+    ):
         reasons.add("transport_or_service_failure_before_request_acceptance")
+    exit_code = completion.get("agent_exit")
     if no_attributable_target_activity and exit_code in {130, 137, 143}:
         reasons.add("external_termination_before_attributable_target_completion")
     return sorted(reasons)
@@ -1930,6 +2117,29 @@ def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, A
             errors.append(f"{location} run directory does not match frozen slot")
         if not isinstance(row.get("analysis_eligible"), bool):
             errors.append(f"{location} analysis_eligible must be boolean")
+        if not isinstance(row.get("process_group_cleaned"), bool):
+            errors.append(f"{location} process_group_cleaned must be boolean")
+        if not isinstance(row.get("staged_attempt_retained"), bool):
+            errors.append(f"{location} staged_attempt_retained must be boolean")
+        if row.get("staged_attempt_retained") is True:
+            raw_stage_path = row.get("staged_attempt_path")
+            if not isinstance(raw_stage_path, str) or not raw_stage_path:
+                errors.append(f"{location} retained stage lacks its external path")
+            else:
+                try:
+                    stage_path = Path(raw_stage_path).resolve(strict=True)
+                    stage_path.relative_to(ROOT.resolve())
+                except (OSError, RuntimeError):
+                    errors.append(f"{location} retained stage path is missing")
+                except ValueError:
+                    if Path(raw_stage_path).is_symlink() or not stage_path.is_dir():
+                        errors.append(f"{location} retained stage path is not a real directory")
+                else:
+                    errors.append(f"{location} retained stage path must be outside the repository")
+        elif row.get("staged_attempt_retained") is False and row.get(
+            "staged_attempt_path"
+        ) is not None:
+            errors.append(f"{location} non-retained stage must not record a path")
         if row.get("artifact_manifest_sha256") is not None and not re.fullmatch(
             r"[0-9a-f]{64}", str(row.get("artifact_manifest_sha256") or "")
         ):
@@ -1945,11 +2155,19 @@ def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, A
         for path_key, hash_key in (
             ("failure_receipt", "failure_receipt_sha256"),
             ("quarantine_receipt", "quarantine_receipt_sha256"),
+            ("quarantine_failure_receipt", "quarantine_failure_receipt_sha256"),
+            ("stage_quarantine_receipt", "stage_quarantine_receipt_sha256"),
         ):
             if row.get(path_key) is not None and not re.fullmatch(
                 r"[0-9a-f]{64}", str(row.get(hash_key) or "")
             ):
                 errors.append(f"{location} {path_key} lacks a content hash anchor")
+        if (
+            row.get("quarantine_receipt") is not None
+            or row.get("quarantine_failure_receipt") is not None
+            or row.get("stage_quarantine_receipt") is not None
+        ) and row.get("failure_receipt") is None:
+            errors.append(f"{location} quarantine evidence lacks an attempt-failure receipt")
         preflight = row.get("preflight")
         if not isinstance(preflight, dict):
             errors.append(f"{location} lacks a treatment preflight record")
@@ -2330,13 +2548,19 @@ def preflight_condition(condition: dict[str, Any], env: dict[str, str]) -> tuple
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=False
     ).stdout.strip()
+    try:
+        process_containment = process_scope_capability()
+    except (OSError, RuntimeError, ValueError) as exc:
+        process_containment = "unavailable"
+        errors.append(f"process containment unavailable: {type(exc).__name__}")
     snapshot: dict[str, Any] = {
         "condition_id": condition["condition_id"],
         "driver": driver,
         "cli_version": version,
         "harness_commit": commit or "unknown",
         "environment_policy": "minimal-allowlist-v3",
-        "execution_isolation_policy": "rubric-free staged driver; nondumpable parent; atomic output transfer",
+        "execution_isolation_policy": "rubric-free staged driver; nondumpable parent; atomic output transfer; dedicated cgroup-v2",
+        "process_containment": process_containment,
         "temp_root": env.get("TMPDIR"),
     }
     if driver == "claude":
@@ -2521,13 +2745,43 @@ def scan_run_credentials(driver: str, env: dict[str, str], run_dir: Path, receip
     return receipt
 
 
-def quarantine_destination(manifest: dict[str, Any], slot: dict[str, Any]) -> Path:
-    """Prepare an atomic, same-filesystem quarantine destination before target execution."""
-    raw_base = os.environ.get("ARENA_QUARANTINE_DIR")
+def _safe_path_component(value: Any, label: str) -> str:
+    component = str(value)
+    if component in {"", ".", ".."} or Path(component).name != component:
+        raise ValueError(f"unsafe {label}")
+    return component
+
+
+def _directory_open_flags() -> int:
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    return flags
+
+
+def _reject_symlink_components(path: Path, label: str) -> None:
+    absolute = Path(os.path.abspath(path))
+    current = Path(absolute.anchor)
+    for component in absolute.parts[1:]:
+        current /= component
+        if current.is_symlink():
+            raise ValueError(f"{label} must not contain a symlink component")
+
+
+def prepare_quarantine(
+    manifest: dict[str, Any],
+    slot: dict[str, Any],
+    *,
+    base_override: Path | None = None,
+    ephemeral: bool = False,
+) -> dict[str, Any]:
+    """Open and retain the exact safe destination before target execution."""
+    raw_base = str(base_override) if base_override is not None else os.environ.get("ARENA_QUARANTINE_DIR")
     unresolved = Path(raw_base).expanduser() if raw_base else Path.home() / ".agent-arena-quarantine"
-    if unresolved.is_symlink():
-        raise ValueError("secret quarantine root must not be a symlink")
+    unresolved = Path(os.path.abspath(unresolved))
+    _reject_symlink_components(unresolved, "secret quarantine root")
     unresolved.mkdir(parents=True, mode=0o700, exist_ok=True)
+    _reject_symlink_components(unresolved, "secret quarantine root")
     metadata = unresolved.lstat()
     if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
         raise ValueError("secret quarantine root must be a real directory")
@@ -2538,37 +2792,216 @@ def quarantine_destination(manifest: dict[str, Any], slot: dict[str, Any]) -> Pa
         pass
     else:
         raise ValueError("secret quarantine must be outside the Agent Arena repository")
-    if stat.S_IMODE(base.stat().st_mode) & 0o077:
+    if (
+        base != unresolved
+        or metadata.st_uid != os.getuid()
+        or stat.S_IMODE(base.stat().st_mode) & 0o077
+    ):
         raise ValueError("secret quarantine root must not be accessible by group or other users")
-    experiment_id = str(manifest["experiment_id"])
-    slot_id = str(slot["slot_id"])
-    for value, label in ((experiment_id, "experiment ID"), (slot_id, "slot ID")):
-        if value in {"", ".", ".."} or Path(value).name != value:
-            raise ValueError(f"unsafe quarantine {label}")
-    experiment_dir = base / experiment_id
+    experiment_id = _safe_path_component(manifest["experiment_id"], "quarantine experiment ID")
+    slot_id = _safe_path_component(slot["slot_id"], "quarantine slot ID")
+    parent_fd = os.open(base.parent, _directory_open_flags())
     try:
-        experiment_dir.mkdir(mode=0o700)
-    except FileExistsError:
-        pass
-    experiment_metadata = experiment_dir.lstat()
-    if not stat.S_ISDIR(experiment_metadata.st_mode) or stat.S_ISLNK(experiment_metadata.st_mode):
-        raise ValueError("secret quarantine experiment directory must be a real directory")
-    resolved_experiment = experiment_dir.resolve(strict=True)
-    if resolved_experiment != base / experiment_id:
-        raise ValueError("secret quarantine experiment directory escapes its configured root")
-    resolved_experiment.chmod(0o700)
-    if stat.S_IMODE(resolved_experiment.stat().st_mode) & 0o077:
-        raise ValueError("secret quarantine experiment directory has unsafe permissions")
-    destination = resolved_experiment / slot_id
-    if destination.exists() or destination.is_symlink():
-        raise FileExistsError(f"refusing to overwrite secret quarantine {destination}")
-    if resolved_experiment.stat().st_dev != ROOT.stat().st_dev:
-        raise ValueError("secret quarantine must share a filesystem with the repository for atomic rename")
-    return destination
+        base_fd = os.open(base.name, _directory_open_flags(), dir_fd=parent_fd)
+    except BaseException:
+        os.close(parent_fd)
+        raise
+    try:
+        base_stat = os.fstat(base_fd)
+        attached_base = os.stat(base.name, dir_fd=parent_fd, follow_symlinks=False)
+        if (base_stat.st_dev, base_stat.st_ino) != (attached_base.st_dev, attached_base.st_ino):
+            raise ValueError("secret quarantine root changed during preparation")
+        try:
+            os.mkdir(experiment_id, mode=0o700, dir_fd=base_fd)
+        except FileExistsError:
+            existing = os.stat(experiment_id, dir_fd=base_fd, follow_symlinks=False)
+            if not stat.S_ISDIR(existing.st_mode) or stat.S_ISLNK(existing.st_mode):
+                raise ValueError("secret quarantine experiment directory must be a real directory")
+        experiment_fd = os.open(experiment_id, _directory_open_flags(), dir_fd=base_fd)
+        try:
+            os.fchmod(experiment_fd, 0o700)
+            experiment_stat = os.fstat(experiment_fd)
+            attached_experiment = os.stat(
+                experiment_id, dir_fd=base_fd, follow_symlinks=False
+            )
+            if (experiment_stat.st_dev, experiment_stat.st_ino) != (
+                attached_experiment.st_dev,
+                attached_experiment.st_ino,
+            ):
+                raise ValueError("secret quarantine experiment directory changed during preparation")
+            if (
+                not stat.S_ISDIR(experiment_stat.st_mode)
+                or experiment_stat.st_uid != os.getuid()
+                or stat.S_IMODE(experiment_stat.st_mode) & 0o077
+            ):
+                raise ValueError("secret quarantine experiment directory has unsafe permissions")
+            if experiment_stat.st_dev != ROOT.stat().st_dev:
+                raise ValueError(
+                    "secret quarantine must share a filesystem with the repository for atomic rename"
+                )
+            for destination_name in (slot_id, f"{slot_id}--stage"):
+                try:
+                    os.stat(destination_name, dir_fd=experiment_fd, follow_symlinks=False)
+                except (FileNotFoundError, OSError, RuntimeError):
+                    pass
+                else:
+                    raise FileExistsError(
+                        f"refusing to overwrite secret quarantine {base / experiment_id / destination_name}"
+                    )
+        except BaseException:
+            os.close(experiment_fd)
+            raise
+    except BaseException:
+        os.close(base_fd)
+        os.close(parent_fd)
+        raise
+    return {
+        "parent_fd": parent_fd,
+        "base_fd": base_fd,
+        "experiment_fd": experiment_fd,
+        "base_name": base.name,
+        "experiment_id": experiment_id,
+        "slot_id": slot_id,
+        "base_stat": (base_stat.st_dev, base_stat.st_ino),
+        "experiment_stat": (experiment_stat.st_dev, experiment_stat.st_ino),
+        "base_path": base,
+        "ephemeral": ephemeral,
+        "closed": False,
+    }
 
 
-def quarantine_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -> dict[str, Any]:
-    destination = quarantine_destination(manifest, slot)
+def close_quarantine(handle: dict[str, Any] | None) -> None:
+    if not handle or handle.get("closed"):
+        return
+    for key in ("experiment_fd", "base_fd", "parent_fd"):
+        try:
+            os.close(handle[key])
+        except OSError:
+            pass
+    handle["closed"] = True
+
+
+def prepare_emergency_quarantine(
+    manifest: dict[str, Any], slot: dict[str, Any]
+) -> dict[str, Any]:
+    base = Path(tempfile.mkdtemp(prefix="arena-plan-emergency-quarantine.", dir=SAFE_TEMP_ROOT))
+    base.chmod(0o700)
+    try:
+        return prepare_quarantine(
+            manifest,
+            slot,
+            base_override=base,
+            ephemeral=True,
+        )
+    except BaseException:
+        try:
+            base.rmdir()
+        except OSError:
+            pass
+        raise
+
+
+def dispose_quarantine(handle: dict[str, Any] | None) -> None:
+    if not handle or handle.get("closed"):
+        return
+    if handle.get("ephemeral"):
+        try:
+            os.rmdir(handle["experiment_id"], dir_fd=handle["base_fd"])
+            os.rmdir(handle["base_name"], dir_fd=handle["parent_fd"])
+        except OSError as exc:
+            if exc.errno not in {errno.ENOTEMPTY, errno.EEXIST}:
+                close_quarantine(handle)
+                raise
+    close_quarantine(handle)
+
+
+def quarantine_destination(manifest: dict[str, Any], slot: dict[str, Any]) -> Path:
+    """Compatibility probe that validates and closes the preopened destination."""
+    handle = prepare_quarantine(manifest, slot)
+    try:
+        return handle["base_path"] / handle["experiment_id"] / handle["slot_id"]
+    finally:
+        close_quarantine(handle)
+
+
+def _validate_quarantine_handle(handle: dict[str, Any], destination_name: str) -> None:
+    if handle.get("closed"):
+        raise ValueError("secret quarantine descriptor is closed")
+    base_stat = os.fstat(handle["base_fd"])
+    experiment_stat = os.fstat(handle["experiment_fd"])
+    attached_base = os.stat(
+        handle["base_name"], dir_fd=handle["parent_fd"], follow_symlinks=False
+    )
+    attached_experiment = os.stat(
+        handle["experiment_id"], dir_fd=handle["base_fd"], follow_symlinks=False
+    )
+    if (base_stat.st_dev, base_stat.st_ino) != handle["base_stat"] or (
+        attached_base.st_dev,
+        attached_base.st_ino,
+    ) != handle["base_stat"]:
+        raise ValueError("prevalidated secret quarantine root is no longer attached")
+    if (experiment_stat.st_dev, experiment_stat.st_ino) != handle["experiment_stat"] or (
+        attached_experiment.st_dev,
+        attached_experiment.st_ino,
+    ) != handle["experiment_stat"]:
+        raise ValueError("prevalidated secret quarantine experiment directory is no longer attached")
+    if stat.S_IMODE(base_stat.st_mode) & 0o077 or stat.S_IMODE(experiment_stat.st_mode) & 0o077:
+        raise ValueError("prevalidated secret quarantine permissions changed")
+    absolute_base = os.stat(handle["base_path"], follow_symlinks=False)
+    absolute_experiment = os.stat(
+        handle["base_path"] / handle["experiment_id"], follow_symlinks=False
+    )
+    if (absolute_base.st_dev, absolute_base.st_ino) != handle["base_stat"]:
+        raise ValueError("prevalidated secret quarantine root is no longer path-reachable")
+    if (absolute_experiment.st_dev, absolute_experiment.st_ino) != handle["experiment_stat"]:
+        raise ValueError(
+            "prevalidated secret quarantine experiment directory is no longer path-reachable"
+        )
+    try:
+        os.stat(destination_name, dir_fd=handle["experiment_fd"], follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    raise FileExistsError(f"refusing to overwrite secret quarantine destination {destination_name}")
+
+
+def _rename_noreplace(source: Path, destination_fd: int, destination_name: str) -> None:
+    function = getattr(ctypes.CDLL(None, use_errno=True), "renameat2", None)
+    if function is None:
+        raise OSError("renameat2 with RENAME_NOREPLACE is unavailable")
+    function.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    function.restype = ctypes.c_int
+    result = function(
+        AT_FDCWD,
+        os.fsencode(str(source)),
+        destination_fd,
+        os.fsencode(destination_name),
+        RENAME_NOREPLACE,
+    )
+    if result == 0:
+        return
+    error_number = ctypes.get_errno()
+    if error_number == errno.EEXIST:
+        raise FileExistsError(f"refusing to overwrite secret quarantine destination {destination_name}")
+    raise OSError(error_number, os.strerror(error_number), str(source))
+
+
+def quarantine_run(
+    manifest: dict[str, Any],
+    slot: dict[str, Any],
+    run_dir: Path,
+    *,
+    handle: dict[str, Any] | None = None,
+    destination_kind: str = "run",
+    reason: str = "security_quarantine_after_secret_scan",
+) -> dict[str, Any]:
+    owned_handle = handle is None
+    handle = handle or prepare_quarantine(manifest, slot)
+    if destination_kind not in {"run", "stage"}:
+        raise ValueError("unsupported quarantine destination kind")
+    destination_name = handle["slot_id"] + ("--stage" if destination_kind == "stage" else "")
+    source_metadata = run_dir.lstat()
+    if not stat.S_ISDIR(source_metadata.st_mode) or stat.S_ISLNK(source_metadata.st_mode):
+        raise ValueError("quarantine source must be a real directory")
     entry_count = 0
     regular_file_bytes = 0
     if run_dir.is_dir():
@@ -2580,40 +3013,137 @@ def quarantine_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path
                 continue
             if stat.S_ISREG(metadata.st_mode):
                 regular_file_bytes += metadata.st_size
-    open_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC
-    if hasattr(os, "O_NOFOLLOW"):
-        open_flags |= os.O_NOFOLLOW
-    parent_fd = os.open(destination.parent, open_flags)
-    try:
-        opened = os.fstat(parent_fd)
-        expected = destination.parent.stat()
-        if (opened.st_dev, opened.st_ino) != (expected.st_dev, expected.st_ino):
-            raise ValueError("secret quarantine parent changed before atomic rename")
-        try:
-            os.stat(destination.name, dir_fd=parent_fd, follow_symlinks=False)
-        except FileNotFoundError:
-            pass
-        else:
-            raise FileExistsError(f"refusing to overwrite secret quarantine {destination}")
-        os.rename(run_dir, destination.name, dst_dir_fd=parent_fd)
-    finally:
-        os.close(parent_fd)
     receipt = {
         "schema_version": 1,
         "experiment_id": manifest["experiment_id"],
         "manifest_freeze_id": manifest["freeze_id"],
         "slot_id": slot["slot_id"],
-        "reason": "security_quarantine_after_secret_scan",
+        "reason": reason,
+        "destination_kind": destination_kind,
         "quarantined_at": utc_now(),
         "quarantined_entry_count": entry_count,
         "quarantined_regular_file_bytes": regular_file_bytes,
         "content_published": False,
+        "fallback_destination": bool(handle.get("ephemeral")),
+        "quarantine_destination": str(
+            handle["base_path"] / handle["experiment_id"] / destination_name
+        ),
     }
-    receipt_path = ROOT / manifest["bout_dir"] / "QUARANTINE" / f"{slot['slot_id']}.json"
-    if receipt_path.exists():
-        raise FileExistsError(f"refusing to overwrite quarantine receipt {receipt_path}")
-    write_json(receipt_path, receipt)
-    return {"succeeded": True, "receipt": relative(receipt_path)}
+    suffix = ".stage.json" if destination_kind == "stage" else ".json"
+    receipt_path = ROOT / manifest["bout_dir"] / "QUARANTINE" / f"{slot['slot_id']}{suffix}"
+    receipt_relative = str(receipt_path.relative_to(ROOT))
+    receipt_created = False
+    try:
+        _validate_quarantine_handle(handle, destination_name)
+        try:
+            receipt_sha256 = write_json_exclusive(receipt_path, receipt)
+            receipt_created = True
+        except FileExistsError as exc:
+            raise FileExistsError(
+                f"refusing to overwrite quarantine receipt {receipt_path}"
+            ) from exc
+        try:
+            _rename_noreplace(run_dir, handle["experiment_fd"], destination_name)
+        except BaseException:
+            if receipt_created:
+                unlink_file_durable(receipt_path)
+            raise
+        return {
+            "succeeded": True,
+            "receipt": receipt_relative,
+            "receipt_sha256": receipt_sha256,
+        }
+    finally:
+        if owned_handle:
+            close_quarantine(handle)
+
+
+def quarantine_with_fallback(
+    manifest: dict[str, Any],
+    slot: dict[str, Any],
+    source: Path,
+    *,
+    primary: dict[str, Any],
+    fallback: dict[str, Any],
+    destination_kind: str = "run",
+    reason: str = "security_quarantine_after_secret_scan",
+) -> dict[str, Any]:
+    try:
+        return quarantine_run(
+            manifest,
+            slot,
+            source,
+            handle=primary,
+            destination_kind=destination_kind,
+            reason=reason,
+        )
+    except BaseException as primary_error:
+        if not source.exists() and not source.is_symlink():
+            raise
+        try:
+            result = quarantine_run(
+                manifest,
+                slot,
+                source,
+                handle=fallback,
+                destination_kind=destination_kind,
+                reason=reason,
+            )
+        except BaseException as fallback_error:
+            raise RuntimeError(
+                "both primary and emergency atomic quarantine destinations failed"
+            ) from fallback_error
+        result["primary_destination_error_type"] = type(primary_error).__name__
+        return result
+
+
+def quarantine_destination_issues(receipt: dict[str, Any]) -> list[str]:
+    """Recheck aggregate preservation evidence without publishing quarantined content."""
+    raw_destination = receipt.get("quarantine_destination")
+    if not isinstance(raw_destination, str) or not Path(raw_destination).is_absolute():
+        return ["quarantine destination is not an absolute path"]
+    unresolved = Path(raw_destination)
+    try:
+        metadata = unresolved.lstat()
+        destination = unresolved.resolve(strict=True)
+        destination.relative_to(ROOT.resolve())
+    except FileNotFoundError:
+        return ["quarantine destination is missing"]
+    except (OSError, RuntimeError):
+        return ["quarantine destination is unreadable"]
+    except ValueError:
+        pass
+    else:
+        return ["quarantine destination is inside the repository"]
+    if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
+        return ["quarantine destination is not a real directory"]
+    try:
+        parent_metadata = destination.parent.lstat()
+    except OSError:
+        return ["quarantine destination parent is unreadable"]
+    if (
+        not stat.S_ISDIR(parent_metadata.st_mode)
+        or stat.S_ISLNK(parent_metadata.st_mode)
+        or parent_metadata.st_uid != os.getuid()
+        or stat.S_IMODE(parent_metadata.st_mode) & 0o077
+    ):
+        return ["quarantine destination parent has unsafe ownership or permissions"]
+    entry_count = 0
+    regular_file_bytes = 0
+    try:
+        for path in sorted(destination.rglob("*")):
+            entry_count += 1
+            item_metadata = path.lstat()
+            if stat.S_ISREG(item_metadata.st_mode):
+                regular_file_bytes += item_metadata.st_size
+    except OSError:
+        return ["quarantine destination inventory is unreadable"]
+    issues = []
+    if entry_count != receipt.get("quarantined_entry_count"):
+        issues.append("quarantine destination entry count changed")
+    if regular_file_bytes != receipt.get("quarantined_regular_file_bytes"):
+        issues.append("quarantine destination regular-file bytes changed")
+    return issues
 
 
 def write_quarantine_failure(
@@ -2623,21 +3153,23 @@ def write_quarantine_failure(
     receipt_path = ROOT / manifest["bout_dir"] / "QUARANTINE" / f"{slot['slot_id']}.failed.json"
     if receipt_path.exists() or receipt_path.is_symlink():
         raise FileExistsError(f"refusing to overwrite quarantine-failure receipt {receipt_path}")
-    write_json(
-        receipt_path,
-        {
-            "schema_version": 1,
-            "experiment_id": manifest["experiment_id"],
-            "manifest_freeze_id": manifest["freeze_id"],
-            "slot_id": slot["slot_id"],
-            "reason": "atomic_security_quarantine_failed",
-            "failed_at": utc_now(),
-            "error_type": type(error).__name__,
-            "run_dir_retained_for_manual_recovery": relative(run_dir),
-            "content_published": False,
-        },
-    )
-    return {"succeeded": False, "receipt": relative(receipt_path)}
+    receipt = {
+        "schema_version": 1,
+        "experiment_id": manifest["experiment_id"],
+        "manifest_freeze_id": manifest["freeze_id"],
+        "slot_id": slot["slot_id"],
+        "reason": "atomic_security_quarantine_failed",
+        "failed_at": utc_now(),
+        "error_type": type(error).__name__,
+        "run_dir_retained_for_manual_recovery": relative(run_dir),
+        "content_published": False,
+    }
+    receipt_sha256 = write_json_exclusive(receipt_path, receipt)
+    return {
+        "succeeded": False,
+        "receipt": relative(receipt_path),
+        "receipt_sha256": receipt_sha256,
+    }
 
 
 def raw_attempt_has_attributable_activity(driver: str, run_dir: Path) -> bool:
@@ -2653,7 +3185,226 @@ def raw_attempt_has_attributable_activity(driver: str, run_dir: Path) -> bool:
     except (OSError, ValueError, json.JSONDecodeError):
         return True
     workspace = run_dir / "workspace.diff"
-    return bool(output or calls or unknown or (workspace.is_file() and workspace.stat().st_size))
+    response_activity = any(
+        (driver == "claude" and event.get("type") == "assistant")
+        or (driver == "codex" and isinstance(event.get("item"), dict))
+        or (driver == "kimi" and event.get("role") == "assistant")
+        for event in events
+    )
+    if driver == "codex":
+        session, session_malformed = iter_jsonl(run_dir / "session.jsonl")
+        if session_malformed:
+            return True
+        response_activity = response_activity or any(
+            event.get("type") == "response_item"
+            and isinstance(event.get("payload"), dict)
+            and event["payload"].get("role") == "assistant"
+            for event in session
+        )
+    elif driver == "kimi":
+        wire, wire_malformed = iter_jsonl(run_dir / "wire.jsonl")
+        if wire_malformed:
+            return True
+        response_activity = response_activity or any(
+            event.get("type") == "llm.response" for event in wire
+        )
+    return bool(
+        output
+        or calls
+        or unknown
+        or response_activity
+        or (workspace.is_file() and workspace.stat().st_size)
+    )
+
+
+def _current_cgroup_parent() -> Path:
+    entries = [line for line in Path("/proc/self/cgroup").read_text().splitlines() if line]
+    if len(entries) != 1 or not entries[0].startswith("0::/"):
+        raise RuntimeError("a unified cgroup-v2 process hierarchy is required")
+    relative_cgroup = entries[0].split("::", 1)[1].lstrip("/")
+    root = CGROUP_ROOT.resolve(strict=True)
+    parent = (root / relative_cgroup).resolve(strict=True)
+    parent.relative_to(root)
+    if parent.is_symlink() or not parent.is_dir():
+        raise RuntimeError("current cgroup-v2 parent is not a real directory")
+    return parent
+
+
+def process_scope_capability() -> str:
+    parent = _current_cgroup_parent()
+    if not os.access(parent, os.W_OK) or not (parent / "cgroup.kill").is_file():
+        raise RuntimeError("current cgroup-v2 parent is not delegated for scoped cleanup")
+    name = f"arena-plan-capability-{os.getpid()}-{os.urandom(4).hex()}"
+    parent_fd = os.open(parent, _directory_open_flags())
+    scope_fd: int | None = None
+    created = False
+    try:
+        os.mkdir(name, dir_fd=parent_fd)
+        created = True
+        scope_fd = os.open(name, _directory_open_flags(), dir_fd=parent_fd)
+        for entry, flags in (
+            ("cgroup.procs", os.O_WRONLY | os.O_CLOEXEC),
+            ("cgroup.kill", os.O_WRONLY | os.O_CLOEXEC),
+            ("cgroup.events", os.O_RDONLY | os.O_CLOEXEC),
+        ):
+            descriptor = os.open(entry, flags, dir_fd=scope_fd)
+            os.close(descriptor)
+    finally:
+        try:
+            if scope_fd is not None:
+                os.close(scope_fd)
+            if created:
+                os.rmdir(name, dir_fd=parent_fd)
+        finally:
+            os.close(parent_fd)
+    return "dedicated-cgroup-v2-with-cgroup.kill"
+
+
+def prepare_process_scope(slot: dict[str, Any]) -> dict[str, Any]:
+    """Create one empty cgroup that contains every target descendant, including setsid children."""
+    parent = _current_cgroup_parent()
+    process_scope_capability()
+    slot_id = _safe_path_component(slot["slot_id"], "process-scope slot ID")
+    name = f"arena-plan-{sha256_bytes(slot_id.encode())[:20]}"
+    parent_fd = os.open(parent, _directory_open_flags())
+    scope_created = False
+    scope_fd: int | None = None
+    attach_fd: int | None = None
+    try:
+        os.mkdir(name, dir_fd=parent_fd)
+        scope_created = True
+        scope_fd = os.open(name, _directory_open_flags(), dir_fd=parent_fd)
+    except BaseException:
+        if scope_created:
+            try:
+                os.rmdir(name, dir_fd=parent_fd)
+            except OSError:
+                pass
+        os.close(parent_fd)
+        raise
+    try:
+        assert scope_fd is not None
+        scope_stat = os.fstat(scope_fd)
+        attached = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        if (scope_stat.st_dev, scope_stat.st_ino) != (attached.st_dev, attached.st_ino):
+            raise RuntimeError("process cgroup changed during preparation")
+        attach_fd = os.open(
+            "cgroup.procs",
+            os.O_WRONLY | os.O_CLOEXEC,
+            dir_fd=scope_fd,
+        )
+        kill_probe = os.open("cgroup.kill", os.O_WRONLY | os.O_CLOEXEC, dir_fd=scope_fd)
+        os.close(kill_probe)
+    except BaseException:
+        if attach_fd is not None:
+            os.close(attach_fd)
+        os.close(scope_fd)
+        try:
+            os.rmdir(name, dir_fd=parent_fd)
+        finally:
+            os.close(parent_fd)
+        raise
+    return {
+        "parent_fd": parent_fd,
+        "scope_fd": scope_fd,
+        "attach_fd": attach_fd,
+        "name": name,
+        "path": parent / name,
+        "stat": (scope_stat.st_dev, scope_stat.st_ino),
+        "closed": False,
+        "removed": False,
+    }
+
+
+def close_process_scope(handle: dict[str, Any] | None) -> None:
+    if not handle or handle.get("closed"):
+        return
+    for key in ("attach_fd", "scope_fd", "parent_fd"):
+        descriptor = handle.get(key)
+        if descriptor is None:
+            continue
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        handle[key] = None
+    handle["closed"] = True
+
+
+def attach_process_scope(handle: dict[str, Any]) -> None:
+    """Child-side Popen hook: enter the frozen cgroup before exec, then drop the descriptor."""
+    descriptor = int(handle["attach_fd"])
+    try:
+        os.write(descriptor, b"0\n")
+    finally:
+        os.close(descriptor)
+
+
+def _read_cgroup_file(handle: dict[str, Any], name: str) -> str:
+    descriptor = os.open(name, os.O_RDONLY | os.O_CLOEXEC, dir_fd=handle["scope_fd"])
+    try:
+        chunks = []
+        while True:
+            chunk = os.read(descriptor, 4096)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        return b"".join(chunks).decode(errors="replace")
+    finally:
+        os.close(descriptor)
+
+
+def _process_scope_populated(handle: dict[str, Any]) -> bool:
+    fields = dict(
+        line.split(maxsplit=1)
+        for line in _read_cgroup_file(handle, "cgroup.events").splitlines()
+        if " " in line
+    )
+    if fields.get("populated") not in {"0", "1"}:
+        raise RuntimeError("process cgroup has no trustworthy populated state")
+    return fields["populated"] == "1"
+
+
+def _process_scope_pids(handle: dict[str, Any]) -> list[int]:
+    values = []
+    for raw in _read_cgroup_file(handle, "cgroup.procs").splitlines():
+        try:
+            value = int(raw)
+        except ValueError as exc:
+            raise RuntimeError("process cgroup contains a malformed PID") from exc
+        if value > 1 and value != os.getpid():
+            values.append(value)
+    return sorted(set(values))
+
+
+def _signal_process_scope(handle: dict[str, Any], signum: int) -> None:
+    for pid in _process_scope_pids(handle):
+        try:
+            os.kill(pid, signum)
+        except ProcessLookupError:
+            pass
+
+
+def _wait_for_process_scope_exit(
+    handle: dict[str, Any], timeout_seconds: float, poll_interval: float, *, term_signal: bool
+) -> bool:
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        if not _process_scope_populated(handle):
+            return True
+        if term_signal:
+            _signal_process_scope(handle, signal.SIGTERM)
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(poll_interval)
+
+
+def _kill_process_scope(handle: dict[str, Any]) -> None:
+    descriptor = os.open("cgroup.kill", os.O_WRONLY | os.O_CLOEXEC, dir_fd=handle["scope_fd"])
+    try:
+        os.write(descriptor, b"1\n")
+    finally:
+        os.close(descriptor)
 
 
 def _process_group_exists(process_group_id: int) -> bool:
@@ -2738,6 +3489,51 @@ def terminate_process_group(
     process.poll()
 
 
+def terminate_process_scope(
+    process: subprocess.Popen[Any] | None,
+    handle: dict[str, Any],
+    *,
+    term_grace_seconds: float = 5.0,
+    kill_grace_seconds: float = 5.0,
+    poll_interval: float = 0.05,
+) -> None:
+    """Stop the original PGID and every descendant retained in its dedicated cgroup."""
+    group_error: BaseException | None = None
+    if process is not None:
+        try:
+            terminate_process_group(
+                process,
+                term_grace_seconds=term_grace_seconds,
+                kill_grace_seconds=kill_grace_seconds,
+                poll_interval=poll_interval,
+            )
+        except BaseException as exc:
+            group_error = exc
+    if not _wait_for_process_scope_exit(
+        handle,
+        term_grace_seconds,
+        poll_interval,
+        term_signal=True,
+    ):
+        _kill_process_scope(handle)
+        if not _wait_for_process_scope_exit(
+            handle,
+            kill_grace_seconds,
+            poll_interval,
+            term_signal=False,
+        ):
+            raise RuntimeError("target process cgroup survived cgroup.kill")
+    if process is not None and _process_group_exists(process.pid):
+        if group_error is not None:
+            raise RuntimeError("target process group survived cleanup") from group_error
+        raise RuntimeError("target process group survived cleanup")
+    if _process_scope_populated(handle):
+        raise RuntimeError("target process cgroup remained populated after cleanup")
+    os.rmdir(handle["name"], dir_fd=handle["parent_fd"])
+    handle["removed"] = True
+    close_process_scope(handle)
+
+
 def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dict[str, Any]]) -> list[str]:
     """Recheck immutable anchors before a resumed command may make another paid call."""
     errors: list[str] = []
@@ -2748,10 +3544,33 @@ def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dic
     for row in ledger:
         if not isinstance(row, dict):
             continue
-        if row.get("process_group_cleaned") is False:
+        if row.get("process_group_cleaned") is not True:
             errors.append(
-                f"{row.get('slot_id')}: unresolved process-group cleanup failure blocks further execution"
+                f"{row.get('slot_id')}: missing or unresolved process-scope cleanup evidence blocks further execution"
             )
+        if row.get("staged_attempt_retained") is not False:
+            errors.append(
+                f"{row.get('slot_id')}: missing or retained staged-attempt evidence blocks further execution"
+            )
+        if row.get("staged_attempt_retained") is True:
+            raw_stage_path = row.get("staged_attempt_path")
+            if isinstance(raw_stage_path, str):
+                try:
+                    stage_path = Path(raw_stage_path).resolve(strict=True)
+                    stage_path.relative_to(ROOT.resolve())
+                except (OSError, RuntimeError):
+                    errors.append(
+                        f"{row.get('slot_id')}: retained staged-attempt path is missing"
+                    )
+                except ValueError:
+                    if Path(raw_stage_path).is_symlink() or not stage_path.is_dir():
+                        errors.append(
+                            f"{row.get('slot_id')}: retained staged-attempt path is unsafe"
+                        )
+                else:
+                    errors.append(
+                        f"{row.get('slot_id')}: retained staged-attempt path is inside the repository"
+                    )
         slot = slots.get(row.get("slot_id"))
         if slot is None:
             continue
@@ -2776,6 +3595,8 @@ def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dic
         for path_key, hash_key in (
             ("failure_receipt", "failure_receipt_sha256"),
             ("quarantine_receipt", "quarantine_receipt_sha256"),
+            ("quarantine_failure_receipt", "quarantine_failure_receipt_sha256"),
+            ("stage_quarantine_receipt", "stage_quarantine_receipt_sha256"),
         ):
             raw_path = row.get(path_key)
             if raw_path is None:
@@ -2824,8 +3645,110 @@ def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dic
                         )
                     if receipt.get("process_group_cleaned") is False:
                         errors.append(
-                            f"{row.get('slot_id')}: unresolved process-group cleanup failure blocks further execution"
+                            f"{row.get('slot_id')}: unresolved process-scope cleanup failure blocks further execution"
                         )
+                    if not isinstance(receipt.get("staged_attempt_retained"), bool):
+                        errors.append(
+                            f"{row.get('slot_id')}: failure receipt lacks staged-attempt retention state"
+                        )
+                    elif receipt["staged_attempt_retained"] is not row.get(
+                        "staged_attempt_retained"
+                    ):
+                        errors.append(
+                            f"{row.get('slot_id')}: failure receipt and ledger staged-attempt state differ"
+                        )
+                    if receipt.get("staged_attempt_retained") is True:
+                        errors.append(
+                            f"{row.get('slot_id')}: retained staged attempt blocks further execution"
+                        )
+                    if receipt.get("staged_attempt_path") != row.get(
+                        "staged_attempt_path"
+                    ):
+                        errors.append(
+                            f"{row.get('slot_id')}: failure receipt and ledger staged-attempt path differ"
+                        )
+                    for (
+                        embedded_key,
+                        success_ledger_key,
+                        success_hash_key,
+                        failure_ledger_key,
+                        failure_hash_key,
+                    ) in (
+                        (
+                            "quarantine",
+                            "quarantine_receipt",
+                            "quarantine_receipt_sha256",
+                            "quarantine_failure_receipt",
+                            "quarantine_failure_receipt_sha256",
+                        ),
+                        (
+                            "stage_quarantine",
+                            "stage_quarantine_receipt",
+                            "stage_quarantine_receipt_sha256",
+                            None,
+                            None,
+                        ),
+                    ):
+                        embedded = receipt.get(embedded_key)
+                        succeeded = (
+                            embedded.get("succeeded")
+                            if isinstance(embedded, dict)
+                            else None
+                        )
+                        embedded_path = (
+                            embedded.get("receipt") if isinstance(embedded, dict) else None
+                        )
+                        expected_success = embedded_path if succeeded is True else None
+                        expected_failure = embedded_path if succeeded is False else None
+                        embedded_hash = (
+                            embedded.get("receipt_sha256")
+                            if isinstance(embedded, dict)
+                            else None
+                        )
+                        expected_success_hash = (
+                            embedded_hash if succeeded is True else None
+                        )
+                        expected_failure_hash = (
+                            embedded_hash if succeeded is False else None
+                        )
+                        if expected_success != row.get(success_ledger_key):
+                            errors.append(
+                                f"{row.get('slot_id')}: failure receipt and ledger {embedded_key} evidence differ"
+                            )
+                        if expected_success_hash != row.get(success_hash_key):
+                            errors.append(
+                                f"{row.get('slot_id')}: failure receipt and ledger {embedded_key} hash differ"
+                            )
+                        if failure_ledger_key and expected_failure != row.get(
+                            failure_ledger_key
+                        ):
+                            errors.append(
+                                f"{row.get('slot_id')}: failure receipt and ledger {embedded_key} failure evidence differ"
+                            )
+                        if failure_hash_key and expected_failure_hash != row.get(
+                            failure_hash_key
+                        ):
+                            errors.append(
+                                f"{row.get('slot_id')}: failure receipt and ledger {embedded_key} failure hash differ"
+                            )
+                elif path_key == "quarantine_receipt" and receipt.get(
+                    "destination_kind"
+                ) != "run":
+                    errors.append(
+                        f"{row.get('slot_id')}: quarantine receipt has the wrong destination kind"
+                    )
+                elif path_key in {"quarantine_receipt", "stage_quarantine_receipt"}:
+                    if (
+                        path_key == "stage_quarantine_receipt"
+                        and receipt.get("destination_kind") != "stage"
+                    ):
+                        errors.append(
+                            f"{row.get('slot_id')}: stage quarantine receipt has the wrong destination kind"
+                        )
+                    errors.extend(
+                        f"{row.get('slot_id')}: {issue}"
+                        for issue in quarantine_destination_issues(receipt)
+                    )
     return errors
 
 
@@ -2957,12 +3880,29 @@ def run_slots(
         current_preflight = preflight_manifest(manifest, {slot["condition_id"]}, env)[slot["condition_id"]]
         if current_preflight["sha256"] != initial_preflight[slot["condition_id"]]["sha256"]:
             raise ValueError(f"treatment preflight drifted before {slot['slot_id']}")
-        quarantine_destination(manifest, slot)
+        quarantine_handle = prepare_quarantine(manifest, slot)
+        emergency_quarantine_handle: dict[str, Any] | None = None
+        try:
+            emergency_quarantine_handle = prepare_emergency_quarantine(manifest, slot)
+            process_scope = prepare_process_scope(slot)
+        except BaseException:
+            dispose_quarantine(emergency_quarantine_handle)
+            close_quarantine(quarantine_handle)
+            raise
         env["ARENA_HARNESS_COMMIT"] = current_preflight["harness_commit"]
         env["ARENA_HARNESS_TRACKED_DIRTY"] = "false"
-        attempt_root, staged_run_dir, command, env = prepare_staged_driver(
-            manifest, slot, env
-        )
+        try:
+            attempt_root, staged_run_dir, command, env = prepare_staged_driver(
+                manifest, slot, env
+            )
+        except BaseException:
+            try:
+                terminate_process_scope(None, process_scope)
+            finally:
+                close_process_scope(process_scope)
+                dispose_quarantine(emergency_quarantine_handle)
+                close_quarantine(quarantine_handle)
+            raise
         started = utc_now()
         record: dict[str, Any] | None = None
         driver_exit: int | None = None
@@ -2974,6 +3914,7 @@ def run_slots(
         staged_attempt_retained = False
         caught: BaseException | None = None
         quarantine: dict[str, Any] | None = None
+        stage_quarantine: dict[str, Any] | None = None
         attributable_activity: bool | None = None
         cleanup_signal: int | None = None
         prior_dumpable = process_dumpable()
@@ -2995,16 +3936,23 @@ def run_slots(
         try:
             process_dumpable(0)
             dumpability_lowered = True
-            process = subprocess.Popen(
-                command,
-                cwd=attempt_root,
-                env=env,
-                stdin=subprocess.DEVNULL,
-                start_new_session=True,
-            )
+            try:
+                process = subprocess.Popen(
+                    command,
+                    cwd=attempt_root,
+                    env=env,
+                    stdin=subprocess.DEVNULL,
+                    start_new_session=True,
+                    pass_fds=(process_scope["attach_fd"],),
+                    preexec_fn=lambda: attach_process_scope(process_scope),
+                )
+            finally:
+                if process_scope.get("attach_fd") is not None:
+                    os.close(process_scope["attach_fd"])
+                    process_scope["attach_fd"] = None
             driver_process_spawned = True
             driver_exit = process.wait()
-            terminate_process_group(process)
+            terminate_process_scope(process, process_scope)
             process_group_cleaned = True
             recover_and_remove_staged_driver(attempt_root, staged_run_dir, run_dir)
             target_process_started = (run_dir / "target_started").is_file()
@@ -3030,22 +3978,44 @@ def run_slots(
             caught = exc
         finally:
             if process is None:
-                process_group_cleaned = True
+                try:
+                    terminate_process_scope(None, process_scope)
+                    process_group_cleaned = True
+                except BaseException as termination_exc:
+                    if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
+                        caught = termination_exc
             elif not process_group_cleaned:
                 try:
-                    terminate_process_group(process)
+                    terminate_process_scope(process, process_scope)
                     process_group_cleaned = True
                 except BaseException as termination_exc:
                     if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
                         caught = termination_exc
                 driver_exit = process.returncode
-            if attempt_root.exists() and process_group_cleaned:
+            if path_entry_exists(attempt_root) and process_group_cleaned:
                 try:
                     recover_and_remove_staged_driver(attempt_root, staged_run_dir, run_dir)
                 except BaseException as stage_exc:
                     if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
                         caught = stage_exc
-            elif attempt_root.exists():
+                    if path_entry_exists(attempt_root):
+                        try:
+                            stage_quarantine = quarantine_with_fallback(
+                                manifest,
+                                slot,
+                                attempt_root,
+                                primary=quarantine_handle,
+                                fallback=emergency_quarantine_handle,
+                                destination_kind="stage",
+                                reason="staged_recovery_failure_quarantine",
+                            )
+                        except BaseException as stage_quarantine_exc:
+                            staged_attempt_retained = True
+                            if caught is None or not isinstance(
+                                caught, (KeyboardInterrupt, SystemExit)
+                            ):
+                                caught = stage_quarantine_exc
+            if path_entry_exists(attempt_root):
                 staged_attempt_retained = True
             if dumpability_lowered:
                 try:
@@ -3106,7 +4076,13 @@ def run_slots(
                         caught = scan_exc
                     record = None
                     try:
-                        quarantine = quarantine_run(manifest, slot, run_dir)
+                        quarantine = quarantine_with_fallback(
+                            manifest,
+                            slot,
+                            run_dir,
+                            primary=quarantine_handle,
+                            fallback=emergency_quarantine_handle,
+                        )
                     except BaseException as quarantine_exc:
                         if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
                             caught = quarantine_exc
@@ -3132,6 +4108,8 @@ def run_slots(
             validity_state = (
                 "security_quarantined"
                 if quarantine_succeeded
+                else "staged_recovery_quarantined"
+                if stage_quarantine and stage_quarantine.get("succeeded")
                 else "security_quarantine_failed"
                 if quarantine
                 else "runner_or_normalization_failure"
@@ -3141,6 +4119,8 @@ def run_slots(
             objective_issues = [
                 "security quarantine after secret scan"
                 if quarantine_succeeded
+                else "staged driver recovery failed; external stage quarantined"
+                if stage_quarantine and stage_quarantine.get("succeeded")
                 else "atomic security quarantine failed; run halted for manual recovery"
                 if quarantine
                 else f"{type(caught).__name__ if caught else 'UnknownError'} during driver or normalization"
@@ -3182,9 +4162,13 @@ def run_slots(
                     "target_process_returned": target_process_returned,
                     "process_group_cleaned": process_group_cleaned,
                     "staged_attempt_retained": staged_attempt_retained,
+                    "staged_attempt_path": (
+                        os.path.abspath(attempt_root) if staged_attempt_retained else None
+                    ),
                     "error_type": type(caught).__name__ if caught else "UnknownError",
                     "error_message": str(caught) if caught else "unknown driver or normalization failure",
                     "quarantine": quarantine,
+                    "stage_quarantine": stage_quarantine,
                 },
             )
         try:
@@ -3203,6 +4187,10 @@ def run_slots(
                     "finished_at": utc_now(),
                     "driver_exit": driver_exit,
                     "process_group_cleaned": process_group_cleaned,
+                    "staged_attempt_retained": staged_attempt_retained,
+                    "staged_attempt_path": (
+                        os.path.abspath(attempt_root) if staged_attempt_retained else None
+                    ),
                     "validity_state": validity_state,
                     "analysis_eligible": analysis_eligible,
                     "smoke_excluded": smoke_excluded,
@@ -3211,10 +4199,36 @@ def run_slots(
                     "preflight": current_preflight,
                     "failure_receipt": failure_receipt,
                     "failure_receipt_sha256": sha256_path(ROOT / failure_receipt) if failure_receipt else None,
-                    "quarantine_receipt": quarantine.get("receipt") if quarantine else None,
+                    "quarantine_receipt": (
+                        quarantine.get("receipt")
+                        if quarantine and quarantine.get("succeeded") is True
+                        else None
+                    ),
                     "quarantine_receipt_sha256": (
-                        sha256_path(ROOT / quarantine["receipt"])
-                        if quarantine and quarantine.get("receipt")
+                        quarantine.get("receipt_sha256")
+                        if quarantine
+                        and quarantine.get("succeeded") is True
+                        and quarantine.get("receipt")
+                        else None
+                    ),
+                    "quarantine_failure_receipt": (
+                        quarantine.get("receipt")
+                        if quarantine and quarantine.get("succeeded") is False
+                        else None
+                    ),
+                    "quarantine_failure_receipt_sha256": (
+                        quarantine.get("receipt_sha256")
+                        if quarantine
+                        and quarantine.get("succeeded") is False
+                        and quarantine.get("receipt")
+                        else None
+                    ),
+                    "stage_quarantine_receipt": (
+                        stage_quarantine.get("receipt") if stage_quarantine else None
+                    ),
+                    "stage_quarantine_receipt_sha256": (
+                        stage_quarantine.get("receipt_sha256")
+                        if stage_quarantine and stage_quarantine.get("receipt")
                         else None
                     ),
                     "artifact_manifest_sha256": sha256_path(run_dir / "artifact_manifest.json")
@@ -3230,6 +4244,9 @@ def run_slots(
         finally:
             for signum, prior_handler in previous_signal_handlers.items():
                 signal.signal(signum, prior_handler)
+            close_process_scope(process_scope)
+            dispose_quarantine(emergency_quarantine_handle)
+            close_quarantine(quarantine_handle)
         if cleanup_signal is not None and caught is None:
             caught = OperatorTermination(cleanup_signal)
         if caught is not None:
@@ -3254,6 +4271,7 @@ def make_blind_packets(manifest_path: Path, output_dir: Path, key: str) -> dict[
     if malformed:
         raise ValueError(f"execution ledger is malformed at lines {malformed}")
     effective, ledger_errors = select_effective_attempts(manifest, ledger)
+    ledger_errors.extend(validate_prior_attempt_provenance(manifest, ledger))
     if ledger_errors:
         raise ValueError("execution ledger cannot produce a frozen matrix: " + "; ".join(ledger_errors))
     frozen_slots = {

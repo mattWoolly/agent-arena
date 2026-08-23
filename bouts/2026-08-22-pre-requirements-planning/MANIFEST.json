@@ -31,6 +31,8 @@
       "expected_model_identities": [
         "claude-opus-5"
       ],
+      "expected_model_aliases": [],
+      "expected_providers": [],
       "expected_cli_version": "2.1.241 (Claude Code)",
       "expected_base_url": "https://api.anthropic.com",
       "model_env_expected": "absent",
@@ -54,6 +56,8 @@
       "expected_model_identities": [
         "gpt-5.6-sol"
       ],
+      "expected_model_aliases": [],
+      "expected_providers": [],
       "expected_cli_version": "codex-cli 0.149.0",
       "expected_base_url": "https://api.openai.com (native)",
       "effort": {
@@ -75,6 +79,12 @@
       "output_label": "kimi-k3-kimicode",
       "expected_model_identities": [
         "kimi-k3"
+      ],
+      "expected_model_aliases": [
+        "arena/k3"
+      ],
+      "expected_providers": [
+        "moonshot-platform"
       ],
       "expected_cli_version": "kimi-code 0.27.0",
       "expected_base_url": "https://api.moonshot.ai/v1 (platform, metered)",
@@ -869,23 +879,23 @@
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/DESIGN.md",
-      "sha256": "a3d5d65a03237596d5c807c9bc5481ce0da62db53fbe7e650441ad514b504dbe",
-      "bytes": 22793
+      "sha256": "c16ebfa877ecfd435a73afce2ea5abb63dc5d98bcc35ea04e3e84ab6f0d1cb89",
+      "bytes": 25268
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/CONFIGURATION.json",
-      "sha256": "62390bc25c29215717cd57e7b0b366556d8bd2b5c454b01b2715d41be5a037c7",
-      "bytes": 2371
+      "sha256": "150d123e36660bc7b03598591e2029ab544097daf796dabc1e2b3796960e9b6f",
+      "bytes": 2641
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/analyze.py",
-      "sha256": "88694d63044cd959c935fbc931462d8b44acd760d5b6c690ea30fae925d79a1d",
-      "bytes": 63200
+      "sha256": "9b5d2452fb3cfe9608d36dc399bebc5ec1c416fe7a9f55c81c0014c79310ba52",
+      "bytes": 63643
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/REPORT_TEMPLATE.md",
-      "sha256": "affe31e341bb3abf21e3e53971f5c2c25bb410b160926c8ac9a47501834cf015",
-      "bytes": 4404
+      "sha256": "82e47fb52764db61ef2a6cb484705c9efd6c51c397fab24b4ff0bf2853bb6114",
+      "bytes": 4495
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/adjudications.template.json",
@@ -909,8 +919,8 @@
     },
     {
       "path": "bin/plan_experiment.py",
-      "sha256": "d18306dfc51b983fe9990eaec2ccbf8732bbf2a61aebbc3744df5411d5495488",
-      "bytes": 162356
+      "sha256": "c5ccf568e9c267a2af47e68c3b0bc1de812291bbbcd3e971eb976654912262ed",
+      "bytes": 204793
     },
     {
       "path": "bin/credential_guard.py",
@@ -963,5 +973,5 @@
       "bytes": 1
     }
   ],
-  "freeze_id": "e23dce4b5b3f40aee14dffa80407e596d86968a34caa742be7135139f8208bcf"
+  "freeze_id": "f1c9311143d3632e14144170112ec79bee36fd899e3024281d38bfbaff4f870c"
 }

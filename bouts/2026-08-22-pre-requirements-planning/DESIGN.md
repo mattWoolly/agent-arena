@@ -79,7 +79,11 @@ neutral prompt, and fixture into a parent-owned staging tree; no rubric,
 analysis, design, or repository path is passed to the target wrapper. Output is
 atomically transferred back after the target exits. While the target is live,
 the runner is non-dumpable so descendants cannot resolve its cwd, file
-descriptors, or environment through `/proc`.
+descriptors, or environment through `/proc`. Before launch, the runner creates
+a dedicated cgroup-v2 child and attaches the driver in the child-side launch
+hook. Cleanup therefore covers descendants that call `setsid()` or create a new
+process group; `cgroup.kill` is the final forced-cleanup primitive and an empty
+`cgroup.events` state is required before recovery or scanning.
 Sampling parameters not named above remain provider/CLI defaults and are
 recorded as omitted/default, not guessed.
 
@@ -93,9 +97,10 @@ and contain no symlink or extra state. `CONFIGURATION.json` freezes only
 non-secret expectations: credential schema, recognized-secret-field count, and
 a secret-redacted credential-structure digest plus the complete structural
 inventory digest, as well as the names of credential environment fields present
-under the minimal environment policy. Preflight uses
-the exact same environment constructor as target execution. It also rejects
-tracked worktree or index changes before the first target call and again before
+under the minimal environment policy. Preflight uses the exact same environment
+constructor as target execution. It also rejects hosts without a writable
+delegated cgroup-v2 parent and `cgroup.kill`, and rejects tracked worktree or
+index changes before the first target call and again before
 every slot; treatment files and the fixture are exact-hashed, while expected
 untracked runtime outputs do not create a false dirty signal. The executor stops
 on any drift.
@@ -105,9 +110,11 @@ identity, effort where exposed, instruction source, or tool configuration
 drifts. Stop that condition and preregister an amendment; do not pool versions.
 Codex does not always expose the API-served identity, and Claude does not expose
 its full native system text in stream-json. Every response-side model tag Codex
-or Kimi does expose is reconciled with the exact request-side identity; any
-mismatch invalidates the condition. Remaining limitations are reported, never
-silently upgraded to exact knowledge.
+or Kimi exposes is reconciled with the exact request-side identity. Kimi's
+request and response alias and provider tags are also required to match the
+frozen `arena/k3` and `moonshot-platform` values. Any mismatch invalidates the
+condition. Remaining limitations are reported, never silently upgraded to
+exact knowledge.
 
 ## Instruction-stack confounding
 
@@ -158,15 +165,17 @@ authorizes opportunistic expansion.
 
 The controller converts `SIGINT`, `SIGTERM`, and `SIGHUP` during an active
 attempt into transactional interruption. On interruption or ordinary wrapper
-return, it signals the entire process group even if the group leader has already
-exited, waits for live descendants, escalates to `SIGKILL` after five seconds,
-and verifies no live group member remains before recovering or scanning
-artifacts. If that proof fails even after `SIGKILL`, it leaves the staging tree
-untouched, records an unresolved cleanup failure, and blocks every later call
-until operator recovery. Otherwise it completes safety cleanup and appends the
-attempt receipt and ledger row before exiting. Each target command also uses
-`timeout --kill-after=10s`, so a TERM-ignoring CLI cannot outlive its declared
-timeout.
+return, it first signals the original process group, then repeatedly signals all
+processes in the dedicated cgroup, escalates through `cgroup.kill`, and verifies
+both the group and cgroup are empty before recovering or scanning artifacts.
+This includes a descendant that detached into a new session after its leader
+exited. If that proof fails, it leaves the staging tree untouched, records the
+exact external stage path plus unresolved cleanup state, and blocks every later
+call; operator recovery plus a documented new freeze is required. Otherwise it
+removes the empty cgroup, completes safety cleanup, and appends the attempt
+receipt and ledger row before exiting.
+Each target command also uses `timeout --kill-after=10s`, so a TERM-ignoring CLI
+cannot outlive its declared timeout.
 
 ## Frozen hypotheses and decision language
 
@@ -233,7 +242,8 @@ form a prefix of the frozen randomized sequence; resume automatically starts at
 the next slot, and reserves run in frozen reserve-index order. Exclude and
 replace only:
 
-- transport/service failure before request acceptance;
+- transport/service failure with explicit structured evidence that the request
+  was not accepted;
 - harness crash before target execution;
 - prompt hash mismatch;
 - wrong model or frozen configuration;
@@ -245,7 +255,9 @@ Never exclude tool/subagent calls, refusal, a target-chosen empty output,
 questions, prose, invented requirements, implementation content, normal
 truncation, or a target-driven tool loop/timeout. With no scorable output,
 semantic behaviors count not observed and full compliance is false; show a
-scorable-output sensitivity table. Token and cost fields that a CLI/provider
+scorable-output sensitivity table. A nonzero exit plus absent output/tool
+activity is not evidence of pre-request transport failure; ambiguous failures
+remain behavioral observations and are not replaced. Token and cost fields that a CLI/provider
 does not emit for a timeout remain explicit `null` descriptive values rather
 than invalidating the behavioral observation; aggregation reports observed and
 unavailable counts. A wrapper-level `finally` scan parses the
@@ -260,13 +272,22 @@ a failed scan forces quarantine. Receipts contain only schema,
 secret-field/pattern counts, redacted structural digests, scanned counts/bytes,
 and pass/fail—not secret values or secret hashes. A leak, scanner failure,
 special filesystem node, or escaping symlink atomically renames the whole
-attempt through an open, non-symlink directory descriptor into a prevalidated
-`0700`, same-filesystem location outside the repository before publication. If
-that prevalidated rename still fails, the runner writes a failure receipt and
-ledger row, leaves the slot ineligible and nonreplaceable, and halts for manual
-recovery. The safe receipt records only aggregate quarantine counts. This
-safety-forced missingness is reported explicitly rather than described as an
-exogenous behavioral outcome.
+attempt through retained directory descriptors into a prevalidated `0700`,
+same-filesystem location outside the repository before publication. The
+destination uses Linux `renameat2(RENAME_NOREPLACE)`, so a path created after
+validation is never overwritten. A randomized, preopened emergency quarantine
+under `/tmp` is prepared before launch and used if the configured destination
+is detached or raced. An exclusive receipt and its hash are finalized and
+directory-synced before the move, and the receipt is durably removed if the
+move fails; it records aggregate counts, destination kind, and recovery path,
+never credential values or individual credential hashes. The same mechanism
+quarantines an external staging tree if atomic recovery fails. If both
+destinations fail, the ledger
+records the exact retained stage path and blocks resume. This safety-forced
+missingness is reported explicitly rather than described as an exogenous
+behavioral outcome. Resume, blinding, and analysis recheck that every successful
+external quarantine destination still exists under a private parent and still
+matches its anchored entry-count and regular-byte aggregates.
 
 ## Blinding, review, and agreement
 
@@ -334,6 +355,10 @@ If normalization fails after a run directory is retained, a distinct
 `failed_attempt` artifact manifest content-addresses that exact partial
 directory and is anchored in the ledger. Resume rejects a retained directory
 without an anchor and rechecks both normalized and failed-attempt inventories.
+Every ledger row must contain Boolean process-scope cleanup and staged-retention
+evidence. Failure receipts must agree with those fields and with every run,
+stage-quarantine, or quarantine-failure receipt hash; missing cleanup evidence
+or a retained external stage blocks resume.
 Normalized scoring uses full `final_output.txt`, never the 4,000-character
 metrics preview.
 
@@ -348,9 +373,11 @@ untouched.
 
 1. **Freeze gate:** exact prompt/design/rubric/manifest/analysis hashes validate;
    automated tests and independent design review pass.
-2. **Smoke gate:** separate smoke cells prove transport, session association,
-   output extraction, trace detection, hashes, and exclusion labeling. Smoke
-   text is not semantically scored.
+2. **Smoke gate:** after two fresh independent offline approvals of the exact
+   committed candidate, exactly one separate excluded smoke cell per condition
+   (three calls total) proves transport, session association, output extraction,
+   trace detection, hashes, and exclusion labeling. Smoke text is neither
+   semantically inspected nor scored.
 3. **Approval gate:** no confirmatory invocation without the exact freeze ID and
    explicit user approval. This document's current status fails that gate by
    design.
@@ -374,8 +401,11 @@ There are currently no target-facing amendments. Commits `7dabb11` and
 `110b694` began the draft package; successive independent offline reviews then
 required further revisions before any target or smoke output was observed. A
 later draft at `3defecb` was also withheld after adversarial offline review; no
-target call used it. The regenerated manifests supersede all earlier draft
-freeze IDs.
+target call used it. The next candidate at `f12476a` was withheld by two fresh
+offline reviewers because detached-session containment, quarantine race/stage
+provenance, transport exclusion, cleanup evidence, and response identity still
+needed tightening; it likewise made zero target calls. The regenerated
+manifests supersede all earlier draft freeze IDs.
 
 ## Known limitations frozen before seeing outcomes
 
@@ -391,3 +421,6 @@ freeze IDs.
 - N=20 has broad uncertainty and does not support fine rankings.
 - Human semantic judgment remains fallible despite blinding, exact evidence,
   agreement measurement, and adjudication.
+- The frozen executor requires the recorded Linux cgroup-v2 delegation and
+  `renameat2(RENAME_NOREPLACE)` support; this is a harness configuration, not a
+  portable intrinsic model condition.

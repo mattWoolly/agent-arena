@@ -21,7 +21,7 @@ python3 bin/plan_experiment.py manifest --phase smoke --output bouts/2026-08-22-
 ```bash
 python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning/MANIFEST.json
 python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-smoke/MANIFEST.json
-python3 bin/test_plan_experiment.py
+ARENA_SYNTHETIC_ONLY=1 python3 bin/test_plan_experiment.py
 ARENA_SYNTHETIC_ONLY=1 python3 bin/test_served_model.py
 python3 bin/test_summarize_integrity.py
 bin/check-graders.sh
@@ -53,9 +53,16 @@ python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-plann
 ```
 
 The executor repeats the same preflight before every slot and refuses tracked
-worktree/index changes.
+worktree/index changes. Preflight also requires the recorded delegated
+cgroup-v2 parent and `cgroup.kill`; no target starts if containment is
+unavailable.
 
 ## Excluded smoke only
+
+Do not enter this gate until two fresh independent reviewers approve the exact
+clean committed candidate. The command below then makes exactly three target
+calls—one frozen smoke slot per condition—and no retries. Preserve outputs and
+technical traces, but do not read or semantically score the smoke response text.
 
 ```bash
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke/MANIFEST.json
@@ -82,13 +89,16 @@ After the user explicitly approves the frozen design, substitute the exact
 committed `freeze_id` below. The runner rejects a missing or different value.
 
 ```bash
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval e23dce4b5b3f40aee14dffa80407e596d86968a34caa742be7135139f8208bcf
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval f1c9311143d3632e14144170112ec79bee36fd899e3024281d38bfbaff4f870c
 ```
 
 After an operator interruption, rerun the same command: the ledger must be a
 prefix of the frozen order and the runner resumes at the next primary. It will
 refuse to continue past an objectively ineligible attempt until its linked
-reserve chain ends in an eligible attempt.
+reserve chain ends in an eligible attempt. It also refuses all later calls when
+process-scope cleanup is unproven or an external staging path remains retained;
+recover the external state manually, then document and freeze an amendment
+rather than editing the append-only ledger.
 
 Do not run reserves with the primary schedule. Record an objective invalidation
 and explicit reserve linkage first; the requested reason must appear in that
@@ -102,7 +112,7 @@ manifest:
 
 ```bash
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json \
-  --approval e23dce4b5b3f40aee14dffa80407e596d86968a34caa742be7135139f8208bcf \
+  --approval f1c9311143d3632e14144170112ec79bee36fd899e3024281d38bfbaff4f870c \
   --reserve [frozen-reserve-slot-id] \
   --replacement-for [ineligible-primary-or-reserve-attempt-id] \
   --exclusion-reason [preregistered-reason]
