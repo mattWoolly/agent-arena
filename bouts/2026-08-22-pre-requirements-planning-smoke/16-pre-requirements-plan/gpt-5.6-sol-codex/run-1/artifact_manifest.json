@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "slot_id": "primary-01--codex--gpt-5.6-sol",
+  "condition_id": "codex--gpt-5.6-sol",
+  "driver": "codex",
+  "manifest_freeze_id": "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e",
+  "record_kind": "normalized_run",
+  "artifacts": [
+    {
+      "path": "agent_exit",
+      "type": "regular_file",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": "credential_scan.json",
+      "type": "regular_file",
+      "sha256": "a2433e061aad5cc5f4aaf74df72b97d0273cd047ece6886b8f10b956b700f16f",
+      "bytes": 553
+    },
+    {
+      "path": "credential_scan.raw.json",
+      "type": "regular_file",
+      "sha256": "973ec8cc8087499e7182574a5ac232b00c3ab81cbaf2f10ddb174bc991345c42",
+      "bytes": 552
+    },
+    {
+      "path": "credential_scan.runtime.json",
+      "type": "regular_file",
+      "sha256": "ef5b89421648b921bb08311e68375d906b4edec8bc4ea5fc2be0967b2a16be35",
+      "bytes": 524
+    },
+    {
+      "path": "embargo.json",
+      "type": "regular_file",
+      "sha256": "6733cda4232eb348a8731f932359dcc634468405efcb50f7c63e8c3bb14bc32a",
+      "bytes": 637
+    },
+    {
+      "path": "final_output.txt",
+      "type": "regular_file",
+      "sha256": "cda52a0527b38e6314ebfd4861127c8797f976bdf9148c0b7d6806190a7e2483",
+      "bytes": 3900
+    },
+    {
+      "path": "instruction_context.json",
+      "type": "regular_file",
+      "sha256": "84a30209396129b8d2175eebe6afe3741067a176e9eba2e1b311499c847f049c",
+      "bytes": 32877
+    },
+    {
+      "path": "last_message.txt",
+      "type": "regular_file",
+      "sha256": "cda52a0527b38e6314ebfd4861127c8797f976bdf9148c0b7d6806190a7e2483",
+      "bytes": 3900
+    },
+    {
+      "path": "metrics.json",
+      "type": "regular_file",
+      "sha256": "6a84784fb0ec3980714702eb937b81e456a577ff2838aa7be11d656e117824af",
+      "bytes": 5206
+    },
+    {
+      "path": "peek_check",
+      "type": "regular_file",
+      "sha256": "2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d",
+      "bytes": 6
+    },
+    {
+      "path": "prompt.txt",
+      "type": "regular_file",
+      "sha256": "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0",
+      "bytes": 471
+    },
+    {
+      "path": "run_env.json",
+      "type": "regular_file",
+      "sha256": "be00979e215352d32d86fc11729fad569dba9b50e594598506155706786578bb",
+      "bytes": 722
+    },
+    {
+      "path": "run_record.json",
+      "type": "regular_file",
+      "sha256": "4a9942baaef0bcef00e67b4a0a4dfdc11c74d458a80da2708215e667a9a7e86a",
+      "bytes": 36034
+    },
+    {
+      "path": "session.jsonl",
+      "type": "regular_file",
+      "sha256": "65ca784c3b422f2f13ec8eb97c0b06e402fc769504ef214dcdcd4e777c281c71",
+      "bytes": 46932
+    },
+    {
+      "path": "stderr.log",
+      "type": "regular_file",
+      "sha256": "6da96b9bba55157af90f173f458d1257128c21c3da0241d875462780d184ade5",
+      "bytes": 302
+    },
+    {
+      "path": "target_returned",
+      "type": "regular_file",
+      "sha256": "0d98d293a6c21e46e4c2d815151f9bea8316a741301c64ae28c118d65499c19e",
+      "bytes": 21
+    },
+    {
+      "path": "target_started",
+      "type": "regular_file",
+      "sha256": "f52890a64af37abe5e8605d7c427fafa3d96fe57fb8977efc434d5e0b128631c",
+      "bytes": 21
+    },
+    {
+      "path": "transcript.jsonl",
+      "type": "regular_file",
+      "sha256": "8df2a952137147ce3faa7e0047a0bf24fa735a0bc5c79d747863a7f5445c20d1",
+      "bytes": 4339
+    },
+    {
+      "path": "wall_seconds",
+      "type": "regular_file",
+      "sha256": "e2f232088e86c0b960850cdd0425f5be924ce4750c1f64d7bd48625c6a7e916e",
+      "bytes": 13
+    },
+    {
+      "path": "workspace",
+      "type": "directory"
+    },
+    {
+      "path": "workspace/.gitkeep",
+      "type": "regular_file",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "path": "workspace.diff",
+      "type": "regular_file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "workspace.diffstat",
+      "type": "regular_file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}

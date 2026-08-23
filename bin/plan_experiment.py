@@ -66,12 +66,21 @@ PROMPT_REL = f"{TASK_REL}/PROMPT.md"
 FROZEN_PROMPT_SHA256 = "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0"
 EXPERIMENT_ID = "2026-08-22-pre-requirements-planning"
 CONFIG_LOCK_REL = f"bouts/{EXPERIMENT_ID}/CONFIGURATION.json"
+AMENDMENT_ID = "smoke-technical-001"
+AMENDMENT_REL = f"bouts/{EXPERIMENT_ID}-amendment-1/AMENDMENT.md"
+AMENDED_RUNBOOK_REL = f"bouts/{EXPERIMENT_ID}-amendment-1/RUNBOOK.md"
+AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-1"
+INITIAL_SMOKE_MANIFEST_REL = f"bouts/{EXPERIMENT_ID}-smoke/MANIFEST.json"
+INITIAL_SMOKE_FREEZE_ID = "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e"
+SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-1"
 FROZEN_CORE_RELATIVE = [
     PROMPT_REL,
     f"{TASK_REL}/SCORING.md",
     f"{TASK_REL}/review.schema.json",
     f"{TASK_REL}/adjudication.schema.json",
     f"bouts/{EXPERIMENT_ID}/DESIGN.md",
+    AMENDMENT_REL,
+    AMENDED_RUNBOOK_REL,
     CONFIG_LOCK_REL,
     f"analysis/{EXPERIMENT_ID}/analyze.py",
     f"analysis/{EXPERIMENT_ID}/REPORT_TEMPLATE.md",
@@ -181,6 +190,31 @@ PASSIVE_CODEX_EVENT_MESSAGES = {
     "turn_aborted",
     "user_message",
     "warning",
+}
+# Codex rollout `event_msg.item_completed` payloads wrap protocol `TurnItem`
+# values. These names are case-sensitive because the rollout enum does not use
+# serde rename_all. Keep the allowlist intentionally narrow and classify every
+# action-bearing variant below; additions fail closed until reviewed.
+PASSIVE_CODEX_COMPLETED_ITEMS = {
+    "AgentMessage",
+    "ContextCompaction",
+    "Plan",
+    "Reasoning",
+    "UserMessage",
+}
+ACTIVE_CODEX_COMPLETED_ITEMS = {
+    "CollabAgentToolCall": "collab_agent_tool_call",
+    "CommandExecution": "command_execution",
+    "DynamicToolCall": "custom_tool_call",
+    "EnteredReviewMode": "review_mode",
+    "ExitedReviewMode": "review_mode",
+    "Extension": "extension_tool_call",
+    "FileChange": "file_change",
+    "ImageGeneration": "image_generation",
+    "ImageView": "image_view",
+    "McpToolCall": "mcp_tool_call",
+    "SubAgentActivity": "collab_agent_tool_call",
+    "WebSearch": "web_search",
 }
 ACTIVE_CODEX_EVENT_MESSAGES = {
     "collab_agent_spawn_begin",
@@ -398,6 +432,35 @@ def default_conditions() -> list[dict[str, Any]]:
     ]
 
 
+def current_amendments() -> list[dict[str, Any]]:
+    documentation = ROOT / AMENDMENT_REL
+    if not documentation.is_file() or documentation.is_symlink():
+        raise ValueError(f"required amendment record is missing or unsafe: {AMENDMENT_REL}")
+    return [
+        {
+            "amendment_id": AMENDMENT_ID,
+            "kind": "technical_harness_compatibility",
+            "target_prompt_changed": False,
+            "target_prompt_sha256": FROZEN_PROMPT_SHA256,
+            "documentation": file_record(documentation),
+        }
+    ]
+
+
+def _validated_bout_dir(value: str) -> str:
+    candidate = Path(value)
+    if candidate.is_absolute() or not candidate.parts or candidate.parts[0] != "bouts":
+        raise ValueError("bout directory must be a repository-relative path under bouts/")
+    try:
+        resolved = (ROOT / candidate).resolve()
+        resolved.relative_to((ROOT / "bouts").resolve())
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise ValueError("bout directory escapes the repository bouts directory") from exc
+    if resolved == (ROOT / "bouts").resolve():
+        raise ValueError("bout directory must name a child of bouts/")
+    return str(candidate)
+
+
 def _balanced_orders(condition_ids: list[str], repeats: int, seed: int) -> list[tuple[str, ...]]:
     """Return randomized complete-block orders with near-perfect position balance."""
     if repeats < 1:
@@ -425,6 +488,166 @@ def _balanced_orders(condition_ids: list[str], repeats: int, seed: int) -> list[
     return orders
 
 
+def smoke_continuation_state(predecessor_path: Path) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return content-addressed predecessor facts and its unattempted smoke suffix.
+
+    The function verifies technical provenance only. It hashes response files as
+    opaque bytes through the artifact contract and never returns their content.
+    """
+    expected_path = ROOT / INITIAL_SMOKE_MANIFEST_REL
+    try:
+        resolved = predecessor_path.resolve(strict=True)
+    except OSError as exc:
+        raise ValueError("smoke predecessor manifest is unavailable") from exc
+    if resolved != expected_path.resolve():
+        raise ValueError(f"smoke continuation must use the frozen predecessor {relative(expected_path)}")
+    predecessor = load_json(resolved)
+    manifest_errors = validate_manifest(
+        predecessor,
+        check_files=False,
+        allow_historical=True,
+    )
+    if manifest_errors:
+        raise ValueError("historical smoke predecessor is invalid: " + "; ".join(manifest_errors))
+    if predecessor.get("phase") != "smoke" or predecessor.get("experiment_id") != EXPERIMENT_ID:
+        raise ValueError("smoke predecessor belongs to a different phase or experiment")
+    if len(predecessor.get("schedule") or []) != len(default_conditions()):
+        raise ValueError("smoke predecessor does not contain the original one-call-per-condition block")
+    ledger_path = resolved.parent / "EXECUTION.jsonl"
+    if not ledger_path.is_file() or ledger_path.is_symlink():
+        raise ValueError("smoke predecessor execution ledger is missing or unsafe")
+    ledger, malformed = iter_jsonl(ledger_path)
+    if malformed:
+        raise ValueError(f"smoke predecessor execution ledger is malformed at lines {malformed}")
+    ledger_errors = validate_execution_ledger(predecessor, ledger)
+    ledger_errors.extend(validate_prior_attempt_provenance(predecessor, ledger))
+    if ledger_errors:
+        raise ValueError("smoke predecessor provenance is invalid: " + "; ".join(ledger_errors))
+    if len(ledger) != 1 or ledger[0].get("kind") != "primary":
+        raise ValueError("smoke continuation requires exactly one consumed primary call")
+    consumed = ledger[0]
+    first_slot = (predecessor.get("schedule") or [None])[0]
+    if not isinstance(first_slot, dict) or consumed.get("slot_id") != first_slot.get("slot_id"):
+        raise ValueError("consumed smoke call is not the exact first frozen predecessor slot")
+    if consumed.get("condition_id") != "codex--gpt-5.6-sol":
+        raise ValueError("the one consumed predecessor call is not the frozen Codex smoke slot")
+    if consumed.get("smoke_excluded") is not True:
+        raise ValueError("consumed predecessor call is not irreversibly smoke-excluded")
+    if consumed.get("process_group_cleaned") is not True or consumed.get("staged_attempt_retained") is not False:
+        raise ValueError("smoke predecessor lacks completed process and stage cleanup")
+    consumed_record, consumed_errors = validate_run_provenance(predecessor, first_slot, consumed)
+    if consumed_errors or consumed_record is None:
+        raise ValueError(
+            "consumed smoke run provenance is invalid: " + "; ".join(consumed_errors)
+        )
+    completion = consumed_record.get("completion") or {}
+    if (
+        completion.get("request_acceptance_observed") is not True
+        or completion.get("target_response_activity_observed") is not True
+        or completion.get("agent_exit") != 0
+        or completion.get("output_present") is not True
+        or completion.get("pre_request_transport_failure_observed") is not False
+        or completion.get("timeout_exit") is not False
+        or completion.get("structured_statuses") != ["turn.completed"]
+    ):
+        raise ValueError("predecessor ledger row does not prove a consumed target call")
+    if (consumed_record.get("validity") or {}).get("smoke_excluded") is not True:
+        raise ValueError("consumed run record is not smoke-excluded")
+    consumed_run_dir = ROOT / str(consumed["run_dir"])
+    for marker in ("target_started", "target_returned"):
+        marker_path = consumed_run_dir / marker
+        if marker_path.is_symlink() or not marker_path.is_file() or not marker_path.read_text().strip():
+            raise ValueError(f"consumed smoke run lacks a safe nonempty {marker} marker")
+    transcript, transcript_malformed = iter_jsonl(consumed_run_dir / "transcript.jsonl")
+    if transcript_malformed:
+        raise ValueError("consumed smoke transcript is malformed")
+    transcript_shapes = Counter(
+        (
+            event.get("type"),
+            (event.get("item") or {}).get("type")
+            if isinstance(event.get("item"), dict)
+            else None,
+        )
+        for event in transcript
+    )
+    if transcript_shapes != Counter(
+        {
+            ("thread.started", None): 1,
+            ("turn.started", None): 1,
+            ("item.completed", "agent_message"): 1,
+            ("turn.completed", None): 1,
+        }
+    ):
+        raise ValueError("consumed smoke transcript does not prove one clean completed target turn")
+    attempted_slot_ids = [str(consumed["slot_id"])]
+    remaining_slots = [
+        dict(slot)
+        for slot in (predecessor.get("schedule") or [])[len(attempted_slot_ids) :]
+    ]
+    if len(remaining_slots) != 2:
+        raise ValueError("smoke continuation must contain exactly the two unattempted calls")
+    predecessor_conditions = condition_map(predecessor)
+    remaining_conditions = [predecessor_conditions[slot["condition_id"]] for slot in remaining_slots]
+    artifact_path = ROOT / str(consumed.get("run_dir", "")) / "artifact_manifest.json"
+    if not artifact_path.is_file() or artifact_path.is_symlink():
+        raise ValueError("consumed smoke attempt lacks a safe artifact manifest")
+    state = {
+        "schema_version": 1,
+        "predecessor_manifest": file_record(resolved),
+        "predecessor_freeze_id": predecessor["freeze_id"],
+        "predecessor_ledger": file_record(ledger_path),
+        "consumed_call_count": 1,
+        "consumed_slot_ids": attempted_slot_ids,
+        "consumed_artifact_manifests": [
+            {"slot_id": consumed["slot_id"], **file_record(artifact_path)}
+        ],
+        "remaining_call_count": 2,
+        "remaining_slot_ids": [slot["slot_id"] for slot in remaining_slots],
+        "cumulative_smoke_call_cap": 3,
+        "retries_allowed": False,
+        "order_rule": "preserve the unattempted suffix of the predecessor randomized schedule",
+    }
+    return state, remaining_conditions, remaining_slots
+
+
+def validate_smoke_call_budget(
+    manifest: dict[str, Any],
+    ledger: list[dict[str, Any]],
+    *,
+    next_slot: dict[str, Any] | None = None,
+) -> list[str]:
+    """Enforce the cumulative one-plus-two smoke budget without response access."""
+    continuation = manifest.get("smoke_continuation")
+    if continuation is None:
+        return []
+    errors: list[str] = []
+    consumed_conditions = {
+        str(slot_id).partition("--")[2]
+        for slot_id in continuation.get("consumed_slot_ids") or []
+    }
+    continuation_conditions = [
+        str(row.get("condition_id"))
+        for row in ledger
+        if isinstance(row, dict) and row.get("kind") == "primary"
+    ]
+    all_attempted = [*sorted(consumed_conditions), *continuation_conditions]
+    if len(all_attempted) != len(set(all_attempted)):
+        errors.append("cumulative smoke attempts contain a retried condition")
+    total = int(continuation.get("consumed_call_count") or 0) + len(continuation_conditions)
+    cap = int(continuation.get("cumulative_smoke_call_cap") or 0)
+    if total > cap:
+        errors.append("cumulative smoke call cap has already been exceeded")
+    if next_slot is not None:
+        next_condition = str(next_slot.get("condition_id"))
+        if total >= cap:
+            errors.append("cumulative smoke call cap blocks another target invocation")
+        if next_condition in set(all_attempted):
+            errors.append("next smoke slot would retry an already attempted condition")
+    if set(all_attempted) - set(condition["condition_id"] for condition in default_conditions()):
+        errors.append("cumulative smoke attempts include a non-frozen condition")
+    return errors
+
+
 def build_manifest(
     *,
     phase: str,
@@ -437,33 +660,57 @@ def build_manifest(
     frozen_at: str,
     reserve_per_condition: int = 5,
     replace_draft: bool = False,
+    bout_dir_override: str | None = None,
+    smoke_continuation_from: Path | None = None,
+    test_only_allow_noncanonical_paths: bool = False,
 ) -> dict[str, Any]:
     if phase not in {"smoke", "confirmatory"}:
         raise ValueError("phase must be smoke or confirmatory")
     if phase == "confirmatory" and repeats < 10:
         raise ValueError("confirmatory manifests require at least 10 runs per condition")
+    requested_bout_dir = bout_dir_override or f"bouts/{EXPERIMENT_ID}{'-smoke' if phase == 'smoke' else ''}"
+    if not test_only_allow_noncanonical_paths:
+        if phase == "confirmatory":
+            if smoke_continuation_from is not None:
+                raise ValueError("confirmatory manifests cannot continue smoke")
+            expected_output = ROOT / AMENDED_CONFIRMATORY_BOUT_REL / "MANIFEST.json"
+            if output.resolve() != expected_output.resolve() or requested_bout_dir != AMENDED_CONFIRMATORY_BOUT_REL:
+                raise ValueError("the amended confirmatory manifest has one canonical output and bout path")
+        elif smoke_continuation_from is None:
+            raise ValueError("the initial smoke freeze is immutable; only its canonical continuation may be built")
+        else:
+            expected_output = ROOT / SMOKE_CONTINUATION_BOUT_REL / "MANIFEST.json"
+            if output.resolve() != expected_output.resolve() or requested_bout_dir != SMOKE_CONTINUATION_BOUT_REL:
+                raise ValueError("the smoke continuation has one canonical output and bout path")
     prompt = ROOT / PROMPT_REL
     if sha256_path(prompt) != FROZEN_PROMPT_SHA256:
         raise ValueError("target prompt differs from the frozen exact prompt")
-    conditions = default_conditions()
+    continuation: dict[str, Any] | None = None
+    if smoke_continuation_from is not None:
+        if phase != "smoke" or repeats != 1 or reserve_per_condition != 0:
+            raise ValueError("smoke continuation requires phase=smoke, runs=1, and reserves=0")
+        continuation, conditions, schedule = smoke_continuation_state(smoke_continuation_from)
+    else:
+        conditions = default_conditions()
+        condition_ids = [c["condition_id"] for c in conditions]
+        orders = _balanced_orders(condition_ids, repeats, seed)
+        schedule = []
+        sequence = 0
+        for block, order in enumerate(orders, start=1):
+            for position, condition_id in enumerate(order, start=1):
+                sequence += 1
+                schedule.append(
+                    {
+                        "slot_id": f"primary-{block:02d}--{condition_id}",
+                        "kind": "primary",
+                        "block": block,
+                        "position": position,
+                        "sequence": sequence,
+                        "replicate": block,
+                        "condition_id": condition_id,
+                    }
+                )
     condition_ids = [c["condition_id"] for c in conditions]
-    orders = _balanced_orders(condition_ids, repeats, seed)
-    schedule: list[dict[str, Any]] = []
-    sequence = 0
-    for block, order in enumerate(orders, start=1):
-        for position, condition_id in enumerate(order, start=1):
-            sequence += 1
-            schedule.append(
-                {
-                    "slot_id": f"primary-{block:02d}--{condition_id}",
-                    "kind": "primary",
-                    "block": block,
-                    "position": position,
-                    "sequence": sequence,
-                    "replicate": block,
-                    "condition_id": condition_id,
-                }
-            )
     reserves: list[dict[str, Any]] = []
     if phase == "confirmatory":
         for condition_id in condition_ids:
@@ -495,14 +742,14 @@ def build_manifest(
     missing = [str(path) for path in frozen_files if not path.is_file()]
     if missing:
         raise ValueError(f"missing frozen input files: {missing}")
-    bout_dir = f"bouts/{EXPERIMENT_ID}{'-smoke' if phase == 'smoke' else ''}"
+    bout_dir = _validated_bout_dir(requested_bout_dir)
     manifest: dict[str, Any] = {
         "schema_version": 1,
         "experiment_id": EXPERIMENT_ID,
         "phase": phase,
         "status": "excluded-smoke" if phase == "smoke" else "frozen-awaiting-explicit-user-approval",
         "frozen_at": frozen_at,
-        "amendments": [],
+        "amendments": current_amendments(),
         "bout_dir": bout_dir,
         "task": {
             "path": TASK_REL,
@@ -522,11 +769,19 @@ def build_manifest(
             "reserve_slots_per_condition": reserve_per_condition if phase == "confirmatory" else 0,
             "adaptive_stopping": False,
         },
-        "randomization": {
-            "algorithm": "Python random.Random MT19937; complete blocks; position-balanced permutation selection",
-            "seed": seed,
-            "unit": "within-replicate condition order",
-        },
+        "randomization": (
+            {
+                "algorithm": "continued predecessor randomized order; no rerandomization after technical halt",
+                "seed": seed,
+                "unit": "unattempted predecessor schedule suffix",
+            }
+            if continuation is not None
+            else {
+                "algorithm": "Python random.Random MT19937; complete blocks; position-balanced permutation selection",
+                "seed": seed,
+                "unit": "within-replicate condition order",
+            }
+        ),
         "schedule": schedule,
         "reserve_slots": reserves,
         "exclusions": {
@@ -575,6 +830,18 @@ def build_manifest(
         },
         "frozen_inputs": [file_record(path) for path in frozen_files],
     }
+    if continuation is not None:
+        manifest["smoke_continuation"] = continuation
+        manifest["sampling"].update(
+            {
+                "calls_previously_consumed": continuation["consumed_call_count"],
+                "calls_in_manifest": continuation["remaining_call_count"],
+                "cumulative_smoke_call_cap": continuation["cumulative_smoke_call_cap"],
+                "retries_allowed": False,
+            }
+        )
+    if test_only_allow_noncanonical_paths:
+        manifest["test_only_noncanonical_paths"] = True
     manifest["freeze_id"] = sha256_bytes(canonical_json(manifest))
     output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists() or output.is_symlink():
@@ -611,7 +878,12 @@ def compute_freeze_id(manifest: dict[str, Any]) -> str:
     return sha256_bytes(canonical_json(clone))
 
 
-def validate_manifest(manifest: dict[str, Any], *, check_files: bool = True) -> list[str]:
+def validate_manifest(
+    manifest: dict[str, Any],
+    *,
+    check_files: bool = True,
+    allow_historical: bool = False,
+) -> list[str]:
     errors: list[str] = []
     if manifest.get("schema_version") != 1:
         errors.append("unsupported manifest schema")
@@ -620,6 +892,26 @@ def validate_manifest(manifest: dict[str, Any], *, check_files: bool = True) -> 
         errors.append("invalid phase")
     if manifest.get("freeze_id") != compute_freeze_id(manifest):
         errors.append("freeze_id does not match manifest content")
+    test_only_noncanonical = manifest.get("test_only_noncanonical_paths") is True
+    if test_only_noncanonical and os.environ.get("ARENA_SYNTHETIC_ONLY") != "1":
+        errors.append("test-only noncanonical manifest is disabled outside synthetic tests")
+    if not allow_historical and not test_only_noncanonical:
+        bout_dir = manifest.get("bout_dir")
+        if phase == "confirmatory" and bout_dir != AMENDED_CONFIRMATORY_BOUT_REL:
+            errors.append("confirmatory manifest is outside its canonical amended bout directory")
+        if phase == "smoke" and manifest.get("smoke_continuation") is not None:
+            if bout_dir != SMOKE_CONTINUATION_BOUT_REL:
+                errors.append("smoke continuation is outside its canonical bout directory")
+        if phase == "smoke" and manifest.get("smoke_continuation") is None:
+            errors.append("current smoke manifests must be canonical continuations of the immutable initial smoke")
+    if not allow_historical:
+        try:
+            expected_amendments = current_amendments()
+        except (OSError, ValueError) as exc:
+            errors.append(f"current amendment record is unavailable: {exc}")
+        else:
+            if manifest.get("amendments") != expected_amendments:
+                errors.append("manifest does not contain the exact current technical amendment record")
     task = manifest.get("task") or {}
     prompt_path = ROOT / str(task.get("path", "")) / "PROMPT.md"
     if task.get("prompt_sha256") != FROZEN_PROMPT_SHA256:
@@ -676,16 +968,27 @@ def validate_manifest(manifest: dict[str, Any], *, check_files: bool = True) -> 
     conditions = condition_map(manifest) if manifest.get("conditions") else {}
     if len(conditions) != len(manifest.get("conditions") or []):
         errors.append("duplicate condition_id")
+    default_by_id = {condition["condition_id"]: condition for condition in default_conditions()}
     for condition_id, condition in conditions.items():
+        if condition_id not in default_by_id or condition != default_by_id.get(condition_id):
+            errors.append(f"condition {condition_id} differs from the frozen default condition")
         if condition.get("instruction_text_observability") not in {"complete", "partial"}:
             errors.append(f"condition {condition_id} has invalid instruction-text observability")
+    continuation = manifest.get("smoke_continuation")
+    if phase == "confirmatory" and set(conditions) != set(default_by_id):
+        errors.append("confirmatory manifest must contain every frozen condition")
+    if phase == "smoke" and continuation is None and set(conditions) != set(default_by_id):
+        errors.append("initial smoke manifest must contain every frozen condition")
+    if continuation is not None and phase != "smoke":
+        errors.append("only a smoke manifest may contain continuation metadata")
     if check_files:
         try:
             configuration_lock = load_json(ROOT / CONFIG_LOCK_REL)
         except (OSError, json.JSONDecodeError) as exc:
             errors.append(f"configuration lock unreadable: {exc}")
         else:
-            if configuration_lock.get("schema_version") != 1 or set(configuration_lock.get("conditions") or {}) != set(conditions):
+            locked_conditions = configuration_lock.get("conditions") or {}
+            if configuration_lock.get("schema_version") != 1 or not set(conditions).issubset(set(locked_conditions)):
                 errors.append("configuration lock does not cover frozen conditions")
     repeats = (manifest.get("sampling") or {}).get("valid_runs_per_condition")
     if not isinstance(repeats, int) or repeats < 1:
@@ -696,7 +999,49 @@ def validate_manifest(manifest: dict[str, Any], *, check_files: bool = True) -> 
     slot_ids = [slot.get("slot_id") for slot in slots]
     if len(slot_ids) != len(set(slot_ids)):
         errors.append("duplicate primary slot_id")
-    if conditions and isinstance(repeats, int):
+    if continuation is not None:
+        if not check_files:
+            predecessor_record = continuation.get("predecessor_manifest") or {}
+            predecessor_path = ROOT / str(predecessor_record.get("path", ""))
+            if predecessor_record.get("sha256") != (
+                sha256_path(predecessor_path) if predecessor_path.is_file() else None
+            ):
+                errors.append("smoke continuation predecessor manifest anchor is invalid")
+        else:
+            try:
+                expected_continuation, expected_conditions, expected_slots = smoke_continuation_state(
+                    ROOT / str((continuation.get("predecessor_manifest") or {}).get("path", ""))
+                )
+            except (OSError, ValueError, json.JSONDecodeError) as exc:
+                errors.append(f"smoke continuation provenance is invalid: {exc}")
+            else:
+                if continuation != expected_continuation:
+                    errors.append("smoke continuation metadata differs from predecessor evidence")
+                if manifest.get("conditions") != expected_conditions:
+                    errors.append("smoke continuation conditions are not the unattempted predecessor suffix")
+                if slots != expected_slots:
+                    errors.append("smoke continuation schedule is not the unattempted predecessor suffix")
+        sampling = manifest.get("sampling") or {}
+        expected_sampling = {
+            "calls_previously_consumed": 1,
+            "calls_in_manifest": 2,
+            "cumulative_smoke_call_cap": 3,
+            "retries_allowed": False,
+        }
+        for key, value in expected_sampling.items():
+            if sampling.get(key) != value:
+                errors.append(f"smoke continuation sampling field {key} is invalid")
+        if len(slots) != 2 or set(slot_ids) != set(continuation.get("remaining_slot_ids") or []):
+            errors.append("smoke continuation does not contain exactly the two remaining slots")
+        consumed_conditions = {
+            str(slot_id).partition("--")[2]
+            for slot_id in continuation.get("consumed_slot_ids") or []
+        }
+        if set(conditions) & consumed_conditions:
+            errors.append("smoke continuation includes a consumed condition")
+        if set(conditions) | consumed_conditions != set(default_by_id):
+            errors.append("consumed and remaining smoke conditions do not form the original three-call set")
+    elif conditions and isinstance(repeats, int):
         seed = (manifest.get("randomization") or {}).get("seed")
         if isinstance(seed, int):
             expected_slots: list[dict[str, Any]] = []
@@ -762,6 +1107,77 @@ def validate_manifest(manifest: dict[str, Any], *, check_files: bool = True) -> 
         if (manifest.get("reserve_slots") or []) != expected_reserves:
             errors.append("reserve schedule differs from the deterministic frozen construction")
     return errors
+
+
+def validate_historical_smoke_sources(
+    manifest_path: Path,
+    manifest: dict[str, Any],
+) -> tuple[str | None, list[str]]:
+    """Verify the one superseded smoke freeze from its anchored Git commit."""
+    errors: list[str] = []
+    expected_manifest = ROOT / INITIAL_SMOKE_MANIFEST_REL
+    try:
+        resolved_manifest = manifest_path.resolve(strict=True)
+    except OSError:
+        return None, ["historical smoke manifest is unavailable"]
+    if resolved_manifest != expected_manifest.resolve():
+        errors.append("historical mode is restricted to the canonical initial smoke manifest")
+    if manifest.get("freeze_id") != INITIAL_SMOKE_FREEZE_ID:
+        errors.append("historical mode is restricted to the recorded initial smoke freeze")
+    continuation_path = ROOT / SMOKE_CONTINUATION_BOUT_REL / "MANIFEST.json"
+    if not continuation_path.is_file() or continuation_path.is_symlink():
+        errors.append("canonical continuation manifest is unavailable to anchor historical verification")
+    else:
+        try:
+            continuation_manifest = load_json(continuation_path)
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"canonical continuation manifest is unreadable: {type(exc).__name__}")
+        else:
+            continuation_errors = validate_manifest(continuation_manifest)
+            errors.extend(
+                f"canonical continuation: {error}" for error in continuation_errors
+            )
+            predecessor_record = (
+                continuation_manifest.get("smoke_continuation") or {}
+            ).get("predecessor_manifest") or {}
+            if predecessor_record != file_record(resolved_manifest):
+                errors.append("canonical continuation does not anchor this historical manifest")
+    ledger_path = resolved_manifest.parent / "EXECUTION.jsonl"
+    ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
+    if malformed or len(ledger) != 1:
+        errors.append("historical smoke ledger cannot identify one recorded harness commit")
+        return None, errors
+    commit = str(((ledger[0].get("preflight") or {}).get("harness_commit") or ""))
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        errors.append("historical smoke ledger lacks a full Git commit identifier")
+        return None, errors
+
+    def git_blob(path: str) -> bytes | None:
+        completed = subprocess.run(
+            ["git", "show", f"{commit}:{path}"],
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        return completed.stdout if completed.returncode == 0 else None
+
+    manifest_blob = git_blob(INITIAL_SMOKE_MANIFEST_REL)
+    if manifest_blob is None or sha256_bytes(manifest_blob) != sha256_path(resolved_manifest):
+        errors.append("historical smoke manifest does not match its recorded Git commit")
+    for record in manifest.get("frozen_inputs") or []:
+        if not isinstance(record, dict):
+            errors.append("historical frozen-input record is malformed")
+            continue
+        path = str(record.get("path") or "")
+        blob = git_blob(path)
+        if (
+            blob is None
+            or sha256_bytes(blob) != record.get("sha256")
+            or len(blob) != record.get("bytes")
+        ):
+            errors.append(f"historical frozen input differs at recorded commit: {path}")
+    return commit, errors
 
 
 def iter_jsonl(path: Path) -> tuple[list[dict[str, Any]], list[int]]:
@@ -963,6 +1379,40 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
             if envelope_type == "event_msg":
                 if payload_type in PASSIVE_CODEX_EVENT_MESSAGES:
                     continue
+                if payload_type == "item_completed":
+                    item = payload.get("item")
+                    if not isinstance(item, dict):
+                        unknown.append(
+                            f"session.jsonl:{event['_line']}:malformed completed item"
+                        )
+                        continue
+                    item_type = item.get("type")
+                    if item_type in PASSIVE_CODEX_COMPLETED_ITEMS:
+                        continue
+                    normalized_type = ACTIVE_CODEX_COMPLETED_ITEMS.get(str(item_type))
+                    if normalized_type is None:
+                        unknown.append(
+                            f"session.jsonl:{event['_line']}:unknown completed item type {item_type!r}"
+                        )
+                        continue
+                    event_id = str(item.get("id") or f"session-line-{event['_line']}")
+                    calls[event_id] = {
+                        "event_id": event_id,
+                        "source": "session.jsonl",
+                        "line": event["_line"],
+                        "name": _event_name_from_input(item),
+                        "event_type": normalized_type,
+                        "arguments": _call_arguments(
+                            item.get("arguments")
+                            if item.get("arguments") is not None
+                            else item.get("input")
+                            if item.get("input") is not None
+                            else item.get("command")
+                            if item.get("command") is not None
+                            else item.get("changes")
+                        ),
+                    }
+                    continue
                 if payload_type not in ACTIVE_CODEX_EVENT_MESSAGES:
                     unknown.append(
                         f"session.jsonl:{event['_line']}:unknown event message type {payload_type!r}"
@@ -1116,12 +1566,15 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
 def classify_calls(calls: list[dict[str, Any]], workspace_changed: bool) -> dict[str, bool]:
     names = [call["name"].lower() for call in calls]
     types = [call["event_type"].lower() for call in calls]
-    arguments = [
-        json.dumps(call.get("arguments"), sort_keys=True, ensure_ascii=False).lower()
-        if not isinstance(call.get("arguments"), str)
-        else call["arguments"].lower()
-        for call in calls
-    ]
+    arguments = []
+    for call in calls:
+        value = call.get("arguments")
+        if isinstance(value, str):
+            arguments.append(value.lower())
+        elif isinstance(value, list) and all(isinstance(part, str) for part in value):
+            arguments.append(" ".join(value).lower())
+        else:
+            arguments.append(json.dumps(value, sort_keys=True, ensure_ascii=False).lower())
     surfaces = [" ".join(parts) for parts in zip(names, types, arguments)]
     spawned = any(
         name in {"task", "agent", "agentswarm", "spawn_agent", "collaboration.spawn_agent"}
@@ -1133,7 +1586,7 @@ def classify_calls(calls: list[dict[str, Any]], workspace_changed: bool) -> dict
         for name, event_type, surface in zip(names, types, surfaces)
     )
     inspected = any(
-        name in {"read", "grep", "glob", "view_image", "read_file", "search_files"}
+        name in {"read", "grep", "glob", "imageview", "view_image", "read_file", "search_files"}
         or any(token in surface for token in (
             "tools.view_image", "tools.read", "tools.exec_command", " read ", " cat ", " sed -n", " head ",
             " tail ", " grep ", " rg ", " find ", " ls ", " pwd", "git status", "git diff",
@@ -3942,6 +4395,9 @@ def run_slots(
     provenance_errors = validate_prior_attempt_provenance(manifest, ledger)
     if provenance_errors:
         raise ValueError("prior attempt provenance is invalid:\n- " + "\n- ".join(provenance_errors))
+    budget_errors = validate_smoke_call_budget(manifest, ledger)
+    if budget_errors:
+        raise ValueError("smoke call budget is invalid:\n- " + "\n- ".join(budget_errors))
     if reserve_slot:
         if requested_slots:
             raise ValueError("--reserve and --slot cannot be combined")
@@ -4014,6 +4470,13 @@ def run_slots(
     base_env = dict(os.environ)
     initial_preflight = preflight_manifest(manifest, {slot["condition_id"] for slot in schedule}, base_env)
     for slot in schedule:
+        if manifest.get("smoke_continuation") is not None:
+            continuation_errors = validate_manifest(manifest)
+            if continuation_errors:
+                raise ValueError(
+                    "smoke predecessor or continuation drifted before the next call:\n- "
+                    + "\n- ".join(continuation_errors)
+                )
         run_dir = output_dir_for(manifest, slot)
         if run_dir.exists():
             raise FileExistsError(f"refusing to overwrite {run_dir}")
@@ -4022,6 +4485,9 @@ def run_slots(
             raise ValueError(f"execution ledger is malformed at lines {malformed}")
         existing_errors = validate_execution_ledger(manifest, existing_ledger)
         existing_errors.extend(validate_prior_attempt_provenance(manifest, existing_ledger))
+        existing_errors.extend(
+            validate_smoke_call_budget(manifest, existing_ledger, next_slot=slot)
+        )
         if existing_errors:
             raise ValueError(
                 "prior attempt provenance changed before the next call:\n- "
@@ -4497,6 +4963,131 @@ def _find_slot(manifest: dict[str, Any], slot_id: str) -> dict[str, Any]:
     raise ValueError(f"slot not found: {slot_id}")
 
 
+def technical_smoke_status(manifest_path: Path, *, historical: bool = False) -> dict[str, Any]:
+    """Return a response-free technical view of one excluded-smoke ledger."""
+    manifest = load_json(manifest_path)
+    if manifest.get("phase") != "smoke":
+        raise ValueError("technical smoke status accepts only a smoke manifest")
+    manifest_errors = validate_manifest(
+        manifest,
+        check_files=not historical,
+        allow_historical=historical,
+    )
+    if manifest_errors:
+        raise ValueError("smoke manifest is invalid: " + "; ".join(manifest_errors))
+    historical_commit: str | None = None
+    if historical:
+        historical_commit, historical_errors = validate_historical_smoke_sources(
+            manifest_path,
+            manifest,
+        )
+        if historical_errors:
+            raise ValueError(
+                "historical smoke source verification failed: "
+                + "; ".join(historical_errors)
+            )
+    ledger_path = ROOT / str(manifest.get("bout_dir", "")) / "EXECUTION.jsonl"
+    ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
+    if malformed:
+        raise ValueError(f"smoke execution ledger is malformed at lines {malformed}")
+    ledger_errors = validate_execution_ledger(manifest, ledger)
+    ledger_errors.extend(validate_prior_attempt_provenance(manifest, ledger))
+    if ledger_errors:
+        raise ValueError("smoke artifact integrity failed: " + "; ".join(ledger_errors))
+    runs: list[dict[str, Any]] = []
+    for row in ledger:
+        run_dir = ROOT / str(row["run_dir"])
+        record = load_json(run_dir / "run_record.json")
+        metrics = load_json(run_dir / "metrics.json")
+        condition = condition_map(manifest)[row["condition_id"]]
+        completion = record.get("completion") or {}
+        embargo = record.get("embargo") or {}
+        output = record.get("output") or {}
+        identity = ((record.get("configuration") or {}).get("observed_identity") or {})
+        policy = ((record.get("configuration") or {}).get("instruction_policy_signature") or {})
+        runs.append(
+            {
+                "slot_id": row["slot_id"],
+                "condition_id": row["condition_id"],
+                "driver": condition["driver"],
+                "requested_model": condition["requested_model"],
+                "observed_identity": {
+                    key: identity.get(key)
+                    for key in ("models", "model_aliases", "providers")
+                    if key in identity
+                },
+                "driver_exit": row.get("driver_exit"),
+                "validity_state": row.get("validity_state"),
+                "analysis_eligible": row.get("analysis_eligible"),
+                "smoke_excluded": row.get("smoke_excluded"),
+                "process_group_cleaned": row.get("process_group_cleaned"),
+                "staged_attempt_retained": row.get("staged_attempt_retained"),
+                "eligible_exclusion_reasons": row.get("eligible_exclusion_reasons") or [],
+                "artifact_manifest_sha256": row.get("artifact_manifest_sha256"),
+                "instruction_policy_signature_sha256": policy.get("sha256"),
+                "completion": {
+                    key: completion.get(key)
+                    for key in (
+                        "agent_exit",
+                        "timeout_exit",
+                        "output_present",
+                        "request_acceptance_observed",
+                        "pre_request_transport_failure_observed",
+                        "target_response_activity_observed",
+                        "truncation_observed",
+                    )
+                },
+                "output": {
+                    "present": output.get("present"),
+                    "bytes": output.get("bytes"),
+                    "sha256": output.get("sha256"),
+                },
+                "embargo": {
+                    key: embargo.get(key)
+                    for key in (
+                        "pass",
+                        "trace_integrity_pass",
+                        "trace_integrity_failure",
+                        "target_originated_tool_or_function_call",
+                        "spawned_agent",
+                        "repository_or_file_inspection",
+                        "research_or_network_action",
+                        "implementation_or_mutation_attempt",
+                        "unclassified_tool_action",
+                        "workspace_changed",
+                    )
+                },
+                "tool_event_count": embargo.get("tool_call_count"),
+                "unknown_trace_shape_count": len(embargo.get("trace_unknowns") or []),
+                "technical_issue_count": len((record.get("validity") or {}).get("technical_issues") or []),
+                "metrics": {
+                    key: metrics.get(key)
+                    for key in (
+                        "wall_seconds",
+                        "input_tokens",
+                        "cached_input_tokens",
+                        "output_tokens",
+                        "reasoning_output_tokens",
+                        "total_cost_usd",
+                    )
+                    if key in metrics
+                },
+            }
+        )
+    return {
+        "schema_version": 1,
+        "experiment_id": manifest["experiment_id"],
+        "manifest_freeze_id": manifest["freeze_id"],
+        "phase": "smoke",
+        "historical_current_worktree_source_check_skipped": historical,
+        "historical_git_frozen_source_check_pass": True if historical else None,
+        "historical_frozen_sources_verified_at_commit": historical_commit,
+        "response_and_instruction_content_omitted": True,
+        "attempt_count": len(runs),
+        "runs": runs,
+    }
+
+
 def command_manifest(args: argparse.Namespace) -> None:
     manifest = build_manifest(
         phase=args.phase,
@@ -4509,6 +5100,12 @@ def command_manifest(args: argparse.Namespace) -> None:
         frozen_at=args.frozen_at,
         reserve_per_condition=args.reserves,
         replace_draft=args.replace_draft,
+        bout_dir_override=args.bout_dir,
+        smoke_continuation_from=(
+            Path(args.smoke_continuation_from).resolve()
+            if args.smoke_continuation_from
+            else None
+        ),
     )
     print(manifest["freeze_id"])
 
@@ -4538,6 +5135,7 @@ def command_observe(args: argparse.Namespace) -> None:
 def command_verify(args: argparse.Namespace) -> None:
     run_dir = Path(args.run_dir).resolve()
     errors = verify_artifacts(run_dir)
+    historical_commit: str | None = None
     manifest_path = next(
         (parent / "MANIFEST.json" for parent in run_dir.parents if (parent / "MANIFEST.json").is_file()),
         None,
@@ -4546,7 +5144,19 @@ def command_verify(args: argparse.Namespace) -> None:
         errors.append("no enclosing frozen MANIFEST.json found")
     else:
         manifest = load_json(manifest_path)
-        errors.extend(validate_manifest(manifest))
+        errors.extend(
+            validate_manifest(
+                manifest,
+                check_files=not args.historical,
+                allow_historical=args.historical,
+            )
+        )
+        if args.historical:
+            historical_commit, historical_errors = validate_historical_smoke_sources(
+                manifest_path,
+                manifest,
+            )
+            errors.extend(historical_errors)
         ledger_path = manifest_path.parent / "EXECUTION.jsonl"
         ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
         if malformed:
@@ -4579,7 +5189,13 @@ def command_verify(args: argparse.Namespace) -> None:
     if errors:
         print("\n".join(f"ERROR: {error}" for error in errors), file=sys.stderr)
         raise SystemExit(1)
-    print("artifact integrity: OK")
+    if args.historical:
+        print(
+            "historical artifact and frozen-source integrity: OK at Git commit "
+            + str(historical_commit)
+        )
+    else:
+        print("artifact integrity: OK")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -4595,6 +5211,14 @@ def parser() -> argparse.ArgumentParser:
     manifest.add_argument("--reserves", type=int, default=5)
     manifest.add_argument("--seed", type=int, required=True)
     manifest.add_argument("--frozen-at", required=True)
+    manifest.add_argument(
+        "--bout-dir",
+        help="repository-relative artifact directory; defaults to the phase's canonical base path",
+    )
+    manifest.add_argument(
+        "--smoke-continuation-from",
+        help="derive only the unattempted suffix of the immutable initial smoke manifest",
+    )
     manifest.add_argument(
         "--replace-draft",
         action="store_true",
@@ -4633,7 +5257,30 @@ def parser() -> argparse.ArgumentParser:
     observe.set_defaults(func=command_observe)
     verify = sub.add_parser("verify-run", help="verify a run's content-addressed artifacts")
     verify.add_argument("run_dir")
+    verify.add_argument(
+        "--historical",
+        action="store_true",
+        help="verify an immutable superseded run while allowing its frozen source tree to have advanced",
+    )
     verify.set_defaults(func=command_verify)
+    smoke_status = sub.add_parser(
+        "smoke-status",
+        help="emit a response-free technical view of an excluded-smoke ledger",
+    )
+    smoke_status.add_argument("manifest")
+    smoke_status.add_argument(
+        "--historical",
+        action="store_true",
+        help="allow source-tree drift for a superseded immutable smoke manifest",
+    )
+    smoke_status.set_defaults(
+        func=lambda args: print(
+            json.dumps(
+                technical_smoke_status(Path(args.manifest), historical=args.historical),
+                indent=2,
+            )
+        )
+    )
     blind = sub.add_parser("blind", help="create label-free semantic-review packets")
     blind.add_argument("manifest")
     blind.add_argument("--output-dir", required=True)

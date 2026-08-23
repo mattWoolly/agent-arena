@@ -53,6 +53,7 @@ def make_manifest(temp: Path, phase: str = "confirmatory", repeats: int | None =
         repeats=repeats,
         seed=seed,
         frozen_at="2026-08-22T00:00:00Z",
+        test_only_allow_noncanonical_paths=True,
     )
     return path, manifest
 
@@ -410,6 +411,105 @@ class PromptAndManifestTests(unittest.TestCase):
             with self.assertRaisesRegex(FileExistsError, "refusing to overwrite frozen manifest"):
                 make_manifest(temp)
 
+    def test_smoke_continuation_is_exact_inherited_suffix_and_call_capped(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            path = temp / "continuation.json"
+            manifest = probe.build_manifest(
+                phase="smoke",
+                output=path,
+                design=DESIGN,
+                analysis_script=ANALYZE_PATH,
+                report_template=REPORT_TEMPLATE,
+                repeats=1,
+                seed=2808222027,
+                frozen_at="2026-08-23T18:00:00Z",
+                reserve_per_condition=0,
+                bout_dir_override=f"bouts/test-only-{temp.name}",
+                smoke_continuation_from=probe.ROOT / probe.INITIAL_SMOKE_MANIFEST_REL,
+                test_only_allow_noncanonical_paths=True,
+            )
+            self.assertEqual(probe.validate_manifest(manifest), [])
+            self.assertEqual(
+                [slot["condition_id"] for slot in manifest["schedule"]],
+                ["kimi-code--kimi-k3", "claude-code--claude-opus-5"],
+            )
+            self.assertEqual(
+                [(slot["position"], slot["sequence"]) for slot in manifest["schedule"]],
+                [(2, 2), (3, 3)],
+            )
+            self.assertNotIn("codex--gpt-5.6-sol", probe.condition_map(manifest))
+            self.assertEqual(manifest["sampling"]["cumulative_smoke_call_cap"], 3)
+            self.assertFalse(manifest["sampling"]["retries_allowed"])
+
+            first_remaining = {
+                "kind": "primary",
+                "condition_id": "kimi-code--kimi-k3",
+            }
+            final_slot = manifest["schedule"][1]
+            self.assertEqual(
+                probe.validate_smoke_call_budget(manifest, [first_remaining], next_slot=final_slot),
+                [],
+            )
+            retry_errors = probe.validate_smoke_call_budget(
+                manifest,
+                [first_remaining],
+                next_slot=manifest["schedule"][0],
+            )
+            self.assertTrue(any("retry" in error for error in retry_errors))
+            cap_errors = probe.validate_smoke_call_budget(
+                manifest,
+                [
+                    first_remaining,
+                    {"kind": "primary", "condition_id": "claude-code--claude-opus-5"},
+                ],
+                next_slot=final_slot,
+            )
+            self.assertTrue(any("cap" in error for error in cap_errors))
+
+            tampered = copy.deepcopy(manifest)
+            tampered["smoke_continuation"]["predecessor_manifest"]["sha256"] = "0" * 64
+            tampered["freeze_id"] = probe.compute_freeze_id(tampered)
+            self.assertTrue(
+                any("continuation" in error for error in probe.validate_manifest(tampered))
+            )
+            reordered = copy.deepcopy(manifest)
+            reordered["schedule"] = list(reversed(reordered["schedule"]))
+            reordered["freeze_id"] = probe.compute_freeze_id(reordered)
+            self.assertIn(
+                "smoke continuation schedule is not the unattempted predecessor suffix",
+                probe.validate_manifest(reordered),
+            )
+
+    def test_production_manifest_paths_prevent_duplicate_smoke_continuations(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            with self.assertRaisesRegex(ValueError, "one canonical output"):
+                probe.build_manifest(
+                    phase="smoke",
+                    output=temp / "second-continuation.json",
+                    design=DESIGN,
+                    analysis_script=ANALYZE_PATH,
+                    report_template=REPORT_TEMPLATE,
+                    repeats=1,
+                    seed=2808222027,
+                    frozen_at="2026-08-23T18:00:00Z",
+                    reserve_per_condition=0,
+                    bout_dir_override=str((temp / "second-bout").relative_to(probe.ROOT)),
+                    smoke_continuation_from=probe.ROOT / probe.INITIAL_SMOKE_MANIFEST_REL,
+                )
+
+    def test_historical_smoke_sources_are_verified_from_anchored_git_commit(self):
+        manifest_path = probe.ROOT / probe.INITIAL_SMOKE_MANIFEST_REL
+        manifest = json.loads(manifest_path.read_text())
+        commit, errors = probe.validate_historical_smoke_sources(manifest_path, manifest)
+        self.assertEqual(errors, [])
+        self.assertEqual(commit, "c4c4c84a4d328637bd508b009b322a8d9d4bd2b5")
+        tampered = copy.deepcopy(manifest)
+        tampered["frozen_inputs"][0]["sha256"] = "0" * 64
+        _, errors = probe.validate_historical_smoke_sources(manifest_path, tampered)
+        self.assertTrue(any("historical frozen input differs" in error for error in errors))
+
     def test_confirmatory_gate_blocks_execution_but_allows_dry_run(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             path, manifest = make_manifest(Path(raw))
@@ -555,6 +655,147 @@ class TraceAndArtifactTests(unittest.TestCase):
             )
             self.assertEqual(len(calls), 1)
             self.assertFalse(unknown)
+
+    def test_codex_completed_item_wrappers_are_recursively_classified(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            run_dir = Path(raw)
+            jsonl(
+                run_dir / "session.jsonl",
+                [
+                    {
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "item_completed",
+                            "item": {"id": "u1", "type": "UserMessage", "content": []},
+                        },
+                    },
+                    {
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "item_completed",
+                            "item": {"id": "a1", "type": "AgentMessage", "content": []},
+                        },
+                    },
+                    {
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "item_completed",
+                            "item": {
+                                "id": "c1",
+                                "type": "CommandExecution",
+                                "command": ["pwd"],
+                            },
+                        },
+                    },
+                ],
+            )
+            calls, unknown = probe.detect_tool_events("codex", [], run_dir)
+            self.assertEqual(unknown, [])
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0]["event_type"], "command_execution")
+            self.assertTrue(probe.classify_calls(calls, False)["repository_or_file_inspection"])
+
+            jsonl(
+                run_dir / "session.jsonl",
+                [
+                    {
+                        "type": "event_msg",
+                        "payload": {
+                            "type": "item_completed",
+                            "item": {"id": "future", "type": "FutureTool"},
+                        },
+                    }
+                ],
+            )
+            calls, unknown = probe.detect_tool_events("codex", [], run_dir)
+            self.assertEqual(calls, [])
+            self.assertTrue(any("unknown completed item type" in issue for issue in unknown))
+
+            jsonl(
+                run_dir / "session.jsonl",
+                [{"type": "event_msg", "payload": {"type": "item_completed", "item": None}}],
+            )
+            calls, unknown = probe.detect_tool_events("codex", [], run_dir)
+            self.assertEqual(calls, [])
+            self.assertTrue(any("malformed completed item" in issue for issue in unknown))
+
+    def test_technical_smoke_status_never_serializes_sensitive_or_semantic_fields(self):
+        sentinel = "DO-NOT-SERIALIZE-SMOKE-CONTENT-9f65"
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            bout = temp / "bout"
+            run_dir = bout / "task" / "model" / "run-1"
+            run_dir.mkdir(parents=True)
+            condition = probe.default_conditions()[0]
+            slot = {
+                "slot_id": "primary-01--" + condition["condition_id"],
+                "condition_id": condition["condition_id"],
+            }
+            manifest = {
+                "phase": "smoke",
+                "experiment_id": "sentinel-test",
+                "freeze_id": "f" * 64,
+                "bout_dir": probe.relative(bout),
+                "conditions": [condition],
+                "schedule": [slot],
+                "reserve_slots": [],
+            }
+            manifest_path = temp / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest))
+            ledger_row = {
+                "slot_id": slot["slot_id"],
+                "condition_id": condition["condition_id"],
+                "run_dir": probe.relative(run_dir),
+                "driver_exit": 0,
+                "validity_state": "valid",
+                "analysis_eligible": False,
+                "smoke_excluded": True,
+                "process_group_cleaned": True,
+                "staged_attempt_retained": False,
+                "eligible_exclusion_reasons": [],
+                "artifact_manifest_sha256": "a" * 64,
+            }
+            (bout / "EXECUTION.jsonl").write_text(json.dumps(ledger_row) + "\n")
+            (run_dir / "run_record.json").write_text(
+                json.dumps(
+                    {
+                        "completion": {"agent_exit": 0, "output_present": True},
+                        "embargo": {
+                            "pass": False,
+                            "tool_call_count": 1,
+                            "tool_calls": [{"arguments": sentinel}],
+                            "trace_unknowns": [sentinel],
+                        },
+                        "output": {"present": True, "bytes": len(sentinel), "sha256": "b" * 64},
+                        "configuration": {
+                            "observed_identity": {"models": [condition["requested_model"]]},
+                            "instruction_policy_signature": {
+                                "sha256": "c" * 64,
+                                "value": sentinel,
+                            },
+                        },
+                        "validity": {"technical_issues": [sentinel]},
+                    }
+                )
+            )
+            (run_dir / "metrics.json").write_text(
+                json.dumps({"wall_seconds": 1.0, "final_message": sentinel})
+            )
+            with mock.patch.object(probe, "validate_manifest", return_value=[]), mock.patch.object(
+                probe, "validate_execution_ledger", return_value=[]
+            ), mock.patch.object(probe, "validate_prior_attempt_provenance", return_value=[]):
+                status = probe.technical_smoke_status(manifest_path)
+            serialized = json.dumps(status, sort_keys=True)
+            self.assertNotIn(sentinel, serialized)
+            for forbidden_key in (
+                "final_message",
+                "value",
+                "tool_calls",
+                "trace_unknowns",
+                "technical_issues",
+                "content",
+            ):
+                self.assertNotIn(f'"{forbidden_key}"', serialized)
 
     def test_kimi_normal_loop_and_usage_events_are_passive_but_strict(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
