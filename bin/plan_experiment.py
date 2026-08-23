@@ -37,6 +37,9 @@ SAFE_TEMP_ROOT = Path("/tmp")
 CGROUP_ROOT = Path("/sys/fs/cgroup")
 AT_FDCWD = -100
 RENAME_NOREPLACE = 1
+PR_SET_CHILD_SUBREAPER = 36
+PR_GET_CHILD_SUBREAPER = 37
+PROCESS_CONTAINMENT = "dedicated-cgroup-v2-plus-child-subreaper"
 STAGED_DRIVER_FILES = {
     "claude": (
         "bin/run-task.sh",
@@ -244,6 +247,23 @@ def process_dumpable(value: int | None = None) -> int:
         error = ctypes.get_errno()
         raise OSError(error, os.strerror(error))
     return result
+
+
+def process_child_subreaper(value: int | None = None) -> int:
+    """Get or set Linux child-subreaper state for escaped-descendant cleanup."""
+    libc = ctypes.CDLL(None, use_errno=True)
+    if value is None:
+        current = ctypes.c_int()
+        result = libc.prctl(PR_GET_CHILD_SUBREAPER, ctypes.byref(current), 0, 0, 0)
+        if result < 0:
+            error = ctypes.get_errno()
+            raise OSError(error, os.strerror(error))
+        return current.value
+    result = libc.prctl(PR_SET_CHILD_SUBREAPER, int(bool(value)), 0, 0, 0)
+    if result < 0:
+        error = ctypes.get_errno()
+        raise OSError(error, os.strerror(error))
+    return int(bool(value))
 
 
 def utc_now() -> str:
@@ -2559,7 +2579,7 @@ def preflight_condition(condition: dict[str, Any], env: dict[str, str]) -> tuple
         "cli_version": version,
         "harness_commit": commit or "unknown",
         "environment_policy": "minimal-allowlist-v3",
-        "execution_isolation_policy": "rubric-free staged driver; nondumpable parent; atomic output transfer; dedicated cgroup-v2",
+        "execution_isolation_policy": "rubric-free staged driver; nondumpable parent; atomic output transfer; dedicated cgroup-v2 plus child subreaper",
         "process_containment": process_containment,
         "temp_root": env.get("TMPDIR"),
     }
@@ -3217,6 +3237,93 @@ def raw_attempt_has_attributable_activity(driver: str, run_dir: Path) -> bool:
     )
 
 
+def _process_record(pid: int) -> dict[str, Any] | None:
+    try:
+        raw = (Path("/proc") / str(pid) / "stat").read_text()
+        fields = raw[raw.rfind(")") + 2 :].split()
+        if len(fields) < 20:
+            return None
+        return {
+            "pid": pid,
+            "state": fields[0],
+            "ppid": int(fields[1]),
+            "process_group": int(fields[2]),
+            "start_time": int(fields[19]),
+        }
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def _direct_child_records() -> list[dict[str, Any]]:
+    runner_pid = os.getpid()
+    records = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        record = _process_record(int(entry.name))
+        if record is not None and record["ppid"] == runner_pid:
+            records.append(record)
+    return sorted(records, key=lambda item: item["pid"])
+
+
+def _reap_zombie_children() -> None:
+    for record in _direct_child_records():
+        if record["state"] != "Z":
+            continue
+        try:
+            os.waitpid(record["pid"], os.WNOHANG)
+        except (ChildProcessError, ProcessLookupError):
+            pass
+
+
+def _live_direct_child_records() -> list[dict[str, Any]]:
+    _reap_zombie_children()
+    return [record for record in _direct_child_records() if record["state"] != "Z"]
+
+
+def prepare_child_subreaper() -> dict[str, Any]:
+    """Claim exclusive adoption of target descendants before the target can fork."""
+    prior = process_child_subreaper()
+    process_child_subreaper(1)
+    try:
+        if process_child_subreaper() != 1:
+            raise RuntimeError("child-subreaper state did not activate")
+        existing = _direct_child_records()
+        if existing:
+            raise RuntimeError(
+                "runner already has child processes; exclusive target adoption is unavailable"
+            )
+    except BaseException:
+        process_child_subreaper(prior)
+        raise
+    return {"prior": prior, "active": True}
+
+
+def close_child_subreaper(handle: dict[str, Any] | None) -> None:
+    if not handle or not handle.get("active"):
+        return
+    _reap_zombie_children()
+    if _direct_child_records():
+        raise RuntimeError("refusing to release child-subreaper state with descendants present")
+    process_child_subreaper(int(handle["prior"]))
+    handle["active"] = False
+
+
+def _signal_adopted_children(signum: int) -> None:
+    for record in _live_direct_child_records():
+        current = _process_record(record["pid"])
+        if (
+            current is None
+            or current["ppid"] != os.getpid()
+            or current["start_time"] != record["start_time"]
+        ):
+            continue
+        try:
+            os.kill(record["pid"], signum)
+        except ProcessLookupError:
+            pass
+
+
 def _current_cgroup_parent() -> Path:
     entries = [line for line in Path("/proc/self/cgroup").read_text().splitlines() if line]
     if len(entries) != 1 or not entries[0].startswith("0::/"):
@@ -3234,39 +3341,51 @@ def process_scope_capability() -> str:
     parent = _current_cgroup_parent()
     if not os.access(parent, os.W_OK) or not (parent / "cgroup.kill").is_file():
         raise RuntimeError("current cgroup-v2 parent is not delegated for scoped cleanup")
-    name = f"arena-plan-capability-{os.getpid()}-{os.urandom(4).hex()}"
-    parent_fd = os.open(parent, _directory_open_flags())
-    scope_fd: int | None = None
-    created = False
+    prior_subreaper = process_child_subreaper()
+    process_child_subreaper(1)
     try:
-        os.mkdir(name, dir_fd=parent_fd)
-        created = True
-        scope_fd = os.open(name, _directory_open_flags(), dir_fd=parent_fd)
-        for entry, flags in (
-            ("cgroup.procs", os.O_WRONLY | os.O_CLOEXEC),
-            ("cgroup.kill", os.O_WRONLY | os.O_CLOEXEC),
-            ("cgroup.events", os.O_RDONLY | os.O_CLOEXEC),
-        ):
-            descriptor = os.open(entry, flags, dir_fd=scope_fd)
-            os.close(descriptor)
-    finally:
+        if process_child_subreaper() != 1:
+            raise RuntimeError("Linux child-subreaper containment is unavailable")
+        name = f"arena-plan-capability-{os.getpid()}-{os.urandom(4).hex()}"
+        parent_fd = os.open(parent, _directory_open_flags())
+        scope_fd: int | None = None
+        created = False
         try:
-            if scope_fd is not None:
-                os.close(scope_fd)
-            if created:
-                os.rmdir(name, dir_fd=parent_fd)
+            os.mkdir(name, dir_fd=parent_fd)
+            created = True
+            scope_fd = os.open(name, _directory_open_flags(), dir_fd=parent_fd)
+            for entry, flags in (
+                ("cgroup.procs", os.O_WRONLY | os.O_CLOEXEC),
+                ("cgroup.kill", os.O_WRONLY | os.O_CLOEXEC),
+                ("cgroup.events", os.O_RDONLY | os.O_CLOEXEC),
+            ):
+                descriptor = os.open(entry, flags, dir_fd=scope_fd)
+                os.close(descriptor)
         finally:
-            os.close(parent_fd)
-    return "dedicated-cgroup-v2-with-cgroup.kill"
+            try:
+                if scope_fd is not None:
+                    os.close(scope_fd)
+                if created:
+                    os.rmdir(name, dir_fd=parent_fd)
+            finally:
+                os.close(parent_fd)
+    finally:
+        process_child_subreaper(prior_subreaper)
+    return PROCESS_CONTAINMENT
 
 
 def prepare_process_scope(slot: dict[str, Any]) -> dict[str, Any]:
-    """Create one empty cgroup that contains every target descendant, including setsid children."""
+    """Create dual cgroup/subreaper containment before any target process exists."""
     parent = _current_cgroup_parent()
     process_scope_capability()
+    subreaper = prepare_child_subreaper()
     slot_id = _safe_path_component(slot["slot_id"], "process-scope slot ID")
     name = f"arena-plan-{sha256_bytes(slot_id.encode())[:20]}"
-    parent_fd = os.open(parent, _directory_open_flags())
+    try:
+        parent_fd = os.open(parent, _directory_open_flags())
+    except BaseException:
+        close_child_subreaper(subreaper)
+        raise
     scope_created = False
     scope_fd: int | None = None
     attach_fd: int | None = None
@@ -3281,6 +3400,7 @@ def prepare_process_scope(slot: dict[str, Any]) -> dict[str, Any]:
             except OSError:
                 pass
         os.close(parent_fd)
+        close_child_subreaper(subreaper)
         raise
     try:
         assert scope_fd is not None
@@ -3303,6 +3423,7 @@ def prepare_process_scope(slot: dict[str, Any]) -> dict[str, Any]:
             os.rmdir(name, dir_fd=parent_fd)
         finally:
             os.close(parent_fd)
+            close_child_subreaper(subreaper)
         raise
     return {
         "parent_fd": parent_fd,
@@ -3311,24 +3432,39 @@ def prepare_process_scope(slot: dict[str, Any]) -> dict[str, Any]:
         "name": name,
         "path": parent / name,
         "stat": (scope_stat.st_dev, scope_stat.st_ino),
+        "subreaper": subreaper,
         "closed": False,
         "removed": False,
     }
 
 
 def close_process_scope(handle: dict[str, Any] | None) -> None:
-    if not handle or handle.get("closed"):
+    if not handle:
         return
-    for key in ("attach_fd", "scope_fd", "parent_fd"):
-        descriptor = handle.get(key)
-        if descriptor is None:
-            continue
+    if not handle.get("closed"):
+        if not handle.get("removed") and handle.get("scope_fd") is not None:
+            try:
+                if not _process_scope_populated(handle):
+                    os.rmdir(handle["name"], dir_fd=handle["parent_fd"])
+                    handle["removed"] = True
+            except OSError:
+                pass
+        for key in ("attach_fd", "scope_fd", "parent_fd"):
+            descriptor = handle.get(key)
+            if descriptor is None:
+                continue
+            try:
+                os.close(descriptor)
+            except OSError:
+                pass
+            handle[key] = None
+        handle["closed"] = True
+    subreaper = handle.get("subreaper")
+    if subreaper and subreaper.get("active") and not _direct_child_records():
         try:
-            os.close(descriptor)
-        except OSError:
-            pass
-        handle[key] = None
-    handle["closed"] = True
+            close_child_subreaper(subreaper)
+        except (OSError, RuntimeError) as exc:
+            handle["subreaper_close_error"] = type(exc).__name__
 
 
 def attach_process_scope(handle: dict[str, Any]) -> None:
@@ -3385,26 +3521,45 @@ def _signal_process_scope(handle: dict[str, Any], signum: int) -> None:
             pass
 
 
-def _wait_for_process_scope_exit(
-    handle: dict[str, Any], timeout_seconds: float, poll_interval: float, *, term_signal: bool
-) -> bool:
-    deadline = time.monotonic() + timeout_seconds
-    while True:
-        if not _process_scope_populated(handle):
-            return True
-        if term_signal:
-            _signal_process_scope(handle, signal.SIGTERM)
-        if time.monotonic() >= deadline:
-            return False
-        time.sleep(poll_interval)
-
-
 def _kill_process_scope(handle: dict[str, Any]) -> None:
     descriptor = os.open("cgroup.kill", os.O_WRONLY | os.O_CLOEXEC, dir_fd=handle["scope_fd"])
     try:
         os.write(descriptor, b"1\n")
     finally:
         os.close(descriptor)
+
+
+def _wait_for_contained_descendants_exit(
+    handle: dict[str, Any],
+    timeout_seconds: float,
+    poll_interval: float,
+    *,
+    force: bool,
+) -> bool:
+    """Drain both cgroup members and escaped descendants adopted by the runner."""
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        populated = _process_scope_populated(handle)
+        adopted = (
+            _live_direct_child_records()
+            if (handle.get("subreaper") or {}).get("active")
+            else []
+        )
+        if not populated and not adopted:
+            _reap_zombie_children()
+            if not _process_scope_populated(handle) and not _live_direct_child_records():
+                return True
+        elif force:
+            if populated:
+                _kill_process_scope(handle)
+            _signal_adopted_children(signal.SIGKILL)
+        else:
+            if populated:
+                _signal_process_scope(handle, signal.SIGTERM)
+            _signal_adopted_children(signal.SIGTERM)
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(poll_interval)
 
 
 def _process_group_exists(process_group_id: int) -> bool:
@@ -3497,7 +3652,7 @@ def terminate_process_scope(
     kill_grace_seconds: float = 5.0,
     poll_interval: float = 0.05,
 ) -> None:
-    """Stop the original PGID and every descendant retained in its dedicated cgroup."""
+    """Stop the original PGID, cgroup members, and escaped adopted descendants."""
     group_error: BaseException | None = None
     if process is not None:
         try:
@@ -3509,29 +3664,35 @@ def terminate_process_scope(
             )
         except BaseException as exc:
             group_error = exc
-    if not _wait_for_process_scope_exit(
+    if not _wait_for_contained_descendants_exit(
         handle,
         term_grace_seconds,
         poll_interval,
-        term_signal=True,
+        force=False,
     ):
-        _kill_process_scope(handle)
-        if not _wait_for_process_scope_exit(
+        if not _wait_for_contained_descendants_exit(
             handle,
             kill_grace_seconds,
             poll_interval,
-            term_signal=False,
+            force=True,
         ):
-            raise RuntimeError("target process cgroup survived cgroup.kill")
+            raise RuntimeError(
+                "target process cgroup or an escaped adopted descendant survived forced cleanup"
+            )
     if process is not None and _process_group_exists(process.pid):
         if group_error is not None:
             raise RuntimeError("target process group survived cleanup") from group_error
         raise RuntimeError("target process group survived cleanup")
     if _process_scope_populated(handle):
         raise RuntimeError("target process cgroup remained populated after cleanup")
+    _reap_zombie_children()
+    if _direct_child_records():
+        raise RuntimeError("escaped target descendant remained after child-subreaper cleanup")
     os.rmdir(handle["name"], dir_fd=handle["parent_fd"])
     handle["removed"] = True
     close_process_scope(handle)
+    if handle.get("subreaper_close_error"):
+        raise RuntimeError("child-subreaper state could not be restored after cleanup")
 
 
 def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dict[str, Any]]) -> list[str]:

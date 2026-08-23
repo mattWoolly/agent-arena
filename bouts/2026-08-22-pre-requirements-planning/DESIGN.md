@@ -80,10 +80,13 @@ analysis, design, or repository path is passed to the target wrapper. Output is
 atomically transferred back after the target exits. While the target is live,
 the runner is non-dumpable so descendants cannot resolve its cwd, file
 descriptors, or environment through `/proc`. Before launch, the runner creates
-a dedicated cgroup-v2 child and attaches the driver in the child-side launch
-hook. Cleanup therefore covers descendants that call `setsid()` or create a new
-process group; `cgroup.kill` is the final forced-cleanup primitive and an empty
-`cgroup.events` state is required before recovery or scanning.
+a dedicated cgroup-v2 child, claims exclusive Linux child-subreaper adoption,
+and attaches the driver in the child-side launch hook. Cleanup therefore covers
+descendants that call `setsid()` or create a new process group. Because the
+delegated parent is writable by the target UID, the subreaper separately adopts
+and drains a descendant that moves itself out of the child cgroup. `cgroup.kill`
+and direct `SIGKILL` are the final forced-cleanup primitives; empty process-group,
+`cgroup.events`, and adopted-child states are required before recovery or scanning.
 Sampling parameters not named above remain provider/CLI defaults and are
 recorded as omitted/default, not guessed.
 
@@ -99,9 +102,9 @@ a secret-redacted credential-structure digest plus the complete structural
 inventory digest, as well as the names of credential environment fields present
 under the minimal environment policy. Preflight uses the exact same environment
 constructor as target execution. It also rejects hosts without a writable
-delegated cgroup-v2 parent and `cgroup.kill`, and rejects tracked worktree or
-index changes before the first target call and again before
-every slot; treatment files and the fixture are exact-hashed, while expected
+delegated cgroup-v2 parent, `cgroup.kill`, and Linux child-subreaper support,
+and rejects tracked worktree or index changes before the first target call and
+again before every slot; treatment files and the fixture are exact-hashed, while expected
 untracked runtime outputs do not create a false dirty signal. The executor stops
 on any drift.
 
@@ -166,14 +169,16 @@ authorizes opportunistic expansion.
 The controller converts `SIGINT`, `SIGTERM`, and `SIGHUP` during an active
 attempt into transactional interruption. On interruption or ordinary wrapper
 return, it first signals the original process group, then repeatedly signals all
-processes in the dedicated cgroup, escalates through `cgroup.kill`, and verifies
-both the group and cgroup are empty before recovering or scanning artifacts.
-This includes a descendant that detached into a new session after its leader
+processes in the dedicated cgroup and every escaped descendant adopted by the
+runner. It escalates through `cgroup.kill` and direct `SIGKILL`, and verifies the
+original group, cgroup, and adopted-child population are all empty before
+recovering or scanning artifacts. This includes a descendant that detached into
+a new session and moved itself into the writable parent cgroup after its leader
 exited. If that proof fails, it leaves the staging tree untouched, records the
 exact external stage path plus unresolved cleanup state, and blocks every later
 call; operator recovery plus a documented new freeze is required. Otherwise it
-removes the empty cgroup, completes safety cleanup, and appends the attempt
-receipt and ledger row before exiting.
+removes the empty cgroup, restores the prior subreaper state, completes safety
+cleanup, and appends the attempt receipt and ledger row before exiting.
 Each target command also uses `timeout --kill-after=10s`, so a TERM-ignoring CLI
 cannot outlive its declared timeout.
 
@@ -404,8 +409,11 @@ later draft at `3defecb` was also withheld after adversarial offline review; no
 target call used it. The next candidate at `f12476a` was withheld by two fresh
 offline reviewers because detached-session containment, quarantine race/stage
 provenance, transport exclusion, cleanup evidence, and response identity still
-needed tightening; it likewise made zero target calls. The regenerated
-manifests supersede all earlier draft freeze IDs.
+needed tightening; it likewise made zero target calls. Candidate `c4f0d94`
+closed those findings but was retired when an additional offline probe showed
+that a same-UID descendant could move to the writable parent cgroup and survive;
+no target call used that candidate either. The regenerated manifests supersede
+all earlier draft freeze IDs.
 
 ## Known limitations frozen before seeing outcomes
 
@@ -421,6 +429,6 @@ manifests supersede all earlier draft freeze IDs.
 - N=20 has broad uncertainty and does not support fine rankings.
 - Human semantic judgment remains fallible despite blinding, exact evidence,
   agreement measurement, and adjudication.
-- The frozen executor requires the recorded Linux cgroup-v2 delegation and
-  `renameat2(RENAME_NOREPLACE)` support; this is a harness configuration, not a
-  portable intrinsic model condition.
+- The frozen executor requires the recorded Linux cgroup-v2 delegation,
+  child-subreaper support, and `renameat2(RENAME_NOREPLACE)`; this is a harness
+  configuration, not a portable intrinsic model condition.

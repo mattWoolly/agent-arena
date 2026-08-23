@@ -330,12 +330,14 @@ same-filesystem `/tmp`. Live attempts receive a rubric-free staging tree with
 only the selected wrapper, required helpers, neutral task, and fixture; the
 parent is non-dumpable while the target runs, and output is atomically moved
 back before normalization. The runner attaches each target to a dedicated
-cgroup-v2 child before `exec`, terminates the original group plus every process
-remaining in that cgroup, escalates with `cgroup.kill`, and requires both to be
-empty before recovery or scanning. This covers descendants that create a new
-session after the wrapper leader exits. If cleanup cannot be proved, it leaves
-the staging tree untouched, records its exact external path, and blocks every
-later experiment call for operator recovery.
+cgroup-v2 child before `exec` and first claims exclusive Linux child-subreaper
+adoption. Cleanup terminates the original group and every process remaining in
+the cgroup, while separately draining descendants that created a new session
+and moved themselves to the writable parent cgroup. It escalates through
+`cgroup.kill` and `SIGKILL`, then requires all three populations to be empty
+before recovery or scanning. If cleanup cannot be proved, it leaves the staging
+tree untouched, records its exact external path, and blocks every later
+experiment call for operator recovery.
 Continuing after such a catastrophic cleanup failure requires a documented new
 freeze; the append-only row is never edited in place.
 Experiment validation sets `ARENA_SYNTHETIC_ONLY=1` for the served-model helper

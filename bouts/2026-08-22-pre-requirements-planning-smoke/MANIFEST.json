@@ -245,13 +245,13 @@
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/DESIGN.md",
-      "sha256": "c16ebfa877ecfd435a73afce2ea5abb63dc5d98bcc35ea04e3e84ab6f0d1cb89",
-      "bytes": 25268
+      "sha256": "9254bd73c28927d6a939e6f7b897602162c4e944136f6ec3e7b0d8140104d54f",
+      "bytes": 25997
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/CONFIGURATION.json",
-      "sha256": "150d123e36660bc7b03598591e2029ab544097daf796dabc1e2b3796960e9b6f",
-      "bytes": 2641
+      "sha256": "f72c33f0bafba4608b822e81073eb247c8685703aa63e757bcc1d1640c1cc023",
+      "bytes": 2716
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/analyze.py",
@@ -285,8 +285,8 @@
     },
     {
       "path": "bin/plan_experiment.py",
-      "sha256": "c5ccf568e9c267a2af47e68c3b0bc1de812291bbbcd3e971eb976654912262ed",
-      "bytes": 204793
+      "sha256": "13cc83bbf587a99d216476213f3d9f2cc72f65d0f804c737f5a086ef85649470",
+      "bytes": 210640
     },
     {
       "path": "bin/credential_guard.py",
@@ -339,5 +339,5 @@
       "bytes": 1
     }
   ],
-  "freeze_id": "06f0f2f86b3caccd426290af39afe56ba97ffe1dbf53f0af742d9d12fb7b6c76"
+  "freeze_id": "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e"
 }

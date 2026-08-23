@@ -2090,6 +2090,7 @@ class CredentialGuardTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="arena-process-scope-test-") as raw:
             ready = Path(raw) / "child.pid"
             slot = {"slot_id": f"synthetic-detached-{Path(raw).name}"}
+            prior_subreaper = probe.process_child_subreaper()
             scope = probe.prepare_process_scope(slot)
             child_pid = None
             process = None
@@ -2129,6 +2130,7 @@ class CredentialGuardTests(unittest.TestCase):
                     poll_interval=0.01,
                 )
                 self.assertTrue(scope["removed"])
+                self.assertEqual(probe.process_child_subreaper(), prior_subreaper)
             finally:
                 if child_pid is not None:
                     try:
@@ -2146,6 +2148,101 @@ class CredentialGuardTests(unittest.TestCase):
                         )
                     except BaseException:
                         probe.close_process_scope(scope)
+
+    def test_process_scope_kills_descendant_that_escapes_to_parent_cgroup(self):
+        try:
+            probe.process_scope_capability()
+        except (OSError, RuntimeError, ValueError) as exc:
+            self.skipTest(f"cgroup-v2 process containment unavailable: {type(exc).__name__}")
+        with tempfile.TemporaryDirectory(prefix="arena-process-escape-test-") as raw:
+            ready = Path(raw) / "child.pid"
+            slot = {"slot_id": f"synthetic-cgroup-escape-{Path(raw).name}"}
+            prior_subreaper = probe.process_child_subreaper()
+            scope = probe.prepare_process_scope(slot)
+            child_pid = None
+            process = None
+            child_code = (
+                "import os,signal,sys,time;"
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN);"
+                "open(str(sys.argv[2]) + '/cgroup.procs', 'w').write(str(os.getpid()));"
+                "open(sys.argv[1], 'w').write(str(os.getpid()));"
+                "time.sleep(30)"
+            )
+            leader_code = (
+                "import subprocess,sys,time;"
+                "subprocess.Popen([sys.executable, '-c', sys.argv[3], sys.argv[1], sys.argv[2]], "
+                "start_new_session=True);"
+                "\nwhile True:\n"
+                " try:\n"
+                "  open(sys.argv[1]).read(); break\n"
+                " except OSError: time.sleep(0.01)\n"
+            )
+            try:
+                process = subprocess.Popen(
+                    [
+                        os.sys.executable,
+                        "-c",
+                        leader_code,
+                        str(ready),
+                        str(probe._current_cgroup_parent()),
+                        child_code,
+                    ],
+                    start_new_session=True,
+                    pass_fds=(scope["attach_fd"],),
+                    preexec_fn=lambda: probe.attach_process_scope(scope),
+                )
+                os.close(scope["attach_fd"])
+                scope["attach_fd"] = None
+                self.assertEqual(process.wait(timeout=5), 0)
+                child_pid = int(ready.read_text())
+                self.assertFalse(probe._process_scope_populated(scope))
+                escaped_record = probe._process_record(child_pid)
+                self.assertIsNotNone(escaped_record)
+                self.assertEqual(escaped_record["ppid"], os.getpid())
+                probe.terminate_process_scope(
+                    process,
+                    scope,
+                    term_grace_seconds=0.1,
+                    kill_grace_seconds=2.0,
+                    poll_interval=0.01,
+                )
+                self.assertFalse(Path(f"/proc/{child_pid}").exists())
+                self.assertTrue(scope["removed"])
+                self.assertEqual(probe.process_child_subreaper(), prior_subreaper)
+            finally:
+                if child_pid is not None:
+                    try:
+                        os.kill(child_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                if not scope.get("removed"):
+                    try:
+                        probe.terminate_process_scope(
+                            process,
+                            scope,
+                            term_grace_seconds=0.1,
+                            kill_grace_seconds=2.0,
+                            poll_interval=0.01,
+                        )
+                    except BaseException:
+                        probe.close_process_scope(scope)
+
+    def test_process_scope_requires_exclusive_subreaper_adoption(self):
+        try:
+            probe.process_scope_capability()
+        except (OSError, RuntimeError, ValueError) as exc:
+            self.skipTest(f"cgroup-v2 process containment unavailable: {type(exc).__name__}")
+        prior_subreaper = probe.process_child_subreaper()
+        unrelated = subprocess.Popen([os.sys.executable, "-c", "import time; time.sleep(30)"])
+        try:
+            with self.assertRaisesRegex(RuntimeError, "already has child processes"):
+                probe.prepare_process_scope(
+                    {"slot_id": f"synthetic-nonexclusive-{os.getpid()}"}
+                )
+            self.assertEqual(probe.process_child_subreaper(), prior_subreaper)
+        finally:
+            unrelated.kill()
+            unrelated.wait(timeout=5)
 
     def test_driver_discards_hostile_inherited_stdin_and_preserves_prompt_argument(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:

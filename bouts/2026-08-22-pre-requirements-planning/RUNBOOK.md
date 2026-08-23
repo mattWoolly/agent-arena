@@ -54,8 +54,8 @@ python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-plann
 
 The executor repeats the same preflight before every slot and refuses tracked
 worktree/index changes. Preflight also requires the recorded delegated
-cgroup-v2 parent and `cgroup.kill`; no target starts if containment is
-unavailable.
+cgroup-v2 parent, `cgroup.kill`, and Linux child-subreaper support; no target
+starts if either containment layer is unavailable.
 
 ## Excluded smoke only
 
@@ -89,7 +89,7 @@ After the user explicitly approves the frozen design, substitute the exact
 committed `freeze_id` below. The runner rejects a missing or different value.
 
 ```bash
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval f1c9311143d3632e14144170112ec79bee36fd899e3024281d38bfbaff4f870c
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval 65d952383df9b167dae3104e9bc33c30b864bf28f2b258353bdc85c34c8ad32e
 ```
 
 After an operator interruption, rerun the same command: the ledger must be a
@@ -112,7 +112,7 @@ manifest:
 
 ```bash
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json \
-  --approval f1c9311143d3632e14144170112ec79bee36fd899e3024281d38bfbaff4f870c \
+  --approval 65d952383df9b167dae3104e9bc33c30b864bf28f2b258353bdc85c34c8ad32e \
   --reserve [frozen-reserve-slot-id] \
   --replacement-for [ineligible-primary-or-reserve-attempt-id] \
   --exclusion-reason [preregistered-reason]
