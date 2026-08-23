@@ -56,7 +56,7 @@ def computed_cost(out: Path, model: str) -> tuple[float, str] | None:
 
     total = sum(price_one(u, per_request=True) for u in usage_by_id.values())
     if total > 0:
-        return round(total, 5), "computed:env/prices.json (per-request)"
+        return total, "computed:env/prices.json (per-request)"
     # Some proxies zero out per-message usage; fall back to the envelope's
     # aggregate usage (no long-context surcharge judgeable at this precision).
     rpath = out / "result.json"
@@ -64,7 +64,7 @@ def computed_cost(out: Path, model: str) -> tuple[float, str] | None:
         agg = json.loads(rpath.read_text()).get("usage") or {}
         total = price_one(agg, per_request=False)
         if total > 0:
-            return round(total, 5), "computed:env/prices.json (aggregate)"
+            return total, "computed:env/prices.json (aggregate)"
     return None
 
 
@@ -95,7 +95,7 @@ def proxy_usage_cost(out: Path):
         cached += details.get("cached_tokens") or 0
     if n == 0:
         return None
-    return round(total, 5), f"proxy-usage-log ({n} requests)", cached
+    return total, f"proxy-usage-log ({n} requests)", cached
 
 
 def main(out_dir: str, model: str) -> None:

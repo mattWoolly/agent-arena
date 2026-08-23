@@ -229,6 +229,7 @@ def scan_artifacts(
         raise CredentialGuardError("zero credential patterns available for scanning")
     entries = 0
     regular_bytes = 0
+    path_bytes = 0
     leaks = 0
     special_entries = 0
     escaping_symlinks = 0
@@ -240,8 +241,10 @@ def scan_artifacts(
             candidates.extend(scan_root.rglob("*"))
         for path in candidates:
             kind, data, byte_count = _scan_entry(path)
+            encoded_name = os.fsencode(path.name)
             entries += 1
             regular_bytes += byte_count
+            path_bytes += len(encoded_name)
             if kind == "special":
                 special_entries += 1
                 continue
@@ -254,7 +257,7 @@ def scan_artifacts(
                     resolved_target.resolve(strict=False).relative_to(root_resolved)
                 except ValueError:
                     escaping_symlinks += 1
-            if data is not None and any(secret in data for secret in secrets):
+            if any(secret in encoded_name or (data is not None and secret in data) for secret in secrets):
                 leaks += 1
     passed = leaks == 0 and special_entries == 0 and escaping_symlinks == 0
     return {
@@ -266,6 +269,7 @@ def scan_artifacts(
         ],
         "credential_pattern_count": len(secrets),
         "scanned_entry_count": entries,
+        "scanned_path_bytes": path_bytes,
         "scanned_regular_and_symlink_bytes": regular_bytes,
         "leak_match_count": leaks,
         "unsafe_special_entry_count": special_entries,

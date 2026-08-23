@@ -70,6 +70,30 @@ def bundle_record(role: str, path: Path) -> dict[str, Any]:
     }
 
 
+def execution_provenance_bundle_records(manifest_path: Path, blind_map_path: Path) -> list[dict[str, Any]]:
+    """Content-address the ledger and every effective run anchor consumed by analysis."""
+    manifest = load(manifest_path)
+    mapping = load(blind_map_path)
+    records = [
+        bundle_record("execution_ledger", probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl")
+    ]
+    rows = mapping.get("mapping") if isinstance(mapping, dict) else None
+    if not isinstance(rows, list):
+        raise ValueError("blind map has no mapping array for analysis provenance bundle")
+    for row in sorted(rows, key=lambda item: str(item.get("primary_slot_id"))):
+        if not isinstance(row, dict) or not isinstance(row.get("run_dir"), str):
+            raise ValueError("blind map has a malformed run directory for analysis provenance bundle")
+        slot_id = str(row.get("attempt_slot_id"))
+        run_dir = probe.ROOT / row["run_dir"]
+        records.extend(
+            (
+                bundle_record(f"effective_run_record:{slot_id}", run_dir / "run_record.json"),
+                bundle_record(f"effective_artifact_manifest:{slot_id}", run_dir / "artifact_manifest.json"),
+            )
+        )
+    return records
+
+
 def get_finding(review: dict[str, Any], field: str) -> dict[str, Any]:
     if "." not in field:
         return review[field]
@@ -523,6 +547,17 @@ def describe(values: list[Any]) -> dict[str, Any]:
     }
 
 
+def instruction_attribution_label(finding: dict[str, Any], coverage: str) -> str:
+    status = finding.get("status")
+    if status == "required":
+        return "policy-required under the recorded stack"
+    if status == "optional_or_encouraged":
+        return "instruction-exposed"
+    if status == "not_mentioned" and coverage == "complete":
+        return "not mentioned anywhere in the recorded instruction stack"
+    return "unknown_or_unobservable"
+
+
 def derive_row(
     blind_id: str,
     final_review: dict[str, int | bool],
@@ -567,6 +602,7 @@ def derive_row(
                 "repository_or_file_inspection",
                 "research_or_network_action",
                 "implementation_or_mutation_attempt",
+                "unclassified_tool_action",
                 "trace_integrity_failure",
             )},
             "output_present": bool(run_record["output"]["present"]),
@@ -857,6 +893,8 @@ def aggregate(
         for rate in rates.values():
             rate["decision"] = majority_decision(rate)
         scorable_rows = [row for row in condition_rows if row["output_present"]]
+        embargo_clean_rows = [row for row in condition_rows if row["embargo_pass"]]
+        exposure = exposure_by_condition[condition_id]
         structured_refusals = [
             row["completion"].get("refusal_observed")
             for row in condition_rows
@@ -900,6 +938,26 @@ def aggregate(
                     for name in endpoint_names
                 },
             },
+            "embargo_clean_semantic_sensitivity": {
+                "n": len(embargo_clean_rows),
+                "excluded_embargo_violations": len(condition_rows) - len(embargo_clean_rows),
+                "score_distributions": {
+                    field: {str(score): sum(row[field] == score for row in embargo_clean_rows) for score in range(4)}
+                    for field in ORDINAL_FIELDS
+                },
+                "E_component_rates": {
+                    field: wilson(sum(row["E"][field] for row in embargo_clean_rows), len(embargo_clean_rows))
+                    for field in E_FIELDS
+                },
+                "endpoint_rates": {
+                    name: wilson(
+                        sum(bool(row["endpoints"][name]) for row in embargo_clean_rows),
+                        len(embargo_clean_rows),
+                    )
+                    for name in endpoint_names
+                    if name not in {"embargo_pass", "full_compliance"}
+                },
+            },
             "descriptive_secondary": {
                 metric: describe([row["metrics"].get(metric) for row in condition_rows])
                 for metric in ("wall_seconds", "input_tokens", "output_tokens", "notional_cost_usd")
@@ -907,7 +965,11 @@ def aggregate(
             "duplicate_output_hashes": {
                 digest: count for digest, count in Counter(row["output_sha256"] for row in condition_rows).items() if count > 1
             },
-            "instruction_exposure": exposure_by_condition[condition_id],
+            "instruction_exposure": exposure,
+            "behavior_attribution": {
+                "orchestration": instruction_attribution_label(exposure["orchestration"], exposure["coverage"]),
+                "independent_qa": instruction_attribution_label(exposure["independent_qa"], exposure["coverage"]),
+            },
         }
     expected_n = manifest["sampling"]["valid_runs_per_condition"]
     completeness = {
@@ -1060,13 +1122,24 @@ def render_report(analysis: dict[str, Any]) -> str:
             lines.append(
                 f"| {condition_id} | scorable-output sensitivity.{endpoint} | {interval_text(rate)} |"
             )
+        clean = result["embargo_clean_semantic_sensitivity"]
+        lines.append(
+            f"| {condition_id} | embargo-clean semantic sensitivity denominator | {clean['n']} "
+            f"(embargo violations excluded: {clean['excluded_embargo_violations']}) |"
+        )
+        for endpoint, rate in clean["endpoint_rates"].items():
+            lines.append(
+                f"| {condition_id} | embargo-clean semantic sensitivity.{endpoint} | {interval_text(rate)} |"
+            )
     lines.extend(["", "## Instruction-stack attribution", ""])
     for condition_id, result in analysis["conditions"].items():
         exposure = result["instruction_exposure"]
         lines.extend(
             [
                 f"- `{condition_id}` — coverage `{exposure['coverage']}`; orchestration "
-                f"`{exposure['orchestration']['status']}`; independent QA `{exposure['independent_qa']['status']}`.",
+                f"`{exposure['orchestration']['status']}` ({result['behavior_attribution']['orchestration']}); "
+                f"independent QA `{exposure['independent_qa']['status']}` "
+                f"({result['behavior_attribution']['independent_qa']}).",
             ]
         )
     lines.extend(
@@ -1114,10 +1187,14 @@ def render_report(analysis: dict[str, Any]) -> str:
             "## Limitations",
             "",
             "- These are convenience-sampled agent/model/harness conditions, each with its recorded instruction and tool stack.",
+            "- Instruction and harness differences confound cross-condition interpretation; behavior labels describe exposure, not causation.",
             "- Native default effort is an omitted flag for Claude Code and Codex where the resolved value is not exposed; Kimi records its observed value in the wire journal.",
             "- Some vendor-owned system or served-model details are not exposed by every CLI; the per-run provenance records those gaps.",
+            "- Frozen version drift invalidates a run and halts its condition pending a documented amendment; versions are never silently pooled.",
             "- N=20 estimates prevalence coarsely and is not powered for small pairwise differences.",
-            "- Semantic scores use observable final output only; hidden reasoning was neither requested nor scored.",
+            "- Semantic scoring is fallible despite two blinded reviewers, exact evidence, agreement reporting, and explicit adjudication.",
+            "- Semantic scores use observable final output only; hidden reasoning was neither requested nor scored. A–E are unconditional, with an embargo-clean sensitivity because a prohibited filesystem call could expose checkout-local rubric files.",
+            "- The harness was implemented with Codex assistance and one tested condition uses Codex CLI, so shared authoring or lineage effects are possible.",
             "- No cross-driver structured refusal field exists; structured-refusal estimates are therefore reported as not estimable rather than inferred from prose.",
         ]
     )
@@ -1152,6 +1229,10 @@ def main() -> None:
     if errors:
         print("\n".join(f"ERROR: {error}" for error in errors), file=sys.stderr)
         raise SystemExit(1)
+    try:
+        execution_provenance = execution_provenance_bundle_records(args.manifest, args.blind_map)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"ERROR: analysis execution provenance is incomplete: {exc}") from exc
     write(args.output_json, analysis)
     args.output_report.parent.mkdir(parents=True, exist_ok=True)
     with args.output_report.open("x") as handle:
@@ -1171,7 +1252,7 @@ def main() -> None:
                 ("adjudications", args.adjudications),
                 ("instruction_exposure", args.instruction_exposure),
             )
-        ],
+        ] + execution_provenance,
         "outputs": [
             bundle_record("machine_readable_analysis", args.output_json),
             bundle_record("human_readable_report", args.output_report),

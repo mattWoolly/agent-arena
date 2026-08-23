@@ -5,7 +5,9 @@
     "claude-code--claude-opus-5": {
       "driver": "claude",
       "cli_version": "2.1.241 (Claude Code)",
-      "environment_policy": "minimal-allowlist-v1",
+      "environment_policy": "minimal-allowlist-v3",
+      "execution_isolation_policy": "rubric-free staged driver; nondumpable parent; atomic output transfer",
+      "temp_root": "/tmp",
       "credential_environment_fields_present": [
         "ANTHROPIC_API_KEY"
       ],
@@ -18,7 +20,9 @@
     "codex--gpt-5.6-sol": {
       "driver": "codex",
       "cli_version": "codex-cli 0.149.0",
-      "environment_policy": "minimal-allowlist-v1",
+      "environment_policy": "minimal-allowlist-v3",
+      "execution_isolation_policy": "rubric-free staged driver; nondumpable parent; atomic output transfer",
+      "temp_root": "/tmp",
       "credential_environment_fields_present": [],
       "auth_present": true,
       "credential_source_schema": "json",
@@ -29,7 +33,9 @@
     "kimi-code--kimi-k3": {
       "driver": "kimi",
       "cli_version": "kimi-code 0.27.0",
-      "environment_policy": "minimal-allowlist-v1",
+      "environment_policy": "minimal-allowlist-v3",
+      "execution_isolation_policy": "rubric-free staged driver; nondumpable parent; atomic output transfer",
+      "temp_root": "/tmp",
       "credential_environment_fields_present": [],
       "credential_source_schema": "toml",
       "credential_secret_field_count": 1,

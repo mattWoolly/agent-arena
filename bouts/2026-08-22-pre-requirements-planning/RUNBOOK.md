@@ -22,10 +22,10 @@ python3 bin/plan_experiment.py manifest --phase smoke --output bouts/2026-08-22-
 python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning/MANIFEST.json
 python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-smoke/MANIFEST.json
 python3 bin/test_plan_experiment.py
-python3 bin/test_served_model.py
+ARENA_SYNTHETIC_ONLY=1 python3 bin/test_served_model.py
 python3 bin/test_summarize_integrity.py
 bin/check-graders.sh
-ruff check bin/plan_experiment.py bin/credential_guard.py bin/test_plan_experiment.py analysis/2026-08-22-pre-requirements-planning/analyze.py
+ruff check bin/plan_experiment.py bin/credential_guard.py bin/test_plan_experiment.py bin/test_served_model.py bin/metrics.py bin/metrics_codex.py bin/metrics_kimi.py analysis/2026-08-22-pre-requirements-planning/analyze.py
 bash -n bin/run-task.sh bin/run-task-codex.sh bin/run-task-kimi.sh
 git diff --check
 ```
@@ -82,7 +82,7 @@ After the user explicitly approves the frozen design, substitute the exact
 committed `freeze_id` below. The runner rejects a missing or different value.
 
 ```bash
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval 4777b35b8e9aabbbf3ecef5bcfba6905cec49dd84eeb567137504aa0677f346c
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval 973f73bdd2f0773e752e19a039071fc005cda3def46e06896e03ee1b4507f9df
 ```
 
 After an operator interruption, rerun the same command: the ledger must be a
@@ -102,7 +102,7 @@ manifest:
 
 ```bash
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json \
-  --approval 4777b35b8e9aabbbf3ecef5bcfba6905cec49dd84eeb567137504aa0677f346c \
+  --approval 973f73bdd2f0773e752e19a039071fc005cda3def46e06896e03ee1b4507f9df \
   --reserve [frozen-reserve-slot-id] \
   --replacement-for [ineligible-primary-or-reserve-attempt-id] \
   --exclusion-reason [preregistered-reason]

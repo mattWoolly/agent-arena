@@ -28,7 +28,9 @@
       "requested_model": "claude-opus-5",
       "model_argument": "claude-opus-5",
       "output_label": "claude-opus-5",
-      "expected_model_substring": "claude-opus-5",
+      "expected_model_identities": [
+        "claude-opus-5"
+      ],
       "expected_cli_version": "2.1.241 (Claude Code)",
       "expected_base_url": "https://api.anthropic.com",
       "model_env_expected": "absent",
@@ -49,7 +51,9 @@
       "requested_model": "gpt-5.6-sol",
       "model_argument": "gpt-5.6-sol",
       "output_label": "gpt-5.6-sol-codex",
-      "expected_model_substring": "gpt-5.6-sol",
+      "expected_model_identities": [
+        "gpt-5.6-sol"
+      ],
       "expected_cli_version": "codex-cli 0.149.0",
       "expected_base_url": "https://api.openai.com (native)",
       "effort": {
@@ -58,8 +62,8 @@
         "observed_value": "not_exposed"
       },
       "expected_effort_record": "codex-default",
-      "expected_setting_sources": "none (--ignore-user-config, --ignore-rules, fresh auth-only CODEX_HOME)",
-      "instruction_configuration": "fresh auth-only per-run CODEX_HOME with user config and rules disabled",
+      "expected_setting_sources": "none (--ignore-user-config, --ignore-rules, fresh auth-only HOME/CODEX_HOME)",
+      "instruction_configuration": "fresh auth-only per-run HOME/CODEX_HOME with user config and rules disabled",
       "instruction_text_observability": "partial",
       "tool_configuration": "native default tools enabled; schemas opaque unless present in session rollout"
     },
@@ -69,7 +73,9 @@
       "requested_model": "kimi-k3",
       "model_argument": "arena/k3",
       "output_label": "kimi-k3-kimicode",
-      "expected_model_substring": "kimi-k3",
+      "expected_model_identities": [
+        "kimi-k3"
+      ],
       "expected_cli_version": "kimi-code 0.27.0",
       "expected_base_url": "https://api.moonshot.ai/v1 (platform, metered)",
       "effort": {
@@ -161,6 +167,7 @@
       "full_compliance"
     ],
     "interval": "two-sided 95% Wilson score interval",
+    "embargo_clean_semantic_sensitivity": true,
     "no_omnibus_score_or_confirmatory_pairwise_ranking": true,
     "hidden_reasoning_scored": false
   },
@@ -169,6 +176,7 @@
     "required_common": [
       "agent_exit",
       "credential_scan.raw.json",
+      "credential_scan.runtime.json",
       "metrics.json",
       "peek_check",
       "prompt.txt",
@@ -212,8 +220,8 @@
     },
     {
       "path": "tasks/16-pre-requirements-plan/SCORING.md",
-      "sha256": "25315b99306d123640e1a2a06e873ed9be79bf3fe8fbc01dd5a072954c199bff",
-      "bytes": 5977
+      "sha256": "6f5643fd2db964cb480a99d7f55c64a8426624c0f6c86536eb7bd85f2c574608",
+      "bytes": 6279
     },
     {
       "path": "tasks/16-pre-requirements-plan/review.schema.json",
@@ -227,23 +235,23 @@
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/DESIGN.md",
-      "sha256": "8bc9d34d96437240baf1e11655e3405d6fd916f9ab97655e9f69f5660e5c886b",
-      "bytes": 18675
+      "sha256": "14aa8a827de89cdd431d3382a61c15b38445b99f43bc76964b3e8cd068fd19e6",
+      "bytes": 21180
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/CONFIGURATION.json",
-      "sha256": "7eda52ec58271dc1df74b0033946a18bd0627745674d5efba15604a6ed7aed32",
-      "bytes": 1621
+      "sha256": "aa08a7f9f150cea36227572c69768077e96fe97cf56eedd2d21d46d934195e39",
+      "bytes": 2029
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/analyze.py",
-      "sha256": "7a313bac59fb026eea89376c2391abc39e1c8872264e99901f3ae9b8a0170769",
-      "bytes": 56865
+      "sha256": "90221afa2d76f11bda0bec2ccf09b7e09f85c60cb70d280a1a155ab360bcb91b",
+      "bytes": 61637
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/REPORT_TEMPLATE.md",
-      "sha256": "ba284839f6d2c2e8ea67e8a1a982e760f58d7ad62bbad1782d3c8df4331384f4",
-      "bytes": 4078
+      "sha256": "1dcd4787ad472d364a56211964a1624a68c07cb11ce44727ce30c4c6bbe0a304",
+      "bytes": 4179
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/adjudications.template.json",
@@ -267,43 +275,43 @@
     },
     {
       "path": "bin/plan_experiment.py",
-      "sha256": "83c7552ff71d404101bc023f0b4eaa4c30e94d39e6049779fb057bb4640a8d6b",
-      "bytes": 122711
+      "sha256": "7e4ea439857853542cdd9f1330bbc960f8f89e7941a76514048285578a2e56ad",
+      "bytes": 146234
     },
     {
       "path": "bin/credential_guard.py",
-      "sha256": "529366a03b03ab02037ff30f1d44352b764638ec07f0363b06fd2165af487416",
-      "bytes": 11149
+      "sha256": "0e2f0992e0e26455ff52d1ed18909d7250966614ac5633e0be1c645d2afc3eaf",
+      "bytes": 11332
     },
     {
       "path": "bin/run-task.sh",
-      "sha256": "e8847ca83cb876708fb73f009fc40c506507fcb3180ed88fdd5c649980acb208",
-      "bytes": 8179
+      "sha256": "fb1f86b6e766919fa0911bffe68887d2a8a4c57135847a126f9b63fc32fc9ad8",
+      "bytes": 10816
     },
     {
       "path": "bin/run-task-codex.sh",
-      "sha256": "bfe71caa6ad5c7a2cb483958f68684aa998113eba0b646d4c19b34727cfc9dd5",
-      "bytes": 7284
+      "sha256": "f9d142338004025beaeaca75494a98c84bdfacd085aca9ade752d5352b8e3477",
+      "bytes": 9789
     },
     {
       "path": "bin/run-task-kimi.sh",
-      "sha256": "37902ff6feb3ba88d29d37e9a76c82a772397135d49c62b426829fc97a8add42",
-      "bytes": 7488
+      "sha256": "a56030b0d312026e25205b0d8d7ded61451954efac6b2b84b6241eb30c3182a3",
+      "bytes": 10019
     },
     {
       "path": "bin/metrics.py",
-      "sha256": "d327471cfe04ed4c28af6c6cde3dd08a459cc19db7208ca914fc4a7a4e99ae4b",
-      "bytes": 8676
+      "sha256": "86da6dc8170d2322faca37a0de49a8183018850206e290c7983a0030e28dd82c",
+      "bytes": 8646
     },
     {
       "path": "bin/metrics_codex.py",
-      "sha256": "7416cdb2e41c7cba234700110487a94e006d45ffce2daff05065c53ac0e316b9",
-      "bytes": 4342
+      "sha256": "3902ce7fecdf4e814e739f334722ada1baf8fbad97a353cb1154853952ab9700",
+      "bytes": 4332
     },
     {
       "path": "bin/metrics_kimi.py",
-      "sha256": "901cafc06536e811a125308372f5af18940358b005ec7e99c5a28b169db5fc46",
-      "bytes": 5087
+      "sha256": "2fbbe1df8f5973abdb779f7458dac735eac1f3ac7f0926b5e309e202ecf2f46a",
+      "bytes": 5077
     },
     {
       "path": "bin/served_model.py",
@@ -321,5 +329,5 @@
       "bytes": 1
     }
   ],
-  "freeze_id": "5f3c6676c0d7e2de2dce3979fb469aa4ad6f524bc820658aef9f22b19cd761c1"
+  "freeze_id": "bd4d11a4ca9c828400ad75147375d656adbae1a357a9e1c141940fd9d903328c"
 }

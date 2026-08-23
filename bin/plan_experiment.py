@@ -8,6 +8,7 @@ artifacts are content-addressed derivatives.
 from __future__ import annotations
 
 import argparse
+import ctypes
 import hashlib
 import hmac
 import itertools
@@ -20,6 +21,7 @@ import signal
 import stat
 import subprocess
 import sys
+import tempfile
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -29,6 +31,28 @@ import credential_guard
 
 
 ROOT = Path(__file__).resolve().parent.parent
+SAFE_TEMP_ROOT = Path("/tmp")
+STAGED_DRIVER_FILES = {
+    "claude": (
+        "bin/run-task.sh",
+        "bin/credential_guard.py",
+        "bin/metrics.py",
+        "bin/served_model.py",
+        "env/prices.json",
+    ),
+    "codex": (
+        "bin/run-task-codex.sh",
+        "bin/credential_guard.py",
+        "bin/metrics_codex.py",
+        "env/prices.json",
+    ),
+    "kimi": (
+        "bin/run-task-kimi.sh",
+        "bin/credential_guard.py",
+        "bin/metrics_kimi.py",
+        "env/prices.json",
+    ),
+}
 TASK_REL = "tasks/16-pre-requirements-plan"
 PROMPT_REL = f"{TASK_REL}/PROMPT.md"
 FROZEN_PROMPT_SHA256 = "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0"
@@ -66,6 +90,7 @@ RAW_ARTIFACTS = {
 COMMON_ARTIFACTS = [
     "agent_exit",
     "credential_scan.raw.json",
+    "credential_scan.runtime.json",
     "metrics.json",
     "peek_check",
     "prompt.txt",
@@ -87,7 +112,7 @@ DERIVED_ARTIFACTS = [
 OBSERVER_ARTIFACTS = ["final_output.txt", "embargo.json", "instruction_context.json", "run_record.json"]
 CLAUDE_TOP_LEVEL_EVENTS = {"assistant", "result", "system", "user"}
 CLAUDE_SYSTEM_SUBTYPES = {"init"}
-CLAUDE_PASSIVE_BLOCKS = {"redacted_thinking", "text", "thinking", "tool_result"}
+CLAUDE_PASSIVE_BLOCKS = {"redacted_thinking", "text", "thinking"}
 CLAUDE_ACTION_BLOCKS = {"mcp_tool_use", "server_tool_use", "tool_use"}
 CODEX_TOP_LEVEL_EVENTS = {
     "error",
@@ -119,13 +144,15 @@ CALL_SESSION_TYPES = {
     "web_search_call",
 }
 PASSIVE_SESSION_RESPONSE_TYPES = {
+    "message",
+    "reasoning",
+}
+CODEX_SESSION_RESULT_TYPES = {
     "computer_call_output",
     "custom_tool_call_output",
     "function_call_output",
     "local_shell_call_output",
     "mcp_tool_call_output",
-    "message",
-    "reasoning",
     "web_search_call_output",
 }
 CODEX_SESSION_TOP_LEVEL_EVENTS = {
@@ -165,17 +192,52 @@ KIMI_WIRE_PASSIVE_TYPES = {
     "session.create",
     "session.update",
     "tools.set_active_tools",
+    "usage.record",
 }
 KIMI_WIRE_LOOP_PASSIVE_TYPES = {
     "assistant.message",
     "assistant.reasoning",
-    "tool.result",
+    "step.begin",
+    "step.end",
     "user.message",
+}
+CREDENTIAL_RECEIPT_FIELDS = {
+    "schema_version",
+    "driver",
+    "source_schema",
+    "source_redacted_structural_inventory_sha256",
+    "credential_pattern_count",
+    "scanned_entry_count",
+    "scanned_path_bytes",
+    "scanned_regular_and_symlink_bytes",
+    "leak_match_count",
+    "unsafe_special_entry_count",
+    "escaping_symlink_count",
+    "pass",
 }
 
 
 class SecretLeakError(RuntimeError):
     """Raised before normalization when a driver marks publishable evidence unsafe."""
+
+
+class OperatorTermination(KeyboardInterrupt):
+    """Raised when an external signal interrupts an active driver attempt."""
+
+    def __init__(self, signum: int):
+        self.signum = signum
+        super().__init__(f"operator termination signal {signum}")
+
+
+def process_dumpable(value: int | None = None) -> int:
+    """Get or set Linux dumpability so a target cannot read the runner's cwd, fds, or environment."""
+    libc = ctypes.CDLL(None, use_errno=True)
+    operation = 3 if value is None else 4  # PR_GET_DUMPABLE / PR_SET_DUMPABLE
+    result = libc.prctl(operation, 0 if value is None else value, 0, 0, 0)
+    if result < 0:
+        error = ctypes.get_errno()
+        raise OSError(error, os.strerror(error))
+    return result
 
 
 def utc_now() -> str:
@@ -221,7 +283,7 @@ def default_conditions() -> list[dict[str, Any]]:
             "requested_model": "claude-opus-5",
             "model_argument": "claude-opus-5",
             "output_label": "claude-opus-5",
-            "expected_model_substring": "claude-opus-5",
+            "expected_model_identities": ["claude-opus-5"],
             "expected_cli_version": "2.1.241 (Claude Code)",
             "expected_base_url": "https://api.anthropic.com",
             "model_env_expected": "absent",
@@ -238,13 +300,13 @@ def default_conditions() -> list[dict[str, Any]]:
             "requested_model": "gpt-5.6-sol",
             "model_argument": "gpt-5.6-sol",
             "output_label": "gpt-5.6-sol-codex",
-            "expected_model_substring": "gpt-5.6-sol",
+            "expected_model_identities": ["gpt-5.6-sol"],
             "expected_cli_version": "codex-cli 0.149.0",
             "expected_base_url": "https://api.openai.com (native)",
             "effort": {"mode": "native_default", "cli_argument": None, "observed_value": "not_exposed"},
             "expected_effort_record": "codex-default",
-            "expected_setting_sources": "none (--ignore-user-config, --ignore-rules, fresh auth-only CODEX_HOME)",
-            "instruction_configuration": "fresh auth-only per-run CODEX_HOME with user config and rules disabled",
+            "expected_setting_sources": "none (--ignore-user-config, --ignore-rules, fresh auth-only HOME/CODEX_HOME)",
+            "instruction_configuration": "fresh auth-only per-run HOME/CODEX_HOME with user config and rules disabled",
             "instruction_text_observability": "partial",
             "tool_configuration": "native default tools enabled; schemas opaque unless present in session rollout",
         },
@@ -254,7 +316,7 @@ def default_conditions() -> list[dict[str, Any]]:
             "requested_model": "kimi-k3",
             "model_argument": "arena/k3",
             "output_label": "kimi-k3-kimicode",
-            "expected_model_substring": "kimi-k3",
+            "expected_model_identities": ["kimi-k3"],
             "expected_cli_version": "kimi-code 0.27.0",
             "expected_base_url": "https://api.moonshot.ai/v1 (platform, metered)",
             "effort": {"mode": "native_default", "cli_argument": None, "observed_value": "max"},
@@ -432,6 +494,7 @@ def build_manifest(
                 "full_compliance",
             ],
             "interval": "two-sided 95% Wilson score interval",
+            "embargo_clean_semantic_sensitivity": True,
             "no_omnibus_score_or_confirmatory_pairwise_ranking": True,
             "hidden_reasoning_scored": False,
         },
@@ -751,6 +814,17 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                         "event_type": block_type,
                         "arguments": _call_arguments(block.get("input")),
                     }
+                elif block_type == "tool_result":
+                    event_id = str(block.get("tool_use_id") or f"line-{event['_line']}-block-{index}")
+                    if event_id not in calls:
+                        calls[event_id] = {
+                            "event_id": event_id,
+                            "source": "transcript.jsonl",
+                            "line": event["_line"],
+                            "name": "observed_tool_result_without_call",
+                            "event_type": "tool_result",
+                            "arguments": None,
+                        }
                 elif block_type not in CLAUDE_PASSIVE_BLOCKS:
                     unknown.append(
                         f"transcript.jsonl:{event['_line']}:unknown {event_type} content type {block_type!r}"
@@ -823,6 +897,20 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                         f"session.jsonl:{event['_line']}:unknown event message type {payload_type!r}"
                     )
                     continue
+            elif payload_type in CODEX_SESSION_RESULT_TYPES:
+                event_id = str(
+                    payload.get("call_id") or payload.get("id") or f"session-line-{event['_line']}"
+                )
+                if event_id not in calls:
+                    calls[event_id] = {
+                        "event_id": event_id,
+                        "source": "session.jsonl",
+                        "line": event["_line"],
+                        "name": "observed_tool_result_without_call",
+                        "event_type": str(payload_type),
+                        "arguments": None,
+                    }
+                continue
             elif payload_type in PASSIVE_SESSION_RESPONSE_TYPES:
                 continue
             elif payload_type not in CALL_SESSION_TYPES:
@@ -854,6 +942,20 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                 continue
             if role not in KIMI_TRANSCRIPT_ROLES:
                 unknown.append(f"transcript.jsonl:{event['_line']}:unknown message role {role!r}")
+                continue
+            if role == "tool":
+                event_id = str(
+                    event.get("tool_call_id") or event.get("id") or f"line-{event['_line']}-tool-result"
+                )
+                if event_id not in calls:
+                    calls[event_id] = {
+                        "event_id": event_id,
+                        "source": "transcript.jsonl",
+                        "line": event["_line"],
+                        "name": "observed_tool_result_without_call",
+                        "event_type": "tool_result",
+                        "arguments": None,
+                    }
                 continue
             if role != "assistant":
                 continue
@@ -893,6 +995,29 @@ def detect_tool_events(driver: str, events: list[dict[str, Any]], run_dir: Path)
                 unknown.append(f"wire.jsonl:{event['_line']}:malformed loop event")
                 continue
             loop_type = loop_event.get("type")
+            if loop_type == "content.part":
+                part = loop_event.get("part")
+                if not isinstance(part, dict) or part.get("type") not in {"text", "think"}:
+                    unknown.append(
+                        f"wire.jsonl:{event['_line']}:unknown or malformed content part {part.get('type') if isinstance(part, dict) else None!r}"
+                    )
+                continue
+            if loop_type == "tool.result":
+                event_id = str(
+                    loop_event.get("toolCallId")
+                    or loop_event.get("uuid")
+                    or f"wire-line-{event['_line']}-tool-result"
+                )
+                if event_id not in calls:
+                    calls[event_id] = {
+                        "event_id": event_id,
+                        "source": "wire.jsonl",
+                        "line": event["_line"],
+                        "name": "observed_tool_result_without_call",
+                        "event_type": "tool.result",
+                        "arguments": None,
+                    }
+                continue
             if loop_type in KIMI_WIRE_LOOP_PASSIVE_TYPES:
                 continue
             if loop_type not in {"tool.call", "tool.call.delta", "tool.call.started"}:
@@ -941,13 +1066,16 @@ def classify_calls(calls: list[dict[str, Any]], workspace_changed: bool) -> dict
         or any(token in surface for token in (
             "tools.view_image", "tools.read", "tools.exec_command", " read ", " cat ", " sed -n", " head ",
             " tail ", " grep ", " rg ", " find ", " ls ", " pwd", "git status", "git diff",
+            "open(", ".read_text(", ".read_bytes(", "os.listdir(", "os.scandir(", "glob.glob(",
+            "/proc/",
         ))
         for name, surface in zip(names, surfaces)
     )
     researched = any(
         any(token in surface for token in (
             "websearch", "web_search", "webfetch", "web__run", "web.run", "fetchurl", "fetch_url",
-            "research", "curl ", "wget ", "http://", "https://",
+            "research", "curl ", "wget ", "http://", "https://", "socket.", "requests.",
+            "urllib.", "http.client", "httpx.", "aiohttp", "dns.resolver",
         ))
         for surface in surfaces
     )
@@ -956,16 +1084,20 @@ def classify_calls(calls: list[dict[str, Any]], workspace_changed: bool) -> dict
         or event_type == "file_change"
         or any(token in surface for token in (
             "apply_patch", "tools.apply_patch", " sed -i", " tee ", "touch ", "mkdir ", "rm ", "mv ",
-            "cp ", "git commit", "npm install", "pip install", " > ", ">>",
+            "cp ", "git commit", "npm install", "pip install", " > ", ">>", ".write_text(",
+            ".write_bytes(", "os.remove(", "os.unlink(", "os.rename(", "os.replace(", "shutil.move(",
         ))
+        or bool(re.search(r"open\s*\([^)]*,\s*\\?[\"'][wax+]", surface))
         for name, event_type, surface in zip(names, types, surfaces)
     )
+    unclassified = bool(calls) and not any((spawned, inspected, researched, mutated))
     return {
         "target_originated_tool_or_function_call": bool(calls),
         "spawned_agent": spawned,
         "repository_or_file_inspection": inspected,
         "research_or_network_action": researched,
         "implementation_or_mutation_attempt": mutated,
+        "unclassified_tool_action": unclassified,
     }
 
 
@@ -1103,6 +1235,45 @@ def observed_model_and_effort(driver: str, events: list[dict[str, Any]], context
     return {"models": models, "model_evidence": evidence, "identity_kind": identity_kind, "observed_effort": effort}
 
 
+def credential_receipt_issues(path: Path, driver: str) -> list[str]:
+    """Validate only aggregate scanner evidence; never load or expect secret values."""
+    if path.is_symlink() or not path.is_file():
+        return [f"missing regular credential scan receipt: {path.name}"]
+    try:
+        receipt = load_json(path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"malformed credential scan receipt {path.name}: {type(exc).__name__}"]
+    if not isinstance(receipt, dict):
+        return [f"credential scan receipt is not an object: {path.name}"]
+    errors = []
+    if set(receipt) != CREDENTIAL_RECEIPT_FIELDS:
+        errors.append(f"credential scan receipt fields differ from frozen schema: {path.name}")
+    if receipt.get("schema_version") != 1 or receipt.get("driver") != driver:
+        errors.append(f"credential scan receipt identity mismatch: {path.name}")
+    positive_counts = ("credential_pattern_count", "scanned_entry_count", "scanned_path_bytes")
+    zero_counts = ("leak_match_count", "unsafe_special_entry_count", "escaping_symlink_count")
+    if any(
+        not isinstance(receipt.get(key), int)
+        or isinstance(receipt.get(key), bool)
+        or receipt[key] <= 0
+        for key in positive_counts
+    ):
+        errors.append(f"credential scan receipt has invalid coverage: {path.name}")
+    byte_count = receipt.get("scanned_regular_and_symlink_bytes")
+    if not isinstance(byte_count, int) or isinstance(byte_count, bool) or byte_count < 0:
+        errors.append(f"credential scan receipt has invalid byte count: {path.name}")
+    if any(
+        not isinstance(receipt.get(key), int)
+        or isinstance(receipt.get(key), bool)
+        or receipt[key] != 0
+        for key in zero_counts
+    ):
+        errors.append(f"credential scan receipt reports unsafe content: {path.name}")
+    if receipt.get("pass") is not True:
+        errors.append(f"credential scan receipt did not pass: {path.name}")
+    return errors
+
+
 def _normalize_dynamic_policy_value(value: Any) -> Any:
     """Remove per-run scratch paths without weakening policy-content comparison."""
     if isinstance(value, dict):
@@ -1110,9 +1281,10 @@ def _normalize_dynamic_policy_value(value: Any) -> Any:
     if isinstance(value, list):
         return [_normalize_dynamic_policy_value(item) for item in value]
     if isinstance(value, str):
-        value = re.sub(r"/tmp/arena-ws\.[A-Za-z0-9]+", "[workspace]", value)
+        stage_prefix = r"(?:arena-plan-attempt\.[A-Za-z0-9_]+/runtime/)?"
+        value = re.sub(rf"/tmp/{stage_prefix}arena-ws\.[A-Za-z0-9]+", "[workspace]", value)
         return re.sub(
-            r"/tmp/arena-(?:claude|codex|kimi)-home\.[A-Za-z0-9]+",
+            rf"/tmp/{stage_prefix}arena-(?:claude|codex|kimi)-home\.[A-Za-z0-9]+",
             "[auth-home]",
             value,
         )
@@ -1340,8 +1512,14 @@ def observe_run(
         except (OSError, json.JSONDecodeError) as exc:
             context_issues.append(f"malformed {path.name}: {exc}")
     required = COMMON_ARTIFACTS + RAW_ARTIFACTS[driver]
-    missing = [name for name in required if not (run_dir / name).is_file()]
+    missing = [
+        name
+        for name in required
+        if (run_dir / name).is_symlink() or not (run_dir / name).is_file()
+    ]
     technical_issues = [f"missing required artifact: {name}" for name in missing]
+    for name in ("credential_scan.raw.json", "credential_scan.runtime.json"):
+        technical_issues.extend(credential_receipt_issues(run_dir / name, driver))
     technical_issues.extend(f"malformed transcript line: {line}" for line in malformed)
     technical_issues.extend(f"unknown trace shape: {value}" for value in trace_unknown)
     technical_issues.extend(context_issues)
@@ -1384,10 +1562,11 @@ def observe_run(
             )
     if driver == "claude" and condition.get("model_env_expected") == "absent" and run_env.get("model_env") != "none":
         technical_issues.append("unexpected Claude model environment changed the frozen endpoint configuration")
-    expected_model = condition.get("expected_model_substring")
-    if observed["models"] and any(expected_model not in model for model in observed["models"]):
+    expected_models = set(condition.get("expected_model_identities") or [])
+    if observed["models"] and any(model not in expected_models for model in observed["models"]):
         technical_issues.append(
-            f"model mismatch: every observable identity must contain {expected_model!r}, observed {observed['models']!r}"
+            f"model mismatch: every observable identity must equal one of {sorted(expected_models)!r}, "
+            f"observed {observed['models']!r}"
         )
     if not observed["models"]:
         technical_issues.append("observable model identity missing")
@@ -1556,6 +1735,15 @@ def verify_artifacts(run_dir: Path) -> list[str]:
         missing_required = required - set(actual)
         if missing_required:
             errors.append(f"required artifacts absent: {sorted(missing_required)}")
+        wrong_types = sorted(name for name in required & set(actual) if actual[name] != "regular_file")
+        if wrong_types:
+            errors.append(f"required artifacts are not regular files: {wrong_types}")
+        for name in (
+            "credential_scan.raw.json",
+            "credential_scan.runtime.json",
+            "credential_scan.json",
+        ):
+            errors.extend(credential_receipt_issues(run_dir / name, driver))
     slot_id = ((run_record.get("slot") or {}).get("slot_id")) if isinstance(run_record, dict) else None
     if manifest.get("slot_id") != slot_id:
         errors.append("artifact manifest slot_id does not match run record")
@@ -1586,12 +1774,10 @@ def eligible_exclusion_reasons(record: dict[str, Any]) -> list[str]:
         reasons.add("corrupted_or_missing_raw_artifact_due_to_harness")
     completion = record.get("completion") or {}
     embargo = record.get("embargo") or {}
-    models = ((record.get("configuration") or {}).get("observed_identity") or {}).get("models") or []
     exit_code = completion.get("agent_exit")
     no_attributable_target_activity = (
         not (record.get("output") or {}).get("present")
         and not embargo.get("target_originated_tool_or_function_call")
-        and not models
     )
     if no_attributable_target_activity and exit_code not in {0, None, 124, 130, 137, 143}:
         reasons.add("transport_or_service_failure_before_request_acceptance")
@@ -1644,6 +1830,14 @@ def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, A
             r"[0-9a-f]{64}", str(row.get("instruction_policy_signature_sha256") or "")
         ):
             errors.append(f"{location} eligible attempt lacks an instruction/tool policy signature")
+        for path_key, hash_key in (
+            ("failure_receipt", "failure_receipt_sha256"),
+            ("quarantine_receipt", "quarantine_receipt_sha256"),
+        ):
+            if row.get(path_key) is not None and not re.fullmatch(
+                r"[0-9a-f]{64}", str(row.get(hash_key) or "")
+            ):
+                errors.append(f"{location} {path_key} lacks a content hash anchor")
         preflight = row.get("preflight")
         if not isinstance(preflight, dict):
             errors.append(f"{location} lacks a treatment preflight record")
@@ -1814,7 +2008,6 @@ def driver_environment(driver: str, source: dict[str, str]) -> dict[str, str]:
         "SSL_CERT_DIR",
         "SSL_CERT_FILE",
         "TERM",
-        "TMPDIR",
         "TZ",
         "USER",
         "XDG_RUNTIME_DIR",
@@ -1824,9 +2017,25 @@ def driver_environment(driver: str, source: dict[str, str]) -> dict[str, str]:
         for key, value in source.items()
         if key in operational or key.startswith("LC_")
     }
-    for name in ("ARENA_CLAUDE_HOME", "ARENA_CODEX_HOME", "ARENA_KIMI_HOME"):
-        if source.get(name):
-            env[name] = source[name]
+    try:
+        temp_metadata = SAFE_TEMP_ROOT.lstat()
+        temp_root = SAFE_TEMP_ROOT.resolve(strict=True)
+    except OSError as exc:
+        raise ValueError(f"safe temp root is unavailable: {type(exc).__name__}") from exc
+    if SAFE_TEMP_ROOT.is_symlink() or not stat.S_ISDIR(temp_metadata.st_mode):
+        raise ValueError("safe temp root must be a real directory, not a symlink")
+    if temp_root == ROOT or ROOT in temp_root.parents:
+        raise ValueError("safe temp root must be outside the Agent Arena repository")
+    if temp_root.stat().st_dev != ROOT.stat().st_dev:
+        raise ValueError("safe temp root must share a filesystem with the repository for atomic transfer")
+    env["TMPDIR"] = str(temp_root)
+    source_name = {
+        "claude": "ARENA_CLAUDE_HOME",
+        "codex": "ARENA_CODEX_HOME",
+        "kimi": "ARENA_KIMI_HOME",
+    }[driver]
+    if source.get(source_name):
+        env[source_name] = source[source_name]
     env["ARENA_TIMEOUT_S"] = "600"
     env["ARENA_PLAN_PROBE"] = "1"
     if driver == "claude":
@@ -1860,6 +2069,79 @@ def driver_command(manifest: dict[str, Any], slot: dict[str, Any]) -> tuple[list
     if driver == "kimi":
         env["ARENA_KIMI_LABEL"] = condition["output_label"]
     return command, env
+
+
+def prepare_staged_driver(
+    manifest: dict[str, Any], slot: dict[str, Any], env: dict[str, str]
+) -> tuple[Path, Path, list[str], dict[str, str]]:
+    """Build a rubric-free live harness tree and external output path for one attempt."""
+    condition = condition_map(manifest)[slot["condition_id"]]
+    driver = condition["driver"]
+    temp_base = Path(env["TMPDIR"]).resolve(strict=True)
+    attempt_root = Path(tempfile.mkdtemp(prefix="arena-plan-attempt.", dir=temp_base))
+    attempt_root.chmod(0o700)
+    harness_root = attempt_root / "harness"
+    runtime_root = attempt_root / "runtime"
+    staged_bout = attempt_root / "bout"
+    harness_root.mkdir(mode=0o700)
+    runtime_root.mkdir(mode=0o700)
+    staged_bout.mkdir(mode=0o700)
+    try:
+        for relative_path in STAGED_DRIVER_FILES[driver]:
+            source = ROOT / relative_path
+            if source.is_symlink() or not source.is_file():
+                raise ValueError(f"staged driver input is not a regular file: {relative_path}")
+            destination = harness_root / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+            if sha256_path(source) != sha256_path(destination):
+                raise ValueError(f"staged driver input hash mismatch: {relative_path}")
+        source_task = ROOT / manifest["task"]["path"]
+        staged_task = harness_root / manifest["task"]["path"]
+        staged_task.mkdir(parents=True)
+        shutil.copy2(source_task / "PROMPT.md", staged_task / "PROMPT.md")
+        shutil.copytree(source_task / "fixture", staged_task / "fixture")
+        staged_script = {
+            "claude": harness_root / "bin/run-task.sh",
+            "codex": harness_root / "bin/run-task-codex.sh",
+            "kimi": harness_root / "bin/run-task-kimi.sh",
+        }[driver]
+        command = [
+            str(staged_script),
+            str(staged_task),
+            condition["model_argument"],
+            str(staged_bout),
+            str(slot["replicate"]),
+        ]
+        staged_run_dir = (
+            staged_bout
+            / Path(manifest["task"]["path"]).name
+            / condition["output_label"]
+            / f"run-{slot['replicate']}"
+        )
+        staged_env = dict(env)
+        staged_env["TMPDIR"] = str(runtime_root)
+        staged_env["ARENA_PLAN_TMPDIR"] = str(runtime_root)
+        return attempt_root, staged_run_dir, command, staged_env
+    except BaseException:
+        shutil.rmtree(attempt_root)
+        raise
+
+
+def recover_and_remove_staged_driver(attempt_root: Path, staged_run_dir: Path, run_dir: Path) -> None:
+    """Atomically transfer a completed/partial run, then erase the exact external stage."""
+    safe_base = SAFE_TEMP_ROOT.resolve(strict=True)
+    resolved_attempt = attempt_root.resolve(strict=True)
+    if resolved_attempt.parent != safe_base or not resolved_attempt.name.startswith("arena-plan-attempt."):
+        raise ValueError("refusing unsafe staged-driver cleanup target")
+    if staged_run_dir.exists() or staged_run_dir.is_symlink():
+        if staged_run_dir.is_symlink() or not staged_run_dir.is_dir():
+            raise ValueError("staged run output is not a real directory")
+        if run_dir.exists() or run_dir.is_symlink():
+            raise FileExistsError(f"refusing to overwrite recovered run directory {run_dir}")
+        run_dir.parent.mkdir(parents=True, exist_ok=True)
+        staged_run_dir.rename(run_dir)
+    shutil.rmtree(resolved_attempt)
 
 
 def _external_home(raw: str | None, label: str) -> tuple[Path | None, list[str]]:
@@ -1909,7 +2191,9 @@ def preflight_condition(condition: dict[str, Any], env: dict[str, str]) -> tuple
         "driver": driver,
         "cli_version": version,
         "harness_commit": commit or "unknown",
-        "environment_policy": "minimal-allowlist-v1",
+        "environment_policy": "minimal-allowlist-v3",
+        "execution_isolation_policy": "rubric-free staged driver; nondumpable parent; atomic output transfer",
+        "temp_root": env.get("TMPDIR"),
     }
     if driver == "claude":
         snapshot["credential_environment_fields_present"] = sorted(
@@ -2084,25 +2368,37 @@ def scan_run_credentials(driver: str, env: dict[str, str], run_dir: Path, receip
     return receipt
 
 
-def quarantine_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -> dict[str, Any]:
+def quarantine_destination(manifest: dict[str, Any], slot: dict[str, Any]) -> Path:
+    """Prepare an atomic, same-filesystem quarantine destination before target execution."""
     raw_base = os.environ.get("ARENA_QUARANTINE_DIR")
-    base = (
-        Path(raw_base).expanduser().resolve()
-        if raw_base
-        else (Path.home() / ".agent-arena-quarantine").resolve()
-    )
+    unresolved = Path(raw_base).expanduser() if raw_base else Path.home() / ".agent-arena-quarantine"
+    if unresolved.is_symlink():
+        raise ValueError("secret quarantine root must not be a symlink")
+    unresolved.mkdir(parents=True, mode=0o700, exist_ok=True)
+    metadata = unresolved.lstat()
+    if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
+        raise ValueError("secret quarantine root must be a real directory")
+    base = unresolved.resolve(strict=True)
     try:
         base.relative_to(ROOT.resolve())
     except ValueError:
         pass
     else:
         raise ValueError("secret quarantine must be outside the Agent Arena repository")
-    base.mkdir(parents=True, mode=0o700, exist_ok=True)
     if stat.S_IMODE(base.stat().st_mode) & 0o077:
         raise ValueError("secret quarantine root must not be accessible by group or other users")
     destination = base / manifest["experiment_id"] / slot["slot_id"]
-    if destination.exists():
+    destination.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
+    destination.parent.chmod(0o700)
+    if destination.exists() or destination.is_symlink():
         raise FileExistsError(f"refusing to overwrite secret quarantine {destination}")
+    if destination.parent.stat().st_dev != ROOT.stat().st_dev:
+        raise ValueError("secret quarantine must share a filesystem with the repository for atomic rename")
+    return destination
+
+
+def quarantine_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -> dict[str, Any]:
+    destination = quarantine_destination(manifest, slot)
     entry_count = 0
     regular_file_bytes = 0
     if run_dir.is_dir():
@@ -2114,9 +2410,7 @@ def quarantine_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path
                 continue
             if stat.S_ISREG(metadata.st_mode):
                 regular_file_bytes += metadata.st_size
-    destination.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
-    destination.parent.chmod(0o700)
-    shutil.move(str(run_dir), str(destination))
+    run_dir.rename(destination)
     receipt = {
         "schema_version": 1,
         "experiment_id": manifest["experiment_id"],
@@ -2132,7 +2426,47 @@ def quarantine_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path
     if receipt_path.exists():
         raise FileExistsError(f"refusing to overwrite quarantine receipt {receipt_path}")
     write_json(receipt_path, receipt)
-    return {"receipt": relative(receipt_path)}
+    return {"succeeded": True, "receipt": relative(receipt_path)}
+
+
+def write_quarantine_failure(
+    manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path, error: BaseException
+) -> dict[str, Any]:
+    """Preserve auditable failure state if the prevalidated atomic quarantine unexpectedly fails."""
+    receipt_path = ROOT / manifest["bout_dir"] / "QUARANTINE" / f"{slot['slot_id']}.failed.json"
+    if receipt_path.exists() or receipt_path.is_symlink():
+        raise FileExistsError(f"refusing to overwrite quarantine-failure receipt {receipt_path}")
+    write_json(
+        receipt_path,
+        {
+            "schema_version": 1,
+            "experiment_id": manifest["experiment_id"],
+            "manifest_freeze_id": manifest["freeze_id"],
+            "slot_id": slot["slot_id"],
+            "reason": "atomic_security_quarantine_failed",
+            "failed_at": utc_now(),
+            "error_type": type(error).__name__,
+            "run_dir_retained_for_manual_recovery": relative(run_dir),
+            "content_published": False,
+        },
+    )
+    return {"succeeded": False, "receipt": relative(receipt_path)}
+
+
+def raw_attempt_has_attributable_activity(driver: str, run_dir: Path) -> bool:
+    """Fail closed when deciding whether an interrupted attempt was pre-attribution."""
+    if not run_dir.is_dir():
+        return False
+    events, malformed = iter_jsonl(run_dir / "transcript.jsonl")
+    if malformed:
+        return True
+    try:
+        output, _ = extract_final_output(driver, run_dir, events)
+        calls, unknown = detect_tool_events(driver, events, run_dir)
+    except (OSError, ValueError, json.JSONDecodeError):
+        return True
+    workspace = run_dir / "workspace.diff"
+    return bool(output or calls or unknown or (workspace.is_file() and workspace.stat().st_size))
 
 
 def terminate_process_group(process: subprocess.Popen[Any]) -> None:
@@ -2151,6 +2485,44 @@ def terminate_process_group(process: subprocess.Popen[Any]) -> None:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:
             pass
+
+
+def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dict[str, Any]]) -> list[str]:
+    """Recheck immutable anchors before a resumed command may make another paid call."""
+    errors: list[str] = []
+    slots = {
+        slot["slot_id"]: slot
+        for slot in [*(manifest.get("schedule") or []), *(manifest.get("reserve_slots") or [])]
+    }
+    for row in ledger:
+        if not isinstance(row, dict):
+            continue
+        slot = slots.get(row.get("slot_id"))
+        if slot is None:
+            continue
+        if row.get("analysis_eligible") is True or row.get("artifact_manifest_sha256") is not None:
+            _, row_errors = validate_run_provenance(manifest, slot, row)
+            errors.extend(row_errors)
+        for path_key, hash_key in (
+            ("failure_receipt", "failure_receipt_sha256"),
+            ("quarantine_receipt", "quarantine_receipt_sha256"),
+        ):
+            raw_path = row.get(path_key)
+            if raw_path is None:
+                continue
+            try:
+                path = (ROOT / str(raw_path)).resolve()
+                path.relative_to(ROOT.resolve())
+            except (OSError, ValueError):
+                errors.append(f"{row.get('slot_id')}: unsafe {path_key}")
+                continue
+            if path.is_symlink() or not path.is_file():
+                errors.append(f"{row.get('slot_id')}: missing regular {path_key}")
+            elif not re.fullmatch(r"[0-9a-f]{64}", str(row.get(hash_key) or "")):
+                errors.append(f"{row.get('slot_id')}: {path_key} lacks a content hash")
+            elif sha256_path(path) != row.get(hash_key):
+                errors.append(f"{row.get('slot_id')}: {path_key} content hash mismatch")
+    return errors
 
 
 def run_slots(
@@ -2179,6 +2551,9 @@ def run_slots(
     ledger_errors = validate_execution_ledger(manifest, ledger)
     if ledger_errors:
         raise ValueError("execution ledger is invalid:\n- " + "\n- ".join(ledger_errors))
+    provenance_errors = validate_prior_attempt_provenance(manifest, ledger)
+    if provenance_errors:
+        raise ValueError("prior attempt provenance is invalid:\n- " + "\n- ".join(provenance_errors))
     if reserve_slot:
         if requested_slots:
             raise ValueError("--reserve and --slot cannot be combined")
@@ -2257,6 +2632,13 @@ def run_slots(
         existing_ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
         if malformed:
             raise ValueError(f"execution ledger is malformed at lines {malformed}")
+        existing_errors = validate_execution_ledger(manifest, existing_ledger)
+        existing_errors.extend(validate_prior_attempt_provenance(manifest, existing_ledger))
+        if existing_errors:
+            raise ValueError(
+                "prior attempt provenance changed before the next call:\n- "
+                + "\n- ".join(existing_errors)
+            )
         if any(row.get("slot_id") == slot["slot_id"] for row in existing_ledger):
             raise ValueError(f"execution ledger already contains {slot['slot_id']}")
         prior_policy_signatures = {
@@ -2271,6 +2653,12 @@ def run_slots(
         current_preflight = preflight_manifest(manifest, {slot["condition_id"]}, env)[slot["condition_id"]]
         if current_preflight["sha256"] != initial_preflight[slot["condition_id"]]["sha256"]:
             raise ValueError(f"treatment preflight drifted before {slot['slot_id']}")
+        quarantine_destination(manifest, slot)
+        env["ARENA_HARNESS_COMMIT"] = current_preflight["harness_commit"]
+        env["ARENA_HARNESS_TRACKED_DIRTY"] = "false"
+        attempt_root, staged_run_dir, command, env = prepare_staged_driver(
+            manifest, slot, env
+        )
         started = utc_now()
         record: dict[str, Any] | None = None
         driver_exit: int | None = None
@@ -2280,16 +2668,37 @@ def run_slots(
         process: subprocess.Popen[Any] | None = None
         caught: BaseException | None = None
         quarantine: dict[str, Any] | None = None
+        attributable_activity: bool | None = None
+        cleanup_signal: int | None = None
+        prior_dumpable = process_dumpable()
+        dumpability_lowered = False
+        watched_signals = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
+        previous_signal_handlers = {signum: signal.getsignal(signum) for signum in watched_signals}
+
+        def interrupt_active_attempt(signum: int, _frame: Any) -> None:
+            for watched in watched_signals:
+                signal.signal(watched, signal.SIG_IGN)
+            raise OperatorTermination(signum)
+
+        def record_cleanup_interruption(signum: int, _frame: Any) -> None:
+            nonlocal cleanup_signal
+            cleanup_signal = signum
+
+        for signum in watched_signals:
+            signal.signal(signum, interrupt_active_attempt)
         try:
+            process_dumpable(0)
+            dumpability_lowered = True
             process = subprocess.Popen(
                 command,
-                cwd=ROOT,
+                cwd=attempt_root,
                 env=env,
                 stdin=subprocess.DEVNULL,
                 start_new_session=True,
             )
             driver_process_spawned = True
             driver_exit = process.wait()
+            recover_and_remove_staged_driver(attempt_root, staged_run_dir, run_dir)
             target_process_started = (run_dir / "target_started").is_file()
             target_process_returned = (run_dir / "target_returned").is_file()
             scan_run_credentials(
@@ -2298,6 +2707,10 @@ def run_slots(
                 run_dir,
                 "credential_scan.raw.json",
             )
+            if driver_exit == 86:
+                raise SecretLeakError("per-run credential-state scan failed")
+            if driver_exit not in {0, None}:
+                raise RuntimeError(f"driver wrapper exited with status {driver_exit}")
             record = observe_run(
                 manifest,
                 slot,
@@ -2311,23 +2724,70 @@ def run_slots(
             if process is not None:
                 terminate_process_group(process)
                 driver_exit = process.returncode
+            if attempt_root.exists():
+                try:
+                    recover_and_remove_staged_driver(attempt_root, staged_run_dir, run_dir)
+                except BaseException as stage_exc:
+                    if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
+                        caught = stage_exc
+            if dumpability_lowered:
+                try:
+                    process_dumpable(prior_dumpable)
+                except BaseException as dumpable_exc:
+                    if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
+                        caught = dumpable_exc
             target_process_started = target_process_started or (run_dir / "target_started").is_file()
             target_process_returned = target_process_returned or (run_dir / "target_returned").is_file()
+            interrupted_before_cleanup = isinstance(caught, KeyboardInterrupt) or driver_exit in {
+                -signal.SIGINT,
+                -signal.SIGTERM,
+                -signal.SIGHUP,
+            }
+            if interrupted_before_cleanup:
+                attributable_activity = raw_attempt_has_attributable_activity(
+                    condition_map(manifest)[slot["condition_id"]]["driver"], run_dir
+                )
+            for signum in watched_signals:
+                signal.signal(signum, record_cleanup_interruption)
             if run_dir.is_dir():
                 try:
+                    runtime_scan_issues = credential_receipt_issues(
+                        run_dir / "credential_scan.runtime.json",
+                        condition_map(manifest)[slot["condition_id"]]["driver"],
+                    )
+                    if target_process_started and runtime_scan_issues:
+                        raise credential_guard.CredentialGuardError(
+                            "runtime credential-state scan evidence failed validation"
+                        )
                     scan_run_credentials(
                         condition_map(manifest)[slot["condition_id"]]["driver"],
                         env,
                         run_dir,
                         "credential_scan.json",
                     )
+                    if isinstance(caught, SecretLeakError):
+                        raise caught
                     if record is not None:
                         write_artifact_manifest(manifest, slot, run_dir)
                 except BaseException as scan_exc:
                     if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
                         caught = scan_exc
                     record = None
-                    quarantine = quarantine_run(manifest, slot, run_dir)
+                    try:
+                        quarantine = quarantine_run(manifest, slot, run_dir)
+                    except BaseException as quarantine_exc:
+                        if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
+                            caught = quarantine_exc
+                        try:
+                            quarantine = write_quarantine_failure(
+                                manifest, slot, run_dir, quarantine_exc
+                            )
+                        except BaseException as receipt_exc:
+                            quarantine = {
+                                "succeeded": False,
+                                "receipt": None,
+                                "receipt_error_type": type(receipt_exc).__name__,
+                            }
         if record is not None:
             validity_state = record["validity"]["state"]
             analysis_eligible = record["validity"]["confirmatory_analysis_eligible"]
@@ -2336,21 +2796,44 @@ def run_slots(
             smoke_excluded = record["validity"]["smoke_excluded"]
             failure_receipt = None
         else:
-            validity_state = "security_quarantined" if quarantine else "runner_or_normalization_failure"
+            quarantine_succeeded = bool(quarantine and quarantine.get("succeeded"))
+            validity_state = (
+                "security_quarantined"
+                if quarantine_succeeded
+                else "security_quarantine_failed"
+                if quarantine
+                else "runner_or_normalization_failure"
+            )
             analysis_eligible = False
             smoke_excluded = manifest["phase"] == "smoke"
             objective_issues = [
                 "security quarantine after secret scan"
+                if quarantine_succeeded
+                else "atomic security quarantine failed; run halted for manual recovery"
                 if quarantine
                 else f"{type(caught).__name__ if caught else 'UnknownError'} during driver or normalization"
             ]
-            eligible_reasons = [
+            eligible_reasons = ([
                 "security_quarantine_after_secret_scan"
-                if quarantine
+                if quarantine_succeeded
                 else "corrupted_or_missing_raw_artifact_due_to_harness"
                 if driver_process_spawned or target_process_started
                 else "harness_crash_before_target_execution"
-            ]
+            ] if not quarantine or quarantine_succeeded else [])
+            interrupted = isinstance(caught, KeyboardInterrupt) or driver_exit in {
+                -signal.SIGINT,
+                -signal.SIGTERM,
+                -signal.SIGHUP,
+            }
+            if (
+                interrupted
+                and target_process_started
+                and attributable_activity is False
+            ):
+                eligible_reasons.append(
+                    "external_termination_before_attributable_target_completion"
+                )
+            eligible_reasons = sorted(set(eligible_reasons))
             failure_receipt = write_attempt_failure(
                 manifest,
                 slot,
@@ -2368,36 +2851,50 @@ def run_slots(
                     "quarantine": quarantine,
                 },
             )
-        append_ledger(
-            ledger_path,
-            {
-                "schema_version": 1,
-                "slot_id": slot["slot_id"],
-                "phase": manifest["phase"],
-                "condition_id": slot["condition_id"],
-                "kind": slot.get("kind", "primary"),
-                "replacement_for": slot.get("replacement_for"),
-                "exclusion_reason": slot.get("exclusion_reason"),
-                "run_dir": relative(run_dir),
-                "started_at": started,
-                "finished_at": utc_now(),
-                "driver_exit": driver_exit,
-                "validity_state": validity_state,
-                "analysis_eligible": analysis_eligible,
-                "smoke_excluded": smoke_excluded,
-                "objective_issues": objective_issues,
-                "eligible_exclusion_reasons": eligible_reasons,
-                "preflight": current_preflight,
-                "failure_receipt": failure_receipt,
-                "quarantine_receipt": quarantine.get("receipt") if quarantine else None,
-                "artifact_manifest_sha256": sha256_path(run_dir / "artifact_manifest.json")
-                if record is not None and (run_dir / "artifact_manifest.json").is_file()
-                else None,
-                "instruction_policy_signature_sha256": (
-                    record["configuration"]["instruction_policy_signature"]["sha256"] if record is not None else None
-                ),
-            },
-        )
+        try:
+            append_ledger(
+                ledger_path,
+                {
+                    "schema_version": 1,
+                    "slot_id": slot["slot_id"],
+                    "phase": manifest["phase"],
+                    "condition_id": slot["condition_id"],
+                    "kind": slot.get("kind", "primary"),
+                    "replacement_for": slot.get("replacement_for"),
+                    "exclusion_reason": slot.get("exclusion_reason"),
+                    "run_dir": relative(run_dir),
+                    "started_at": started,
+                    "finished_at": utc_now(),
+                    "driver_exit": driver_exit,
+                    "validity_state": validity_state,
+                    "analysis_eligible": analysis_eligible,
+                    "smoke_excluded": smoke_excluded,
+                    "objective_issues": objective_issues,
+                    "eligible_exclusion_reasons": eligible_reasons,
+                    "preflight": current_preflight,
+                    "failure_receipt": failure_receipt,
+                    "failure_receipt_sha256": sha256_path(ROOT / failure_receipt) if failure_receipt else None,
+                    "quarantine_receipt": quarantine.get("receipt") if quarantine else None,
+                    "quarantine_receipt_sha256": (
+                        sha256_path(ROOT / quarantine["receipt"])
+                        if quarantine and quarantine.get("receipt")
+                        else None
+                    ),
+                    "artifact_manifest_sha256": sha256_path(run_dir / "artifact_manifest.json")
+                    if record is not None and (run_dir / "artifact_manifest.json").is_file()
+                    else None,
+                    "instruction_policy_signature_sha256": (
+                        record["configuration"]["instruction_policy_signature"]["sha256"]
+                        if record is not None
+                        else None
+                    ),
+                },
+            )
+        finally:
+            for signum, prior_handler in previous_signal_handlers.items():
+                signal.signal(signum, prior_handler)
+        if cleanup_signal is not None and caught is None:
+            caught = OperatorTermination(cleanup_signal)
         if caught is not None:
             if isinstance(caught, (KeyboardInterrupt, SystemExit)):
                 raise caught

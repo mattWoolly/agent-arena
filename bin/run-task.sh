@@ -25,17 +25,42 @@ fi
 LABEL="$TASK_NAME/$MODEL${RUN_IDX:+ run-$RUN_IDX}"
 
 RUN_AUTH_HOME=""
+RUNTIME_SCAN_HOME=""
 TARGET_ENV=()
 if [[ "${ARENA_PLAN_PROBE:-0}" == "1" ]]; then
+  if [[ -L /tmp || ! -d /tmp ]]; then
+    echo "fixed plan-probe temp root /tmp must be a real directory" > "$OUT_DIR/stderr.log"
+    exit 1
+  fi
+  PLAN_TMPDIR="${ARENA_PLAN_TMPDIR:-/tmp}"
+  if [[ "$PLAN_TMPDIR" != /* || -L "$PLAN_TMPDIR" || ! -d "$PLAN_TMPDIR" ]]; then
+    echo "plan-probe temp root must be an absolute real directory" > "$OUT_DIR/stderr.log"
+    exit 1
+  fi
+  TMPDIR=$(cd "$PLAN_TMPDIR" && pwd -P) || exit 1
+  case "$TMPDIR" in
+    "$ROOT"|"$ROOT"/*)
+      echo "fixed plan-probe temp root must be outside the repository" > "$OUT_DIR/stderr.log"
+      exit 1;;
+  esac
+  case "$TMPDIR" in
+    /tmp|/tmp/arena-plan-attempt.*/runtime) ;;
+    *) echo "plan-probe temp root is outside the frozen /tmp policy" > "$OUT_DIR/stderr.log"; exit 1;;
+  esac
+  export TMPDIR
   if [[ -z "${ARENA_CLAUDE_HOME:-}" || ! -f "$ARENA_CLAUDE_HOME/.credentials.json" ]]; then
     echo "ARENA_CLAUDE_HOME must be an external auth-only source" > "$OUT_DIR/stderr.log"
     exit 1
   fi
-  RUN_AUTH_HOME=$(mktemp -d "${TMPDIR:-/tmp}/arena-claude-home.XXXXXX")
+  RUN_AUTH_HOME=$(mktemp -d "${TMPDIR:-/tmp}/arena-claude-home.XXXXXX") || {
+    echo "could not create disposable Claude home" > "$OUT_DIR/stderr.log"
+    exit 1
+  }
   chmod 700 "$RUN_AUTH_HOME"
   cp "$ARENA_CLAUDE_HOME/.credentials.json" "$RUN_AUTH_HOME/.credentials.json"
   chmod 600 "$RUN_AUTH_HOME/.credentials.json"
-  TARGET_ENV=(env -u ARENA_CLAUDE_HOME HOME="$RUN_AUTH_HOME" CLAUDE_CONFIG_DIR="$RUN_AUTH_HOME")
+  TARGET_ENV=(env -u ARENA_CLAUDE_HOME -u ARENA_PLAN_TMPDIR -u ARENA_HARNESS_COMMIT \
+    -u ARENA_HARNESS_TRACKED_DIRTY HOME="$RUN_AUTH_HOME" CLAUDE_CONFIG_DIR="$RUN_AUTH_HOME")
 fi
 
 # Optional per-model environment: env/<model>.env holds endpoint/auth vars
@@ -52,8 +77,11 @@ if [[ -f "$MODEL_ENV" ]]; then
 fi
 
 # Seed an isolated workspace from the fixture, apply optional mutations, baseline it.
-WS=$(mktemp -d "${TMPDIR:-/tmp}/arena-ws.XXXXXX")
-trap 'rm -rf "$WS" ${RUN_AUTH_HOME:+"$RUN_AUTH_HOME"}' EXIT
+WS=$(mktemp -d "${TMPDIR:-/tmp}/arena-ws.XXXXXX") || {
+  echo "could not create disposable target workspace" > "$OUT_DIR/stderr.log"
+  exit 1
+}
+trap 'rm -rf "$WS" ${RUN_AUTH_HOME:+"$RUN_AUTH_HOME"} ${RUNTIME_SCAN_HOME:+"$RUNTIME_SCAN_HOME"}' EXIT
 cp -a "$TASK_DIR/fixture/." "$WS/"
 if [[ -f "$TASK_DIR/setup.sh" ]]; then
   (cd "$WS" && bash "$TASK_DIR/setup.sh")
@@ -86,9 +114,14 @@ fi
 printf '%s' "$PROMPT" > "$OUT_DIR/prompt.txt"
 PROMPT_SHA=$(sha256sum "$OUT_DIR/prompt.txt" | awk '{print $1}')
 PRICE_SHA=$(sha256sum "$ROOT/env/prices.json" | awk '{print $1}')
-HARNESS_COMMIT=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)
-HARNESS_DIRTY=false
-git -C "$ROOT" diff --quiet && git -C "$ROOT" diff --cached --quiet || HARNESS_DIRTY=true
+if [[ "${ARENA_PLAN_PROBE:-0}" == "1" && -n "${ARENA_HARNESS_COMMIT:-}" ]]; then
+  HARNESS_COMMIT="$ARENA_HARNESS_COMMIT"
+  HARNESS_DIRTY="${ARENA_HARNESS_TRACKED_DIRTY:-true}"
+else
+  HARNESS_COMMIT=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)
+  HARNESS_DIRTY=false
+  git -C "$ROOT" diff --quiet && git -C "$ROOT" diff --cached --quiet || HARNESS_DIRTY=true
+fi
 
 CLI_VERSION=$(claude --version 2>/dev/null | head -1)
 cat > "$OUT_DIR/run_env.json" <<EOF
@@ -119,7 +152,7 @@ echo "[$LABEL] starting"
 START=$(date +%s.%N)
 date -u +%Y-%m-%dT%H:%M:%SZ > "$OUT_DIR/target_started"
 (
-  cd "$WS" && "${TARGET_ENV[@]}" timeout "$TIMEOUT_S" claude -p "$PROMPT" \
+  cd "$WS" && "${TARGET_ENV[@]}" timeout --kill-after=10s "$TIMEOUT_S" claude -p "$PROMPT" \
     --model "$MODEL" \
     "${EFFORT_ARGS[@]}" \
     --setting-sources "$SETTING_SOURCES" \
@@ -132,7 +165,7 @@ AGENT_EXIT=$?
 date -u +%Y-%m-%dT%H:%M:%SZ > "$OUT_DIR/target_returned"
 END=$(date +%s.%N)
 echo "$AGENT_EXIT" > "$OUT_DIR/agent_exit"
-python3 -c "print(f'{$END - $START:.1f}')" > "$OUT_DIR/wall_seconds"
+python3 -c "from decimal import Decimal; print(Decimal('$END') - Decimal('$START'))" > "$OUT_DIR/wall_seconds"
 
 # Final result envelope is the last "result" event in the stream.
 grep '"type":"result"' "$OUT_DIR/transcript.jsonl" | tail -1 > "$OUT_DIR/result.json" || true
@@ -199,5 +232,32 @@ fi
 
 # Metrics from transcript + result envelope (+ run_env.json + peek_check).
 python3 "$ROOT/bin/metrics.py" "$OUT_DIR" "$MODEL" > "$OUT_DIR/metrics.json" 2>> "$OUT_DIR/stderr.log"
+
+# The CLI may rotate auth state in its disposable home. Scan with the final
+# credential values as well as the original source values; publish only the
+# aggregate receipt. Exit 86 tells the parent wrapper to quarantine.
+if [[ "${ARENA_PLAN_PROBE:-0}" == "1" ]]; then
+  RUNTIME_RECEIPT="$OUT_DIR/credential_scan.runtime.json"
+  if [[ -e "$RUNTIME_RECEIPT" || -L "$RUNTIME_RECEIPT" ]]; then
+    echo "runtime credential scan receipt path already exists" >> "$OUT_DIR/stderr.log"
+    exit 86
+  fi
+  RUNTIME_SCAN_HOME=$(mktemp -d "${TMPDIR:-/tmp}/arena-claude-scan.XXXXXX") || {
+    echo "could not create runtime credential scan home" >> "$OUT_DIR/stderr.log"
+    exit 86
+  }
+  if ! chmod 700 "$RUNTIME_SCAN_HOME" || \
+     ! cp "$RUN_AUTH_HOME/.credentials.json" "$RUNTIME_SCAN_HOME/.credentials.json" || \
+     ! chmod 600 "$RUNTIME_SCAN_HOME/.credentials.json" || \
+     ! python3 "$ROOT/bin/credential_guard.py" \
+       --environment-secret-var ANTHROPIC_API_KEY \
+       --environment-secret-var ANTHROPIC_AUTH_TOKEN \
+       claude "$RUNTIME_SCAN_HOME" "$OUT_DIR" > "$RUNTIME_RECEIPT"; then
+    echo "runtime credential-state scan failed; parent quarantine required" >> "$OUT_DIR/stderr.log"
+    exit 86
+  fi
+  rm -rf "$RUNTIME_SCAN_HOME"
+  RUNTIME_SCAN_HOME=""
+fi
 
 echo "[$LABEL] done: agent_exit=$AGENT_EXIT grade_exit=$(cat "$OUT_DIR/grade_exit" 2>/dev/null || echo n/a) wall=$(cat "$OUT_DIR/wall_seconds")s"

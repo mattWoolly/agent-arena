@@ -77,7 +77,8 @@ not rank agents.
 Generate `analysis.json`, `REPORT.md`, and `ANALYSIS_MANIFEST.json` once with
 no-clobber semantics. The bundle manifest must content-address every review,
 adjudication, instruction-exposure input, blinded packet/map, and both generated
-outputs.
+outputs, plus the execution ledger and every effective run record and artifact
+manifest consumed by analysis.
 
 ## Limitations
 

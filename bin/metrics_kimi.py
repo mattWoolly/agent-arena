@@ -90,7 +90,7 @@ def main(out_dir: str, label: str, price_key: str = "kimi-k3") -> None:
                 + cached * prices.get("cache_read", prices["input"])
                 + outp * prices["output"]
             ) / 1e6
-            metrics["total_cost_usd"] = round(total, 5)
+            metrics["total_cost_usd"] = total
             metrics["cost_source"] = f"computed:env/prices.json (wire.jsonl usage, {len(usage_records)} turn records)"
 
     epath = out / "run_env.json"

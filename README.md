@@ -247,7 +247,8 @@ For the response-only planning probe, `ARENA_CODEX_HOME` is required and must
 name an isolated auth-only home outside the repository; in-repository homes and
 homes containing user instruction or config files are refused. The probe copies
 only `auth.json` into a fresh `0700` home per slot and uses both
-`--ignore-user-config` and `--ignore-rules`; other tasks retain the driver's
+`HOME` and `CODEX_HOME` for that directory plus `--ignore-user-config` and
+`--ignore-rules`; other tasks retain the driver's
 existing `.codex-arena/` behavior. Each run also copies the session rollout
 associated by its emitted thread ID to `session.jsonl`; this preserves the
 exposed base/developer instruction stack omitted by the public event stream.
@@ -317,18 +318,27 @@ before each slot and halts the matrix on drift or run-integrity failure. The
 experiment's `CONFIGURATION.json` freezes only non-secret expectations: exact
 credential schemas and recognized-field counts, secret-redacted structural
 digests for all three sources, the minimal environment policy, and credential
-environment-field names without values.
+environment-field names without values. Each driver receives only its own
+source-home path; paths and credentials for the other conditions are removed.
+The response-only probe ignores inherited `TMPDIR` and uses a validated,
+same-filesystem `/tmp`. Live attempts receive a rubric-free staging tree with
+only the selected wrapper, required helpers, neutral task, and fixture; the
+parent is non-dumpable while the target runs, and output is atomically moved
+back before normalization.
+Experiment validation sets `ARENA_SYNTHETIC_ONLY=1` for the served-model helper
+tests so this package never opens an archived bout transcript.
 
 Each normalized run adds:
 
 - `final_output.txt` — complete final response, never the metrics preview;
 - `embargo.json` — issued tool events and arguments, workspace mutation,
   specific spawn/inspection/research/implementation flags, and fail-closed
-  trace-integrity status;
+  trace-integrity status, plus an explicit unclassified-action flag;
 - `instruction_context.json` — exposed system/developer/tool context, without
   hidden reasoning;
-- `credential_scan.raw.json` and `credential_scan.json` — aggregate-only
-  before/after leak-scan receipts;
+- `credential_scan.raw.json`, `credential_scan.runtime.json`, and
+  `credential_scan.json` — aggregate-only raw, final-runtime-credential, and
+  post-normalization leak-scan receipts;
 - `run_record.json` — slot, condition, model/effort evidence, metrics, and
   technical eligibility; and
 - `artifact_manifest.json` — byte size and SHA-256 for every raw and normalized
@@ -337,7 +347,8 @@ Each normalized run adds:
 `bin/plan_experiment.py blind` emits HMAC-ordered label-free packets containing
 only blind ID, output hash, and exact final text. The withheld mapping, frozen
 ledger, run record, final-output hash, and ledger-anchored artifact manifest
-must all agree before analysis. The analyzer requires two distinct reviewers,
+must all agree before analysis, and resume revalidates those anchors before any
+later paid call. The analyzer requires two distinct reviewers,
 exact quote/offset evidence for every positive score, and a distinct adjudicator
 for every disagreement. It reports per-run results, Wilson intervals, complete
 rubric/component rates, run accounting, and inter-rater agreement without

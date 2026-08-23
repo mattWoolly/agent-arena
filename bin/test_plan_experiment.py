@@ -9,6 +9,7 @@ import copy
 import importlib.util
 import json
 import os
+import signal
 import subprocess
 import tempfile
 import unittest
@@ -66,8 +67,11 @@ def seed_run(run_dir: Path, condition: dict, *, output: str = "# Plan\n\n- Use `
     scan_receipt = {
         "schema_version": 1,
         "driver": condition["driver"],
+        "source_schema": "toml" if condition["driver"] == "kimi" else "json",
+        "source_redacted_structural_inventory_sha256": "a" * 64,
         "credential_pattern_count": 1,
         "scanned_entry_count": 1,
+        "scanned_path_bytes": 1,
         "scanned_regular_and_symlink_bytes": 1,
         "leak_match_count": 0,
         "unsafe_special_entry_count": 0,
@@ -75,6 +79,7 @@ def seed_run(run_dir: Path, condition: dict, *, output: str = "# Plan\n\n- Use `
         "pass": True,
     }
     (run_dir / "credential_scan.raw.json").write_text(json.dumps(scan_receipt))
+    (run_dir / "credential_scan.runtime.json").write_text(json.dumps(scan_receipt))
     (run_dir / "credential_scan.json").write_text(json.dumps(scan_receipt))
     (run_dir / "metrics.json").write_text(json.dumps({"agent_exit": 0, "wall_seconds": 1.25, "output_tokens": 20, "input_tokens": 30, "total_cost_usd": 0.01}))
     (run_dir / "peek_check").write_text("clean\n")
@@ -479,6 +484,68 @@ class TraceAndArtifactTests(unittest.TestCase):
             self.assertEqual([call["name"] for call in calls], ["Agent"])
             self.assertTrue(probe.classify_calls(calls, False)["spawned_agent"])
 
+            orphan_claude = [
+                {
+                    "type": "user",
+                    "_line": 2,
+                    "message": {"content": [{"type": "tool_result", "tool_use_id": "missing-call"}]},
+                }
+            ]
+            calls, unknown = probe.detect_tool_events("claude", orphan_claude, root)
+            self.assertEqual(len(calls), 1)
+            self.assertFalse(unknown)
+
+            jsonl(
+                root / "session.jsonl",
+                [
+                    {
+                        "type": "response_item",
+                        "payload": {"type": "function_call_output", "call_id": "missing-call"},
+                    }
+                ],
+            )
+            calls, unknown = probe.detect_tool_events("codex", [], root)
+            self.assertEqual(len(calls), 1)
+            self.assertFalse(unknown)
+
+            jsonl(root / "wire.jsonl", [{"type": "usage.record", "usageScope": "turn", "usage": {}}])
+            calls, unknown = probe.detect_tool_events(
+                "kimi",
+                [{"role": "tool", "tool_call_id": "missing-call", "_line": 2}],
+                root,
+            )
+            self.assertEqual(len(calls), 1)
+            self.assertFalse(unknown)
+
+    def test_kimi_normal_loop_and_usage_events_are_passive_but_strict(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            run_dir = Path(raw)
+            jsonl(
+                run_dir / "wire.jsonl",
+                [
+                    {"type": "usage.record", "usageScope": "turn", "usage": {}},
+                    {"type": "context.append_loop_event", "event": {"type": "step.begin"}},
+                    {
+                        "type": "context.append_loop_event",
+                        "event": {"type": "content.part", "part": {"type": "text", "text": "plan"}},
+                    },
+                    {
+                        "type": "context.append_loop_event",
+                        "event": {"type": "content.part", "part": {"type": "think", "think": "hidden"}},
+                    },
+                    {"type": "context.append_loop_event", "event": {"type": "step.end"}},
+                ],
+            )
+            calls, unknown = probe.detect_tool_events("kimi", [], run_dir)
+            self.assertEqual(calls, [])
+            self.assertEqual(unknown, [])
+            jsonl(
+                run_dir / "wire.jsonl",
+                [{"type": "context.append_loop_event", "event": {"type": "content.part", "part": {"type": "new"}}}],
+            )
+            _, unknown = probe.detect_tool_events("kimi", [], run_dir)
+            self.assertTrue(any("unknown or malformed content part" in item for item in unknown))
+
     def test_unknown_trace_shapes_fail_closed(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             temp = Path(raw)
@@ -524,6 +591,26 @@ class TraceAndArtifactTests(unittest.TestCase):
             )
             _, unknown = probe.detect_tool_events("kimi", [], run_dir)
             self.assertTrue(any("unknown loop event" in item for item in unknown))
+
+    def test_shell_subtypes_cover_python_inspection_network_and_mutation(self):
+        cases = (
+            ("python3 -c \"open('/proc/self/cmdline').read()\"", "repository_or_file_inspection"),
+            ("python3 -c \"import socket; socket.create_connection(('example.com', 443))\"", "research_or_network_action"),
+            ("python3 -c \"open('/tmp/result', 'w').write('x')\"", "implementation_or_mutation_attempt"),
+        )
+        for command, expected in cases:
+            classified = probe.classify_calls(
+                [{"name": "exec_command", "event_type": "command_execution", "arguments": command}],
+                False,
+            )
+            self.assertTrue(classified[expected], (command, classified))
+            self.assertFalse(classified["unclassified_tool_action"], (command, classified))
+
+        classified = probe.classify_calls(
+            [{"name": "exec_command", "event_type": "command_execution", "arguments": "opaque-binary"}],
+            False,
+        )
+        self.assertTrue(classified["unclassified_tool_action"])
 
     def test_plain_plan_language_does_not_trigger_and_diff_does(self):
         text_event = {"type": "assistant", "_line": 1, "message": {"content": [{"type": "text", "text": "Later, an agent may run tests."}]}}
@@ -632,6 +719,21 @@ class TraceAndArtifactTests(unittest.TestCase):
             )
             self.assertTrue(any("prefix of frozen sequence" in error for error in errors))
 
+    def test_resume_rechecks_prior_artifact_anchors_before_dry_or_paid_execution(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            paths = seed_confirmatory_matrix(Path(raw))
+            manifest = json.loads(paths["manifest"].read_text())
+            first_run = probe.ROOT / manifest["bout_dir"] / Path(probe.TASK_REL).name
+            final_output = next(first_run.rglob("final_output.txt"))
+            final_output.write_text("tampered after ledger append")
+            with self.assertRaisesRegex(ValueError, "prior attempt provenance"):
+                probe.run_slots(
+                    paths["manifest"],
+                    approval=None,
+                    requested_slots=None,
+                    dry_run=True,
+                )
+
     def test_pre_directory_driver_failure_is_preserved_in_ledger(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             temp = Path(raw)
@@ -640,19 +742,68 @@ class TraceAndArtifactTests(unittest.TestCase):
             manifest["freeze_id"] = probe.compute_freeze_id(manifest)
             path.write_text(json.dumps(manifest))
             slot = manifest["schedule"][0]
-            preflight = {"condition_id": slot["condition_id"]}
+            preflight = {
+                "condition_id": slot["condition_id"],
+                "harness_commit": "test-harness-commit",
+            }
             preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
             snapshot = {slot["condition_id"]: preflight}
-            with mock.patch.object(probe, "preflight_manifest", return_value=snapshot), mock.patch.object(
-                probe.subprocess, "Popen", side_effect=OSError("driver unavailable")
-            ):
-                with self.assertRaisesRegex(RuntimeError, "ledger row was preserved"):
-                    probe.run_slots(path, approval=None, requested_slots={slot["slot_id"]}, dry_run=False)
+            with tempfile.TemporaryDirectory(prefix="arena-quarantine-test-") as quarantine:
+                with mock.patch.dict(
+                    os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+                ), mock.patch.object(
+                    probe, "preflight_manifest", return_value=snapshot
+                ), mock.patch.object(probe.subprocess, "Popen", side_effect=OSError("driver unavailable")):
+                    with self.assertRaisesRegex(RuntimeError, "ledger row was preserved"):
+                        probe.run_slots(path, approval=None, requested_slots={slot["slot_id"]}, dry_run=False)
             ledger, malformed = probe.iter_jsonl(probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl")
             self.assertEqual(malformed, [])
             self.assertEqual(len(ledger), 1)
             self.assertFalse(ledger[0]["analysis_eligible"])
             self.assertEqual(ledger[0]["eligible_exclusion_reasons"], ["harness_crash_before_target_execution"])
+
+    def test_sigterm_during_active_driver_restores_handlers_and_preserves_ledger(self):
+        class SignaledProcess:
+            pid = os.getpid()
+            returncode = -signal.SIGTERM
+
+            def wait(self, timeout=None):
+                if timeout is None:
+                    os.kill(os.getpid(), signal.SIGTERM)
+                return self.returncode
+
+            def poll(self):
+                return self.returncode
+
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            path.write_text(json.dumps(manifest))
+            slot = manifest["schedule"][0]
+            preflight = {
+                "condition_id": slot["condition_id"],
+                "harness_commit": "test-harness-commit",
+            }
+            preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
+            snapshot = {slot["condition_id"]: preflight}
+            prior_handler = signal.getsignal(signal.SIGTERM)
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+            ), mock.patch.object(
+                probe, "preflight_manifest", return_value=snapshot
+            ), mock.patch.object(probe.subprocess, "Popen", return_value=SignaledProcess()):
+                with self.assertRaises(probe.OperatorTermination):
+                    probe.run_slots(path, approval=None, requested_slots={slot["slot_id"]}, dry_run=False)
+            self.assertEqual(signal.getsignal(signal.SIGTERM), prior_handler)
+            ledger, malformed = probe.iter_jsonl(probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl")
+            self.assertEqual(malformed, [])
+            self.assertEqual(len(ledger), 1)
+            self.assertEqual(ledger[0]["driver_exit"], -signal.SIGTERM)
+            self.assertRegex(ledger[0]["failure_receipt_sha256"], r"^[0-9a-f]{64}$")
             self.assertTrue((probe.ROOT / ledger[0]["failure_receipt"]).is_file())
 
     def test_target_chosen_empty_output_remains_confirmatory_eligible_for_every_driver(self):
@@ -710,9 +861,6 @@ class TraceAndArtifactTests(unittest.TestCase):
             slot = next(slot for slot in manifest["schedule"] if slot["condition_id"].startswith("codex--"))
             run_dir = temp / "run"
             seed_run(run_dir, probe.condition_map(manifest)[slot["condition_id"]], output="")
-            session, _ = probe.iter_jsonl(run_dir / "session.jsonl")
-            session = [event for event in session if event.get("type") != "turn_context"]
-            jsonl(run_dir / "session.jsonl", [{k: v for k, v in event.items() if k != "_line"} for event in session])
             metrics = json.loads((run_dir / "metrics.json").read_text())
             metrics["agent_exit"] = 1
             (run_dir / "metrics.json").write_text(json.dumps(metrics))
@@ -723,6 +871,35 @@ class TraceAndArtifactTests(unittest.TestCase):
                 "transport_or_service_failure_before_request_acceptance",
                 probe.eligible_exclusion_reasons(record),
             )
+            self.assertTrue(record["configuration"]["observed_identity"]["models"])
+
+            record["completion"]["agent_exit"] = 143
+            self.assertIn(
+                "external_termination_before_attributable_target_completion",
+                probe.eligible_exclusion_reasons(record),
+            )
+
+    def test_model_identity_matching_is_exact_not_substring_based(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            slot = next(slot for slot in manifest["schedule"] if slot["condition_id"].startswith("claude-code--"))
+            condition = probe.condition_map(manifest)[slot["condition_id"]]
+            run_dir = temp / "run"
+            seed_run(run_dir, condition)
+            events, _ = probe.iter_jsonl(run_dir / "transcript.jsonl")
+            for event in events:
+                if event.get("model"):
+                    event["model"] = f"unexpected-{condition['requested_model']}-proxy"
+                message = event.get("message")
+                if isinstance(message, dict) and message.get("model"):
+                    message["model"] = f"unexpected-{condition['requested_model']}-proxy"
+            jsonl(
+                run_dir / "transcript.jsonl",
+                [{key: value for key, value in event.items() if key != "_line"} for event in events],
+            )
+            record = probe.observe_run(manifest, slot, run_dir)
+            self.assertTrue(any("model mismatch" in issue for issue in record["validity"]["technical_issues"]))
 
     def test_smoke_outputs_cannot_be_blinded(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
@@ -788,10 +965,20 @@ class TraceAndArtifactTests(unittest.TestCase):
         self.assertEqual(first["sha256"], second["sha256"])
         self.assertNotEqual(first["sha256"], changed["sha256"])
 
+        staged = probe.instruction_policy_signature(
+            "codex",
+            context(
+                "/tmp/arena-plan-attempt.Stage123/runtime/arena-ws.ABC123",
+                "/tmp/arena-plan-attempt.Stage123/runtime/arena-codex-home.ZYX987",
+            ),
+        )
+        self.assertEqual(first["sha256"], staged["sha256"])
+
     def test_driver_environment_is_minimal_and_driver_specific(self):
         source = {
             "HOME": "/home/operator",
             "PATH": "/bin",
+            "TMPDIR": "relative-or-hostile",
             "LC_ALL": "C",
             "SSH_AUTH_SOCK": "/tmp/agent.sock",
             "OPENAI_API_KEY": "openai-secret",
@@ -807,9 +994,46 @@ class TraceAndArtifactTests(unittest.TestCase):
         self.assertEqual(claude["ANTHROPIC_API_KEY"], "anthropic-secret")
         self.assertNotIn("OPENAI_API_KEY", claude)
         self.assertNotIn("SSH_AUTH_SOCK", claude)
+        self.assertNotIn("ARENA_CODEX_HOME", claude)
+        self.assertNotIn("ARENA_KIMI_HOME", claude)
         self.assertNotIn("OPENAI_API_KEY", codex)
+        self.assertNotIn("ARENA_CLAUDE_HOME", codex)
+        self.assertNotIn("ARENA_KIMI_HOME", codex)
         self.assertNotIn("KIMI_API_KEY", kimi)
         self.assertEqual(kimi["ARENA_KIMI_HOME"], "/outside/kimi")
+        self.assertNotIn("ARENA_CLAUDE_HOME", kimi)
+        self.assertNotIn("ARENA_CODEX_HOME", kimi)
+        for environment in (claude, codex, kimi):
+            self.assertEqual(environment["TMPDIR"], "/tmp")
+
+        with mock.patch.object(probe, "SAFE_TEMP_ROOT", probe.ROOT):
+            with self.assertRaisesRegex(ValueError, "outside"):
+                probe.driver_environment("codex", source)
+
+    def test_live_driver_stage_contains_no_hidden_rubric_or_analysis_files(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            _, manifest = make_manifest(Path(raw) / "manifest", phase="smoke")
+            source = {"HOME": str(Path.home()), "PATH": os.environ["PATH"]}
+            for slot in manifest["schedule"]:
+                driver = probe.condition_map(manifest)[slot["condition_id"]]["driver"]
+                env = probe.driver_environment(driver, source)
+                attempt_root, staged_run, command, staged_env = probe.prepare_staged_driver(
+                    manifest, slot, env
+                )
+                try:
+                    staged_names = {
+                        str(path.relative_to(attempt_root)) for path in attempt_root.rglob("*")
+                    }
+                    self.assertFalse(any("SCORING" in name for name in staged_names))
+                    self.assertFalse(any("analysis" in name.lower() for name in staged_names))
+                    self.assertEqual(
+                        (attempt_root / "harness" / probe.PROMPT_REL).read_bytes(),
+                        (probe.ROOT / probe.PROMPT_REL).read_bytes(),
+                    )
+                    self.assertTrue(all(str(attempt_root) in argument for argument in (command[0], command[1], command[3])))
+                    self.assertEqual(Path(staged_env["ARENA_PLAN_TMPDIR"]), attempt_root / "runtime")
+                finally:
+                    probe.recover_and_remove_staged_driver(attempt_root, staged_run, probe.ROOT / raw / "unused")
 
 
 class CredentialGuardTests(unittest.TestCase):
@@ -855,6 +1079,61 @@ class CredentialGuardTests(unittest.TestCase):
             self.assertFalse(receipt["pass"])
             self.assertEqual(receipt["escaping_symlink_count"], 1)
 
+    def test_runtime_rotated_secret_and_receipt_validation_fail_closed(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            final_home = temp / "final-auth"
+            final_home.mkdir()
+            rotated = "rotated-runtime-secret-value-123456"
+            (final_home / "auth.json").write_text(json.dumps({"accessToken": rotated}))
+            artifacts = temp / "artifacts"
+            artifacts.mkdir()
+            (artifacts / "transcript.jsonl").write_text(rotated)
+            receipt = credential_guard.scan_artifacts("codex", final_home, [artifacts])
+            self.assertFalse(receipt["pass"])
+            self.assertEqual(receipt["leak_match_count"], 1)
+            receipt_path = temp / "credential_scan.runtime.json"
+            receipt_path.write_text(json.dumps(receipt))
+            issues = probe.credential_receipt_issues(receipt_path, "codex")
+            self.assertTrue(any("unsafe content" in issue for issue in issues))
+            self.assertTrue(any("did not pass" in issue for issue in issues))
+
+    def test_credential_guard_scans_artifact_path_names(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            home = temp / "home"
+            home.mkdir()
+            secret = "test-secret-value-in-path-123456"
+            (home / "auth.json").write_text(json.dumps({"OPENAI_API_KEY": secret}))
+            artifacts = temp / "artifacts"
+            artifacts.mkdir()
+            (artifacts / secret).write_text("content contains no credential")
+            receipt = credential_guard.scan_artifacts("codex", home, [artifacts])
+            self.assertFalse(receipt["pass"])
+            self.assertEqual(receipt["leak_match_count"], 1)
+            self.assertGreater(receipt["scanned_path_bytes"], 0)
+
+    def test_security_quarantine_uses_prevalidated_atomic_rename(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            slot = manifest["schedule"][0]
+            run_dir = temp / "unsafe-run"
+            run_dir.mkdir()
+            (run_dir / "unsafe.txt").write_text("synthetic unsafe artifact")
+            with mock.patch.dict(os.environ, {"ARENA_QUARANTINE_DIR": quarantine}):
+                expected = probe.quarantine_destination(manifest, slot)
+                result = probe.quarantine_run(manifest, slot, run_dir)
+            self.assertTrue(result["succeeded"])
+            self.assertFalse(run_dir.exists())
+            self.assertEqual((expected / "unsafe.txt").read_text(), "synthetic unsafe artifact")
+            receipt = probe.ROOT / result["receipt"]
+            self.assertTrue(receipt.is_file())
+
     def test_driver_discards_hostile_inherited_stdin_and_preserves_prompt_argument(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             temp = Path(raw)
@@ -862,6 +1141,7 @@ class CredentialGuardTests(unittest.TestCase):
             fake_bin.mkdir()
             capture_args = temp / "args.bin"
             capture_stdin = temp / "stdin.bin"
+            capture_env = temp / "env.txt"
             fake = fake_bin / "claude"
             fake.write_text(
                 "#!/usr/bin/env bash\n"
@@ -869,6 +1149,7 @@ class CredentialGuardTests(unittest.TestCase):
                 "IFS= read -r incoming || true\n"
                 "printf '%s' \"$incoming\" > \"$FAKE_STDIN\"\n"
                 "printf '%s\\0' \"$@\" > \"$FAKE_ARGS\"\n"
+                "printf '%s|%s|%s' \"${ARENA_CLAUDE_HOME-unset}\" \"${ARENA_HARNESS_COMMIT-unset}\" \"${ARENA_PLAN_TMPDIR-unset}\" > \"$FAKE_ENV\"\n"
                 "printf '%s\\n' '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"fake-session\",\"model\":\"claude-opus-5\"}'\n"
                 "printf '%s\\n' '{\"type\":\"assistant\",\"message\":{\"model\":\"claude-opus-5\",\"content\":[{\"type\":\"text\",\"text\":\"# Plan\"}]}}'\n"
                 "printf '%s\\n' '{\"type\":\"result\",\"result\":\"# Plan\"}'\n"
@@ -887,7 +1168,10 @@ class CredentialGuardTests(unittest.TestCase):
                     "ARENA_EFFORT": "native-default",
                     "ARENA_SETTING_SOURCES": "project",
                     "ARENA_SETTING_SOURCES_RECORD": "project (fresh auth-only per-run home)",
+                    "ARENA_HARNESS_COMMIT": "offline-test-commit",
+                    "ARENA_HARNESS_TRACKED_DIRTY": "false",
                     "FAKE_ARGS": str(capture_args),
+                    "FAKE_ENV": str(capture_env),
                     "FAKE_STDIN": str(capture_stdin),
                 }
             )
@@ -909,11 +1193,71 @@ class CredentialGuardTests(unittest.TestCase):
             arguments = capture_args.read_bytes().split(b"\0")[:-1]
             self.assertEqual(arguments[0], b"-p")
             self.assertEqual(arguments[1], EXPECTED_PROMPT.encode())
+            self.assertEqual(capture_env.read_text(), "unset|unset|unset")
 
     def test_every_target_driver_has_shell_level_stdin_isolation(self):
         for name in ("run-task.sh", "run-task-codex.sh", "run-task-kimi.sh"):
             source = (probe.ROOT / "bin" / name).read_text()
             self.assertIn("< /dev/null", source, name)
+            self.assertIn("credential_scan.runtime.json", source, name)
+            self.assertIn("exit 86", source, name)
+        codex_source = (probe.ROOT / "bin/run-task-codex.sh").read_text()
+        self.assertIn('HOME="$CODEX_HOME" CODEX_HOME="$CODEX_HOME"', codex_source)
+
+    def test_staged_claude_wrapper_recovers_and_normalizes_offline(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            fake_bin = temp / "bin"
+            fake_bin.mkdir()
+            fake = fake_bin / "claude"
+            fake.write_text(
+                "#!/usr/bin/env bash\n"
+                "if [[ \"${1:-}\" == \"--version\" ]]; then echo '2.1.241 (Claude Code)'; exit 0; fi\n"
+                "printf '%s\\n' '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"stage-session\",\"model\":\"claude-opus-5\",\"tools\":[],\"agents\":[],\"skills\":[],\"plugins\":[],\"mcp_servers\":[]}'\n"
+                "printf '%s\\n' '{\"type\":\"assistant\",\"message\":{\"id\":\"stage-message\",\"model\":\"claude-opus-5\",\"content\":[{\"type\":\"text\",\"text\":\"# Plan\"}]}}'\n"
+                "printf '%s\\n' '{\"type\":\"result\",\"result\":\"# Plan\",\"total_cost_usd\":0,\"num_turns\":1,\"modelUsage\":{\"claude-opus-5\":{\"inputTokens\":1,\"outputTokens\":1}}}'\n"
+            )
+            fake.chmod(0o755)
+            auth_home = temp / "auth"
+            auth_home.mkdir()
+            (auth_home / ".credentials.json").write_text(
+                json.dumps({"accessToken": "offline-staged-auth-value-123456"})
+            )
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            slot = next(
+                slot
+                for slot in manifest["schedule"]
+                if slot["condition_id"].startswith("claude-code--")
+            )
+            env = probe.driver_environment(
+                "claude",
+                {
+                    **os.environ,
+                    "PATH": f"{fake_bin}:{os.environ['PATH']}",
+                    "ARENA_CLAUDE_HOME": str(auth_home),
+                },
+            )
+            env["ARENA_HARNESS_COMMIT"] = "offline-stage-test"
+            env["ARENA_HARNESS_TRACKED_DIRTY"] = "false"
+            attempt_root, staged_run, command, staged_env = probe.prepare_staged_driver(
+                manifest, slot, env
+            )
+            recovered = temp / "recovered"
+            completed = subprocess.run(
+                command,
+                cwd=attempt_root,
+                env=staged_env,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                check=False,
+            )
+            probe.recover_and_remove_staged_driver(attempt_root, staged_run, recovered)
+            self.assertEqual(completed.returncode, 0, completed.stderr.decode(errors="replace"))
+            probe.scan_run_credentials("claude", staged_env, recovered, "credential_scan.raw.json")
+            probe.scan_run_credentials("claude", staged_env, recovered, "credential_scan.json")
+            record = probe.observe_run(manifest, slot, recovered)
+            self.assertEqual(record["validity"]["technical_issues"], [])
+            self.assertTrue(record["embargo"]["pass"])
 
 
 class ReviewAndAggregationTests(unittest.TestCase):
@@ -1053,6 +1397,7 @@ class ReviewAndAggregationTests(unittest.TestCase):
                 "repository_or_file_inspection": False,
                 "research_or_network_action": False,
                 "implementation_or_mutation_attempt": False,
+                "unclassified_tool_action": False,
                 "trace_integrity_failure": False,
             },
             "metrics": {},
@@ -1130,6 +1475,10 @@ class ReviewAndAggregationTests(unittest.TestCase):
                 "machine_readable_analysis",
                 "human_readable_report",
             })
+            input_roles = [item["role"] for item in bundle["inputs"]]
+            self.assertEqual(input_roles.count("execution_ledger"), 1)
+            self.assertEqual(sum(role.startswith("effective_run_record:") for role in input_roles), 30)
+            self.assertEqual(sum(role.startswith("effective_artifact_manifest:") for role in input_roles), 30)
             analysis_doc = json.loads(output_json.read_text())
             self.assertIn("semantic_review_provenance", analysis_doc["per_run"][0])
             second = subprocess.run(command, cwd=probe.ROOT, capture_output=True, text=True, check=False)
