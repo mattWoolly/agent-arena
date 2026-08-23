@@ -298,28 +298,33 @@ Task `16-pre-requirements-plan` uses a committed manifest instead of
 is observable response behavior rather than workspace correctness:
 
 ```
-python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-amendment-2/MANIFEST.json
-python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke-amendment-2/MANIFEST.json
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke-amendment-2/MANIFEST.json
-python3 bin/plan_experiment.py smoke-status bouts/2026-08-22-pre-requirements-planning-smoke-amendment-2/MANIFEST.json
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-amendment-2/MANIFEST.json --dry-run
+python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-amendment-3/MANIFEST.json
+python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke-amendment-3/MANIFEST.json
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke-amendment-3/MANIFEST.json
+python3 bin/plan_experiment.py smoke-status bouts/2026-08-22-pre-requirements-planning-smoke-amendment-3/MANIFEST.json
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-amendment-3/MANIFEST.json --dry-run
 ```
 
 Confirmatory execution requires `--approval <exact-freeze-id>` and is blocked
 without it. The manifest fixes the exact prompt, condition versions, native
 effort behavior, randomized complete-block schedule, exclusions, and analysis
 inputs. Smoke has its own manifest/bout and cannot enter blinding or analysis.
-Manifest construction is no-clobber by default; the explicit
-`--replace-draft` flag works only before any ledger or run artifact exists.
+Manifest publication uses an atomically no-clobber same-directory operation;
+the explicit `--replace-draft` flag works only on an unchanged safe draft
+before any claim, intent, ledger, or run artifact exists.
 The post-smoke technical amendment preserves the original one-call smoke bout,
 anchors it to its recorded Git commit, and permits exactly one canonical
 two-condition continuation without retrying the consumed Codex slot. The
 response-free `smoke-status` view is the only supported technical inspection
 surface for those excluded outputs. Before launching a target, the current
-runner holds a bout-wide execution lock and durably creates an exclusive,
-slot-bound attempt intent. Every ledger row binds that immutable intent by path
-and hash. An intent without a matching durable row blocks all execution, so an
-uncertain crash cannot turn into a retry or exceed the frozen call budget.
+runner holds a bout-wide execution lock, durably appends a slot-bound row to
+`ATTEMPT_CLAIMS.jsonl`, then creates its exclusive immutable intent and
+revalidates both witnesses. Every ledger row binds the exact claim and intent.
+Any journal-only, intent-only, or mismatched state consumes the slot and blocks
+all execution, so an uncertain crash or partial witness loss cannot turn into a
+retry or exceed the frozen call budget. After a confirmatory attempt becomes
+analysis-ineligible, the same invocation pauses before another primary;
+reserves remain explicit and frozen-order only.
 Preregistered reserves require `--reserve`, `--replacement-for`, and one exact
 `--exclusion-reason` from the manifest; the runner accepts them only when that
 reason is supported by a same-condition ineligible attempt's recorded evidence.
