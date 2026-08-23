@@ -78,13 +78,28 @@ INITIAL_SMOKE_MANIFEST_REL = f"bouts/{EXPERIMENT_ID}-smoke/MANIFEST.json"
 INITIAL_SMOKE_FREEZE_ID = "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e"
 SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-2"
 ATTEMPT_INTENT_DIRECTORY = "ATTEMPT_INTENTS"
-ATTEMPT_INTENT_CONTRACT = {
+ATTEMPT_CLAIM_JOURNAL = "ATTEMPT_CLAIMS.jsonl"
+LEGACY_ATTEMPT_INTENT_CONTRACT = {
     "schema_version": 1,
     "directory": ATTEMPT_INTENT_DIRECTORY,
     "serialization": "nonblocking exclusive advisory lock on the bout directory for the complete runner transaction",
     "claim": "exclusive regular-file creation plus file and directory fsync before driver process launch",
     "resolution": "immutable intent retained and bound by exact path and SHA-256 in one durable execution-ledger row",
     "unresolved_policy": "block every subsequent execution without retry",
+}
+ATTEMPT_INTENT_CONTRACT = {
+    "schema_version": 2,
+    "directory": ATTEMPT_INTENT_DIRECTORY,
+    "claim_journal": ATTEMPT_CLAIM_JOURNAL,
+    "serialization": "nonblocking exclusive advisory lock on the bout directory for the complete runner transaction",
+    "claim": "append and fsync one authoritative journal row before exclusive regular-file intent creation and before driver process launch",
+    "revalidation": "journal, intent, execution order, and call budget revalidated immediately before driver process launch",
+    "resolution": "immutable journal row and intent retained and bound by exact path, sequence, and SHA-256 in one durable execution-ledger row",
+    "unresolved_policy": "a journal-only or intent-only claim consumes its slot and blocks every subsequent execution without retry",
+}
+LEGACY_ATTEMPT_MANIFEST_FREEZE_IDS = {
+    "907f1280f3d9670899836fe476bbb5b17d7a70272a9b4f52c64d70d76a4c740c",
+    "0b80e0f9b1fd4cfda26a78a3a134f3b97a9ab52861c17932d2053a91dde89a71",
 }
 ATTEMPT_INTENT_FIELDS = {
     "schema_version",
@@ -102,6 +117,12 @@ ATTEMPT_INTENT_FIELDS = {
     "preflight_sha256",
     "harness_commit",
     "command_sha256",
+}
+ATTEMPT_CLAIM_FIELDS = {
+    *ATTEMPT_INTENT_FIELDS,
+    "sequence",
+    "attempt_intent",
+    "attempt_intent_sha256",
 }
 FROZEN_CORE_RELATIVE = [
     PROMPT_REL,
@@ -310,6 +331,7 @@ class SyntheticAttemptCrash(BaseException):
 
 SYNTHETIC_CRASH_CHECKPOINTS = {
     "pre_claim",
+    "post_journal_pre_intent",
     "post_claim_pre_spawn",
     "post_spawn",
     "post_cleanup",
@@ -402,6 +424,187 @@ def write_json_exclusive(path: Path, value: Any) -> str:
     return sha256_bytes(payload)
 
 
+def _renameat2_noreplace(
+    source_fd: int,
+    source_name: str,
+    destination_fd: int,
+    destination_name: str,
+    *,
+    label: str,
+) -> None:
+    function = getattr(ctypes.CDLL(None, use_errno=True), "renameat2", None)
+    if function is None:
+        raise OSError("renameat2 with RENAME_NOREPLACE is unavailable")
+    function.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    function.restype = ctypes.c_int
+    result = function(
+        source_fd,
+        os.fsencode(source_name),
+        destination_fd,
+        os.fsencode(destination_name),
+        RENAME_NOREPLACE,
+    )
+    if result == 0:
+        return
+    error_number = ctypes.get_errno()
+    if error_number == errno.EEXIST:
+        raise FileExistsError(f"refusing to overwrite {label}")
+    raise OSError(error_number, os.strerror(error_number), source_name)
+
+
+def _read_manifest_file_at(parent_fd: int, name: str) -> tuple[os.stat_result, bytes]:
+    attached = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+    if (
+        not stat.S_ISREG(attached.st_mode)
+        or stat.S_ISLNK(attached.st_mode)
+        or attached.st_nlink != 1
+        or attached.st_uid != os.getuid()
+        or stat.S_IMODE(attached.st_mode) & 0o002
+    ):
+        raise ValueError("manifest publication target is unsafe")
+    flags = os.O_RDONLY | os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(name, flags, dir_fd=parent_fd)
+    try:
+        opened = os.fstat(descriptor)
+        if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
+            raise ValueError("manifest publication target changed while opened")
+        return opened, _read_descriptor_bytes(descriptor, limit=16 * 1024 * 1024)
+    finally:
+        os.close(descriptor)
+
+
+def _manifest_publication_baseline(path: Path) -> dict[str, Any] | None:
+    """Capture one safe draft inode before an explicit replacement build."""
+    absolute = Path(os.path.abspath(path))
+    _reject_symlink_components(absolute.parent, "manifest publication parent")
+    if not absolute.parent.is_dir():
+        return None
+    parent_fd = os.open(absolute.parent, _directory_open_flags())
+    try:
+        try:
+            attached = os.stat(
+                absolute.name, dir_fd=parent_fd, follow_symlinks=False
+            )
+        except FileNotFoundError:
+            return None
+        try:
+            attached, payload = _read_manifest_file_at(parent_fd, absolute.name)
+        except ValueError as exc:
+            raise ValueError(f"draft manifest replacement target is unsafe: {path}") from exc
+        return {
+            "device": attached.st_dev,
+            "inode": attached.st_ino,
+            "sha256": sha256_bytes(payload),
+            "payload": payload,
+        }
+    finally:
+        os.close(parent_fd)
+
+
+def _publish_manifest_atomic(
+    path: Path,
+    payload: bytes,
+    *,
+    replace_baseline: dict[str, Any] | None,
+    replace_draft: bool,
+    replace_forbidden_paths: tuple[Path, ...] = (),
+) -> None:
+    """Publish a complete manifest atomically, with no-clobber as the default."""
+    absolute = Path(os.path.abspath(path))
+    _reject_symlink_components(absolute.parent, "manifest publication parent")
+    parent_existed = absolute.parent.is_dir()
+    absolute.parent.mkdir(parents=True, exist_ok=True)
+    _reject_symlink_components(absolute.parent, "manifest publication parent")
+    if not parent_existed:
+        ancestor_fd = os.open(absolute.parent.parent, _directory_open_flags())
+        try:
+            os.fsync(ancestor_fd)
+        finally:
+            os.close(ancestor_fd)
+    parent_fd = os.open(absolute.parent, _directory_open_flags())
+    temporary_name: str | None = None
+    temporary_fd: int | None = None
+    try:
+        fcntl.flock(parent_fd, fcntl.LOCK_EX)
+        if replace_draft:
+            if replace_baseline is None:
+                raise FileNotFoundError(
+                    f"draft manifest replacement target does not exist: {path}"
+                )
+            try:
+                attached, current = _read_manifest_file_at(parent_fd, absolute.name)
+            except (FileNotFoundError, ValueError) as exc:
+                raise FileExistsError(
+                    "draft manifest changed during construction; refusing concurrent replacement"
+                ) from exc
+            if (
+                (attached.st_dev, attached.st_ino)
+                != (replace_baseline["device"], replace_baseline["inode"])
+                or sha256_bytes(current) != replace_baseline["sha256"]
+            ):
+                raise FileExistsError(
+                    "draft manifest changed during construction; refusing concurrent replacement"
+                )
+            if any(path_entry_exists(item) for item in replace_forbidden_paths):
+                raise ValueError(
+                    "refusing to replace a manifest after any run artifact or ledger exists"
+                )
+        for _ in range(64):
+            candidate = f".{absolute.name}.publish-{os.urandom(12).hex()}.tmp"
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
+            if hasattr(os, "O_NOFOLLOW"):
+                flags |= os.O_NOFOLLOW
+            try:
+                temporary_fd = os.open(candidate, flags, 0o600, dir_fd=parent_fd)
+            except FileExistsError:
+                continue
+            temporary_name = candidate
+            break
+        if temporary_fd is None or temporary_name is None:
+            raise FileExistsError("could not allocate an exclusive manifest publication file")
+        offset = 0
+        while offset < len(payload):
+            offset += os.write(temporary_fd, payload[offset:])
+        os.fsync(temporary_fd)
+        written = os.fstat(temporary_fd)
+        if not stat.S_ISREG(written.st_mode) or written.st_nlink != 1 or written.st_size != len(payload):
+            raise ValueError("manifest publication file changed before commit")
+        os.close(temporary_fd)
+        temporary_fd = None
+        if replace_draft:
+            os.replace(
+                temporary_name,
+                absolute.name,
+                src_dir_fd=parent_fd,
+                dst_dir_fd=parent_fd,
+            )
+        else:
+            _renameat2_noreplace(
+                parent_fd,
+                temporary_name,
+                parent_fd,
+                absolute.name,
+                label=f"frozen manifest: {path}",
+            )
+        temporary_name = None
+        os.fsync(parent_fd)
+    finally:
+        if temporary_fd is not None:
+            os.close(temporary_fd)
+        if temporary_name is not None:
+            try:
+                os.unlink(temporary_name, dir_fd=parent_fd)
+                os.fsync(parent_fd)
+            except FileNotFoundError:
+                pass
+        try:
+            fcntl.flock(parent_fd, fcntl.LOCK_UN)
+        finally:
+            os.close(parent_fd)
+
+
 def unlink_file_durable(path: Path) -> None:
     """Remove one file and sync its parent without resolving through a swapped parent."""
     parent_fd = os.open(path.parent, _directory_open_flags())
@@ -425,8 +628,21 @@ def file_record(path: Path) -> dict[str, Any]:
     return {"path": relative(path), "sha256": sha256_bytes(data), "bytes": len(data)}
 
 
+def attempt_intent_contract_version(manifest: dict[str, Any]) -> int:
+    contract = manifest.get("attempt_intent_contract")
+    if contract == ATTEMPT_INTENT_CONTRACT:
+        return 2
+    if contract == LEGACY_ATTEMPT_INTENT_CONTRACT:
+        return 1
+    return 0
+
+
 def attempt_intent_enabled(manifest: dict[str, Any]) -> bool:
-    return manifest.get("attempt_intent_contract") == ATTEMPT_INTENT_CONTRACT
+    return attempt_intent_contract_version(manifest) in {1, 2}
+
+
+def attempt_claim_journal_enabled(manifest: dict[str, Any]) -> bool:
+    return attempt_intent_contract_version(manifest) == 2
 
 
 def attempt_intent_directory(manifest: dict[str, Any]) -> Path:
@@ -435,6 +651,10 @@ def attempt_intent_directory(manifest: dict[str, Any]) -> Path:
 
 def attempt_intent_path(manifest: dict[str, Any], slot_id: str) -> Path:
     return attempt_intent_directory(manifest) / f"{_safe_path_component(slot_id, 'attempt-intent slot ID')}.json"
+
+
+def attempt_claim_journal_path(manifest: dict[str, Any]) -> Path:
+    return ROOT / str(manifest.get("bout_dir", "")) / ATTEMPT_CLAIM_JOURNAL
 
 
 def _open_attempt_intent_directory(
@@ -515,6 +735,177 @@ def _read_regular_file_at(directory_fd: int, name: str, *, limit: int = 65536) -
         return b"".join(chunks)
     finally:
         os.close(descriptor)
+
+
+def _open_attempt_bout_directory(
+    manifest: dict[str, Any], *, create: bool
+) -> int | None:
+    """Open the frozen bout directory without following a path component."""
+    bout = Path(os.path.abspath(ROOT / str(manifest.get("bout_dir", ""))))
+    try:
+        bout.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise ValueError("attempt-claim bout directory escapes the repository") from exc
+    _reject_symlink_components(bout, "attempt-claim bout directory")
+    existed = path_entry_exists(bout)
+    if create:
+        bout.mkdir(parents=True, exist_ok=True)
+        if not existed:
+            parent_fd = os.open(bout.parent, _directory_open_flags())
+            try:
+                os.fsync(parent_fd)
+            finally:
+                os.close(parent_fd)
+    if not path_entry_exists(bout):
+        return None
+    _reject_symlink_components(bout, "attempt-claim bout directory")
+    attached = bout.lstat()
+    if not stat.S_ISDIR(attached.st_mode) or stat.S_ISLNK(attached.st_mode):
+        raise ValueError("attempt-claim bout path is not a real directory")
+    descriptor = os.open(bout, _directory_open_flags())
+    opened = os.fstat(descriptor)
+    if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
+        os.close(descriptor)
+        raise ValueError("attempt-claim bout directory changed while it was opened")
+    return descriptor
+
+
+def _read_descriptor_bytes(descriptor: int, *, limit: int) -> bytes:
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    chunks: list[bytes] = []
+    length = 0
+    while True:
+        chunk = os.read(descriptor, min(65536, limit + 1 - length))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        length += len(chunk)
+        if length > limit:
+            raise ValueError("append-only claim journal exceeds the safety size limit")
+    return b"".join(chunks)
+
+
+def _parse_attempt_claim_payload(
+    manifest: dict[str, Any], payload: bytes
+) -> tuple[list[dict[str, Any]], list[str]]:
+    records: list[dict[str, Any]] = []
+    errors: list[str] = []
+    all_slots = {
+        slot["slot_id"]: slot
+        for slot in [*(manifest.get("schedule") or []), *(manifest.get("reserve_slots") or [])]
+    }
+    if payload and not payload.endswith(b"\n"):
+        errors.append("attempt-claim journal ends with an incomplete row")
+    for line_number, raw_line in enumerate(payload.splitlines(keepends=True), start=1):
+        if not raw_line.endswith(b"\n") or not raw_line.strip():
+            errors.append(f"attempt-claim journal row {line_number} is incomplete or blank")
+            continue
+        try:
+            record = json.loads(raw_line)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            errors.append(f"attempt-claim journal row {line_number} is malformed")
+            continue
+        if not isinstance(record, dict):
+            errors.append(f"attempt-claim journal row {line_number} is not an object")
+            continue
+        row_errors: list[str] = []
+        slot_id = str(record.get("slot_id") or "")
+        slot = all_slots.get(slot_id)
+        if set(record) != ATTEMPT_CLAIM_FIELDS:
+            row_errors.append("field set differs from the frozen schema")
+        for good, label in (
+            (record.get("schema_version") == 1, "schema version"),
+            (record.get("record_kind") == "target-attempt-claim", "record kind"),
+            (record.get("experiment_id") == manifest.get("experiment_id"), "experiment ID"),
+            (record.get("manifest_freeze_id") == manifest.get("freeze_id"), "freeze ID"),
+            (record.get("phase") == manifest.get("phase"), "phase"),
+            (record.get("sequence") == line_number, "sequence"),
+            (slot is not None, "slot ID"),
+            (
+                slot is not None and record.get("condition_id") == slot.get("condition_id"),
+                "condition ID",
+            ),
+            (
+                slot is not None and record.get("kind") == slot.get("kind", "primary"),
+                "slot kind",
+            ),
+        ):
+            if not good:
+                row_errors.append(f"{label} mismatch")
+        if slot is not None:
+            try:
+                expected_run_dir = relative(output_dir_for(manifest, slot))
+            except (KeyError, OSError, ValueError):
+                expected_run_dir = None
+            if record.get("run_dir") != expected_run_dir:
+                row_errors.append("run directory mismatch")
+            expected_intent = str(
+                Path(manifest["bout_dir"])
+                / ATTEMPT_INTENT_DIRECTORY
+                / f"{slot_id}.json"
+            )
+            if record.get("attempt_intent") != expected_intent:
+                row_errors.append("attempt-intent path mismatch")
+            if slot.get("kind", "primary") == "primary" and (
+                record.get("replacement_for") is not None
+                or record.get("exclusion_reason") is not None
+            ):
+                row_errors.append("primary claim contains replacement metadata")
+        for key, label, pattern in (
+            ("preflight_sha256", "preflight hash", r"[0-9a-f]{64}"),
+            ("harness_commit", "harness commit", r"[0-9a-f]{40}"),
+            ("command_sha256", "command hash", r"[0-9a-f]{64}"),
+            ("attempt_intent_sha256", "attempt-intent hash", r"[0-9a-f]{64}"),
+        ):
+            if not re.fullmatch(pattern, str(record.get(key) or "")):
+                row_errors.append(f"{label} is invalid")
+        try:
+            datetime.fromisoformat(str(record.get("created_at") or "").replace("Z", "+00:00"))
+        except ValueError:
+            row_errors.append("creation timestamp is invalid")
+        if row_errors:
+            errors.extend(
+                f"attempt-claim journal row {line_number}: {issue}"
+                for issue in row_errors
+            )
+        records.append(
+            {
+                "record": record,
+                "path": str(Path(manifest["bout_dir"]) / ATTEMPT_CLAIM_JOURNAL),
+                "sha256": sha256_bytes(raw_line),
+                "line": line_number,
+            }
+        )
+    slot_ids = [str(item["record"].get("slot_id")) for item in records]
+    if len(slot_ids) != len(set(slot_ids)):
+        errors.append("attempt-claim journal contains a duplicate slot")
+    return records, errors
+
+
+def read_attempt_claims(
+    manifest: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Read the authoritative append-only claim journal without following it."""
+    if not attempt_claim_journal_enabled(manifest):
+        return [], []
+    try:
+        directory_fd = _open_attempt_bout_directory(manifest, create=False)
+    except (OSError, ValueError) as exc:
+        return [], [f"attempt-claim journal parent is unsafe: {type(exc).__name__}: {exc}"]
+    if directory_fd is None:
+        return [], []
+    try:
+        try:
+            payload = _read_regular_file_at(
+                directory_fd, ATTEMPT_CLAIM_JOURNAL, limit=16 * 1024 * 1024
+            )
+        except FileNotFoundError:
+            return [], []
+        except (OSError, ValueError) as exc:
+            return [], [f"attempt-claim journal is unsafe or malformed: {type(exc).__name__}: {exc}"]
+    finally:
+        os.close(directory_fd)
+    return _parse_attempt_claim_payload(manifest, payload)
 
 
 def read_attempt_intents(
@@ -611,22 +1002,19 @@ def read_attempt_intents(
     return records, errors
 
 
-def claim_attempt_intent(
+def _attempt_intent_record(
     manifest: dict[str, Any],
     slot: dict[str, Any],
     preflight: dict[str, Any],
     command: list[str],
-) -> tuple[str, str]:
-    """Durably acquire a frozen target slot before any driver process launch."""
-    if not attempt_intent_enabled(manifest):
-        raise ValueError("attempt-intent contract is not enabled")
+) -> dict[str, Any]:
     if not re.fullmatch(r"[0-9a-f]{64}", str(preflight.get("sha256") or "")):
         raise ValueError("attempt-intent preflight hash is invalid")
     if not re.fullmatch(r"[0-9a-f]{40}", str(preflight.get("harness_commit") or "")):
         raise ValueError("attempt-intent harness commit is invalid")
     if not command or not all(isinstance(value, str) and value for value in command):
         raise ValueError("attempt-intent command is invalid")
-    record = {
+    return {
         "schema_version": 1,
         "record_kind": "target-attempt-intent",
         "experiment_id": manifest["experiment_id"],
@@ -643,10 +1031,197 @@ def claim_attempt_intent(
         "harness_commit": preflight["harness_commit"],
         "command_sha256": sha256_bytes(canonical_json(command)),
     }
-    payload = json.dumps(record, indent=2, ensure_ascii=False).encode() + b"\n"
+
+
+def _read_claim_ledger_at(directory_fd: int) -> list[dict[str, Any]]:
+    try:
+        payload = _read_regular_file_at(
+            directory_fd, "EXECUTION.jsonl", limit=16 * 1024 * 1024
+        )
+    except FileNotFoundError:
+        return []
+    if payload and not payload.endswith(b"\n"):
+        raise ValueError("execution ledger ends with an incomplete row")
+    ledger: list[dict[str, Any]] = []
+    for number, raw_line in enumerate(payload.splitlines(keepends=True), start=1):
+        if not raw_line.endswith(b"\n") or not raw_line.strip():
+            raise ValueError(f"execution ledger is malformed at line {number}")
+        try:
+            row = json.loads(raw_line)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError(f"execution ledger is malformed at line {number}") from exc
+        if not isinstance(row, dict):
+            raise ValueError(f"execution ledger row {number} is not an object")
+        ledger.append(row)
+    return ledger
+
+
+def _confirmatory_pending_attempt(
+    ledger: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    pending: dict[str, Any] | None = None
+    for row in ledger:
+        if row.get("kind") == "primary":
+            if pending is not None:
+                return pending
+            pending = row if row.get("analysis_eligible") is False else None
+            continue
+        if pending is None or row.get("replacement_for") != pending.get("slot_id"):
+            continue
+        pending = row if row.get("analysis_eligible") is False else None
+    return pending
+
+
+def _append_attempt_claim(
+    manifest: dict[str, Any], intent_record: dict[str, Any], intent_sha256: str
+) -> dict[str, Any]:
+    """Append and sync the authoritative witness before creating the intent."""
+    directory_fd = _open_attempt_bout_directory(manifest, create=True)
+    assert directory_fd is not None
+    flags = os.O_RDWR | os.O_APPEND | os.O_CREAT | os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor: int | None = None
+    journal_existed = False
+    try:
+        try:
+            attached_before = os.stat(
+                ATTEMPT_CLAIM_JOURNAL,
+                dir_fd=directory_fd,
+                follow_symlinks=False,
+            )
+        except FileNotFoundError:
+            attached_before = None
+        else:
+            journal_existed = True
+            if not stat.S_ISREG(attached_before.st_mode) or stat.S_ISLNK(
+                attached_before.st_mode
+            ):
+                raise ValueError("attempt-claim journal is not a regular file")
+        descriptor = os.open(
+            ATTEMPT_CLAIM_JOURNAL, flags, 0o600, dir_fd=directory_fd
+        )
+        opened = os.fstat(descriptor)
+        attached = os.stat(
+            ATTEMPT_CLAIM_JOURNAL,
+            dir_fd=directory_fd,
+            follow_symlinks=False,
+        )
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or opened.st_nlink != 1
+            or opened.st_uid != os.getuid()
+            or stat.S_IMODE(opened.st_mode) & 0o022
+            or (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino)
+        ):
+            raise ValueError("attempt-claim journal ownership, permissions, or identity are unsafe")
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        existing_payload = _read_descriptor_bytes(
+            descriptor, limit=16 * 1024 * 1024
+        )
+        existing, claim_errors = _parse_attempt_claim_payload(
+            manifest, existing_payload
+        )
+        if claim_errors:
+            raise ValueError("attempt-claim journal is invalid: " + "; ".join(claim_errors))
+        slot_id = str(intent_record["slot_id"])
+        if any(item["record"].get("slot_id") == slot_id for item in existing):
+            raise FileExistsError(
+                f"attempt-claim journal already contains {slot_id}"
+            )
+        ledger = _read_claim_ledger_at(directory_fd)
+        claim_slot_ids = [str(item["record"].get("slot_id")) for item in existing]
+        ledger_slot_ids = [str(row.get("slot_id")) for row in ledger]
+        if claim_slot_ids != ledger_slot_ids:
+            raise ValueError(
+                "an unresolved or mismatched authoritative claim blocks another target attempt"
+            )
+        all_primaries = [slot["slot_id"] for slot in manifest.get("schedule") or []]
+        claimed_primaries = [
+            value for value in claim_slot_ids if value in set(all_primaries)
+        ]
+        if intent_record.get("kind") == "primary":
+            if len(claimed_primaries) >= len(all_primaries) or slot_id != all_primaries[
+                len(claimed_primaries)
+            ]:
+                raise ValueError(
+                    "attempt-claim primary is not the next frozen sequence slot"
+                )
+        else:
+            condition_reserves = [
+                slot["slot_id"]
+                for slot in manifest.get("reserve_slots") or []
+                if slot.get("condition_id") == intent_record.get("condition_id")
+            ]
+            claimed_reserves = [
+                value for value in claim_slot_ids if value in set(condition_reserves)
+            ]
+            if (
+                len(claimed_reserves) >= len(condition_reserves)
+                or slot_id != condition_reserves[len(claimed_reserves)]
+            ):
+                raise ValueError(
+                    "attempt-claim reserve is not the next frozen reserve index"
+                )
+        if manifest.get("phase") == "confirmatory":
+            pending = _confirmatory_pending_attempt(ledger)
+            if intent_record.get("kind") == "primary" and pending is not None:
+                raise ValueError(
+                    f"analysis-ineligible attempt {pending.get('slot_id')} requires its next frozen reserve before a later primary"
+                )
+            if intent_record.get("kind") == "reserve" and (
+                pending is None
+                or intent_record.get("replacement_for") != pending.get("slot_id")
+            ):
+                raise ValueError(
+                    "the next frozen reserve must replace the currently paused analysis-ineligible attempt"
+                )
+        intent_path = str(
+            Path(manifest["bout_dir"])
+            / ATTEMPT_INTENT_DIRECTORY
+            / f"{slot_id}.json"
+        )
+        claim_record = {
+            **intent_record,
+            "record_kind": "target-attempt-claim",
+            "sequence": len(existing) + 1,
+            "attempt_intent": intent_path,
+            "attempt_intent_sha256": intent_sha256,
+        }
+        payload = (json.dumps(claim_record, sort_keys=True) + "\n").encode()
+        offset = 0
+        while offset < len(payload):
+            offset += os.write(descriptor, payload[offset:])
+        os.fsync(descriptor)
+        os.fsync(directory_fd)
+        return {
+            "record": claim_record,
+            "path": str(Path(manifest["bout_dir"]) / ATTEMPT_CLAIM_JOURNAL),
+            "sha256": sha256_bytes(payload),
+            "line": claim_record["sequence"],
+        }
+    finally:
+        if descriptor is not None:
+            try:
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+            finally:
+                os.close(descriptor)
+        if not journal_existed:
+            # Syncing even a rejected first creation makes the empty fail-closed
+            # journal's directory entry durable.
+            try:
+                os.fsync(directory_fd)
+            except OSError:
+                pass
+        os.close(directory_fd)
+
+
+def _write_attempt_intent_record(
+    manifest: dict[str, Any], record: dict[str, Any], payload: bytes
+) -> tuple[str, str]:
     directory_fd = _open_attempt_intent_directory(manifest, create=True)
     assert directory_fd is not None
-    name = f"{_safe_path_component(slot['slot_id'], 'attempt-intent slot ID')}.json"
+    name = f"{_safe_path_component(record['slot_id'], 'attempt-intent slot ID')}.json"
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
@@ -673,6 +1248,27 @@ def claim_attempt_intent(
         os.close(directory_fd)
     path = str(Path(manifest["bout_dir"]) / ATTEMPT_INTENT_DIRECTORY / name)
     return path, sha256_bytes(payload)
+
+
+def claim_attempt_intent(
+    manifest: dict[str, Any],
+    slot: dict[str, Any],
+    preflight: dict[str, Any],
+    command: list[str],
+    *,
+    test_only_crash_checkpoint: str | None = None,
+) -> tuple[str, str]:
+    """Durably acquire a frozen target slot before any driver process launch."""
+    if not attempt_intent_enabled(manifest):
+        raise ValueError("attempt-intent contract is not enabled")
+    record = _attempt_intent_record(manifest, slot, preflight, command)
+    payload = json.dumps(record, indent=2, ensure_ascii=False).encode() + b"\n"
+    if attempt_claim_journal_enabled(manifest):
+        _append_attempt_claim(manifest, record, sha256_bytes(payload))
+        synthetic_crash_checkpoint(
+            test_only_crash_checkpoint, "post_journal_pre_intent"
+        )
+    return _write_attempt_intent_record(manifest, record, payload)
 
 
 def acquire_execution_lock(manifest: dict[str, Any]) -> int:
@@ -962,7 +1558,24 @@ def validate_smoke_call_budget(
         str(slot_id).partition("--")[2]
         for slot_id in continuation.get("consumed_slot_ids") or []
     }
-    if attempt_intent_enabled(manifest):
+    if attempt_claim_journal_enabled(manifest):
+        claims, claim_errors = read_attempt_claims(manifest)
+        intent_records, intent_errors = read_attempt_intents(manifest)
+        errors.extend(claim_errors)
+        errors.extend(intent_errors)
+        claimed_slot_ids = {
+            str(item["record"].get("slot_id")) for item in claims
+        } | set(intent_records) | {
+            str(row.get("slot_id"))
+            for row in ledger
+            if isinstance(row, dict) and row.get("kind") == "primary"
+        }
+        continuation_conditions = [
+            str(slot.get("condition_id"))
+            for slot in manifest.get("schedule") or []
+            if slot["slot_id"] in claimed_slot_ids
+        ]
+    elif attempt_intent_enabled(manifest):
         intent_records, intent_errors = read_attempt_intents(manifest)
         errors.extend(intent_errors)
         claimed_slot_ids = set(intent_records) | {
@@ -1017,6 +1630,9 @@ def build_manifest(
 ) -> dict[str, Any]:
     if phase not in {"smoke", "confirmatory"}:
         raise ValueError("phase must be smoke or confirmatory")
+    draft_baseline = (
+        _manifest_publication_baseline(output) if replace_draft else None
+    )
     if phase == "confirmatory" and repeats < 10:
         raise ValueError("confirmatory manifests require at least 10 runs per condition")
     requested_bout_dir = bout_dir_override or f"bouts/{EXPERIMENT_ID}{'-smoke' if phase == 'smoke' else ''}"
@@ -1196,21 +1812,22 @@ def build_manifest(
     if test_only_allow_noncanonical_paths:
         manifest["test_only_noncanonical_paths"] = True
     manifest["freeze_id"] = sha256_bytes(canonical_json(manifest))
-    output.parent.mkdir(parents=True, exist_ok=True)
-    if output.exists() or output.is_symlink():
-        if not replace_draft:
-            raise FileExistsError(f"refusing to overwrite frozen manifest: {output}")
-        if output.is_symlink() or not output.is_file():
-            raise ValueError(f"draft manifest replacement target is unsafe: {output}")
+    runtime_paths: tuple[Path, ...] = ()
+    if replace_draft:
+        if draft_baseline is None:
+            raise FileNotFoundError(
+                f"draft manifest replacement target does not exist: {output}"
+            )
         try:
-            prior = load_json(output)
-        except (OSError, json.JSONDecodeError) as exc:
+            prior = json.loads(draft_baseline["payload"])
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ValueError(f"draft manifest replacement target is unreadable: {type(exc).__name__}") from exc
         if prior.get("experiment_id") != EXPERIMENT_ID or prior.get("phase") != phase:
             raise ValueError("draft manifest replacement target belongs to a different experiment or phase")
         prior_bout = ROOT / str(prior.get("bout_dir", ""))
         runtime_paths = (
             prior_bout / "EXECUTION.jsonl",
+            prior_bout / ATTEMPT_CLAIM_JOURNAL,
             prior_bout / ATTEMPT_INTENT_DIRECTORY,
             prior_bout / "ATTEMPT_FAILURES",
             prior_bout / "QUARANTINE",
@@ -1218,7 +1835,14 @@ def build_manifest(
         )
         if any(path.exists() or path.is_symlink() for path in runtime_paths):
             raise ValueError("refusing to replace a manifest after any run artifact or ledger exists")
-    output.write_bytes(json.dumps(manifest, indent=2, ensure_ascii=False).encode() + b"\n")
+    payload = json.dumps(manifest, indent=2, ensure_ascii=False).encode() + b"\n"
+    _publish_manifest_atomic(
+        output,
+        payload,
+        replace_baseline=draft_baseline,
+        replace_draft=replace_draft,
+        replace_forbidden_paths=runtime_paths,
+    )
     return manifest
 
 
@@ -1270,6 +1894,14 @@ def validate_manifest(
     if intent_contract is None:
         if not allow_historical and not test_only_noncanonical:
             errors.append("production manifest lacks the crash-durable attempt-intent contract")
+    elif intent_contract == LEGACY_ATTEMPT_INTENT_CONTRACT:
+        if (
+            not allow_historical
+            and manifest.get("freeze_id") not in LEGACY_ATTEMPT_MANIFEST_FREEZE_IDS
+        ):
+            errors.append(
+                "legacy attempt-intent contract is restricted to immutable amendment-2 freezes"
+            )
     elif intent_contract != ATTEMPT_INTENT_CONTRACT:
         errors.append("attempt-intent contract differs from the frozen crash-durability contract")
     task = manifest.get("task") or {}
@@ -1493,7 +2125,11 @@ def validate_historical_smoke_sources(
         except (OSError, json.JSONDecodeError) as exc:
             errors.append(f"canonical continuation manifest is unreadable: {type(exc).__name__}")
         else:
-            continuation_errors = validate_manifest(continuation_manifest)
+            continuation_errors = validate_manifest(
+                continuation_manifest,
+                check_files=False,
+                allow_historical=True,
+            )
             errors.extend(
                 f"canonical continuation: {error}" for error in continuation_errors
             )
@@ -2915,12 +3551,21 @@ def eligible_exclusion_reasons(record: dict[str, Any]) -> list[str]:
 
 
 def validate_attempt_intents(
-    manifest: dict[str, Any], ledger: list[dict[str, Any]]
+    manifest: dict[str, Any],
+    ledger: list[dict[str, Any]],
+    *,
+    launch_slot_id: str | None = None,
 ) -> list[str]:
-    """Bind every production ledger row to one durable pre-launch slot claim."""
+    """Bind the journal, intent files, and ledger without forgiving gaps."""
     if not attempt_intent_enabled(manifest):
         return []
     records, errors = read_attempt_intents(manifest)
+    claims, claim_errors = read_attempt_claims(manifest)
+    errors.extend(claim_errors)
+    claim_by_slot = {
+        str(item["record"].get("slot_id")): item for item in claims
+    }
+    journal_enabled = attempt_claim_journal_enabled(manifest)
     all_slots = {
         slot["slot_id"]: slot
         for slot in [*(manifest.get("schedule") or []), *(manifest.get("reserve_slots") or [])]
@@ -2933,6 +3578,20 @@ def validate_attempt_intents(
     for slot_id, row in ledger_by_slot.items():
         intent = records.get(slot_id)
         location = f"execution ledger row for {slot_id}"
+        claim = claim_by_slot.get(slot_id)
+        if journal_enabled:
+            if claim is None:
+                errors.append(f"{location} lacks its authoritative attempt-claim journal row")
+            else:
+                expected_claim_path = str(
+                    Path(manifest["bout_dir"]) / ATTEMPT_CLAIM_JOURNAL
+                )
+                if row.get("attempt_claim_journal") != expected_claim_path:
+                    errors.append(f"{location} attempt-claim journal path mismatch")
+                if row.get("attempt_claim_sequence") != claim["line"]:
+                    errors.append(f"{location} attempt-claim sequence mismatch")
+                if row.get("attempt_claim_sha256") != claim["sha256"]:
+                    errors.append(f"{location} attempt-claim hash mismatch")
         if intent is None:
             errors.append(f"{location} lacks its durable attempt intent")
             continue
@@ -2955,10 +3614,56 @@ def validate_attempt_intents(
         ):
             if not good:
                 errors.append(f"{location} and attempt intent have different {label}")
+    if journal_enabled:
+        journal_ids = [str(item["record"].get("slot_id")) for item in claims]
+        ledger_ids = [
+            str(row.get("slot_id"))
+            for row in ledger
+            if isinstance(row, dict) and row.get("slot_id") in all_slots
+        ]
+        if journal_ids[: len(ledger_ids)] != ledger_ids or len(ledger_ids) > len(
+            journal_ids
+        ):
+            errors.append(
+                "execution ledger order is not an exact prefix of the authoritative attempt-claim journal"
+            )
+        if len(journal_ids) > len(ledger_ids) + 1:
+            errors.append(
+                "multiple unresolved authoritative claims violate serial execution"
+            )
+        for slot_id, claim in claim_by_slot.items():
+            intent = records.get(slot_id)
+            if intent is None:
+                errors.append(
+                    f"authoritative attempt claim for {slot_id} lacks its durable attempt intent"
+                )
+                continue
+            claim_record = claim["record"]
+            intent_record = intent["record"]
+            if claim_record.get("attempt_intent") != intent.get("path"):
+                errors.append(
+                    f"authoritative attempt claim for {slot_id} has a different intent path"
+                )
+            if claim_record.get("attempt_intent_sha256") != intent.get("sha256"):
+                errors.append(
+                    f"authoritative attempt claim for {slot_id} has a different intent hash"
+                )
+            for key in ATTEMPT_INTENT_FIELDS - {"record_kind"}:
+                if claim_record.get(key) != intent_record.get(key):
+                    errors.append(
+                        f"authoritative attempt claim and intent for {slot_id} differ at {key}"
+                    )
+        for slot_id in sorted(set(records) - set(claim_by_slot)):
+            errors.append(
+                f"attempt intent for {slot_id} lacks its authoritative attempt-claim journal row"
+            )
+        authority_records = claim_by_slot
+    else:
+        authority_records = records
     primary_claims = [
         slot["slot_id"]
         for slot in manifest.get("schedule") or []
-        if slot["slot_id"] in records
+        if slot["slot_id"] in authority_records
     ]
     expected_primaries = [slot["slot_id"] for slot in manifest.get("schedule") or []]
     if set(primary_claims) != set(expected_primaries[: len(primary_claims)]):
@@ -2967,7 +3672,8 @@ def validate_attempt_intents(
         reserve_claims = [
             slot["slot_id"]
             for slot in manifest.get("reserve_slots") or []
-            if slot.get("condition_id") == condition_id and slot["slot_id"] in records
+            if slot.get("condition_id") == condition_id
+            and slot["slot_id"] in authority_records
         ]
         expected_reserves = [
             slot["slot_id"]
@@ -2979,8 +3685,10 @@ def validate_attempt_intents(
                 f"attempt-intent reserve claims for {condition_id} are not in frozen reserve-index order"
             )
     allowed_reasons = set((manifest.get("exclusions") or {}).get("replace_only") or [])
-    for slot_id, intent in records.items():
-        slot = all_slots[slot_id]
+    for slot_id, intent in authority_records.items():
+        slot = all_slots.get(slot_id)
+        if slot is None:
+            continue
         record = intent["record"]
         if slot.get("kind") != "reserve":
             continue
@@ -2997,14 +3705,83 @@ def validate_attempt_intents(
                 errors.append(f"attempt intent for {slot_id} has an unsupported exclusion reason")
         if reason not in allowed_reasons:
             errors.append(f"attempt intent for {slot_id} has a non-preregistered exclusion reason")
-    unresolved = sorted(set(records) - set(ledger_by_slot))
+    unresolved = sorted(
+        (set(records) | set(authority_records)) - set(ledger_by_slot)
+    )
     if len(unresolved) > 1:
         errors.append("multiple unresolved attempt intents violate serial execution")
     for slot_id in unresolved:
+        paired = slot_id in records and (
+            not journal_enabled or slot_id in claim_by_slot
+        )
+        if launch_slot_id == slot_id and paired and unresolved == [slot_id]:
+            continue
         errors.append(
-            f"unresolved attempt intent for {slot_id} blocks every subsequent execution without retry"
+            f"unresolved attempt intent/claim for {slot_id} blocks every subsequent execution without retry"
         )
     return errors
+
+
+def validate_confirmatory_delivery_order(
+    manifest: dict[str, Any], ledger: list[dict[str, Any]]
+) -> list[str]:
+    """Require each ineligible attempt to be resolved before later primaries."""
+    if manifest.get("phase") != "confirmatory":
+        return []
+    errors: list[str] = []
+    pending: dict[str, Any] | None = None
+    for index, row in enumerate(ledger, start=1):
+        if not isinstance(row, dict):
+            continue
+        if pending is not None:
+            if row.get("kind") != "reserve" or row.get(
+                "replacement_for"
+            ) != pending.get("slot_id"):
+                errors.append(
+                    f"execution ledger row {index} bypasses analysis-ineligible attempt {pending.get('slot_id')}; its next frozen reserve was required first"
+                )
+                continue
+        elif row.get("kind") == "reserve":
+            errors.append(
+                f"execution ledger row {index} is a reserve without a current confirmatory pause"
+            )
+        pending = row if row.get("analysis_eligible") is False else None
+    return errors
+
+
+def authorize_attempt_launch(
+    manifest: dict[str, Any],
+    slot: dict[str, Any],
+    ledger: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Re-read both witnesses immediately before the only process launch."""
+    errors = validate_attempt_intents(
+        manifest, ledger, launch_slot_id=str(slot["slot_id"])
+    )
+    errors.extend(validate_smoke_call_budget(manifest, ledger))
+    if errors:
+        raise ValueError(
+            "attempt claim is not authorized for process launch:\n- "
+            + "\n- ".join(errors)
+        )
+    if not attempt_claim_journal_enabled(manifest):
+        return None
+    claims, claim_errors = read_attempt_claims(manifest)
+    if claim_errors:
+        raise ValueError(
+            "attempt-claim journal changed before process launch:\n- "
+            + "\n- ".join(claim_errors)
+        )
+    matches = [
+        item
+        for item in claims
+        if item["record"].get("slot_id") == slot["slot_id"]
+    ]
+    if len(matches) != 1 or matches[0]["line"] != len(ledger) + 1:
+        raise ValueError(
+            "the launch slot is not the sole next authoritative attempt claim"
+        )
+    return matches[0]
 
 
 def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, Any]]) -> list[str]:
@@ -3151,6 +3928,7 @@ def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, A
         ]
         if attempted_reserves != expected_reserves[: len(attempted_reserves)]:
             errors.append(f"reserve attempts for {condition_id} are not in frozen reserve-index order")
+    errors.extend(validate_confirmatory_delivery_order(manifest, ledger))
     errors.extend(validate_attempt_intents(manifest, ledger))
     return errors
 
@@ -4957,6 +5735,12 @@ def _run_slots_locked(
         replaced_row = next((row for row in ledger if row.get("slot_id") == replacement_for), None)
         if replaced_row is None or replaced_row.get("analysis_eligible") is not False:
             raise ValueError("the replaced attempt must exist in the ledger and be objectively ineligible")
+        if manifest["phase"] == "confirmatory":
+            pending = _confirmatory_pending_attempt(ledger)
+            if pending is None or pending.get("slot_id") != replacement_for:
+                raise ValueError(
+                    "the reserve must replace the currently paused analysis-ineligible attempt"
+                )
         if reserve["condition_id"] != replaced_row.get("condition_id"):
             raise ValueError("reserve and replaced attempt belong to different conditions")
         if exclusion_reason not in set(replaced_row.get("eligible_exclusion_reasons") or []):
@@ -5079,7 +5863,9 @@ def _run_slots_locked(
         intent_required = attempt_intent_enabled(manifest)
         attempt_intent_relative: str | None = None
         attempt_intent_sha256: str | None = None
+        attempt_claim: dict[str, Any] | None = None
         attempt_intent_claimed = not intent_required
+        launch_authorized = not intent_required
         record: dict[str, Any] | None = None
         driver_exit: int | None = None
         driver_process_spawned = False
@@ -5120,11 +5906,16 @@ def _run_slots_locked(
                     slot,
                     current_preflight,
                     command,
+                    test_only_crash_checkpoint=test_only_crash_checkpoint,
                 )
                 attempt_intent_claimed = True
                 synthetic_crash_checkpoint(
                     test_only_crash_checkpoint, "post_claim_pre_spawn"
                 )
+                attempt_claim = authorize_attempt_launch(
+                    manifest, slot, existing_ledger
+                )
+                launch_authorized = True
             try:
                 process = subprocess.Popen(
                     command,
@@ -5290,7 +6081,11 @@ def _run_slots_locked(
                                 "receipt": None,
                                 "receipt_error_type": type(receipt_exc).__name__,
                             }
-        if synthetic_crash is not None or not attempt_intent_claimed:
+        if (
+            synthetic_crash is not None
+            or not attempt_intent_claimed
+            or not launch_authorized
+        ):
             for signum, prior_handler in previous_signal_handlers.items():
                 signal.signal(signum, prior_handler)
             close_process_scope(process_scope)
@@ -5300,7 +6095,9 @@ def _run_slots_locked(
                 raise synthetic_crash
             if caught is not None:
                 raise caught
-            raise RuntimeError("attempt-intent claim failed before driver process launch")
+            raise RuntimeError(
+                "attempt claim failed authorization before driver process launch"
+            )
         if record is not None:
             validity_state = record["validity"]["state"]
             analysis_eligible = record["validity"]["confirmatory_analysis_eligible"]
@@ -5404,6 +6201,15 @@ def _run_slots_locked(
                     "eligible_exclusion_reasons": eligible_reasons,
                     "attempt_intent": attempt_intent_relative,
                     "attempt_intent_sha256": attempt_intent_sha256,
+                    "attempt_claim_journal": (
+                        attempt_claim["path"] if attempt_claim is not None else None
+                    ),
+                    "attempt_claim_sequence": (
+                        attempt_claim["line"] if attempt_claim is not None else None
+                    ),
+                    "attempt_claim_sha256": (
+                        attempt_claim["sha256"] if attempt_claim is not None else None
+                    ),
                     "preflight": current_preflight,
                     "failure_receipt": failure_receipt,
                     "failure_receipt_sha256": sha256_path(ROOT / failure_receipt) if failure_receipt else None,
@@ -5461,6 +6267,10 @@ def _run_slots_locked(
             if isinstance(caught, (KeyboardInterrupt, SystemExit)):
                 raise caught
             raise RuntimeError(f"attempt {slot['slot_id']} failed after its ledger row was preserved") from caught
+        if manifest["phase"] == "confirmatory" and analysis_eligible is False:
+            raise RuntimeError(
+                f"attempt {slot['slot_id']} is analysis-ineligible; run its next frozen reserve before any later primary"
+            )
         if record is not None and record["validity"]["state"] == "invalid_setup":
             raise RuntimeError(f"attempt {slot['slot_id']} failed the run-integrity gate; matrix halted")
 
