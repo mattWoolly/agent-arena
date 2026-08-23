@@ -30,10 +30,15 @@ ALLOWED_DIRECTORIES = {
 SECRET_KEYS = {
     "apikey",
     "authorization",
+    "bearertoken",
+    "cookie",
+    "credential",
+    "credentials",
     "accesstoken",
     "refreshtoken",
     "idtoken",
     "password",
+    "sessioncookie",
     "secret",
     "token",
 }
@@ -58,7 +63,16 @@ def _normalized_key(value: str) -> str:
 def _is_secret_key(value: str) -> bool:
     normalized = _normalized_key(value)
     return normalized in SECRET_KEYS or normalized.endswith(
-        ("apikey", "accesstoken", "refreshtoken", "idtoken", "password", "secret")
+        (
+            "apikey",
+            "authorization",
+            "cookie",
+            "credential",
+            "credentials",
+            "password",
+            "secret",
+            "token",
+        )
     )
 
 
@@ -167,6 +181,8 @@ def inspect_source(driver: str, home: Path) -> tuple[dict[str, Any], list[bytes]
     secrets = list(dict.fromkeys(_secret_values(parsed)))
     if not secrets:
         raise CredentialGuardError("credential source has zero recognized nonempty secret fields")
+    redacted_shape = _redacted_shape(parsed, preserve_nonsecret=driver == "kimi")
+    redacted_credential_structure_sha256 = sha256_bytes(canonical_json(redacted_shape))
     records = [
         {"path": ".", "type": "directory", "mode": format(stat.S_IMODE(home.lstat().st_mode), "04o")}
     ]
@@ -180,13 +196,12 @@ def inspect_source(driver: str, home: Path) -> tuple[dict[str, Any], list[bytes]
     )
     for rel in sorted(files):
         path = home / rel
-        shape = _redacted_shape(parsed, preserve_nonsecret=driver == "kimi")
         records.append(
             {
                 "path": rel,
                 "type": "regular_file",
                 "mode": format(stat.S_IMODE(path.lstat().st_mode), "04o"),
-                "redacted_content_sha256": sha256_bytes(canonical_json(shape)),
+                "redacted_content_sha256": redacted_credential_structure_sha256,
             }
         )
     inventory_sha = sha256_bytes(canonical_json(records))
@@ -196,6 +211,7 @@ def inspect_source(driver: str, home: Path) -> tuple[dict[str, Any], list[bytes]
         "source_schema": "json" if driver in {"claude", "codex"} else "toml",
         "allowed_files": sorted(ALLOWED_FILES[driver]),
         "secret_field_count": len(secrets),
+        "redacted_credential_structure_sha256": redacted_credential_structure_sha256,
         "redacted_structural_inventory_sha256": inventory_sha,
     }, secrets
 
@@ -264,6 +280,9 @@ def scan_artifacts(
         "schema_version": 1,
         "driver": driver,
         "source_schema": source["source_schema"],
+        "source_redacted_credential_structure_sha256": source[
+            "redacted_credential_structure_sha256"
+        ],
         "source_redacted_structural_inventory_sha256": source[
             "redacted_structural_inventory_sha256"
         ],

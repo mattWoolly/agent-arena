@@ -91,8 +91,9 @@ external authentication sources. All three sources must be outside the
 repository, contain exactly their allowlisted regular files and directories,
 and contain no symlink or extra state. `CONFIGURATION.json` freezes only
 non-secret expectations: credential schema, recognized-secret-field count, and
-a secret-redacted structural inventory digest, plus the names of credential
-environment fields present under the minimal environment policy. Preflight uses
+a secret-redacted credential-structure digest plus the complete structural
+inventory digest, as well as the names of credential environment fields present
+under the minimal environment policy. Preflight uses
 the exact same environment constructor as target execution. It also rejects
 tracked worktree or index changes before the first target call and again before
 every slot; treatment files and the fixture are exact-hashed, while expected
@@ -102,9 +103,11 @@ on any drift.
 The condition is invalid if its frozen CLI, prompt, exact model request/observable
 identity, effort where exposed, instruction source, or tool configuration
 drifts. Stop that condition and preregister an amendment; do not pool versions.
-Codex does not independently expose the API-served identity, and Claude does
-not expose its full native system text in stream-json. Those limitations are
-reported, never silently upgraded to exact knowledge.
+Codex does not always expose the API-served identity, and Claude does not expose
+its full native system text in stream-json. Every response-side model tag Codex
+or Kimi does expose is reconciled with the exact request-side identity; any
+mismatch invalidates the condition. Remaining limitations are reported, never
+silently upgraded to exact knowledge.
 
 ## Instruction-stack confounding
 
@@ -154,11 +157,16 @@ an auditable chain. Exhausting reserves requires a written amendment; it never
 authorizes opportunistic expansion.
 
 The controller converts `SIGINT`, `SIGTERM`, and `SIGHUP` during an active
-attempt into transactional interruption: it terminates the entire process
-group, escalates to `SIGKILL` after five seconds, completes safety cleanup, and
-appends the attempt receipt and ledger row before exiting. Each target command
-also uses `timeout --kill-after=10s`, so a TERM-ignoring CLI cannot outlive its
-declared timeout.
+attempt into transactional interruption. On interruption or ordinary wrapper
+return, it signals the entire process group even if the group leader has already
+exited, waits for live descendants, escalates to `SIGKILL` after five seconds,
+and verifies no live group member remains before recovering or scanning
+artifacts. If that proof fails even after `SIGKILL`, it leaves the staging tree
+untouched, records an unresolved cleanup failure, and blocks every later call
+until operator recovery. Otherwise it completes safety cleanup and appends the
+attempt receipt and ledger row before exiting. Each target command also uses
+`timeout --kill-after=10s`, so a TERM-ignoring CLI cannot outlive its declared
+timeout.
 
 ## Frozen hypotheses and decision language
 
@@ -237,17 +245,22 @@ Never exclude tool/subagent calls, refusal, a target-chosen empty output,
 questions, prose, invented requirements, implementation content, normal
 truncation, or a target-driven tool loop/timeout. With no scorable output,
 semantic behaviors count not observed and full compliance is false; show a
-scorable-output sensitivity table. A wrapper-level `finally` scan parses the
+scorable-output sensitivity table. Token and cost fields that a CLI/provider
+does not emit for a timeout remain explicit `null` descriptive values rather
+than invalidating the behavioral observation; aggregation reports observed and
+unavailable counts. A wrapper-level `finally` scan parses the
 exact credential files and credential environment exposed to that condition,
 fails on unknown schema or zero coverage, and scans without following symlinks
 after raw capture and again after normalization. Before its disposable home is
 destroyed, each driver also scans all artifacts using the final credential
 state, covering a CLI-rotated access token. The parent requires and validates
-that aggregate runtime receipt; absence, malformed evidence, or a failed scan
-forces quarantine. Receipts contain only schema, secret-field/pattern counts,
-redacted structural digests, scanned counts/bytes, and pass/fail—not secret
-values or secret hashes. A leak, scanner failure, special filesystem node, or
-escaping symlink atomically renames the whole attempt into a prevalidated
+that aggregate runtime receipt, including equality of its redacted credential
+structure with the launch source; absence, schema drift, malformed evidence, or
+a failed scan forces quarantine. Receipts contain only schema,
+secret-field/pattern counts, redacted structural digests, scanned counts/bytes,
+and pass/fail—not secret values or secret hashes. A leak, scanner failure,
+special filesystem node, or escaping symlink atomically renames the whole
+attempt through an open, non-symlink directory descriptor into a prevalidated
 `0700`, same-filesystem location outside the repository before publication. If
 that prevalidated rename still fails, the runner writes a failure receipt and
 ledger row, leaves the slot ineligible and nonreplaceable, and halts for manual
@@ -263,14 +276,17 @@ reveal condition labels. The reviewer packet is separated from a `0600`
 custodian mapping in a `0700` directory. Review packets contain
 only the blind ID, exact output hash, and unaltered final text—never condition,
 model, path, order, tools, tokens, timing, or cost. Self-identification inside
-the response is retained and disclosed as compromised blinding.
+the response is retained. Both reviewers separately code it with exact evidence;
+disagreements are adjudicated, and every compromised-blinding flag is disclosed
+per run and by condition without changing behavioral scores.
 
 Two distinct reviewers work independently without seeing one another's scores.
 A distinct third reviewer resolves every value disagreement, recording the
 resolved value, exact evidence, and rationale. Original reviews are append-only.
 Report pre-adjudication exact agreement and linearly weighted Cohen's kappa for
 A-D; report exact agreement and unweighted kappa for binary E/F flags. Constant
-ratings yield `NA` kappa plus raw agreement.
+ratings yield `NA` kappa plus raw agreement. Apply the same binary agreement
+reporting to the separate compromised-blinding flag.
 
 Reviewers never receive or score thinking/reasoning blocks. Reasoning-token
 counts, if exposed, are descriptive metadata only.
@@ -286,7 +302,8 @@ For each condition, publish:
 - all planned, invalid, replacement, truncation, empty-output, and
   duplicate-output counts; structured refusal is reported as not estimable
   where no cross-driver field exists rather than inferred from prose; and
-- token, elapsed-time, and notional-cost median, IQR, and range.
+- token, elapsed-time, and notional-cost observed/unavailable counts, median,
+  IQR, and range.
 
 The machine-readable per-run analysis and human report are generated together,
 refuse overwrite, and are joined to every frozen input, original review,
@@ -313,6 +330,10 @@ directory, and safe non-escaping symlink without following links; unsafe special
 entries force quarantine. Credential scans cover artifact path names as well as
 regular-file and symlink-target bytes. Its own hash is anchored in the append-only execution ledger. Run
 directories are created atomically and existing directories are refused.
+If normalization fails after a run directory is retained, a distinct
+`failed_attempt` artifact manifest content-addresses that exact partial
+directory and is anchored in the ledger. Resume rejects a retained directory
+without an anchor and rechecks both normalized and failed-attempt inventories.
 Normalized scoring uses full `final_output.txt`, never the 4,000-character
 metrics preview.
 
@@ -351,8 +372,10 @@ be recycled, semantically reviewed, or used to tune scoring. Any material fix
 after smoke is a documented amendment and new freeze before confirmatory work.
 There are currently no target-facing amendments. Commits `7dabb11` and
 `110b694` began the draft package; successive independent offline reviews then
-required further revisions before any target or smoke output was observed. The
-regenerated manifests supersede all earlier draft freeze IDs.
+required further revisions before any target or smoke output was observed. A
+later draft at `3defecb` was also withheld after adversarial offline review; no
+target call used it. The regenerated manifests supersede all earlier draft
+freeze IDs.
 
 ## Known limitations frozen before seeing outcomes
 

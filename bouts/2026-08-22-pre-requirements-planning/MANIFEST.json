@@ -854,13 +854,13 @@
     },
     {
       "path": "tasks/16-pre-requirements-plan/SCORING.md",
-      "sha256": "6f5643fd2db964cb480a99d7f55c64a8426624c0f6c86536eb7bd85f2c574608",
-      "bytes": 6279
+      "sha256": "ca8872041c617636c55b77020ccd0be0368e864db0f61d3371a1cd5ba4e953e5",
+      "bytes": 6810
     },
     {
       "path": "tasks/16-pre-requirements-plan/review.schema.json",
-      "sha256": "ed7dd9f50a391b887f2dc73a86cef5e3b26bbc87e96992557aefc73359e2eb60",
-      "bytes": 4354
+      "sha256": "58590f23ebf6a3b294603fba21d7271728d12304f68a0da8b899b4887404bb12",
+      "bytes": 4668
     },
     {
       "path": "tasks/16-pre-requirements-plan/adjudication.schema.json",
@@ -869,23 +869,23 @@
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/DESIGN.md",
-      "sha256": "14aa8a827de89cdd431d3382a61c15b38445b99f43bc76964b3e8cd068fd19e6",
-      "bytes": 21180
+      "sha256": "a3d5d65a03237596d5c807c9bc5481ce0da62db53fbe7e650441ad514b504dbe",
+      "bytes": 22793
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning/CONFIGURATION.json",
-      "sha256": "aa08a7f9f150cea36227572c69768077e96fe97cf56eedd2d21d46d934195e39",
-      "bytes": 2029
+      "sha256": "62390bc25c29215717cd57e7b0b366556d8bd2b5c454b01b2715d41be5a037c7",
+      "bytes": 2371
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/analyze.py",
-      "sha256": "90221afa2d76f11bda0bec2ccf09b7e09f85c60cb70d280a1a155ab360bcb91b",
-      "bytes": 61637
+      "sha256": "88694d63044cd959c935fbc931462d8b44acd760d5b6c690ea30fae925d79a1d",
+      "bytes": 63200
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/REPORT_TEMPLATE.md",
-      "sha256": "1dcd4787ad472d364a56211964a1624a68c07cb11ce44727ce30c4c6bbe0a304",
-      "bytes": 4179
+      "sha256": "affe31e341bb3abf21e3e53971f5c2c25bb410b160926c8ac9a47501834cf015",
+      "bytes": 4404
     },
     {
       "path": "analysis/2026-08-22-pre-requirements-planning/adjudications.template.json",
@@ -909,13 +909,13 @@
     },
     {
       "path": "bin/plan_experiment.py",
-      "sha256": "7e4ea439857853542cdd9f1330bbc960f8f89e7941a76514048285578a2e56ad",
-      "bytes": 146234
+      "sha256": "d18306dfc51b983fe9990eaec2ccbf8732bbf2a61aebbc3744df5411d5495488",
+      "bytes": 162356
     },
     {
       "path": "bin/credential_guard.py",
-      "sha256": "0e2f0992e0e26455ff52d1ed18909d7250966614ac5633e0be1c645d2afc3eaf",
-      "bytes": 11332
+      "sha256": "65801d432c9b37c22592ce9a74a1e758099b92c61d45d7fb694d2d708d78cd19",
+      "bytes": 11858
     },
     {
       "path": "bin/run-task.sh",
@@ -934,18 +934,18 @@
     },
     {
       "path": "bin/metrics.py",
-      "sha256": "86da6dc8170d2322faca37a0de49a8183018850206e290c7983a0030e28dd82c",
-      "bytes": 8646
+      "sha256": "0deb407e9cd0e2accf803f849869bada5f6ef448cb8bfdc84ad6f6993071687d",
+      "bytes": 8754
     },
     {
       "path": "bin/metrics_codex.py",
-      "sha256": "3902ce7fecdf4e814e739f334722ada1baf8fbad97a353cb1154853952ab9700",
-      "bytes": 4332
+      "sha256": "038d3ef3ac8529bcbd5cac65acf47ca376b68d7edf4f8820e306ea91b91d4db9",
+      "bytes": 4504
     },
     {
       "path": "bin/metrics_kimi.py",
-      "sha256": "2fbbe1df8f5973abdb779f7458dac735eac1f3ac7f0926b5e309e202ecf2f46a",
-      "bytes": 5077
+      "sha256": "a94e45985b6a321e4d71329d2c1cc2587452996ddd20b3ced536075521ff0a48",
+      "bytes": 5219
     },
     {
       "path": "bin/served_model.py",
@@ -963,5 +963,5 @@
       "bytes": 1
     }
   ],
-  "freeze_id": "973f73bdd2f0773e752e19a039071fc005cda3def46e06896e03ee1b4507f9df"
+  "freeze_id": "e23dce4b5b3f40aee14dffa80407e596d86968a34caa742be7135139f8208bcf"
 }

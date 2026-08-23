@@ -179,17 +179,19 @@ The base URL and env-file name (never its contents) are recorded in
 templates are tracked.
 
 Because the agent can read its own environment and run artifacts are
-published, every driver scans the complete output directory and finished
-workspace after artifact construction. If an auth value appears, `peek_check`
-records `SECRET LEAK` and the run is unpublishable. A model may also ship
+published, ordinary drivers scan their transcript and finished workspace for
+configured auth values. If a value appears, `peek_check` records `SECRET LEAK`
+and the run is unpublishable. A model may also ship
 an `env/<model>.leakscan` script (tracked; contains no secrets) that prints
 extra secret values, one per line; run-task.sh executes it in a subshell
 after the agent finishes and scans published artifacts for each value, so
 secrets that never enter the agent's environment are still checked.
 Task 16 replaces those legacy string hooks with `credential_guard.py`: it
 parses an exact auth/config-only source, rejects unknown or empty credential
-coverage, scans every raw and normalized artifact without following symlinks,
-and quarantines an unsafe attempt outside the repository. Its standalone
+coverage, requires the runtime credential structure to match the frozen launch
+schema, scans every raw and normalized artifact and pathname without following
+symlinks, and atomically quarantines an unsafe attempt through a verified real
+directory outside the repository. Its standalone
 `--environment-secret-var NAME` option adds an environment value to scan
 coverage without putting that value in output or command arguments. Ordinary
 bouts retain the established leakscan behavior.
@@ -324,7 +326,11 @@ The response-only probe ignores inherited `TMPDIR` and uses a validated,
 same-filesystem `/tmp`. Live attempts receive a rubric-free staging tree with
 only the selected wrapper, required helpers, neutral task, and fixture; the
 parent is non-dumpable while the target runs, and output is atomically moved
-back before normalization.
+back before normalization. The runner terminates and verifies the entire target
+process group before recovery or scanning, including descendants left behind
+after the wrapper leader exits. If the runner cannot prove the group is gone
+even after `SIGKILL`, it leaves the staging tree untouched, records the cleanup
+failure, and blocks every later experiment call for operator recovery.
 Experiment validation sets `ARENA_SYNTHETIC_ONLY=1` for the served-model helper
 tests so this package never opens an archived bout transcript.
 
@@ -342,7 +348,8 @@ Each normalized run adds:
 - `run_record.json` — slot, condition, model/effort evidence, metrics, and
   technical eligibility; and
 - `artifact_manifest.json` — byte size and SHA-256 for every raw and normalized
-  run artifact.
+  run artifact. A retained failed attempt receives a distinct failed-attempt
+  manifest and ledger hash even when normalization cannot create a run record.
 
 `bin/plan_experiment.py blind` emits HMAC-ordered label-free packets containing
 only blind ID, output hash, and exact final text. The withheld mapping, frozen
@@ -350,7 +357,9 @@ ledger, run record, final-output hash, and ledger-anchored artifact manifest
 must all agree before analysis, and resume revalidates those anchors before any
 later paid call. The analyzer requires two distinct reviewers,
 exact quote/offset evidence for every positive score, and a distinct adjudicator
-for every disagreement. It reports per-run results, Wilson intervals, complete
+for every disagreement. Reviewers also evidence model/condition
+self-identification separately so compromised blinding is disclosed per run.
+It reports per-run results, Wilson intervals, complete
 rubric/component rates, run accounting, and inter-rater agreement without
 reading hidden reasoning. Machine and human outputs are no-clobber and are
 bound with every analysis input in `ANALYSIS_MANIFEST.json`. See the bout

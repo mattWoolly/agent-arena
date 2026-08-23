@@ -22,6 +22,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -205,6 +206,7 @@ CREDENTIAL_RECEIPT_FIELDS = {
     "schema_version",
     "driver",
     "source_schema",
+    "source_redacted_credential_structure_sha256",
     "source_redacted_structural_inventory_sha256",
     "credential_pattern_count",
     "scanned_entry_count",
@@ -1157,6 +1159,7 @@ def instruction_context(driver: str, events: list[dict[str, Any]], run_dir: Path
         active_tools = []
         tool_snapshots = []
         requests = []
+        responses = []
         for event in wire:
             clean = {key: value for key, value in event.items() if key != "_line"}
             if event.get("type") == "config.update":
@@ -1185,6 +1188,14 @@ def instruction_context(driver: str, events: list[dict[str, Any]], run_dir: Path
                         if key in clean
                     }
                 )
+            elif event.get("type") == "llm.response":
+                responses.append(
+                    {
+                        key: clean.get(key)
+                        for key in ("type", "time", "model", "modelAlias", "provider")
+                        if key in clean
+                    }
+                )
         if not any("systemPrompt" in event for event in config):
             issues.append("Kimi system prompt missing from wire journal")
         return {
@@ -1193,6 +1204,7 @@ def instruction_context(driver: str, events: list[dict[str, Any]], run_dir: Path
             "active_tools": active_tools,
             "tool_snapshots": tool_snapshots,
             "requests": requests,
+            "responses": responses,
         }, issues
     raise ValueError(f"unknown driver: {driver}")
 
@@ -1209,8 +1221,9 @@ def observed_model_and_effort(driver: str, events: list[dict[str, Any]], context
             evidence.append({"kind": "requested_init_tag", "value": init_model})
         for event in events:
             model = (event.get("message") or {}).get("model") if event.get("type") == "assistant" else None
-            if isinstance(model, str) and model not in models:
-                models.append(model)
+            if isinstance(model, str):
+                if model not in models:
+                    models.append(model)
                 evidence.append({"kind": "served_response_tag", "value": model})
         identity_kind = "requested_init_and_served_response_tags"
     elif driver == "codex":
@@ -1222,7 +1235,14 @@ def observed_model_and_effort(driver: str, events: list[dict[str, Any]], context
             settings = ((turn.get("collaboration_mode") or {}).get("settings") or {})
             if settings.get("reasoning_effort") is not None:
                 effort = settings["reasoning_effort"]
-        identity_kind = "requested_turn_context_only"
+        for event in events:
+            item = event.get("item")
+            model = item.get("model") if isinstance(item, dict) else None
+            if isinstance(model, str):
+                if model not in models:
+                    models.append(model)
+                evidence.append({"kind": "served_response_item_tag", "value": model})
+        identity_kind = "requested_turn_context_and_response_item_tags_when_exposed"
     elif driver == "kimi":
         for request in context.get("requests") or []:
             model = request.get("model")
@@ -1231,11 +1251,40 @@ def observed_model_and_effort(driver: str, events: list[dict[str, Any]], context
                 evidence.append({"kind": "request_wire_record", "value": model})
             if request.get("thinkingEffort") is not None:
                 effort = request["thinkingEffort"]
-        identity_kind = "request_wire_record"
+        for event in events:
+            model = event.get("model") if event.get("role") == "assistant" else None
+            if isinstance(model, str):
+                if model not in models:
+                    models.append(model)
+                evidence.append({"kind": "served_assistant_tag", "value": model})
+        for response in context.get("responses") or []:
+            model = response.get("model")
+            if isinstance(model, str):
+                if model not in models:
+                    models.append(model)
+                evidence.append({"kind": "served_wire_response_tag", "value": model})
+        identity_kind = "request_wire_record_and_served_response_tags_when_exposed"
     return {"models": models, "model_evidence": evidence, "identity_kind": identity_kind, "observed_effort": effort}
 
 
-def credential_receipt_issues(path: Path, driver: str) -> list[str]:
+def _frozen_credential_structure_sha256(driver: str) -> str:
+    lock = load_json(ROOT / CONFIG_LOCK_REL)
+    matches = [
+        value.get("redacted_credential_structure_sha256")
+        for value in (lock.get("conditions") or {}).values()
+        if isinstance(value, dict) and value.get("driver") == driver
+    ]
+    if len(matches) != 1 or not re.fullmatch(r"[0-9a-f]{64}", str(matches[0] or "")):
+        raise ValueError(f"frozen credential structure is unavailable for {driver}")
+    return str(matches[0])
+
+
+def credential_receipt_issues(
+    path: Path,
+    driver: str,
+    *,
+    expected_source_structure_sha256: str | None = None,
+) -> list[str]:
     """Validate only aggregate scanner evidence; never load or expect secret values."""
     if path.is_symlink() or not path.is_file():
         return [f"missing regular credential scan receipt: {path.name}"]
@@ -1250,6 +1299,13 @@ def credential_receipt_issues(path: Path, driver: str) -> list[str]:
         errors.append(f"credential scan receipt fields differ from frozen schema: {path.name}")
     if receipt.get("schema_version") != 1 or receipt.get("driver") != driver:
         errors.append(f"credential scan receipt identity mismatch: {path.name}")
+    try:
+        expected_structure = expected_source_structure_sha256 or _frozen_credential_structure_sha256(driver)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        errors.append(f"frozen credential structure unavailable: {type(exc).__name__}")
+    else:
+        if receipt.get("source_redacted_credential_structure_sha256") != expected_structure:
+            errors.append(f"credential source schema drift: {path.name}")
     positive_counts = ("credential_pattern_count", "scanned_entry_count", "scanned_path_bytes")
     zero_counts = ("leak_match_count", "unsafe_special_entry_count", "escaping_symlink_count")
     if any(
@@ -1443,6 +1499,11 @@ def completion_observation(
             if isinstance(event.get("type"), str) and event.get("type") in {"error", "result"}
         )
     status_text = " ".join(statuses).lower()
+    unavailable_metrics = [
+        name
+        for name in ("input_tokens", "output_tokens", "total_cost_usd")
+        if metrics.get(name) is None
+    ]
     return {
         "agent_exit": exit_code,
         "timeout_exit": exit_code == 124,
@@ -1450,6 +1511,7 @@ def completion_observation(
         "structured_statuses": statuses,
         "truncation_observed": exit_code == 124
         or any(token in status_text for token in ("max_turn", "max_token", "length", "truncat")),
+        "descriptive_metrics_unavailable": unavailable_metrics,
         "refusal_observed": None,
         "refusal_observability": "no cross-driver structured refusal field; semantic nonanswers remain in the output",
     }
@@ -1526,10 +1588,22 @@ def observe_run(
     identifier_key = {"claude": "session_id", "codex": "thread_id", "kimi": "session_id"}[driver]
     if len(identifiers.get(identifier_key) or []) != 1:
         technical_issues.append(f"expected exactly one emitted {identifier_key} for run association")
-    for metric_name in ("input_tokens", "output_tokens", "total_cost_usd", "wall_seconds"):
+    for metric_name in ("input_tokens", "output_tokens", "total_cost_usd"):
+        if metric_name not in metrics:
+            technical_issues.append(f"missing descriptive metric field: {metric_name}")
+            continue
         value = metrics.get(metric_name)
-        if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
-            technical_issues.append(f"missing or invalid required descriptive metric: {metric_name}")
+        if value is not None and (
+            not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0
+        ):
+            technical_issues.append(f"invalid descriptive metric: {metric_name}")
+    wall_seconds = metrics.get("wall_seconds")
+    if (
+        not isinstance(wall_seconds, (int, float))
+        or isinstance(wall_seconds, bool)
+        or wall_seconds < 0
+    ):
+        technical_issues.append("missing or invalid required descriptive metric: wall_seconds")
     if expected_policy_signature is not None and policy_signature["sha256"] != expected_policy_signature:
         technical_issues.append(
             f"instruction/tool policy drift: expected {expected_policy_signature}, got {policy_signature['sha256']}"
@@ -1582,6 +1656,11 @@ def observe_run(
         completion_notes.append(f"agent process exit {agent_exit}; retain unless adjudicated exogenous")
     if not output:
         completion_notes.append("empty target output; retain as behavioral outcome unless caused by an exogenous pre-execution failure")
+    if completion["descriptive_metrics_unavailable"]:
+        completion_notes.append(
+            "descriptive usage fields unavailable from emitted provider/CLI evidence: "
+            + ", ".join(completion["descriptive_metrics_unavailable"])
+        )
     state = "invalid_setup" if technical_issues else ("review_required" if completion_notes else "valid")
     record = {
         "schema_version": 1,
@@ -1635,7 +1714,15 @@ def observe_run(
     return record
 
 
-def write_artifact_manifest(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path) -> None:
+def write_artifact_manifest(
+    manifest: dict[str, Any],
+    slot: dict[str, Any],
+    run_dir: Path,
+    *,
+    record_kind: str = "normalized_run",
+) -> None:
+    if record_kind not in {"normalized_run", "failed_attempt"}:
+        raise ValueError(f"unsupported artifact manifest record kind: {record_kind}")
     path = run_dir / "artifact_manifest.json"
     if path.exists() or path.is_symlink():
         raise FileExistsError(f"refusing to overwrite artifact manifest {path}")
@@ -1644,7 +1731,10 @@ def write_artifact_manifest(manifest: dict[str, Any], slot: dict[str, Any], run_
         {
             "schema_version": 1,
             "slot_id": slot["slot_id"],
+            "condition_id": slot["condition_id"],
+            "driver": condition_map(manifest)[slot["condition_id"]]["driver"],
             "manifest_freeze_id": manifest["freeze_id"],
+            "record_kind": record_kind,
             "artifacts": artifact_records(run_dir),
         },
     )
@@ -1662,9 +1752,14 @@ def verify_artifacts(run_dir: Path) -> list[str]:
     errors: list[str] = []
     if not isinstance(manifest, dict) or manifest.get("schema_version") != 1:
         errors.append("artifact manifest has unsupported schema")
+    record_kind = manifest.get("record_kind") if isinstance(manifest, dict) else None
+    if record_kind not in {"normalized_run", "failed_attempt"}:
+        errors.append("artifact manifest has unsupported record kind")
     records = manifest.get("artifacts") if isinstance(manifest, dict) else None
-    if not isinstance(records, list) or not records:
-        return errors + ["artifact manifest must contain a nonempty artifact inventory"]
+    if not isinstance(records, list):
+        return errors + ["artifact manifest must contain an artifact inventory"]
+    if record_kind == "normalized_run" and not records:
+        errors.append("normalized artifact manifest must contain a nonempty inventory")
     indexed: dict[str, dict[str, Any]] = {}
     for index, record in enumerate(records):
         if not isinstance(record, dict):
@@ -1720,6 +1815,21 @@ def verify_artifacts(run_dir: Path) -> list[str]:
                 errors.append(f"artifact symlink changed: {name}")
         elif actual[name] == "special":
             errors.append(f"unsafe special artifact entry: {name}")
+    driver = manifest.get("driver") if isinstance(manifest, dict) else None
+    condition_id = manifest.get("condition_id") if isinstance(manifest, dict) else None
+    if driver not in RAW_ARTIFACTS:
+        errors.append("artifact manifest has unknown driver")
+    for name in (
+        "credential_scan.raw.json",
+        "credential_scan.runtime.json",
+        "credential_scan.json",
+    ):
+        if name in actual and actual[name] == "regular_file" and driver in RAW_ARTIFACTS:
+            errors.extend(credential_receipt_issues(run_dir / name, driver))
+    if record_kind == "failed_attempt":
+        if not isinstance(condition_id, str) or not condition_id:
+            errors.append("failed-attempt artifact manifest lacks a condition ID")
+        return errors
     run_record_path = run_dir / "run_record.json"
     if not run_record_path.is_file():
         return errors + ["run_record.json missing from artifact inventory"]
@@ -1727,28 +1837,26 @@ def verify_artifacts(run_dir: Path) -> list[str]:
         run_record = load_json(run_record_path)
     except (OSError, json.JSONDecodeError) as exc:
         return errors + [f"run record unreadable: {exc}"]
-    driver = ((run_record.get("condition") or {}).get("driver")) if isinstance(run_record, dict) else None
-    if driver not in RAW_ARTIFACTS:
+    run_driver = ((run_record.get("condition") or {}).get("driver")) if isinstance(run_record, dict) else None
+    if run_driver != driver:
+        errors.append("artifact manifest driver does not match run record")
+    if run_driver not in RAW_ARTIFACTS:
         errors.append("run record has unknown driver")
     else:
-        required = set(COMMON_ARTIFACTS + RAW_ARTIFACTS[driver] + DERIVED_ARTIFACTS)
+        required = set(COMMON_ARTIFACTS + RAW_ARTIFACTS[run_driver] + DERIVED_ARTIFACTS)
         missing_required = required - set(actual)
         if missing_required:
             errors.append(f"required artifacts absent: {sorted(missing_required)}")
         wrong_types = sorted(name for name in required & set(actual) if actual[name] != "regular_file")
         if wrong_types:
             errors.append(f"required artifacts are not regular files: {wrong_types}")
-        for name in (
-            "credential_scan.raw.json",
-            "credential_scan.runtime.json",
-            "credential_scan.json",
-        ):
-            errors.extend(credential_receipt_issues(run_dir / name, driver))
     slot_id = ((run_record.get("slot") or {}).get("slot_id")) if isinstance(run_record, dict) else None
     if manifest.get("slot_id") != slot_id:
         errors.append("artifact manifest slot_id does not match run record")
     if manifest.get("manifest_freeze_id") != run_record.get("manifest_freeze_id"):
         errors.append("artifact manifest freeze ID does not match run record")
+    if manifest.get("condition_id") != ((run_record.get("slot") or {}).get("condition_id")):
+        errors.append("artifact manifest condition_id does not match run record")
     return errors
 
 
@@ -1822,6 +1930,10 @@ def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, A
             errors.append(f"{location} run directory does not match frozen slot")
         if not isinstance(row.get("analysis_eligible"), bool):
             errors.append(f"{location} analysis_eligible must be boolean")
+        if row.get("artifact_manifest_sha256") is not None and not re.fullmatch(
+            r"[0-9a-f]{64}", str(row.get("artifact_manifest_sha256") or "")
+        ):
+            errors.append(f"{location} artifact manifest lacks a valid hash anchor")
         if row.get("analysis_eligible") is True and not re.fullmatch(
             r"[0-9a-f]{64}", str(row.get("artifact_manifest_sha256") or "")
         ):
@@ -1929,19 +2041,54 @@ def select_effective_attempts(
     return effective, errors
 
 
-def validate_run_provenance(
+def validate_artifact_anchor(
     manifest: dict[str, Any], slot: dict[str, Any], ledger_row: dict[str, Any]
-) -> tuple[dict[str, Any] | None, list[str]]:
+) -> tuple[Path | None, str | None, list[str]]:
+    """Verify an exact retained run directory, including failed-attempt inventories."""
     errors: list[str] = []
     expected_dir = output_dir_for(manifest, slot)
     try:
         supplied_dir = (ROOT / str(ledger_row.get("run_dir", ""))).resolve()
         supplied_dir.relative_to(ROOT.resolve())
     except (OSError, ValueError):
-        return None, [f"unsafe run directory for {slot['slot_id']}"]
+        return None, None, [f"unsafe run directory for {slot['slot_id']}"]
     if supplied_dir != expected_dir.resolve():
         errors.append(f"run directory does not match frozen slot {slot['slot_id']}")
+    artifact_manifest_path = supplied_dir / "artifact_manifest.json"
+    expected_hash = ledger_row.get("artifact_manifest_sha256")
+    if artifact_manifest_path.is_symlink() or not artifact_manifest_path.is_file():
+        return supplied_dir, None, errors + [f"artifact manifest missing for {slot['slot_id']}"]
+    if not re.fullmatch(r"[0-9a-f]{64}", str(expected_hash or "")):
+        errors.append(f"{slot['slot_id']}: execution ledger lacks an artifact-manifest hash anchor")
+    elif sha256_path(artifact_manifest_path) != expected_hash:
+        errors.append(f"{slot['slot_id']}: artifact manifest does not match execution-ledger anchor")
     errors.extend(f"{slot['slot_id']}: {error}" for error in verify_artifacts(supplied_dir))
+    try:
+        artifact_manifest = load_json(artifact_manifest_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return supplied_dir, None, errors + [
+            f"{slot['slot_id']}: artifact manifest unreadable: {exc}"
+        ]
+    record_kind = artifact_manifest.get("record_kind") if isinstance(artifact_manifest, dict) else None
+    checks = (
+        (artifact_manifest.get("slot_id") == slot.get("slot_id"), "slot ID"),
+        (artifact_manifest.get("condition_id") == slot.get("condition_id"), "condition ID"),
+        (artifact_manifest.get("manifest_freeze_id") == manifest.get("freeze_id"), "freeze ID"),
+    )
+    for good, label in checks:
+        if not good:
+            errors.append(f"{slot['slot_id']}: artifact-manifest {label} mismatch")
+    return supplied_dir, record_kind, errors
+
+
+def validate_run_provenance(
+    manifest: dict[str, Any], slot: dict[str, Any], ledger_row: dict[str, Any]
+) -> tuple[dict[str, Any] | None, list[str]]:
+    supplied_dir, record_kind, errors = validate_artifact_anchor(manifest, slot, ledger_row)
+    if supplied_dir is None:
+        return None, errors
+    if record_kind != "normalized_run":
+        errors.append(f"{slot['slot_id']}: retained artifacts are not a normalized run")
     record_path = supplied_dir / "run_record.json"
     if not record_path.is_file():
         return None, errors + [f"run record missing for {slot['slot_id']}"]
@@ -1980,9 +2127,6 @@ def validate_run_provenance(
     for good, label in checks:
         if not good:
             errors.append(f"{slot['slot_id']}: run-record {label} mismatch")
-    artifact_manifest_path = supplied_dir / "artifact_manifest.json"
-    if artifact_manifest_path.is_file() and ledger_row.get("artifact_manifest_sha256") != sha256_path(artifact_manifest_path):
-        errors.append(f"{slot['slot_id']}: artifact manifest does not match execution-ledger anchor")
     output_path = supplied_dir / "final_output.txt"
     if output_path.is_file():
         data = output_path.read_bytes()
@@ -2208,6 +2352,9 @@ def preflight_condition(condition: dict[str, Any], env: dict[str, str]) -> tuple
                     {
                         "credential_source_schema": inventory["source_schema"],
                         "credential_secret_field_count": inventory["secret_field_count"],
+                        "redacted_credential_structure_sha256": inventory[
+                            "redacted_credential_structure_sha256"
+                        ],
                         "redacted_home_inventory_sha256": inventory[
                             "redacted_structural_inventory_sha256"
                         ],
@@ -2236,6 +2383,9 @@ def preflight_condition(condition: dict[str, Any], env: dict[str, str]) -> tuple
                         "auth_present": True,
                         "credential_source_schema": inventory["source_schema"],
                         "credential_secret_field_count": inventory["secret_field_count"],
+                        "redacted_credential_structure_sha256": inventory[
+                            "redacted_credential_structure_sha256"
+                        ],
                         "redacted_home_inventory_sha256": inventory[
                             "redacted_structural_inventory_sha256"
                         ],
@@ -2257,6 +2407,9 @@ def preflight_condition(condition: dict[str, Any], env: dict[str, str]) -> tuple
                     {
                         "credential_source_schema": inventory["source_schema"],
                         "credential_secret_field_count": inventory["secret_field_count"],
+                        "redacted_credential_structure_sha256": inventory[
+                            "redacted_credential_structure_sha256"
+                        ],
                         "redacted_config_sha256": inventory["redacted_structural_inventory_sha256"],
                         "redacted_home_inventory_sha256": inventory[
                             "redacted_structural_inventory_sha256"
@@ -2387,12 +2540,29 @@ def quarantine_destination(manifest: dict[str, Any], slot: dict[str, Any]) -> Pa
         raise ValueError("secret quarantine must be outside the Agent Arena repository")
     if stat.S_IMODE(base.stat().st_mode) & 0o077:
         raise ValueError("secret quarantine root must not be accessible by group or other users")
-    destination = base / manifest["experiment_id"] / slot["slot_id"]
-    destination.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
-    destination.parent.chmod(0o700)
+    experiment_id = str(manifest["experiment_id"])
+    slot_id = str(slot["slot_id"])
+    for value, label in ((experiment_id, "experiment ID"), (slot_id, "slot ID")):
+        if value in {"", ".", ".."} or Path(value).name != value:
+            raise ValueError(f"unsafe quarantine {label}")
+    experiment_dir = base / experiment_id
+    try:
+        experiment_dir.mkdir(mode=0o700)
+    except FileExistsError:
+        pass
+    experiment_metadata = experiment_dir.lstat()
+    if not stat.S_ISDIR(experiment_metadata.st_mode) or stat.S_ISLNK(experiment_metadata.st_mode):
+        raise ValueError("secret quarantine experiment directory must be a real directory")
+    resolved_experiment = experiment_dir.resolve(strict=True)
+    if resolved_experiment != base / experiment_id:
+        raise ValueError("secret quarantine experiment directory escapes its configured root")
+    resolved_experiment.chmod(0o700)
+    if stat.S_IMODE(resolved_experiment.stat().st_mode) & 0o077:
+        raise ValueError("secret quarantine experiment directory has unsafe permissions")
+    destination = resolved_experiment / slot_id
     if destination.exists() or destination.is_symlink():
         raise FileExistsError(f"refusing to overwrite secret quarantine {destination}")
-    if destination.parent.stat().st_dev != ROOT.stat().st_dev:
+    if resolved_experiment.stat().st_dev != ROOT.stat().st_dev:
         raise ValueError("secret quarantine must share a filesystem with the repository for atomic rename")
     return destination
 
@@ -2410,7 +2580,24 @@ def quarantine_run(manifest: dict[str, Any], slot: dict[str, Any], run_dir: Path
                 continue
             if stat.S_ISREG(metadata.st_mode):
                 regular_file_bytes += metadata.st_size
-    run_dir.rename(destination)
+    open_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC
+    if hasattr(os, "O_NOFOLLOW"):
+        open_flags |= os.O_NOFOLLOW
+    parent_fd = os.open(destination.parent, open_flags)
+    try:
+        opened = os.fstat(parent_fd)
+        expected = destination.parent.stat()
+        if (opened.st_dev, opened.st_ino) != (expected.st_dev, expected.st_ino):
+            raise ValueError("secret quarantine parent changed before atomic rename")
+        try:
+            os.stat(destination.name, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
+            raise FileExistsError(f"refusing to overwrite secret quarantine {destination}")
+        os.rename(run_dir, destination.name, dst_dir_fd=parent_fd)
+    finally:
+        os.close(parent_fd)
     receipt = {
         "schema_version": 1,
         "experiment_id": manifest["experiment_id"],
@@ -2469,22 +2656,86 @@ def raw_attempt_has_attributable_activity(driver: str, run_dir: Path) -> bool:
     return bool(output or calls or unknown or (workspace.is_file() and workspace.stat().st_size))
 
 
-def terminate_process_group(process: subprocess.Popen[Any]) -> None:
-    """Stop an interrupted driver and every target process in its session."""
-    if process.poll() is not None:
-        return
+def _process_group_exists(process_group_id: int) -> bool:
+    proc_root = Path("/proc")
+    if proc_root.is_dir():
+        saw_member = False
+        for entry in proc_root.iterdir():
+            if not entry.name.isdigit():
+                continue
+            try:
+                raw = (entry / "stat").read_text()
+                fields = raw[raw.rfind(")") + 2 :].split()
+                state = fields[0]
+                member_group = int(fields[2])
+            except (OSError, ValueError, IndexError):
+                continue
+            if member_group == process_group_id:
+                saw_member = True
+                if state != "Z":
+                    return True
+        if saw_member:
+            return False
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-        process.wait(timeout=5)
-    except (OSError, subprocess.TimeoutExpired):
+        os.killpg(process_group_id, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _wait_for_process_group_exit(
+    process: subprocess.Popen[Any],
+    process_group_id: int,
+    timeout_seconds: float,
+    poll_interval: float,
+) -> bool:
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        process.poll()
+        if not _process_group_exists(process_group_id):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(poll_interval)
+
+
+def terminate_process_group(
+    process: subprocess.Popen[Any],
+    *,
+    term_grace_seconds: float = 5.0,
+    kill_grace_seconds: float = 5.0,
+    poll_interval: float = 0.05,
+) -> None:
+    """Stop every process in the driver's session, even after its leader exits."""
+    process_group_id = process.pid
+    if process_group_id <= 1 or process_group_id == os.getpgrp():
+        raise ValueError("refusing to signal the runner's own process group")
+    try:
+        os.killpg(process_group_id, signal.SIGTERM)
+    except ProcessLookupError:
+        process.poll()
+        return
+    if not _wait_for_process_group_exit(
+        process,
+        process_group_id,
+        term_grace_seconds,
+        poll_interval,
+    ):
         try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except OSError:
-            pass
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            pass
+            os.killpg(process_group_id, signal.SIGKILL)
+        except ProcessLookupError:
+            process.poll()
+            return
+        if not _wait_for_process_group_exit(
+            process,
+            process_group_id,
+            kill_grace_seconds,
+            poll_interval,
+        ):
+            raise RuntimeError(f"target process group {process_group_id} survived SIGKILL")
+    process.poll()
 
 
 def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dict[str, Any]]) -> list[str]:
@@ -2497,12 +2748,31 @@ def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dic
     for row in ledger:
         if not isinstance(row, dict):
             continue
+        if row.get("process_group_cleaned") is False:
+            errors.append(
+                f"{row.get('slot_id')}: unresolved process-group cleanup failure blocks further execution"
+            )
         slot = slots.get(row.get("slot_id"))
         if slot is None:
             continue
-        if row.get("analysis_eligible") is True or row.get("artifact_manifest_sha256") is not None:
-            _, row_errors = validate_run_provenance(manifest, slot, row)
-            errors.extend(row_errors)
+        expected_run_dir = output_dir_for(manifest, slot)
+        retained_run_dir = expected_run_dir.exists() or expected_run_dir.is_symlink()
+        artifact_anchor = row.get("artifact_manifest_sha256")
+        if retained_run_dir and artifact_anchor is None:
+            errors.append(f"{row.get('slot_id')}: retained run directory lacks an artifact anchor")
+        elif artifact_anchor is not None:
+            if row.get("analysis_eligible") is True:
+                _, row_errors = validate_run_provenance(manifest, slot, row)
+                errors.extend(row_errors)
+            else:
+                _, record_kind, row_errors = validate_artifact_anchor(manifest, slot, row)
+                if record_kind == "normalized_run":
+                    _, row_errors = validate_run_provenance(manifest, slot, row)
+                    errors.extend(row_errors)
+                else:
+                    errors.extend(row_errors)
+                if record_kind not in {"normalized_run", "failed_attempt"}:
+                    errors.append(f"{row.get('slot_id')}: ineligible attempt has no valid artifact record kind")
         for path_key, hash_key in (
             ("failure_receipt", "failure_receipt_sha256"),
             ("quarantine_receipt", "quarantine_receipt_sha256"),
@@ -2510,18 +2780,52 @@ def validate_prior_attempt_provenance(manifest: dict[str, Any], ledger: list[dic
             raw_path = row.get(path_key)
             if raw_path is None:
                 continue
+            unresolved_path = ROOT / str(raw_path)
             try:
-                path = (ROOT / str(raw_path)).resolve()
+                path = unresolved_path.resolve()
                 path.relative_to(ROOT.resolve())
             except (OSError, ValueError):
                 errors.append(f"{row.get('slot_id')}: unsafe {path_key}")
                 continue
-            if path.is_symlink() or not path.is_file():
+            if unresolved_path.is_symlink() or not unresolved_path.is_file():
                 errors.append(f"{row.get('slot_id')}: missing regular {path_key}")
             elif not re.fullmatch(r"[0-9a-f]{64}", str(row.get(hash_key) or "")):
                 errors.append(f"{row.get('slot_id')}: {path_key} lacks a content hash")
             elif sha256_path(path) != row.get(hash_key):
                 errors.append(f"{row.get('slot_id')}: {path_key} content hash mismatch")
+            else:
+                try:
+                    receipt = load_json(path)
+                except (OSError, json.JSONDecodeError) as exc:
+                    errors.append(
+                        f"{row.get('slot_id')}: malformed {path_key}: {type(exc).__name__}"
+                    )
+                    continue
+                if not isinstance(receipt, dict):
+                    errors.append(f"{row.get('slot_id')}: {path_key} is not an object")
+                    continue
+                for good, label in (
+                    (receipt.get("experiment_id") == manifest.get("experiment_id"), "experiment ID"),
+                    (receipt.get("manifest_freeze_id") == manifest.get("freeze_id"), "freeze ID"),
+                    (receipt.get("slot_id") == row.get("slot_id"), "slot ID"),
+                ):
+                    if not good:
+                        errors.append(f"{row.get('slot_id')}: {path_key} {label} mismatch")
+                if path_key == "failure_receipt":
+                    if not isinstance(receipt.get("process_group_cleaned"), bool):
+                        errors.append(
+                            f"{row.get('slot_id')}: failure receipt lacks process-group cleanup state"
+                        )
+                    elif receipt["process_group_cleaned"] is not row.get(
+                        "process_group_cleaned"
+                    ):
+                        errors.append(
+                            f"{row.get('slot_id')}: failure receipt and ledger cleanup state differ"
+                        )
+                    if receipt.get("process_group_cleaned") is False:
+                        errors.append(
+                            f"{row.get('slot_id')}: unresolved process-group cleanup failure blocks further execution"
+                        )
     return errors
 
 
@@ -2666,6 +2970,8 @@ def run_slots(
         target_process_started = False
         target_process_returned = False
         process: subprocess.Popen[Any] | None = None
+        process_group_cleaned = False
+        staged_attempt_retained = False
         caught: BaseException | None = None
         quarantine: dict[str, Any] | None = None
         attributable_activity: bool | None = None
@@ -2698,6 +3004,8 @@ def run_slots(
             )
             driver_process_spawned = True
             driver_exit = process.wait()
+            terminate_process_group(process)
+            process_group_cleaned = True
             recover_and_remove_staged_driver(attempt_root, staged_run_dir, run_dir)
             target_process_started = (run_dir / "target_started").is_file()
             target_process_returned = (run_dir / "target_returned").is_file()
@@ -2721,15 +3029,24 @@ def run_slots(
         except BaseException as exc:  # ledger preservation also covers operator interruption
             caught = exc
         finally:
-            if process is not None:
-                terminate_process_group(process)
+            if process is None:
+                process_group_cleaned = True
+            elif not process_group_cleaned:
+                try:
+                    terminate_process_group(process)
+                    process_group_cleaned = True
+                except BaseException as termination_exc:
+                    if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
+                        caught = termination_exc
                 driver_exit = process.returncode
-            if attempt_root.exists():
+            if attempt_root.exists() and process_group_cleaned:
                 try:
                     recover_and_remove_staged_driver(attempt_root, staged_run_dir, run_dir)
                 except BaseException as stage_exc:
                     if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
                         caught = stage_exc
+            elif attempt_root.exists():
+                staged_attempt_retained = True
             if dumpability_lowered:
                 try:
                     process_dumpable(prior_dumpable)
@@ -2754,6 +3071,9 @@ def run_slots(
                     runtime_scan_issues = credential_receipt_issues(
                         run_dir / "credential_scan.runtime.json",
                         condition_map(manifest)[slot["condition_id"]]["driver"],
+                        expected_source_structure_sha256=current_preflight.get(
+                            "redacted_credential_structure_sha256"
+                        ),
                     )
                     if target_process_started and runtime_scan_issues:
                         raise credential_guard.CredentialGuardError(
@@ -2768,7 +3088,19 @@ def run_slots(
                     if isinstance(caught, SecretLeakError):
                         raise caught
                     if record is not None:
-                        write_artifact_manifest(manifest, slot, run_dir)
+                        write_artifact_manifest(
+                            manifest,
+                            slot,
+                            run_dir,
+                            record_kind="normalized_run",
+                        )
+                    else:
+                        write_artifact_manifest(
+                            manifest,
+                            slot,
+                            run_dir,
+                            record_kind="failed_attempt",
+                        )
                 except BaseException as scan_exc:
                     if caught is None or not isinstance(caught, (KeyboardInterrupt, SystemExit)):
                         caught = scan_exc
@@ -2839,6 +3171,8 @@ def run_slots(
                 slot,
                 {
                     "schema_version": 1,
+                    "experiment_id": manifest["experiment_id"],
+                    "manifest_freeze_id": manifest["freeze_id"],
                     "slot_id": slot["slot_id"],
                     "started_at": started,
                     "finished_at": utc_now(),
@@ -2846,6 +3180,8 @@ def run_slots(
                     "driver_process_spawned": driver_process_spawned,
                     "target_process_started": target_process_started,
                     "target_process_returned": target_process_returned,
+                    "process_group_cleaned": process_group_cleaned,
+                    "staged_attempt_retained": staged_attempt_retained,
                     "error_type": type(caught).__name__ if caught else "UnknownError",
                     "error_message": str(caught) if caught else "unknown driver or normalization failure",
                     "quarantine": quarantine,
@@ -2866,6 +3202,7 @@ def run_slots(
                     "started_at": started,
                     "finished_at": utc_now(),
                     "driver_exit": driver_exit,
+                    "process_group_cleaned": process_group_cleaned,
                     "validity_state": validity_state,
                     "analysis_eligible": analysis_eligible,
                     "smoke_excluded": smoke_excluded,
@@ -2881,7 +3218,7 @@ def run_slots(
                         else None
                     ),
                     "artifact_manifest_sha256": sha256_path(run_dir / "artifact_manifest.json")
-                    if record is not None and (run_dir / "artifact_manifest.json").is_file()
+                    if (run_dir / "artifact_manifest.json").is_file()
                     else None,
                     "instruction_policy_signature_sha256": (
                         record["configuration"]["instruction_policy_signature"]["sha256"]
@@ -3052,7 +3389,13 @@ def command_verify(args: argparse.Namespace) -> None:
             if slot is None:
                 errors.append("execution ledger row does not reference a frozen slot")
             else:
-                _, provenance_errors = validate_run_provenance(manifest, slot, rows[0])
+                _, record_kind, anchor_errors = validate_artifact_anchor(manifest, slot, rows[0])
+                if record_kind == "normalized_run":
+                    _, provenance_errors = validate_run_provenance(manifest, slot, rows[0])
+                else:
+                    provenance_errors = anchor_errors
+                    if record_kind == "failed_attempt" and rows[0].get("analysis_eligible") is not False:
+                        provenance_errors.append("failed-attempt artifacts cannot be analysis eligible")
                 errors.extend(provenance_errors)
     if errors:
         print("\n".join(f"ERROR: {error}" for error in errors), file=sys.stderr)

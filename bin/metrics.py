@@ -100,7 +100,12 @@ def proxy_usage_cost(out: Path):
 
 def main(out_dir: str, model: str) -> None:
     out = Path(out_dir)
-    metrics = {"model": model}
+    metrics = {
+        "model": model,
+        "input_tokens": None,
+        "output_tokens": None,
+        "total_cost_usd": None,
+    }
 
     try:
         metrics["wall_seconds"] = float((out / "wall_seconds").read_text().strip())

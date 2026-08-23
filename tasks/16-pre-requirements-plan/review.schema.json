@@ -12,7 +12,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["blind_id", "output_sha256", "A", "B", "C", "D", "E", "F"],
+        "required": ["blind_id", "output_sha256", "A", "B", "C", "D", "E", "F", "blinding"],
         "properties": {
           "blind_id": {"type": "string", "minLength": 1},
           "output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
@@ -49,6 +49,14 @@
               "non_outline_prose": {"$ref": "#/$defs/binaryFinding"},
               "uses_explicit_placeholders": {"$ref": "#/$defs/binaryFinding"},
               "separates_assumptions_from_facts": {"$ref": "#/$defs/binaryFinding"}
+            }
+          },
+          "blinding": {
+            "type": "object",
+            "required": ["self_identifies_model_or_condition"],
+            "additionalProperties": false,
+            "properties": {
+              "self_identifies_model_or_condition": {"$ref": "#/$defs/binaryFinding"}
             }
           }
         },

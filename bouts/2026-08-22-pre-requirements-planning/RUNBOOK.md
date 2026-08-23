@@ -82,7 +82,7 @@ After the user explicitly approves the frozen design, substitute the exact
 committed `freeze_id` below. The runner rejects a missing or different value.
 
 ```bash
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval 973f73bdd2f0773e752e19a039071fc005cda3def46e06896e03ee1b4507f9df
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json --approval e23dce4b5b3f40aee14dffa80407e596d86968a34caa742be7135139f8208bcf
 ```
 
 After an operator interruption, rerun the same command: the ledger must be a
@@ -102,7 +102,7 @@ manifest:
 
 ```bash
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning/MANIFEST.json \
-  --approval 973f73bdd2f0773e752e19a039071fc005cda3def46e06896e03ee1b4507f9df \
+  --approval e23dce4b5b3f40aee14dffa80407e596d86968a34caa742be7135139f8208bcf \
   --reserve [frozen-reserve-slot-id] \
   --replacement-for [ineligible-primary-or-reserve-attempt-id] \
   --exclusion-reason [preregistered-reason]

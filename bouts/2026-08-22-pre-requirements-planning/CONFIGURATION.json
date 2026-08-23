@@ -15,6 +15,7 @@
       "model_env_present": false,
       "credential_source_schema": "json",
       "credential_secret_field_count": 5,
+      "redacted_credential_structure_sha256": "19cd32e93e87c7d0f6b84bc578405c1399f7844c85cb326d419cbdf4234a9528",
       "redacted_home_inventory_sha256": "9f7201e02bf7c8ac0ca07475353ab468d657eb728403f7c4ab988361ff929d01"
     },
     "codex--gpt-5.6-sol": {
@@ -27,6 +28,7 @@
       "auth_present": true,
       "credential_source_schema": "json",
       "credential_secret_field_count": 1,
+      "redacted_credential_structure_sha256": "7fc1c920420601399cdf3457a0bd63d1e65ae7a274e1e7d9f80bff006c8c6e2e",
       "redacted_home_inventory_sha256": "dc03fba434a6000a96950819b8c59bc921b1881bb395012b4cfe045df3f61a9e",
       "isolated_home_policy": "outside-repository exact auth-only source; fresh home per run"
     },
@@ -39,6 +41,7 @@
       "credential_environment_fields_present": [],
       "credential_source_schema": "toml",
       "credential_secret_field_count": 1,
+      "redacted_credential_structure_sha256": "0788171a5f2e2c5e7fb7510407a996ff07195beea1afd7054cc38fc999a48e16",
       "redacted_config_sha256": "a77c55e0ecb6e029f120f696db129543ff491ef61e2404d0590faa8354d297da",
       "redacted_home_inventory_sha256": "a77c55e0ecb6e029f120f696db129543ff491ef61e2404d0590faa8354d297da"
     }

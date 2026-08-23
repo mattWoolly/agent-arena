@@ -16,7 +16,12 @@ from pathlib import Path
 
 def main(out_dir: str, label: str) -> None:
     out = Path(out_dir)
-    metrics = {"model": label}
+    metrics = {
+        "model": label,
+        "input_tokens": None,
+        "output_tokens": None,
+        "total_cost_usd": None,
+    }
 
     for key, fname, conv in (("wall_seconds", "wall_seconds", float), ("agent_exit", "agent_exit", int)):
         try:
@@ -49,16 +54,17 @@ def main(out_dir: str, label: str) -> None:
     metrics["tool_calls"] = dict(tool_calls)
     metrics["tool_calls_total"] = sum(tool_calls.values())
 
-    inp = sum(u.get("input_tokens") or 0 for u in usage_records)
-    cached = sum(u.get("cached_input_tokens") or 0 for u in usage_records)
-    outp = sum(u.get("output_tokens") or 0 for u in usage_records)
-    metrics["input_tokens"] = inp
-    metrics["cache_read_tokens"] = cached
-    metrics["output_tokens"] = outp
+    if usage_records:
+        inp = sum(u.get("input_tokens") or 0 for u in usage_records)
+        cached = sum(u.get("cached_input_tokens") or 0 for u in usage_records)
+        outp = sum(u.get("output_tokens") or 0 for u in usage_records)
+        metrics["input_tokens"] = inp
+        metrics["cache_read_tokens"] = cached
+        metrics["output_tokens"] = outp
 
     model_key = label.removesuffix("-codex")
     ppath = Path(__file__).resolve().parent.parent / "env" / "prices.json"
-    if ppath.exists():
+    if ppath.exists() and usage_records:
         prices = json.loads(ppath.read_text()).get(model_key)
         if prices:
             total = 0.0

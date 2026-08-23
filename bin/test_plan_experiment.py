@@ -12,6 +12,7 @@ import os
 import signal
 import subprocess
 import tempfile
+import time
 import unittest
 from unittest import mock
 from collections import Counter, defaultdict
@@ -68,6 +69,9 @@ def seed_run(run_dir: Path, condition: dict, *, output: str = "# Plan\n\n- Use `
         "schema_version": 1,
         "driver": condition["driver"],
         "source_schema": "toml" if condition["driver"] == "kimi" else "json",
+        "source_redacted_credential_structure_sha256": probe._frozen_credential_structure_sha256(
+            condition["driver"]
+        ),
         "source_redacted_structural_inventory_sha256": "a" * 64,
         "credential_pattern_count": 1,
         "scanned_entry_count": 1,
@@ -118,7 +122,15 @@ def seed_run(run_dir: Path, condition: dict, *, output: str = "# Plan\n\n- Use `
             run_dir / "transcript.jsonl",
             [
                 {"type": "thread.started", "thread_id": f"codex-{identity}"},
-                {"type": "item.completed", "item": {"id": "msg-1", "type": "agent_message", "text": output}},
+                {
+                    "type": "item.completed",
+                    "item": {
+                        "id": "msg-1",
+                        "type": "agent_message",
+                        "text": output,
+                        "model": condition["requested_model"],
+                    },
+                },
                 {"type": "turn.completed", "usage": {"input_tokens": 30, "output_tokens": 20}},
             ],
         )
@@ -136,7 +148,7 @@ def seed_run(run_dir: Path, condition: dict, *, output: str = "# Plan\n\n- Use `
             run_dir / "transcript.jsonl",
             [
                 {"type": "session.resume_hint", "session_id": f"kimi-{identity}"},
-                {"role": "assistant", "content": output},
+                {"role": "assistant", "content": output, "model": condition["requested_model"]},
             ],
         )
         jsonl(
@@ -146,6 +158,7 @@ def seed_run(run_dir: Path, condition: dict, *, output: str = "# Plan\n\n- Use `
                 {"type": "tools.set_active_tools", "names": ["Read"]},
                 {"type": "llm.tools_snapshot", "hash": "tools", "tools": []},
                 {"type": "llm.request", "model": condition["requested_model"], "thinkingEffort": "max"},
+                {"type": "llm.response", "model": condition["requested_model"]},
             ],
         )
 
@@ -177,6 +190,9 @@ def review_for(blind_id: str, text: str, *, a_score: int = 0):
             "non_outline_prose": binary(False),
             "uses_explicit_placeholders": binary(True),
             "separates_assumptions_from_facts": binary(True),
+        },
+        "blinding": {
+            "self_identifies_model_or_condition": binary(False),
         },
     }
 
@@ -645,7 +661,9 @@ class TraceAndArtifactTests(unittest.TestCase):
     def test_empty_artifact_inventory_cannot_verify(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             run_dir = Path(raw)
-            (run_dir / "artifact_manifest.json").write_text('{"schema_version":1,"artifacts":[]}\n')
+            (run_dir / "artifact_manifest.json").write_text(
+                '{"schema_version":1,"record_kind":"normalized_run","artifacts":[]}\n'
+            )
             self.assertTrue(any("nonempty" in error for error in probe.verify_artifacts(run_dir)))
 
     def test_observer_refuses_preexisting_derived_artifacts(self):
@@ -734,10 +752,61 @@ class TraceAndArtifactTests(unittest.TestCase):
                     dry_run=True,
                 )
 
+    def test_failed_attempt_retained_artifacts_are_anchored_and_rechecked(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            slot = manifest["schedule"][0]
+            run_dir = probe.output_dir_for(manifest, slot)
+            run_dir.mkdir(parents=True)
+            transcript = run_dir / "transcript.jsonl"
+            transcript.write_text('{"type":"error","message":"synthetic"}\n')
+            probe.write_artifact_manifest(
+                manifest,
+                slot,
+                run_dir,
+                record_kind="failed_attempt",
+            )
+            preflight = {"condition_id": slot["condition_id"]}
+            preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
+            row = {
+                "schema_version": 1,
+                "slot_id": slot["slot_id"],
+                "phase": "smoke",
+                "condition_id": slot["condition_id"],
+                "kind": "primary",
+                "replacement_for": None,
+                "exclusion_reason": None,
+                "run_dir": probe.relative(run_dir),
+                "validity_state": "runner_or_normalization_failure",
+                "analysis_eligible": False,
+                "smoke_excluded": True,
+                "objective_issues": ["synthetic normalization failure"],
+                "eligible_exclusion_reasons": ["corrupted_or_missing_raw_artifact_due_to_harness"],
+                "preflight": preflight,
+                "failure_receipt": None,
+                "failure_receipt_sha256": None,
+                "quarantine_receipt": None,
+                "quarantine_receipt_sha256": None,
+                "artifact_manifest_sha256": probe.sha256_path(
+                    run_dir / "artifact_manifest.json"
+                ),
+                "instruction_policy_signature_sha256": None,
+            }
+            self.assertEqual(probe.validate_execution_ledger(manifest, [row]), [])
+            self.assertEqual(probe.validate_prior_attempt_provenance(manifest, [row]), [])
+            transcript.write_text('{"type":"error","message":"tampered"}\n')
+            errors = probe.validate_prior_attempt_provenance(manifest, [row])
+            self.assertTrue(any("artifact changed: transcript.jsonl" in error for error in errors))
+
     def test_pre_directory_driver_failure_is_preserved_in_ledger(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             temp = Path(raw)
-            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            path, manifest = make_manifest(
+                temp / "manifest", phase="smoke", seed=2808222027
+            )
             manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
             manifest["freeze_id"] = probe.compute_freeze_id(manifest)
             path.write_text(json.dumps(manifest))
@@ -761,6 +830,185 @@ class TraceAndArtifactTests(unittest.TestCase):
             self.assertEqual(len(ledger), 1)
             self.assertFalse(ledger[0]["analysis_eligible"])
             self.assertEqual(ledger[0]["eligible_exclusion_reasons"], ["harness_crash_before_target_execution"])
+
+    def test_unresolved_process_group_blocks_recovery_and_later_execution(self):
+        class UncleanableProcess:
+            pid = 999999
+            returncode = 0
+
+            def wait(self, timeout=None):
+                return self.returncode
+
+            def poll(self):
+                return self.returncode
+
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine:
+            temp = Path(raw)
+            path, manifest = make_manifest(temp / "manifest", phase="smoke")
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            path.write_text(json.dumps(manifest))
+            slot = manifest["schedule"][0]
+            preflight = {
+                "condition_id": slot["condition_id"],
+                "harness_commit": "test-harness-commit",
+            }
+            preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
+            snapshot = {slot["condition_id"]: preflight}
+            attempt_root = temp / "retained-stage"
+            attempt_root.mkdir()
+            staged_run = attempt_root / "unrecovered-run"
+            process = UncleanableProcess()
+            with mock.patch.dict(
+                os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
+            ), mock.patch.object(
+                probe, "preflight_manifest", return_value=snapshot
+            ), mock.patch.object(
+                probe,
+                "prepare_staged_driver",
+                return_value=(attempt_root, staged_run, ["synthetic-driver"], {}),
+            ), mock.patch.object(
+                probe.subprocess, "Popen", return_value=process
+            ) as popen, mock.patch.object(
+                probe,
+                "terminate_process_group",
+                side_effect=RuntimeError("process group survived SIGKILL"),
+            ), mock.patch.object(
+                probe, "recover_and_remove_staged_driver"
+            ) as recover:
+                with self.assertRaisesRegex(RuntimeError, "ledger row was preserved"):
+                    probe.run_slots(
+                        path,
+                        approval=None,
+                        requested_slots={slot["slot_id"]},
+                        dry_run=False,
+                    )
+                recover.assert_not_called()
+                self.assertTrue(attempt_root.is_dir())
+                ledger, malformed = probe.iter_jsonl(
+                    probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+                )
+                self.assertEqual(malformed, [])
+                self.assertEqual(len(ledger), 1)
+                self.assertFalse(ledger[0]["process_group_cleaned"])
+                failure = json.loads((probe.ROOT / ledger[0]["failure_receipt"]).read_text())
+                self.assertFalse(failure["process_group_cleaned"])
+                self.assertTrue(failure["staged_attempt_retained"])
+                with self.assertRaisesRegex(ValueError, "unresolved process-group cleanup"):
+                    probe.run_slots(
+                        path,
+                        approval=None,
+                        requested_slots=None,
+                        dry_run=False,
+                    )
+                self.assertEqual(popen.call_count, 1)
+            attempt_root.rmdir()
+
+    def test_post_start_driver_failure_is_content_addressed_before_ledger_append(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine:
+            temp = Path(raw)
+            path, manifest = make_manifest(
+                temp / "manifest", phase="smoke", seed=2808222027
+            )
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            manifest["freeze_id"] = probe.compute_freeze_id(manifest)
+            path.write_text(json.dumps(manifest))
+            slot = manifest["schedule"][0]
+            condition = probe.condition_map(manifest)[slot["condition_id"]]
+            self.assertEqual(condition["driver"], "codex")
+            auth_home = temp / "auth"
+            auth_home.mkdir()
+            (auth_home / "auth.json").write_text(
+                json.dumps({"OPENAI_API_KEY": "offline-failure-auth-value-123456"})
+            )
+            inventory, _ = credential_guard.inspect_source("codex", auth_home)
+            structure = inventory["redacted_credential_structure_sha256"]
+            preflight = {
+                "condition_id": slot["condition_id"],
+                "harness_commit": "test-harness-commit",
+                "redacted_credential_structure_sha256": structure,
+            }
+            preflight["sha256"] = probe.sha256_bytes(probe.canonical_json(preflight))
+            snapshot = {slot["condition_id"]: preflight}
+
+            class FailedAfterStart:
+                pid = 999999
+                returncode = 7
+
+                def __init__(self, command):
+                    staged_run = (
+                        Path(command[3])
+                        / Path(probe.TASK_REL).name
+                        / condition["output_label"]
+                        / "run-1"
+                    )
+                    seed_run(staged_run, condition)
+                    for name in ("credential_scan.raw.json", "credential_scan.json"):
+                        (staged_run / name).unlink()
+                    receipt = json.loads(
+                        (staged_run / "credential_scan.runtime.json").read_text()
+                    )
+                    receipt["source_redacted_credential_structure_sha256"] = structure
+                    (staged_run / "credential_scan.runtime.json").write_text(
+                        json.dumps(receipt)
+                    )
+
+                def wait(self, timeout=None):
+                    return self.returncode
+
+                def poll(self):
+                    return self.returncode
+
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "ARENA_CODEX_HOME": str(auth_home),
+                    "ARENA_QUARANTINE_DIR": quarantine,
+                },
+            ), mock.patch.object(
+                probe, "preflight_manifest", return_value=snapshot
+            ), mock.patch.object(
+                probe.subprocess,
+                "Popen",
+                side_effect=lambda command, **_kwargs: FailedAfterStart(command),
+            ), mock.patch.object(
+                probe, "terminate_process_group"
+            ), mock.patch.object(
+                probe,
+                "_frozen_credential_structure_sha256",
+                return_value=structure,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "ledger row was preserved"):
+                    probe.run_slots(
+                        path,
+                        approval=None,
+                        requested_slots={slot["slot_id"]},
+                        dry_run=False,
+                    )
+                ledger, malformed = probe.iter_jsonl(
+                    probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+                )
+                self.assertEqual(malformed, [])
+                self.assertEqual(len(ledger), 1)
+                self.assertRegex(
+                    ledger[0]["artifact_manifest_sha256"], r"^[0-9a-f]{64}$"
+                )
+                run_dir = probe.ROOT / ledger[0]["run_dir"]
+                artifact_manifest = json.loads(
+                    (run_dir / "artifact_manifest.json").read_text()
+                )
+                self.assertEqual(artifact_manifest["record_kind"], "failed_attempt")
+                self.assertEqual(
+                    probe.validate_prior_attempt_provenance(manifest, ledger), []
+                )
+                (run_dir / "stderr.log").write_text("tampered")
+                self.assertTrue(
+                    probe.validate_prior_attempt_provenance(manifest, ledger)
+                )
 
     def test_sigterm_during_active_driver_restores_handlers_and_preserves_ledger(self):
         class SignaledProcess:
@@ -795,7 +1043,9 @@ class TraceAndArtifactTests(unittest.TestCase):
                 os.environ, {"ARENA_QUARANTINE_DIR": quarantine}
             ), mock.patch.object(
                 probe, "preflight_manifest", return_value=snapshot
-            ), mock.patch.object(probe.subprocess, "Popen", return_value=SignaledProcess()):
+            ), mock.patch.object(
+                probe.subprocess, "Popen", return_value=SignaledProcess()
+            ), mock.patch.object(probe, "terminate_process_group"):
                 with self.assertRaises(probe.OperatorTermination):
                     probe.run_slots(path, approval=None, requested_slots={slot["slot_id"]}, dry_run=False)
             self.assertEqual(signal.getsignal(signal.SIGTERM), prior_handler)
@@ -819,6 +1069,80 @@ class TraceAndArtifactTests(unittest.TestCase):
                 self.assertTrue(record["validity"]["confirmatory_analysis_eligible"])
                 self.assertFalse(record["output"]["present"])
 
+    def test_target_timeout_with_unavailable_usage_remains_behaviorally_eligible(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", repeats=10)
+            conditions = probe.condition_map(manifest)
+            selected = [
+                slot
+                for slot in manifest["schedule"]
+                if conditions[slot["condition_id"]]["driver"] in {"claude", "kimi"}
+            ][:2]
+            for index, slot in enumerate(selected):
+                condition = conditions[slot["condition_id"]]
+                run_dir = temp / f"timeout-{condition['driver']}"
+                seed_run(run_dir, condition)
+                metrics = json.loads((run_dir / "metrics.json").read_text())
+                metrics.update(
+                    {
+                        "agent_exit": 124,
+                        "input_tokens": None,
+                        "output_tokens": None,
+                        "total_cost_usd": None,
+                    }
+                )
+                (run_dir / "metrics.json").write_text(json.dumps(metrics))
+                (run_dir / "agent_exit").write_text("124\n")
+                if condition["driver"] == "claude":
+                    events, _ = probe.iter_jsonl(run_dir / "transcript.jsonl")
+                    jsonl(
+                        run_dir / "transcript.jsonl",
+                        [
+                            {key: value for key, value in event.items() if key != "_line"}
+                            for event in events
+                            if event.get("type") != "result"
+                        ],
+                    )
+                    (run_dir / "result.json").write_text("")
+                record = probe.observe_run(manifest, slot, run_dir)
+                self.assertEqual(record["validity"]["technical_issues"], [], condition["driver"])
+                self.assertTrue(record["validity"]["confirmatory_analysis_eligible"])
+                self.assertTrue(record["completion"]["truncation_observed"])
+                self.assertEqual(
+                    set(record["completion"]["descriptive_metrics_unavailable"]),
+                    {"input_tokens", "output_tokens", "total_cost_usd"},
+                )
+                self.assertEqual(probe.eligible_exclusion_reasons(record), [])
+
+    def test_metrics_helpers_emit_explicit_null_usage_without_terminal_records(self):
+        scripts = (
+            ("metrics.py", ["claude-opus-5"], [{"type": "assistant", "message": {"model": "claude-opus-5", "content": []}}]),
+            ("metrics_codex.py", ["gpt-5.6-sol-codex"], [{"type": "thread.started", "thread_id": "t"}]),
+            ("metrics_kimi.py", ["kimi-k3-kimicode", "kimi-k3"], [{"role": "assistant", "content": ""}]),
+        )
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            base = Path(raw)
+            for index, (script, arguments, events) in enumerate(scripts):
+                run_dir = base / f"metrics-{index}"
+                run_dir.mkdir()
+                (run_dir / "wall_seconds").write_text("1.25\n")
+                (run_dir / "agent_exit").write_text("124\n")
+                jsonl(run_dir / "transcript.jsonl", events)
+                if script == "metrics_kimi.py":
+                    jsonl(run_dir / "wire.jsonl", [])
+                completed = subprocess.run(
+                    [os.sys.executable, str(probe.ROOT / "bin" / script), str(run_dir), *arguments],
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(completed.returncode, 0, completed.stderr)
+                metrics = json.loads(completed.stdout)
+                self.assertIsNone(metrics["input_tokens"], script)
+                self.assertIsNone(metrics["output_tokens"], script)
+                self.assertIsNone(metrics["total_cost_usd"], script)
+
     def test_model_identity_requires_nonempty_and_all_observations_matching(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             temp = Path(raw)
@@ -840,17 +1164,27 @@ class TraceAndArtifactTests(unittest.TestCase):
                     )
                     jsonl(run_dir / "transcript.jsonl", [{k: v for k, v in event.items() if k != "_line"} for event in events])
                 elif driver == "kimi":
-                    wire, _ = probe.iter_jsonl(run_dir / "wire.jsonl")
-                    wire.append({"type": "llm.request", "model": "unexpected-model", "thinkingEffort": "max", "_line": 99})
-                    jsonl(run_dir / "wire.jsonl", [{k: v for k, v in event.items() if k != "_line"} for event in wire])
+                    events, _ = probe.iter_jsonl(run_dir / "wire.jsonl")
+                    for event in events:
+                        if event.get("type") == "llm.response":
+                            event["model"] = "unexpected-model"
+                    jsonl(
+                        run_dir / "wire.jsonl",
+                        [{k: v for k, v in event.items() if k != "_line"} for event in events],
+                    )
                 else:
-                    session, _ = probe.iter_jsonl(run_dir / "session.jsonl")
-                    session = [event for event in session if event.get("type") != "turn_context"]
-                    jsonl(run_dir / "session.jsonl", [{k: v for k, v in event.items() if k != "_line"} for event in session])
+                    events, _ = probe.iter_jsonl(run_dir / "transcript.jsonl")
+                    for event in events:
+                        item = event.get("item")
+                        if isinstance(item, dict) and item.get("type") == "agent_message":
+                            item["model"] = "unexpected-model"
+                    jsonl(
+                        run_dir / "transcript.jsonl",
+                        [{k: v for k, v in event.items() if k != "_line"} for event in events],
+                    )
                 record = probe.observe_run(manifest, slot, run_dir)
-                expected = "observable model identity missing" if driver == "codex" else "model mismatch"
                 self.assertTrue(
-                    any(expected in issue for issue in record["validity"]["technical_issues"]),
+                    any("model mismatch" in issue for issue in record["validity"]["technical_issues"]),
                     (driver, record["validity"]["technical_issues"]),
                 )
 
@@ -1098,6 +1432,56 @@ class CredentialGuardTests(unittest.TestCase):
             self.assertTrue(any("unsafe content" in issue for issue in issues))
             self.assertTrue(any("did not pass" in issue for issue in issues))
 
+    def test_runtime_credential_schema_drift_is_rejected_even_for_unrecognized_key(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            baseline_home = temp / "baseline"
+            baseline_home.mkdir()
+            (baseline_home / "auth.json").write_text(
+                json.dumps({"accessToken": "baseline-secret-value-123456"})
+            )
+            artifacts = temp / "artifacts"
+            artifacts.mkdir()
+            baseline = credential_guard.scan_artifacts("codex", baseline_home, [artifacts])
+            self.assertTrue(baseline["pass"])
+
+            runtime_home = temp / "runtime"
+            runtime_home.mkdir()
+            unclassified_secret = "runtime-opaque-state-value-123456"
+            (runtime_home / "auth.json").write_text(
+                json.dumps(
+                    {
+                        "accessToken": "baseline-secret-value-123456",
+                        "opaqueState": unclassified_secret,
+                    }
+                )
+            )
+            (artifacts / "transcript.jsonl").write_text(unclassified_secret)
+            runtime = credential_guard.scan_artifacts("codex", runtime_home, [artifacts])
+            self.assertTrue(runtime["pass"], "the structural gate must catch keys outside heuristics")
+            receipt_path = temp / "credential_scan.runtime.json"
+            receipt_path.write_text(json.dumps(runtime))
+            issues = probe.credential_receipt_issues(
+                receipt_path,
+                "codex",
+                expected_source_structure_sha256=baseline[
+                    "source_redacted_credential_structure_sha256"
+                ],
+            )
+            self.assertTrue(any("schema drift" in issue for issue in issues))
+
+            (runtime_home / "auth.json").write_text(
+                json.dumps(
+                    {
+                        "accessToken": "baseline-secret-value-123456",
+                        "sessionCookie": unclassified_secret,
+                    }
+                )
+            )
+            cookie_receipt = credential_guard.scan_artifacts("codex", runtime_home, [artifacts])
+            self.assertFalse(cookie_receipt["pass"])
+            self.assertGreater(cookie_receipt["leak_match_count"], 0)
+
     def test_credential_guard_scans_artifact_path_names(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             temp = Path(raw)
@@ -1133,6 +1517,93 @@ class CredentialGuardTests(unittest.TestCase):
             self.assertEqual((expected / "unsafe.txt").read_text(), "synthetic unsafe artifact")
             receipt = probe.ROOT / result["receipt"]
             self.assertTrue(receipt.is_file())
+
+    def test_quarantine_rejects_symlinked_experiment_directory(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw, tempfile.TemporaryDirectory(
+            prefix="arena-quarantine-test-"
+        ) as quarantine, tempfile.TemporaryDirectory(prefix="arena-quarantine-redirect-") as redirect:
+            temp = Path(raw)
+            _, manifest = make_manifest(temp / "manifest", phase="smoke")
+            experiment_link = Path(quarantine) / manifest["experiment_id"]
+            experiment_link.symlink_to(Path(redirect), target_is_directory=True)
+            with mock.patch.dict(os.environ, {"ARENA_QUARANTINE_DIR": quarantine}):
+                with self.assertRaisesRegex(ValueError, "experiment directory must be a real directory"):
+                    probe.quarantine_destination(manifest, manifest["schedule"][0])
+
+    def test_process_group_cleanup_kills_descendants_after_leader_exit(self):
+        with tempfile.TemporaryDirectory(prefix="arena-process-group-test-") as raw:
+            ready = Path(raw) / "child.pid"
+            child_code = (
+                "import os,signal,sys,time;"
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN);"
+                "open(sys.argv[1], 'w').write(str(os.getpid()));"
+                "time.sleep(30)"
+            )
+            leader_code = (
+                "import subprocess,sys,time;"
+                "subprocess.Popen([sys.executable, '-c', sys.argv[2], sys.argv[1]]);"
+                "\nwhile True:\n"
+                " try:\n"
+                "  open(sys.argv[1]).read(); break\n"
+                " except OSError: time.sleep(0.01)\n"
+            )
+            process = subprocess.Popen(
+                [os.sys.executable, "-c", leader_code, str(ready), child_code],
+                start_new_session=True,
+            )
+            try:
+                self.assertEqual(process.wait(timeout=5), 0)
+                self.assertTrue(ready.is_file())
+                self.assertTrue(probe._process_group_exists(process.pid))
+                probe.terminate_process_group(
+                    process,
+                    term_grace_seconds=0.1,
+                    kill_grace_seconds=2.0,
+                    poll_interval=0.01,
+                )
+                self.assertFalse(probe._process_group_exists(process.pid))
+            finally:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+
+    def test_process_group_cleanup_escalates_after_active_leader_terminates(self):
+        with tempfile.TemporaryDirectory(prefix="arena-process-group-test-") as raw:
+            ready = Path(raw) / "child.pid"
+            child_code = (
+                "import os,signal,sys,time;"
+                "signal.signal(signal.SIGTERM, signal.SIG_IGN);"
+                "open(sys.argv[1], 'w').write(str(os.getpid()));"
+                "time.sleep(30)"
+            )
+            leader_code = (
+                "import subprocess,sys,time;"
+                "subprocess.Popen([sys.executable, '-c', sys.argv[2], sys.argv[1]]);"
+                "time.sleep(30)"
+            )
+            process = subprocess.Popen(
+                [os.sys.executable, "-c", leader_code, str(ready), child_code],
+                start_new_session=True,
+            )
+            try:
+                deadline = time.monotonic() + 5
+                while not ready.is_file() and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                self.assertTrue(ready.is_file())
+                probe.terminate_process_group(
+                    process,
+                    term_grace_seconds=0.1,
+                    kill_grace_seconds=2.0,
+                    poll_interval=0.01,
+                )
+                self.assertIsNotNone(process.returncode)
+                self.assertFalse(probe._process_group_exists(process.pid))
+            finally:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
 
     def test_driver_discards_hostile_inherited_stdin_and_preserves_prompt_argument(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
@@ -1255,7 +1726,15 @@ class CredentialGuardTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr.decode(errors="replace"))
             probe.scan_run_credentials("claude", staged_env, recovered, "credential_scan.raw.json")
             probe.scan_run_credentials("claude", staged_env, recovered, "credential_scan.json")
-            record = probe.observe_run(manifest, slot, recovered)
+            synthetic_structure = json.loads(
+                (recovered / "credential_scan.raw.json").read_text()
+            )["source_redacted_credential_structure_sha256"]
+            with mock.patch.object(
+                probe,
+                "_frozen_credential_structure_sha256",
+                return_value=synthetic_structure,
+            ):
+                record = probe.observe_run(manifest, slot, recovered)
             self.assertEqual(record["validity"]["technical_issues"], [])
             self.assertTrue(record["embargo"]["pass"])
 
@@ -1281,6 +1760,56 @@ class ReviewAndAggregationTests(unittest.TestCase):
         oversized["reviews"][0]["A"]["evidence"][0]["end"] = 999
         _, errors = analysis.validate_review_file(oversized, {"P-1": packet}, "reviewer")
         self.assertTrue(any("invalid offsets" in error for error in errors))
+
+    def test_blinding_self_identification_is_evidenced_and_reportable(self):
+        text = "As Claude, I would use `[requirement]`."
+        packet = {
+            "blind_id": "P-1",
+            "output_sha256": probe.sha256_bytes(text.encode()),
+            "output": text,
+        }
+        review = review_for("P-1", text)
+        review["blinding"]["self_identifies_model_or_condition"] = {
+            "value": True,
+            "rationale": "the output names a model condition",
+            "evidence": [{"quote": "As Claude", "start": 0, "end": 9}],
+        }
+        document = {
+            "schema_version": 1,
+            "reviewer_id": "r1",
+            "independent_of": ["r2"],
+            "reviews": [review],
+        }
+        indexed, errors = analysis.validate_review_file(
+            document, {"P-1": packet}, "reviewer"
+        )
+        self.assertEqual(errors, [])
+        values = {
+            field: analysis.get_value(indexed["P-1"], field)
+            for field in analysis.ALL_FIELDS
+        }
+        run_record = {
+            "output": {"present": True, "sha256": packet["output_sha256"]},
+            "embargo": {
+                "pass": True,
+                "target_originated_tool_or_function_call": False,
+                "spawned_agent": False,
+                "repository_or_file_inspection": False,
+                "research_or_network_action": False,
+                "implementation_or_mutation_attempt": False,
+                "unclassified_tool_action": False,
+                "trace_integrity_failure": False,
+            },
+            "metrics": {},
+            "completion": {},
+        }
+        row = analysis.derive_row(
+            "P-1",
+            values,
+            {"slot_id": "s1", "condition_id": "c1"},
+            run_record,
+        )
+        self.assertTrue(row["blinding_compromised"])
 
     def test_two_reviewers_and_every_disagreement_require_distinct_adjudication(self):
         text = "Use `[requirement]`."
@@ -1386,6 +1915,7 @@ class ReviewAndAggregationTests(unittest.TestCase):
         values = {field: 0 for field in analysis.ORDINAL_FIELDS}
         values.update({f"E.{field}": False for field in analysis.E_FIELDS})
         values.update({f"F.{field}": False for field in analysis.F_FIELDS})
+        values.update({f"blinding.{field}": False for field in analysis.BLINDING_FIELDS})
         values["F.uses_explicit_placeholders"] = True
         values["F.separates_assumptions_from_facts"] = True
         run_record = {
@@ -1423,6 +1953,8 @@ class ReviewAndAggregationTests(unittest.TestCase):
             self.assertEqual(errors, [])
             self.assertTrue(result["complete"])
             self.assertEqual(len(result["per_run"]), 30)
+            self.assertEqual(result["reviewers"]["blinding_compromised_runs"], 0)
+            self.assertIn("blinding", analysis.render_report(result).lower())
             tampered = json.loads(paths["packets"].read_text())
             tampered["packets"][0]["output"] += "tampered"
             paths["packets"].write_text(json.dumps(tampered))
