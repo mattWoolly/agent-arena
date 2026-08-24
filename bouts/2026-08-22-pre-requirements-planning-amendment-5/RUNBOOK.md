@@ -49,7 +49,7 @@ export ARENA_CODEX_HOME=/absolute/path/outside/repository/codex-home
 export ARENA_KIMI_HOME=/absolute/path/outside/repository/kimi-home
 export PYTHONDONTWRITEBYTECODE=1
 python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke-amendment-5/MANIFEST.json \
-  --approval 3834461fcbf1760ffe138aff14d5fd99324085346e65e028ed136918acff0da4
+  --approval <exact-amendment-5-freeze-id>
 ```
 
 Never retry, resume, or manually invoke Claude. Preserve all raw artifacts,
