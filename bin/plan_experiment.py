@@ -80,8 +80,12 @@ AMENDED_RUNBOOK_3_REL = f"bouts/{EXPERIMENT_ID}-amendment-3/RUNBOOK.md"
 AMENDMENT_4_ID = "smoke-technical-004"
 AMENDMENT_4_REL = f"bouts/{EXPERIMENT_ID}-amendment-4/AMENDMENT.md"
 AMENDED_RUNBOOK_4_REL = f"bouts/{EXPERIMENT_ID}-amendment-4/RUNBOOK.md"
+AMENDMENT_5_ID = "smoke-technical-005"
+AMENDMENT_5_REL = f"bouts/{EXPERIMENT_ID}-amendment-5/AMENDMENT.md"
+AMENDED_RUNBOOK_5_REL = f"bouts/{EXPERIMENT_ID}-amendment-5/RUNBOOK.md"
 AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-4"
 AMENDMENT_4_FROZEN_AT = "2026-08-23T23:40:00Z"
+AMENDMENT_5_FROZEN_AT = "2026-08-24T02:05:49Z"
 CONFIRMATORY_RUNS_PER_CONDITION = 20
 CONFIRMATORY_RESERVES_PER_CONDITION = 5
 CONFIRMATORY_RANDOM_SEED = 2808222026
@@ -91,6 +95,10 @@ SMOKE_RANDOM_SEED = 2808222027
 INITIAL_SMOKE_MANIFEST_REL = f"bouts/{EXPERIMENT_ID}-smoke/MANIFEST.json"
 INITIAL_SMOKE_FREEZE_ID = "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e"
 SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-4"
+SMOKE_REPLACEMENT_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-5"
+AMENDMENT_4_SMOKE_FREEZE_ID = "405c7f21dc3ba2d5a03a354881e634960b821b75290300fa20fb047ae114de3e"
+AMENDMENT_4_SMOKE_MANIFEST_SHA256 = "1788d392aea7db97ebce80e466a447ba94861b3615a4d084a124763f2b5feb87"
+SMOKE_REPLACEMENT_RANDOM_SEED = 2808242028
 ATTEMPT_INTENT_DIRECTORY = "ATTEMPT_INTENTS"
 ATTEMPT_CLAIM_JOURNAL = "ATTEMPT_CLAIMS.jsonl"
 LEGACY_ATTEMPT_INTENT_CONTRACT = {
@@ -1724,9 +1732,9 @@ def default_conditions() -> list[dict[str, Any]]:
     ]
 
 
-def current_amendments() -> list[dict[str, Any]]:
+def current_amendments(*, include_amendment_5: bool = False) -> list[dict[str, Any]]:
     records = []
-    for amendment_id, kind, documentation_relative in (
+    amendment_records = [
         (AMENDMENT_1_ID, "technical_harness_compatibility", AMENDMENT_1_REL),
         (AMENDMENT_2_ID, "technical_crash_durability", AMENDMENT_2_REL),
         (AMENDMENT_3_ID, "technical_atomic_claims", AMENDMENT_3_REL),
@@ -1735,7 +1743,12 @@ def current_amendments() -> list[dict[str, Any]]:
             "technical_strict_launch_authorization",
             AMENDMENT_4_REL,
         ),
-    ):
+    ]
+    if include_amendment_5:
+        amendment_records.append(
+            (AMENDMENT_5_ID, "technical_kimi_identity_compatibility", AMENDMENT_5_REL)
+        )
+    for amendment_id, kind, documentation_relative in amendment_records:
         documentation = ROOT / documentation_relative
         if not documentation.is_file() or documentation.is_symlink():
             raise ValueError(
@@ -1751,6 +1764,27 @@ def current_amendments() -> list[dict[str, Any]]:
             }
         )
     return records
+
+
+def manifest_uses_amendment_5(manifest: dict[str, Any]) -> bool:
+    return isinstance(manifest.get("smoke_replacement"), dict)
+
+
+def frozen_core_relative(*, include_amendment_5: bool = False) -> list[str]:
+    paths = list(FROZEN_CORE_RELATIVE)
+    if include_amendment_5:
+        paths.extend((AMENDMENT_5_REL, AMENDED_RUNBOOK_5_REL))
+    return paths
+
+
+def manifest_conditions_defaults(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    conditions = default_conditions()
+    if not manifest_uses_amendment_5(manifest):
+        return conditions
+    for condition in conditions:
+        if condition["condition_id"] == "kimi-code--kimi-k3":
+            condition["expected_providers"] = ["kimi"]
+    return [condition for condition in conditions if condition["condition_id"] == "kimi-code--kimi-k3"]
 
 
 def _validated_bout_dir(value: str) -> str:
@@ -1929,8 +1963,26 @@ def validate_smoke_call_budget(
 ) -> list[str]:
     """Enforce the cumulative one-plus-two smoke budget without response access."""
     continuation = manifest.get("smoke_continuation")
-    if continuation is None:
+    replacement = manifest.get("smoke_replacement")
+    if continuation is None and replacement is None:
         return []
+    if replacement is not None:
+        errors: list[str] = []
+        if replacement.get("calls_previously_consumed") != 2:
+            errors.append("Amendment-5 replacement must account for exactly two prior smoke calls")
+        if replacement.get("calls_in_manifest") != 1:
+            errors.append("Amendment-5 replacement must freeze exactly one call")
+        if replacement.get("cumulative_smoke_call_cap") != 3:
+            errors.append("Amendment-5 replacement must retain the cumulative three-call cap")
+        if replacement.get("retries_allowed") is not False:
+            errors.append("Amendment-5 replacement must retain the no-retry rule")
+        attempted = [row for row in ledger if isinstance(row, dict)]
+        if attempted:
+            errors.append("Amendment-5 replacement cannot resume a partially attempted replacement")
+        if next_slot is not None:
+            if next_slot.get("condition_id") != replacement.get("replaced_condition_id"):
+                errors.append("Amendment-5 replacement slot is not the failed Kimi condition")
+        return errors
     errors: list[str] = []
     consumed_conditions = {
         str(slot_id).partition("--")[2]
@@ -2004,6 +2056,7 @@ def build_manifest(
     replace_draft: bool = False,
     bout_dir_override: str | None = None,
     smoke_continuation_from: Path | None = None,
+    smoke_replacement_from: Path | None = None,
     test_only_allow_noncanonical_paths: bool = False,
 ) -> dict[str, Any]:
     require_strict_creation_umask("manifest publication")
@@ -2020,9 +2073,10 @@ def build_manifest(
             raise ValueError(
                 "the amendment-4 production manifests are immutable no-clobber publications"
             )
-        if frozen_at != AMENDMENT_4_FROZEN_AT:
+        expected_frozen_at = AMENDMENT_5_FROZEN_AT if smoke_replacement_from is not None else AMENDMENT_4_FROZEN_AT
+        if frozen_at != expected_frozen_at:
             raise ValueError(
-                f"the amendment-4 frozen timestamp must be {AMENDMENT_4_FROZEN_AT}"
+                f"the frozen timestamp must be {expected_frozen_at}"
             )
         if phase == "confirmatory":
             if smoke_continuation_from is not None:
@@ -2045,6 +2099,17 @@ def build_manifest(
                 or requested_bout_dir != AMENDED_CONFIRMATORY_BOUT_REL
             ):
                 raise ValueError("the amended confirmatory manifest has one canonical output and bout path")
+        elif smoke_replacement_from is not None:
+            if phase != "smoke" or smoke_continuation_from is not None:
+                raise ValueError("Kimi replacement must be a standalone smoke manifest")
+            if repeats != 1 or reserve_per_condition != 0 or seed != SMOKE_REPLACEMENT_RANDOM_SEED:
+                raise ValueError("the amendment-5 Kimi replacement requires one run, zero reserves, and its frozen seed")
+            expected_output = ROOT / SMOKE_REPLACEMENT_BOUT_REL / "MANIFEST.json"
+            if (
+                _lexical_absolute_path(output) != _lexical_absolute_path(expected_output)
+                or requested_bout_dir != SMOKE_REPLACEMENT_BOUT_REL
+            ):
+                raise ValueError("the amendment-5 replacement has one canonical output and bout path")
         elif smoke_continuation_from is None:
             raise ValueError("the initial smoke freeze is immutable; only its canonical continuation may be built")
         else:
@@ -2070,7 +2135,24 @@ def build_manifest(
     if sha256_path(prompt) != FROZEN_PROMPT_SHA256:
         raise ValueError("target prompt differs from the frozen exact prompt")
     continuation: dict[str, Any] | None = None
-    if smoke_continuation_from is not None:
+    if smoke_replacement_from is not None:
+        if phase != "smoke" or repeats != 1 or reserve_per_condition != 0:
+            raise ValueError("Kimi replacement requires phase=smoke, runs=1, and reserves=0")
+        predecessor_path = _lexical_absolute_path(smoke_replacement_from)
+        predecessor, _ = read_manifest_strict(predecessor_path, label="replacement predecessor manifest")
+        if predecessor.get("freeze_id") != AMENDMENT_4_SMOKE_FREEZE_ID:
+            raise ValueError("replacement predecessor is not the frozen Amendment-4 smoke manifest")
+        conditions = manifest_conditions_defaults({"smoke_replacement": {}})
+        schedule = [{
+            "slot_id": "replacement-01--kimi-code--kimi-k3",
+            "kind": "primary",
+            "block": 1,
+            "position": 1,
+            "sequence": 1,
+            "replicate": 1,
+            "condition_id": "kimi-code--kimi-k3",
+        }]
+    elif smoke_continuation_from is not None:
         if phase != "smoke" or repeats != 1 or reserve_per_condition != 0:
             raise ValueError("smoke continuation requires phase=smoke, runs=1, and reserves=0")
         continuation, conditions, schedule = smoke_continuation_state(smoke_continuation_from)
@@ -2122,7 +2204,7 @@ def build_manifest(
     }
     if supplied_core != expected_supplied:
         raise ValueError("manifest inputs must use the experiment's canonical design/analyzer/report paths")
-    frozen_files = [*(ROOT / path for path in FROZEN_CORE_RELATIVE), *fixture_files]
+    frozen_files = [*(ROOT / path for path in frozen_core_relative(include_amendment_5=smoke_replacement_from is not None)), *fixture_files]
     missing = [str(path) for path in frozen_files if not path.is_file()]
     if missing:
         raise ValueError(f"missing frozen input files: {missing}")
@@ -2133,7 +2215,7 @@ def build_manifest(
         "phase": phase,
         "status": "excluded-smoke" if phase == "smoke" else "frozen-awaiting-explicit-user-approval",
         "frozen_at": frozen_at,
-        "amendments": current_amendments(),
+        "amendments": current_amendments(include_amendment_5=smoke_replacement_from is not None),
         "bout_dir": bout_dir,
         "task": {
             "path": TASK_REL,
@@ -2226,6 +2308,23 @@ def build_manifest(
                 "retries_allowed": False,
             }
         )
+    if smoke_replacement_from is not None:
+        predecessor, _ = read_manifest_strict(
+            _lexical_absolute_path(smoke_replacement_from), label="replacement predecessor manifest"
+        )
+        manifest["smoke_replacement"] = {
+            "schema_version": 1,
+            "predecessor_manifest": file_record(_lexical_absolute_path(smoke_replacement_from)),
+            "predecessor_freeze_id": predecessor["freeze_id"],
+            "replaced_slot_id": "primary-01--kimi-code--kimi-k3",
+            "replaced_condition_id": "kimi-code--kimi-k3",
+            "replacement_reason": "wrong_model_or_frozen_configuration",
+            "calls_previously_consumed": 2,
+            "calls_in_manifest": 1,
+            "cumulative_smoke_call_cap": 3,
+            "retries_allowed": False,
+            "identity_contract_change": "The Kimi wire provider label is frozen as kimi; endpoint, CLI, model alias, effort, and credential configuration are unchanged.",
+        }
     if test_only_allow_noncanonical_paths:
         manifest["test_only_noncanonical_paths"] = True
     manifest["freeze_id"] = sha256_bytes(canonical_json(manifest))
@@ -2273,6 +2372,55 @@ def compute_freeze_id(manifest: dict[str, Any]) -> str:
     return sha256_bytes(canonical_json(clone))
 
 
+def validate_smoke_replacement_metadata(
+    manifest: dict[str, Any], *, check_files: bool
+) -> list[str]:
+    replacement = manifest.get("smoke_replacement")
+    if not isinstance(replacement, dict):
+        return ["Amendment-5 replacement metadata is missing"]
+    errors: list[str] = []
+    predecessor_record = replacement.get("predecessor_manifest") or {}
+    predecessor_path = ROOT / str(predecessor_record.get("path", ""))
+    expected_path = ROOT / SMOKE_CONTINUATION_BOUT_REL / "MANIFEST.json"
+    if _lexical_absolute_path(predecessor_path) != _lexical_absolute_path(expected_path):
+        errors.append("Amendment-5 predecessor is not the Amendment-4 smoke manifest")
+        return errors
+    if predecessor_record.get("sha256") != AMENDMENT_4_SMOKE_MANIFEST_SHA256:
+        errors.append("Amendment-5 predecessor manifest hash is not the frozen Amendment-4 file hash")
+    try:
+        predecessor, _ = read_manifest_strict(predecessor_path, label="Amendment-5 predecessor manifest")
+    except (OSError, ValueError) as exc:
+        return [f"Amendment-5 predecessor manifest is unreadable: {type(exc).__name__}"]
+    if predecessor.get("freeze_id") != AMENDMENT_4_SMOKE_FREEZE_ID:
+        errors.append("Amendment-5 predecessor freeze ID is not the frozen Amendment-4 smoke freeze")
+    predecessor_errors = validate_manifest(predecessor, check_files=check_files)
+    errors.extend(f"Amendment-4 predecessor: {error}" for error in predecessor_errors)
+    ledger_path = predecessor_path.parent / "EXECUTION.jsonl"
+    try:
+        ledger, _ = read_execution_ledger(ledger_path)
+    except (OSError, ValueError) as exc:
+        return errors + [f"Amendment-5 predecessor ledger is unreadable: {type(exc).__name__}"]
+    if len(ledger) != 1:
+        errors.append("Amendment-5 predecessor must contain exactly one recorded Kimi attempt")
+    else:
+        row = ledger[0]
+        if row.get("condition_id") != "kimi-code--kimi-k3":
+            errors.append("Amendment-5 predecessor row is not the Kimi attempt")
+        if row.get("analysis_eligible") is not False or row.get("smoke_excluded") is not True:
+            errors.append("Amendment-5 predecessor Kimi attempt is not excluded and ineligible")
+        if "wrong_model_or_frozen_configuration" not in set(row.get("eligible_exclusion_reasons") or []):
+            errors.append("Amendment-5 predecessor lacks the frozen-configuration exclusion reason")
+    if replacement.get("predecessor_freeze_id") != predecessor.get("freeze_id"):
+        errors.append("Amendment-5 predecessor freeze binding is inconsistent")
+    if replacement.get("replaced_slot_id") != "primary-01--kimi-code--kimi-k3":
+        errors.append("Amendment-5 replacement does not bind the failed Kimi slot")
+    if replacement.get("replaced_condition_id") != "kimi-code--kimi-k3":
+        errors.append("Amendment-5 replacement condition binding is invalid")
+    if replacement.get("replacement_reason") != "wrong_model_or_frozen_configuration":
+        errors.append("Amendment-5 replacement reason is not the recorded frozen-configuration failure")
+    return errors
+
+
 def validate_manifest(
     manifest: dict[str, Any],
     *,
@@ -2288,14 +2436,17 @@ def validate_manifest(
     if manifest.get("freeze_id") != compute_freeze_id(manifest):
         errors.append("freeze_id does not match manifest content")
     test_only_noncanonical = manifest.get("test_only_noncanonical_paths") is True
+    replacement = manifest.get("smoke_replacement")
+    uses_amendment_5 = manifest_uses_amendment_5(manifest)
     if test_only_noncanonical and os.environ.get("ARENA_SYNTHETIC_ONLY") != "1":
         errors.append("test-only noncanonical manifest is disabled outside synthetic tests")
     if not allow_historical and not test_only_noncanonical:
         bout_dir = manifest.get("bout_dir")
         sampling = manifest.get("sampling") or {}
         randomization = manifest.get("randomization") or {}
-        if manifest.get("frozen_at") != AMENDMENT_4_FROZEN_AT:
-            errors.append("current manifest does not use the amendment-4 frozen timestamp")
+        expected_frozen_at = AMENDMENT_5_FROZEN_AT if uses_amendment_5 else AMENDMENT_4_FROZEN_AT
+        if manifest.get("frozen_at") != expected_frozen_at:
+            errors.append("current manifest does not use its frozen amendment timestamp")
         if phase == "confirmatory" and bout_dir != AMENDED_CONFIRMATORY_BOUT_REL:
             errors.append("confirmatory manifest is outside its canonical amended bout directory")
         if phase == "confirmatory":
@@ -2317,7 +2468,17 @@ def validate_manifest(
                 errors.append(
                     "current confirmatory manifest does not use the frozen randomization seed"
                 )
-        if phase == "smoke" and manifest.get("smoke_continuation") is not None:
+        if phase == "smoke" and uses_amendment_5:
+            if manifest.get("bout_dir") != SMOKE_REPLACEMENT_BOUT_REL:
+                errors.append("Amendment-5 replacement is outside its canonical bout directory")
+            if manifest.get("smoke_continuation") is not None:
+                errors.append("Amendment-5 replacement cannot also be a continuation")
+            sampling = manifest.get("sampling") or {}
+            if sampling.get("valid_runs_per_condition") != 1 or sampling.get("reserve_slots_per_condition") != 0:
+                errors.append("Amendment-5 replacement must freeze one Kimi run and zero reserves")
+            if (manifest.get("randomization") or {}).get("seed") != SMOKE_REPLACEMENT_RANDOM_SEED:
+                errors.append("Amendment-5 replacement does not use its frozen seed")
+        elif phase == "smoke" and manifest.get("smoke_continuation") is not None:
             if bout_dir != SMOKE_CONTINUATION_BOUT_REL:
                 errors.append("smoke continuation is outside its canonical bout directory")
             if sampling.get("valid_runs_per_condition") != SMOKE_RUNS_PER_CONDITION:
@@ -2334,7 +2495,7 @@ def validate_manifest(
             errors.append("current smoke manifests must be canonical continuations of the immutable initial smoke")
     if not allow_historical:
         try:
-            expected_amendments = current_amendments()
+            expected_amendments = current_amendments(include_amendment_5=uses_amendment_5)
         except (OSError, ValueError) as exc:
             errors.append(f"current amendment record is unavailable: {exc}")
         else:
@@ -2375,7 +2536,7 @@ def validate_manifest(
                 errors.append("manifest target prompt byte count mismatch")
         frozen_records = manifest.get("frozen_inputs") or []
         frozen_paths = [rec.get("path") for rec in frozen_records if isinstance(rec, dict)]
-        expected_frozen_paths = set(FROZEN_CORE_RELATIVE) | {
+        expected_frozen_paths = set(frozen_core_relative(include_amendment_5=uses_amendment_5)) | {
             item.get("path") for item in task.get("fixture_inventory") or [] if isinstance(item, dict)
         }
         if len(frozen_paths) != len(set(frozen_paths)) or set(frozen_paths) != expected_frozen_paths:
@@ -2410,7 +2571,10 @@ def validate_manifest(
     conditions = condition_map(manifest) if manifest.get("conditions") else {}
     if len(conditions) != len(manifest.get("conditions") or []):
         errors.append("duplicate condition_id")
-    default_by_id = {condition["condition_id"]: condition for condition in default_conditions()}
+    default_by_id = {
+        condition["condition_id"]: condition
+        for condition in manifest_conditions_defaults(manifest)
+    }
     for condition_id, condition in conditions.items():
         if condition_id not in default_by_id or condition != default_by_id.get(condition_id):
             errors.append(f"condition {condition_id} differs from the frozen default condition")
@@ -2419,8 +2583,14 @@ def validate_manifest(
     continuation = manifest.get("smoke_continuation")
     if phase == "confirmatory" and set(conditions) != set(default_by_id):
         errors.append("confirmatory manifest must contain every frozen condition")
-    if phase == "smoke" and continuation is None and set(conditions) != set(default_by_id):
+    if phase == "smoke" and continuation is None and not uses_amendment_5 and set(conditions) != set(default_by_id):
         errors.append("initial smoke manifest must contain every frozen condition")
+    if uses_amendment_5 and set(conditions) != {"kimi-code--kimi-k3"}:
+        errors.append("Amendment-5 replacement must contain only the Kimi condition")
+    if uses_amendment_5:
+        errors.extend(
+            validate_smoke_replacement_metadata(manifest, check_files=check_files)
+        )
     if continuation is not None and phase != "smoke":
         errors.append("only a smoke manifest may contain continuation metadata")
     if check_files:
@@ -7034,6 +7204,11 @@ def command_manifest(args: argparse.Namespace) -> None:
             if args.smoke_continuation_from
             else None
         ),
+        smoke_replacement_from=(
+            _lexical_absolute_path(Path(args.smoke_replacement_from))
+            if args.smoke_replacement_from
+            else None
+        ),
     )
     print(manifest["freeze_id"])
 
@@ -7158,6 +7333,10 @@ def parser() -> argparse.ArgumentParser:
     manifest.add_argument(
         "--smoke-continuation-from",
         help="derive only the unattempted suffix of the immutable initial smoke manifest",
+    )
+    manifest.add_argument(
+        "--smoke-replacement-from",
+        help="construct the one-slot Amendment-5 Kimi replacement from the frozen Amendment-4 smoke manifest",
     )
     manifest.add_argument(
         "--replace-draft",

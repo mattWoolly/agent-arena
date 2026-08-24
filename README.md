@@ -347,6 +347,15 @@ reason is supported by a same-condition ineligible attempt's recorded evidence.
 If a reserve itself fails exogenously, the next reserve links to that failed
 attempt, preserving the full replacement chain.
 
+Amendment 5 is a separately frozen, Kimi-only smoke replacement path for the
+Amendment-4 invalid-setup halt. Its `--smoke-replacement-from` builder binds the
+immutable Amendment-4 manifest and changes only the expected Kimi wire-provider
+label (`kimi`); the endpoint, model alias, CLI, effort, credentials, prompt, and
+tools remain unchanged. It creates a new bout directory, permits one call from
+the remaining cumulative three-call budget, and forbids retries or a Claude
+call. The replacement remains excluded from semantic analysis and requires two
+offline approvals plus explicit user approval before execution.
+
 Before any model call, the executor validates every selected condition's CLI,
 external-home isolation, endpoint/config surface, exact neutral fixture
 inventory, and all content-addressed harness inputs. It repeats that preflight
