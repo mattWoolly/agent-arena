@@ -354,7 +354,9 @@ label (`kimi`); the endpoint, model alias, CLI, effort, credentials, prompt, and
 tools remain unchanged. It creates a new bout directory, permits one call from
 the remaining cumulative three-call budget, and forbids retries or a Claude
 call. The replacement remains excluded from semantic analysis and requires two
-offline approvals plus explicit user approval before execution.
+offline approvals plus explicit user approval before execution. The validator
+also verifies the predecessor manifest and failed Kimi ledger row through
+response-free provenance checks before accepting the replacement.
 
 Before any model call, the executor validates every selected condition's CLI,
 external-home isolation, endpoint/config surface, exact neutral fixture

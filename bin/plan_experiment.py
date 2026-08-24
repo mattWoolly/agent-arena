@@ -2393,7 +2393,9 @@ def validate_smoke_replacement_metadata(
         return [f"Amendment-5 predecessor manifest is unreadable: {type(exc).__name__}"]
     if predecessor.get("freeze_id") != AMENDMENT_4_SMOKE_FREEZE_ID:
         errors.append("Amendment-5 predecessor freeze ID is not the frozen Amendment-4 smoke freeze")
-    predecessor_errors = validate_manifest(predecessor, check_files=check_files)
+    predecessor_errors = validate_manifest(
+        predecessor, check_files=False, allow_historical=True
+    )
     errors.extend(f"Amendment-4 predecessor: {error}" for error in predecessor_errors)
     ledger_path = predecessor_path.parent / "EXECUTION.jsonl"
     try:
@@ -2436,7 +2438,6 @@ def validate_manifest(
     if manifest.get("freeze_id") != compute_freeze_id(manifest):
         errors.append("freeze_id does not match manifest content")
     test_only_noncanonical = manifest.get("test_only_noncanonical_paths") is True
-    replacement = manifest.get("smoke_replacement")
     uses_amendment_5 = manifest_uses_amendment_5(manifest)
     if test_only_noncanonical and os.environ.get("ARENA_SYNTHETIC_ONLY") != "1":
         errors.append("test-only noncanonical manifest is disabled outside synthetic tests")
@@ -2491,7 +2492,7 @@ def validate_manifest(
                 errors.append(
                     "current smoke continuation does not use the frozen randomization seed"
                 )
-        if phase == "smoke" and manifest.get("smoke_continuation") is None:
+        if phase == "smoke" and manifest.get("smoke_continuation") is None and not uses_amendment_5:
             errors.append("current smoke manifests must be canonical continuations of the immutable initial smoke")
     if not allow_historical:
         try:
@@ -2653,6 +2654,18 @@ def validate_manifest(
             errors.append("smoke continuation includes a consumed condition")
         if set(conditions) | consumed_conditions != set(default_by_id):
             errors.append("consumed and remaining smoke conditions do not form the original three-call set")
+    elif uses_amendment_5:
+        expected_slots = [{
+            "slot_id": "replacement-01--kimi-code--kimi-k3",
+            "kind": "primary",
+            "block": 1,
+            "position": 1,
+            "sequence": 1,
+            "replicate": 1,
+            "condition_id": "kimi-code--kimi-k3",
+        }]
+        if slots != expected_slots:
+            errors.append("Amendment-5 replacement schedule differs from its frozen one-slot schedule")
     elif conditions and isinstance(repeats, int):
         seed = (manifest.get("randomization") or {}).get("seed")
         if isinstance(seed, int):
