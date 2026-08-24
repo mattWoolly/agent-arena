@@ -298,19 +298,28 @@ Task `16-pre-requirements-plan` uses a committed manifest instead of
 is observable response behavior rather than workspace correctness:
 
 ```
-python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-amendment-3/MANIFEST.json
-python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke-amendment-3/MANIFEST.json
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke-amendment-3/MANIFEST.json
-python3 bin/plan_experiment.py smoke-status bouts/2026-08-22-pre-requirements-planning-smoke-amendment-3/MANIFEST.json
-python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-amendment-3/MANIFEST.json --dry-run
+python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-amendment-4/MANIFEST.json
+python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke-amendment-4/MANIFEST.json
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke-amendment-4/MANIFEST.json
+python3 bin/plan_experiment.py smoke-status bouts/2026-08-22-pre-requirements-planning-smoke-amendment-4/MANIFEST.json
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-amendment-4/MANIFEST.json --dry-run
 ```
 
 Confirmatory execution requires `--approval <exact-freeze-id>` and is blocked
 without it. The manifest fixes the exact prompt, condition versions, native
 effort behavior, randomized complete-block schedule, exclusions, and analysis
 inputs. Smoke has its own manifest/bout and cannot enter blinding or analysis.
+Amendment 3 was superseded after pre-freeze engineering review, before either
+of its manifests was published and before any target call; Amendment 4 is the
+current freeze path. Its manifest creation and execution commands require an
+independent exact-commit checkout created and kept under `umask 0077` beneath
+an owner-only root. The runner fails closed on unsafe ownership, write modes,
+symlinks, hard links, POSIX ACLs, or metadata inspection failures in the
+repository/bout trust path, manifests, and durable attempt witnesses. It never
+repairs unsafe live evidence.
 Manifest publication verifies the completed bytes and inode, then uses an
-atomically no-clobber same-directory operation;
+atomically no-clobber same-directory operation while preserving the lexical
+output path through no-follow validation;
 the explicit `--replace-draft` flag works only on an unchanged safe draft
 before any claim, intent, ledger, or run artifact exists.
 The post-smoke technical amendment preserves the original one-call smoke bout,
@@ -321,7 +330,9 @@ surface for those excluded outputs. Before launching a target, the current
 runner holds a bout-wide execution lock, follows the version-2 claim contract,
 durably appends a slot-bound row to `ATTEMPT_CLAIMS.jsonl`, then creates its
 exclusive immutable intent and
-revalidates both witnesses. Every ledger row binds the exact claim and intent.
+revalidates the current on-disk manifest, ledger, claim, and intent immediately
+before `Popen`. Every ledger row binds the exact claim and intent, and every
+ledger consumer uses the same strict UTF-8, newline-complete, no-follow reader.
 Any journal-only, intent-only, or mismatched state consumes the slot and blocks
 all execution, so an uncertain crash or partial witness loss cannot turn into a
 retry or exceed the frozen call budget. After a confirmatory attempt becomes

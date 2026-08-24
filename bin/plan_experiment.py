@@ -24,6 +24,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -76,10 +77,13 @@ AMENDED_RUNBOOK_2_REL = f"bouts/{EXPERIMENT_ID}-amendment-2/RUNBOOK.md"
 AMENDMENT_3_ID = "smoke-technical-003"
 AMENDMENT_3_REL = f"bouts/{EXPERIMENT_ID}-amendment-3/AMENDMENT.md"
 AMENDED_RUNBOOK_3_REL = f"bouts/{EXPERIMENT_ID}-amendment-3/RUNBOOK.md"
-AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-3"
+AMENDMENT_4_ID = "smoke-technical-004"
+AMENDMENT_4_REL = f"bouts/{EXPERIMENT_ID}-amendment-4/AMENDMENT.md"
+AMENDED_RUNBOOK_4_REL = f"bouts/{EXPERIMENT_ID}-amendment-4/RUNBOOK.md"
+AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-4"
 INITIAL_SMOKE_MANIFEST_REL = f"bouts/{EXPERIMENT_ID}-smoke/MANIFEST.json"
 INITIAL_SMOKE_FREEZE_ID = "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e"
-SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-3"
+SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-4"
 ATTEMPT_INTENT_DIRECTORY = "ATTEMPT_INTENTS"
 ATTEMPT_CLAIM_JOURNAL = "ATTEMPT_CLAIMS.jsonl"
 LEGACY_ATTEMPT_INTENT_CONTRACT = {
@@ -127,6 +131,7 @@ ATTEMPT_CLAIM_FIELDS = {
     "attempt_intent",
     "attempt_intent_sha256",
 }
+_UMASK_READ_LOCK = threading.Lock()
 FROZEN_CORE_RELATIVE = [
     PROMPT_REL,
     f"{TASK_REL}/SCORING.md",
@@ -139,6 +144,8 @@ FROZEN_CORE_RELATIVE = [
     AMENDED_RUNBOOK_2_REL,
     AMENDMENT_3_REL,
     AMENDED_RUNBOOK_3_REL,
+    AMENDMENT_4_REL,
+    AMENDED_RUNBOOK_4_REL,
     CONFIG_LOCK_REL,
     f"analysis/{EXPERIMENT_ID}/analyze.py",
     f"analysis/{EXPERIMENT_ID}/REPORT_TEMPLATE.md",
@@ -385,6 +392,31 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def _current_process_umask() -> int:
+    """Read the current umask without leaving a permissive transition."""
+    try:
+        status = Path("/proc/self/status").read_text(encoding="utf-8")
+        matches = re.findall(r"(?m)^Umask:\s*([0-7]{4})\s*$", status)
+        if len(matches) == 1:
+            return int(matches[0], 8)
+    except (OSError, UnicodeDecodeError, ValueError):
+        pass
+    with _UMASK_READ_LOCK:
+        current = os.umask(0o777)
+        try:
+            return current
+        finally:
+            os.umask(current)
+
+
+def require_strict_creation_umask(label: str) -> None:
+    current = _current_process_umask()
+    if current & 0o022 != 0o022:
+        raise PermissionError(
+            f"{label} requires a 0022-or-stricter process umask; current umask is {current:04o}"
+        )
+
+
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -458,13 +490,9 @@ def _renameat2_noreplace(
 
 
 def _read_manifest_file_at(parent_fd: int, name: str) -> tuple[os.stat_result, bytes]:
-    attached = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
-    if (
-        not stat.S_ISREG(attached.st_mode)
-        or stat.S_ISLNK(attached.st_mode)
-        or attached.st_nlink != 1
-        or attached.st_uid != os.getuid()
-        or stat.S_IMODE(attached.st_mode) & 0o022
+    attached_before = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+    if not stat.S_ISREG(attached_before.st_mode) or stat.S_ISLNK(
+        attached_before.st_mode
     ):
         raise ValueError("manifest publication target is unsafe")
     flags = os.O_RDONLY | os.O_CLOEXEC
@@ -472,12 +500,33 @@ def _read_manifest_file_at(parent_fd: int, name: str) -> tuple[os.stat_result, b
         flags |= os.O_NOFOLLOW
     descriptor = os.open(name, flags, dir_fd=parent_fd)
     try:
-        opened = os.fstat(descriptor)
-        if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
+        fcntl.flock(descriptor, fcntl.LOCK_SH)
+        opened = _validate_opened_regular_file(
+            parent_fd, name, descriptor, "manifest publication target"
+        )
+        if (opened.st_dev, opened.st_ino) != (
+            attached_before.st_dev,
+            attached_before.st_ino,
+        ):
             raise ValueError("manifest publication target changed while opened")
-        return opened, _read_descriptor_bytes(descriptor, limit=16 * 1024 * 1024)
+        payload = _read_descriptor_bytes(
+            descriptor,
+            limit=16 * 1024 * 1024,
+            label="manifest publication target",
+        )
+        opened_after = _validate_opened_regular_file(
+            parent_fd, name, descriptor, "manifest publication target"
+        )
+        if _stable_file_fingerprint(opened) != _stable_file_fingerprint(
+            opened_after
+        ):
+            raise ValueError("manifest publication target changed while read")
+        return opened_after, payload
     finally:
-        os.close(descriptor)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        finally:
+            os.close(descriptor)
 
 
 def _manifest_publication_baseline(path: Path) -> dict[str, Any] | None:
@@ -486,7 +535,9 @@ def _manifest_publication_baseline(path: Path) -> dict[str, Any] | None:
     _reject_symlink_components(absolute.parent, "manifest publication parent")
     if not absolute.parent.is_dir():
         return None
-    parent_fd = os.open(absolute.parent, _directory_open_flags())
+    parent_fd = _open_trusted_repository_directory(
+        absolute.parent, "manifest publication parent directory"
+    )
     try:
         try:
             attached = os.stat(
@@ -523,12 +574,16 @@ def _publish_manifest_atomic(
     absolute.parent.mkdir(parents=True, exist_ok=True)
     _reject_symlink_components(absolute.parent, "manifest publication parent")
     if not parent_existed:
-        ancestor_fd = os.open(absolute.parent.parent, _directory_open_flags())
+        ancestor_fd = _open_trusted_repository_directory(
+            absolute.parent.parent, "manifest publication ancestor"
+        )
         try:
             os.fsync(ancestor_fd)
         finally:
             os.close(ancestor_fd)
-    parent_fd = os.open(absolute.parent, _directory_open_flags())
+    parent_fd = _open_trusted_repository_directory(
+        absolute.parent, "manifest publication parent directory"
+    )
     temporary_name: str | None = None
     temporary_fd: int | None = None
     try:
@@ -573,19 +628,19 @@ def _publish_manifest_atomic(
         while offset < len(payload):
             offset += os.write(temporary_fd, payload[offset:])
         os.fsync(temporary_fd)
-        written = os.fstat(temporary_fd)
-        attached = os.stat(
-            temporary_name, dir_fd=parent_fd, follow_symlinks=False
+        written = _validate_opened_regular_file(
+            parent_fd,
+            temporary_name,
+            temporary_fd,
+            "manifest publication file",
         )
         if (
-            not stat.S_ISREG(written.st_mode)
-            or written.st_nlink != 1
-            or written.st_uid != os.getuid()
-            or stat.S_IMODE(written.st_mode) & 0o022
-            or written.st_size != len(payload)
-            or (written.st_dev, written.st_ino)
-            != (attached.st_dev, attached.st_ino)
-            or _read_descriptor_bytes(temporary_fd, limit=16 * 1024 * 1024)
+            written.st_size != len(payload)
+            or _read_descriptor_bytes(
+                temporary_fd,
+                limit=16 * 1024 * 1024,
+                label="manifest publication file",
+            )
             != payload
         ):
             raise ValueError("manifest publication file changed before commit")
@@ -647,6 +702,140 @@ def path_entry_exists(path: Path) -> bool:
     return path.exists() or path.is_symlink()
 
 
+def _lexical_absolute_path(path: Path) -> Path:
+    """Normalize dots without resolving any symlink component."""
+    return Path(os.path.abspath(path))
+
+
+def _validate_safe_owner_permissions(
+    metadata: os.stat_result, label: str
+) -> None:
+    mode = stat.S_IMODE(metadata.st_mode)
+    if metadata.st_uid != os.getuid():
+        raise ValueError(f"{label} is not owned by the current user")
+    if mode & 0o022:
+        raise ValueError(f"{label} is group- or world-writable")
+
+
+def _validate_no_posix_acl(
+    descriptor: int, label: str, *, directory: bool
+) -> None:
+    """Reject access/default ACLs on the exact opened inode."""
+    if not hasattr(os, "listxattr"):
+        raise ValueError(f"{label} ACL safety cannot be established")
+    try:
+        names = {
+            os.fsdecode(name) if isinstance(name, bytes) else name
+            for name in os.listxattr(descriptor)
+        }
+    except (OSError, TypeError, ValueError) as exc:
+        raise ValueError(f"{label} ACL safety cannot be established") from exc
+    forbidden = {"system.posix_acl_access"}
+    if directory:
+        forbidden.add("system.posix_acl_default")
+    present = sorted(names & forbidden)
+    if present:
+        raise ValueError(f"{label} has a POSIX ACL: {', '.join(present)}")
+
+
+def _validate_opened_directory(
+    attached: os.stat_result,
+    opened: os.stat_result,
+    descriptor: int,
+    label: str,
+) -> None:
+    if (
+        not stat.S_ISDIR(attached.st_mode)
+        or stat.S_ISLNK(attached.st_mode)
+        or not stat.S_ISDIR(opened.st_mode)
+    ):
+        raise ValueError(f"{label} is not a real directory")
+    if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
+        raise ValueError(f"{label} changed while it was opened")
+    _validate_safe_owner_permissions(attached, label)
+    _validate_safe_owner_permissions(opened, label)
+    _validate_no_posix_acl(descriptor, label, directory=True)
+
+
+def _validate_opened_regular_file(
+    directory_fd: int,
+    name: str,
+    descriptor: int,
+    label: str,
+) -> os.stat_result:
+    """Validate the exact opened and still-attached witness inode."""
+    attached = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+    opened = os.fstat(descriptor)
+    if (
+        not stat.S_ISREG(attached.st_mode)
+        or stat.S_ISLNK(attached.st_mode)
+        or not stat.S_ISREG(opened.st_mode)
+    ):
+        raise ValueError(f"{label} is not a regular file")
+    if attached.st_nlink != 1 or opened.st_nlink != 1:
+        raise ValueError(f"{label} must have exactly one hard link")
+    if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
+        raise ValueError(f"{label} changed while it was opened")
+    _validate_safe_owner_permissions(attached, label)
+    _validate_safe_owner_permissions(opened, label)
+    _validate_no_posix_acl(descriptor, label, directory=False)
+    return opened
+
+
+def _open_trusted_repository_directory(path: Path, label: str) -> int:
+    """Open a repository directory through validated no-follow ancestors."""
+    root = _lexical_absolute_path(ROOT)
+    absolute = _lexical_absolute_path(path)
+    try:
+        relative_parts = absolute.relative_to(root).parts
+    except ValueError as exc:
+        raise ValueError(f"{label} escapes the repository trust anchor") from exc
+    attached_root = root.lstat()
+    descriptor = os.open(root, _directory_open_flags())
+    try:
+        _validate_opened_directory(
+            attached_root,
+            os.fstat(descriptor),
+            descriptor,
+            "repository trust anchor",
+        )
+        for component in relative_parts:
+            attached = os.stat(
+                component, dir_fd=descriptor, follow_symlinks=False
+            )
+            child = os.open(component, _directory_open_flags(), dir_fd=descriptor)
+            try:
+                _validate_opened_directory(
+                    attached,
+                    os.fstat(child),
+                    child,
+                    f"{label} component {component}",
+                )
+            except BaseException:
+                os.close(child)
+                raise
+            os.close(descriptor)
+            descriptor = child
+        return descriptor
+    except BaseException:
+        os.close(descriptor)
+        raise
+
+
+def _stable_file_fingerprint(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_uid,
+        metadata.st_gid,
+        metadata.st_nlink,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
 def file_record(path: Path) -> dict[str, Any]:
     data = path.read_bytes()
     return {"path": relative(path), "sha256": sha256_bytes(data), "bytes": len(data)}
@@ -685,21 +874,9 @@ def _open_attempt_intent_directory(
     manifest: dict[str, Any], *, create: bool
 ) -> int | None:
     """Open the repository intent directory without following its final entries."""
-    bout = Path(os.path.abspath(ROOT / str(manifest.get("bout_dir", ""))))
-    try:
-        bout.relative_to(ROOT.resolve())
-    except ValueError as exc:
-        raise ValueError("attempt-intent bout directory escapes the repository") from exc
-    _reject_symlink_components(bout, "attempt-intent bout directory")
-    if create:
-        bout.mkdir(parents=True, exist_ok=True)
-    if not path_entry_exists(bout):
+    bout_fd = _open_attempt_bout_directory(manifest, create=create)
+    if bout_fd is None:
         return None
-    _reject_symlink_components(bout, "attempt-intent bout directory")
-    metadata = bout.lstat()
-    if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode):
-        raise ValueError("attempt-intent bout path is not a real directory")
-    bout_fd = os.open(bout, _directory_open_flags())
     try:
         if create:
             try:
@@ -716,49 +893,78 @@ def _open_attempt_intent_directory(
             return None
         if not stat.S_ISDIR(attached.st_mode) or stat.S_ISLNK(attached.st_mode):
             raise ValueError("attempt-intent path is not a real directory")
-        if attached.st_uid != os.getuid() or stat.S_IMODE(attached.st_mode) & 0o022:
-            raise ValueError("attempt-intent directory ownership or permissions are unsafe")
         directory_fd = os.open(
             ATTEMPT_INTENT_DIRECTORY, _directory_open_flags(), dir_fd=bout_fd
         )
         opened = os.fstat(directory_fd)
-        if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
+        try:
+            _validate_opened_directory(
+                attached,
+                opened,
+                directory_fd,
+                "attempt-intent directory",
+            )
+        except ValueError:
             os.close(directory_fd)
-            raise ValueError("attempt-intent directory changed while it was opened")
+            raise
         return directory_fd
     finally:
         os.close(bout_fd)
 
 
-def _read_regular_file_at(directory_fd: int, name: str, *, limit: int = 65536) -> bytes:
+def _read_regular_file_snapshot_at(
+    directory_fd: int,
+    name: str,
+    *,
+    limit: int = 65536,
+    label: str = "witness file",
+) -> tuple[bytes, os.stat_result]:
     flags = os.O_RDONLY | os.O_CLOEXEC
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
-    attached = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
-    if not stat.S_ISREG(attached.st_mode) or stat.S_ISLNK(attached.st_mode):
-        raise ValueError("entry is not a regular file")
-    if attached.st_nlink != 1:
-        raise ValueError("entry must have exactly one hard link")
-    if attached.st_uid != os.getuid() or stat.S_IMODE(attached.st_mode) & 0o022:
-        raise ValueError("entry ownership or permissions are unsafe")
+    attached_before = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+    if not stat.S_ISREG(attached_before.st_mode) or stat.S_ISLNK(
+        attached_before.st_mode
+    ):
+        raise ValueError(f"{label} is not a regular file")
     descriptor = os.open(name, flags, dir_fd=directory_fd)
     try:
-        opened = os.fstat(descriptor)
-        if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
-            raise ValueError("entry changed while it was opened")
-        chunks: list[bytes] = []
-        length = 0
-        while True:
-            chunk = os.read(descriptor, min(8192, limit + 1 - length))
-            if not chunk:
-                break
-            chunks.append(chunk)
-            length += len(chunk)
-            if length > limit:
-                raise ValueError("entry exceeds the size limit")
-        return b"".join(chunks)
+        fcntl.flock(descriptor, fcntl.LOCK_SH)
+        opened_before = _validate_opened_regular_file(
+            directory_fd, name, descriptor, label
+        )
+        if (attached_before.st_dev, attached_before.st_ino) != (
+            opened_before.st_dev,
+            opened_before.st_ino,
+        ):
+            raise ValueError(f"{label} changed while it was opened")
+        payload = _read_descriptor_bytes(descriptor, limit=limit, label=label)
+        opened_after = _validate_opened_regular_file(
+            directory_fd, name, descriptor, label
+        )
+        if _stable_file_fingerprint(opened_before) != _stable_file_fingerprint(
+            opened_after
+        ):
+            raise ValueError(f"{label} changed while it was read")
+        return payload, opened_after
     finally:
-        os.close(descriptor)
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+        finally:
+            os.close(descriptor)
+
+
+def _read_regular_file_at(
+    directory_fd: int,
+    name: str,
+    *,
+    limit: int = 65536,
+    label: str = "witness file",
+) -> bytes:
+    payload, _metadata = _read_regular_file_snapshot_at(
+        directory_fd, name, limit=limit, label=label
+    )
+    return payload
 
 
 def _open_attempt_bout_directory(
@@ -775,7 +981,9 @@ def _open_attempt_bout_directory(
     if create:
         bout.mkdir(parents=True, exist_ok=True)
         if not existed:
-            parent_fd = os.open(bout.parent, _directory_open_flags())
+            parent_fd = _open_trusted_repository_directory(
+                bout.parent, "attempt-claim bout parent"
+            )
             try:
                 os.fsync(parent_fd)
             finally:
@@ -783,18 +991,14 @@ def _open_attempt_bout_directory(
     if not path_entry_exists(bout):
         return None
     _reject_symlink_components(bout, "attempt-claim bout directory")
-    attached = bout.lstat()
-    if not stat.S_ISDIR(attached.st_mode) or stat.S_ISLNK(attached.st_mode):
-        raise ValueError("attempt-claim bout path is not a real directory")
-    descriptor = os.open(bout, _directory_open_flags())
-    opened = os.fstat(descriptor)
-    if (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino):
-        os.close(descriptor)
-        raise ValueError("attempt-claim bout directory changed while it was opened")
-    return descriptor
+    return _open_trusted_repository_directory(
+        bout, "attempt-claim bout directory"
+    )
 
 
-def _read_descriptor_bytes(descriptor: int, *, limit: int) -> bytes:
+def _read_descriptor_bytes(
+    descriptor: int, *, limit: int, label: str = "append-only claim journal"
+) -> bytes:
     os.lseek(descriptor, 0, os.SEEK_SET)
     chunks: list[bytes] = []
     length = 0
@@ -805,7 +1009,7 @@ def _read_descriptor_bytes(descriptor: int, *, limit: int) -> bytes:
         chunks.append(chunk)
         length += len(chunk)
         if length > limit:
-            raise ValueError("append-only claim journal exceeds the safety size limit")
+            raise ValueError(f"{label} exceeds the safety size limit")
     return b"".join(chunks)
 
 
@@ -921,7 +1125,10 @@ def read_attempt_claims(
     try:
         try:
             payload = _read_regular_file_at(
-                directory_fd, ATTEMPT_CLAIM_JOURNAL, limit=16 * 1024 * 1024
+                directory_fd,
+                ATTEMPT_CLAIM_JOURNAL,
+                limit=16 * 1024 * 1024,
+                label="attempt-claim journal",
             )
         except FileNotFoundError:
             return [], []
@@ -967,10 +1174,15 @@ def read_attempt_intents(
                 errors.append(f"attempt intent references non-frozen slot: {name}")
                 continue
             try:
-                data = _read_regular_file_at(directory_fd, name)
+                data = _read_regular_file_at(
+                    directory_fd, name, label=f"attempt intent for {slot_id}"
+                )
                 record = json.loads(data)
             except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
-                errors.append(f"attempt intent for {slot_id} is unsafe or malformed: {type(exc).__name__}")
+                errors.append(
+                    f"attempt intent for {slot_id} is unsafe or malformed: "
+                    f"{type(exc).__name__}: {exc}"
+                )
                 continue
             if not isinstance(record, dict):
                 errors.append(f"attempt intent for {slot_id} is not an object")
@@ -1057,27 +1269,116 @@ def _attempt_intent_record(
     }
 
 
-def _read_claim_ledger_at(directory_fd: int) -> list[dict[str, Any]]:
-    try:
-        payload = _read_regular_file_at(
-            directory_fd, "EXECUTION.jsonl", limit=16 * 1024 * 1024
-        )
-    except FileNotFoundError:
-        return []
+def _parse_execution_ledger_payload(payload: bytes) -> list[dict[str, Any]]:
     if payload and not payload.endswith(b"\n"):
         raise ValueError("execution ledger ends with an incomplete row")
+    try:
+        text = payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("execution ledger is not UTF-8") from exc
     ledger: list[dict[str, Any]] = []
-    for number, raw_line in enumerate(payload.splitlines(keepends=True), start=1):
-        if not raw_line.endswith(b"\n") or not raw_line.strip():
-            raise ValueError(f"execution ledger is malformed at line {number}")
+    for number, line in enumerate(text.splitlines(keepends=True), start=1):
+        if not line.endswith("\n") or not line.strip():
+            raise ValueError(
+                f"execution ledger row {number} is incomplete or blank"
+            )
         try:
-            row = json.loads(raw_line)
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise ValueError(f"execution ledger is malformed at line {number}") from exc
+            row = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"execution ledger is malformed at line {number}"
+            ) from exc
         if not isinstance(row, dict):
             raise ValueError(f"execution ledger row {number} is not an object")
         ledger.append(row)
     return ledger
+
+
+def _regular_file_snapshot(
+    metadata: os.stat_result, payload: bytes
+) -> dict[str, Any]:
+    return {
+        "exists": True,
+        "device": metadata.st_dev,
+        "inode": metadata.st_ino,
+        "mode": stat.S_IMODE(metadata.st_mode),
+        "uid": metadata.st_uid,
+        "gid": metadata.st_gid,
+        "nlink": metadata.st_nlink,
+        "size": metadata.st_size,
+        "mtime_ns": metadata.st_mtime_ns,
+        "ctime_ns": metadata.st_ctime_ns,
+        "sha256": sha256_bytes(payload),
+    }
+
+
+def _read_execution_ledger_at(
+    directory_fd: int,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    try:
+        payload, metadata = _read_regular_file_snapshot_at(
+            directory_fd,
+            "EXECUTION.jsonl",
+            limit=16 * 1024 * 1024,
+            label="execution ledger",
+        )
+    except FileNotFoundError:
+        return [], {"exists": False}
+    return _parse_execution_ledger_payload(payload), _regular_file_snapshot(
+        metadata, payload
+    )
+
+
+def _read_claim_ledger_at(directory_fd: int) -> list[dict[str, Any]]:
+    ledger, _snapshot = _read_execution_ledger_at(directory_fd)
+    return ledger
+
+
+def read_execution_ledger(
+    path: Path,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Read one exact execution ledger through the strict witness contract."""
+    absolute = Path(os.path.abspath(path))
+    _reject_symlink_components(absolute.parent, "execution-ledger parent")
+    try:
+        parent_fd = _open_trusted_repository_directory(
+            absolute.parent, "execution-ledger parent directory"
+        )
+    except FileNotFoundError:
+        return [], {"exists": False}
+    try:
+        return _read_execution_ledger_at(parent_fd)
+    finally:
+        os.close(parent_fd)
+
+
+def read_manifest_strict(
+    path: Path,
+    *,
+    label: str = "experiment manifest",
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Read one exact manifest through the same no-follow trust boundary."""
+    absolute = _lexical_absolute_path(path)
+    _reject_symlink_components(absolute.parent, f"{label} parent")
+    parent_fd = _open_trusted_repository_directory(
+        absolute.parent, f"{label} parent directory"
+    )
+    try:
+        payload, metadata = _read_regular_file_snapshot_at(
+            parent_fd,
+            absolute.name,
+            limit=16 * 1024 * 1024,
+            label=label,
+        )
+    finally:
+        os.close(parent_fd)
+    try:
+        value = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"{label} is not strict UTF-8 JSON") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"{label} is not a JSON object")
+    return value, _regular_file_snapshot(metadata, payload)
 
 
 def _confirmatory_pending_attempt(
@@ -1125,23 +1426,17 @@ def _append_attempt_claim(
         descriptor = os.open(
             ATTEMPT_CLAIM_JOURNAL, flags, 0o600, dir_fd=directory_fd
         )
-        opened = os.fstat(descriptor)
-        attached = os.stat(
-            ATTEMPT_CLAIM_JOURNAL,
-            dir_fd=directory_fd,
-            follow_symlinks=False,
-        )
-        if (
-            not stat.S_ISREG(opened.st_mode)
-            or opened.st_nlink != 1
-            or opened.st_uid != os.getuid()
-            or stat.S_IMODE(opened.st_mode) & 0o022
-            or (opened.st_dev, opened.st_ino) != (attached.st_dev, attached.st_ino)
-        ):
-            raise ValueError("attempt-claim journal ownership, permissions, or identity are unsafe")
         fcntl.flock(descriptor, fcntl.LOCK_EX)
+        opened_before = _validate_opened_regular_file(
+            directory_fd,
+            ATTEMPT_CLAIM_JOURNAL,
+            descriptor,
+            "attempt-claim journal",
+        )
         existing_payload = _read_descriptor_bytes(
-            descriptor, limit=16 * 1024 * 1024
+            descriptor,
+            limit=16 * 1024 * 1024,
+            label="attempt-claim journal",
         )
         existing, claim_errors = _parse_attempt_claim_payload(
             manifest, existing_payload
@@ -1217,6 +1512,49 @@ def _append_attempt_claim(
         while offset < len(payload):
             offset += os.write(descriptor, payload[offset:])
         os.fsync(descriptor)
+        opened_after = _validate_opened_regular_file(
+            directory_fd,
+            ATTEMPT_CLAIM_JOURNAL,
+            descriptor,
+            "attempt-claim journal",
+        )
+        if (
+            opened_before.st_dev,
+            opened_before.st_ino,
+        ) != (
+            opened_after.st_dev,
+            opened_after.st_ino,
+        ):
+            raise ValueError("attempt-claim journal changed during append")
+        complete_payload = existing_payload + payload
+        observed_payload = _read_descriptor_bytes(
+            descriptor,
+            limit=16 * 1024 * 1024,
+            label="attempt-claim journal",
+        )
+        if observed_payload != complete_payload:
+            raise ValueError("attempt-claim journal bytes changed during append")
+        observed_claims, observed_errors = _parse_attempt_claim_payload(
+            manifest, observed_payload
+        )
+        if (
+            observed_errors
+            or len(observed_claims) != len(existing) + 1
+            or observed_claims[-1]["record"] != claim_record
+        ):
+            raise ValueError(
+                "attempt-claim journal append did not produce one complete expected row"
+            )
+        verified_after = _validate_opened_regular_file(
+            directory_fd,
+            ATTEMPT_CLAIM_JOURNAL,
+            descriptor,
+            "attempt-claim journal",
+        )
+        if _stable_file_fingerprint(opened_after) != _stable_file_fingerprint(
+            verified_after
+        ):
+            raise ValueError("attempt-claim journal changed during append verification")
         os.fsync(directory_fd)
         return {
             "record": claim_record,
@@ -1257,14 +1595,13 @@ def _write_attempt_intent_record(
             offset += os.write(descriptor, payload[offset:])
         os.fsync(descriptor)
         os.fsync(directory_fd)
-        written = os.fstat(descriptor)
-        attached = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
-        if (
-            not stat.S_ISREG(written.st_mode)
-            or written.st_nlink != 1
-            or written.st_size != len(payload)
-            or (written.st_dev, written.st_ino) != (attached.st_dev, attached.st_ino)
-        ):
+        written = _validate_opened_regular_file(
+            directory_fd,
+            name,
+            descriptor,
+            f"attempt intent for {record['slot_id']}",
+        )
+        if written.st_size != len(payload):
             raise ValueError("attempt intent changed before process-launch authorization")
     finally:
         if descriptor is not None:
@@ -1305,11 +1642,10 @@ def acquire_execution_lock(manifest: dict[str, Any]) -> int:
     _reject_symlink_components(bout, "execution-lock bout directory")
     bout.mkdir(parents=True, exist_ok=True)
     _reject_symlink_components(bout, "execution-lock bout directory")
-    descriptor = os.open(bout, _directory_open_flags())
+    descriptor = _open_trusted_repository_directory(
+        bout, "execution-lock bout directory"
+    )
     try:
-        metadata = os.fstat(descriptor)
-        if not stat.S_ISDIR(metadata.st_mode):
-            raise ValueError("execution-lock bout path is not a directory")
         try:
             fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
@@ -1387,6 +1723,11 @@ def current_amendments() -> list[dict[str, Any]]:
         (AMENDMENT_1_ID, "technical_harness_compatibility", AMENDMENT_1_REL),
         (AMENDMENT_2_ID, "technical_crash_durability", AMENDMENT_2_REL),
         (AMENDMENT_3_ID, "technical_atomic_claims", AMENDMENT_3_REL),
+        (
+            AMENDMENT_4_ID,
+            "technical_strict_launch_authorization",
+            AMENDMENT_4_REL,
+        ),
     ):
         documentation = ROOT / documentation_relative
         if not documentation.is_file() or documentation.is_symlink():
@@ -1452,14 +1793,16 @@ def smoke_continuation_state(predecessor_path: Path) -> tuple[dict[str, Any], li
     The function verifies technical provenance only. It hashes response files as
     opaque bytes through the artifact contract and never returns their content.
     """
-    expected_path = ROOT / INITIAL_SMOKE_MANIFEST_REL
-    try:
-        resolved = predecessor_path.resolve(strict=True)
-    except OSError as exc:
-        raise ValueError("smoke predecessor manifest is unavailable") from exc
-    if resolved != expected_path.resolve():
+    expected_path = _lexical_absolute_path(ROOT / INITIAL_SMOKE_MANIFEST_REL)
+    requested_path = _lexical_absolute_path(predecessor_path)
+    if requested_path != expected_path:
         raise ValueError(f"smoke continuation must use the frozen predecessor {relative(expected_path)}")
-    predecessor = load_json(resolved)
+    try:
+        predecessor, _predecessor_snapshot = read_manifest_strict(
+            requested_path, label="smoke predecessor manifest"
+        )
+    except (OSError, ValueError) as exc:
+        raise ValueError("smoke predecessor manifest is unavailable or unsafe") from exc
     manifest_errors = validate_manifest(
         predecessor,
         check_files=False,
@@ -1471,12 +1814,15 @@ def smoke_continuation_state(predecessor_path: Path) -> tuple[dict[str, Any], li
         raise ValueError("smoke predecessor belongs to a different phase or experiment")
     if len(predecessor.get("schedule") or []) != len(default_conditions()):
         raise ValueError("smoke predecessor does not contain the original one-call-per-condition block")
-    ledger_path = resolved.parent / "EXECUTION.jsonl"
-    if not ledger_path.is_file() or ledger_path.is_symlink():
+    ledger_path = requested_path.parent / "EXECUTION.jsonl"
+    try:
+        ledger, ledger_snapshot = read_execution_ledger(ledger_path)
+    except (OSError, ValueError) as exc:
+        raise ValueError(
+            f"smoke predecessor execution ledger is unsafe: {type(exc).__name__}: {exc}"
+        ) from exc
+    if not ledger_snapshot["exists"]:
         raise ValueError("smoke predecessor execution ledger is missing or unsafe")
-    ledger, malformed = iter_jsonl(ledger_path)
-    if malformed:
-        raise ValueError(f"smoke predecessor execution ledger is malformed at lines {malformed}")
     ledger_errors = validate_execution_ledger(predecessor, ledger)
     ledger_errors.extend(validate_prior_attempt_provenance(predecessor, ledger))
     if ledger_errors:
@@ -1551,7 +1897,7 @@ def smoke_continuation_state(predecessor_path: Path) -> tuple[dict[str, Any], li
         raise ValueError("consumed smoke attempt lacks a safe artifact manifest")
     state = {
         "schema_version": 1,
-        "predecessor_manifest": file_record(resolved),
+        "predecessor_manifest": file_record(requested_path),
         "predecessor_freeze_id": predecessor["freeze_id"],
         "predecessor_ledger": file_record(ledger_path),
         "consumed_call_count": 1,
@@ -1653,6 +1999,7 @@ def build_manifest(
     smoke_continuation_from: Path | None = None,
     test_only_allow_noncanonical_paths: bool = False,
 ) -> dict[str, Any]:
+    require_strict_creation_umask("manifest publication")
     if phase not in {"smoke", "confirmatory"}:
         raise ValueError("phase must be smoke or confirmatory")
     draft_baseline = (
@@ -1666,13 +2013,21 @@ def build_manifest(
             if smoke_continuation_from is not None:
                 raise ValueError("confirmatory manifests cannot continue smoke")
             expected_output = ROOT / AMENDED_CONFIRMATORY_BOUT_REL / "MANIFEST.json"
-            if output.resolve() != expected_output.resolve() or requested_bout_dir != AMENDED_CONFIRMATORY_BOUT_REL:
+            if (
+                _lexical_absolute_path(output)
+                != _lexical_absolute_path(expected_output)
+                or requested_bout_dir != AMENDED_CONFIRMATORY_BOUT_REL
+            ):
                 raise ValueError("the amended confirmatory manifest has one canonical output and bout path")
         elif smoke_continuation_from is None:
             raise ValueError("the initial smoke freeze is immutable; only its canonical continuation may be built")
         else:
             expected_output = ROOT / SMOKE_CONTINUATION_BOUT_REL / "MANIFEST.json"
-            if output.resolve() != expected_output.resolve() or requested_bout_dir != SMOKE_CONTINUATION_BOUT_REL:
+            if (
+                _lexical_absolute_path(output)
+                != _lexical_absolute_path(expected_output)
+                or requested_bout_dir != SMOKE_CONTINUATION_BOUT_REL
+            ):
                 raise ValueError("the smoke continuation has one canonical output and bout path")
     prompt = ROOT / PROMPT_REL
     if sha256_path(prompt) != FROZEN_PROMPT_SHA256:
@@ -2132,13 +2487,18 @@ def validate_historical_smoke_sources(
 ) -> tuple[str | None, list[str]]:
     """Verify the one superseded smoke freeze from its anchored Git commit."""
     errors: list[str] = []
-    expected_manifest = ROOT / INITIAL_SMOKE_MANIFEST_REL
-    try:
-        resolved_manifest = manifest_path.resolve(strict=True)
-    except OSError:
-        return None, ["historical smoke manifest is unavailable"]
-    if resolved_manifest != expected_manifest.resolve():
+    expected_manifest = _lexical_absolute_path(ROOT / INITIAL_SMOKE_MANIFEST_REL)
+    resolved_manifest = _lexical_absolute_path(manifest_path)
+    if resolved_manifest != expected_manifest:
         errors.append("historical mode is restricted to the canonical initial smoke manifest")
+    try:
+        read_manifest_strict(
+            resolved_manifest, label="historical smoke manifest"
+        )
+    except (OSError, ValueError) as exc:
+        return None, [
+            f"historical smoke manifest is unavailable or unsafe: {type(exc).__name__}: {exc}"
+        ]
     if manifest.get("freeze_id") != INITIAL_SMOKE_FREEZE_ID:
         errors.append("historical mode is restricted to the recorded initial smoke freeze")
     continuation_path = ROOT / SMOKE_CONTINUATION_BOUT_REL / "MANIFEST.json"
@@ -2146,8 +2506,10 @@ def validate_historical_smoke_sources(
         errors.append("canonical continuation manifest is unavailable to anchor historical verification")
     else:
         try:
-            continuation_manifest = load_json(continuation_path)
-        except (OSError, json.JSONDecodeError) as exc:
+            continuation_manifest, _continuation_snapshot = read_manifest_strict(
+                continuation_path, label="canonical continuation manifest"
+            )
+        except (OSError, ValueError) as exc:
             errors.append(f"canonical continuation manifest is unreadable: {type(exc).__name__}")
         else:
             continuation_errors = validate_manifest(
@@ -2164,8 +2526,14 @@ def validate_historical_smoke_sources(
             if predecessor_record != file_record(resolved_manifest):
                 errors.append("canonical continuation does not anchor this historical manifest")
     ledger_path = resolved_manifest.parent / "EXECUTION.jsonl"
-    ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
-    if malformed or len(ledger) != 1:
+    try:
+        ledger, _ledger_snapshot = read_execution_ledger(ledger_path)
+    except (OSError, ValueError) as exc:
+        errors.append(
+            f"historical smoke ledger is unsafe or malformed: {type(exc).__name__}: {exc}"
+        )
+        return None, errors
+    if len(ledger) != 1:
         errors.append("historical smoke ledger cannot identify one recorded harness commit")
         return None, errors
     commit = str(((ledger[0].get("preflight") or {}).get("harness_commit") or ""))
@@ -3580,12 +3948,19 @@ def validate_attempt_intents(
     ledger: list[dict[str, Any]],
     *,
     launch_slot_id: str | None = None,
+    intent_state: tuple[dict[str, dict[str, Any]], list[str]] | None = None,
+    claim_state: tuple[list[dict[str, Any]], list[str]] | None = None,
 ) -> list[str]:
     """Bind the journal, intent files, and ledger without forgiving gaps."""
     if not attempt_intent_enabled(manifest):
         return []
-    records, errors = read_attempt_intents(manifest)
-    claims, claim_errors = read_attempt_claims(manifest)
+    records, intent_errors = (
+        read_attempt_intents(manifest) if intent_state is None else intent_state
+    )
+    errors = list(intent_errors)
+    claims, claim_errors = (
+        read_attempt_claims(manifest) if claim_state is None else claim_state
+    )
     errors.extend(claim_errors)
     claim_by_slot = {
         str(item["record"].get("slot_id")): item for item in claims
@@ -3778,12 +4153,42 @@ def authorize_attempt_launch(
     manifest: dict[str, Any],
     slot: dict[str, Any],
     ledger: list[dict[str, Any]],
+    ledger_snapshot: dict[str, Any],
 ) -> dict[str, Any] | None:
-    """Re-read both witnesses immediately before the only process launch."""
-    errors = validate_attempt_intents(
-        manifest, ledger, launch_slot_id=str(slot["slot_id"])
+    """Authorize from one fresh three-witness view immediately before launch."""
+    ledger_path = ROOT / str(manifest.get("bout_dir", "")) / "EXECUTION.jsonl"
+    fresh_ledger, fresh_snapshot = read_execution_ledger(ledger_path)
+    if fresh_ledger != ledger or fresh_snapshot != ledger_snapshot:
+        raise ValueError(
+            "execution ledger changed after the attempt's prior-state validation"
+        )
+    if attempt_claim_journal_enabled(manifest):
+        # Read the claim before its bound intent. A claim carries the immutable
+        # intent hash, so a concurrent intent mutation cannot be hidden behind
+        # a cached intent paired with a later journal read.
+        claims, claim_errors = read_attempt_claims(manifest)
+        intents, intent_errors = read_attempt_intents(manifest)
+        claim_state = (claims, claim_errors)
+        intent_state = (intents, intent_errors)
+    else:
+        claims = []
+        claim_state = None
+        intent_state = None
+    final_ledger, final_snapshot = read_execution_ledger(ledger_path)
+    if final_ledger != fresh_ledger or final_snapshot != fresh_snapshot:
+        raise ValueError(
+            "execution ledger changed during process-launch authorization"
+        )
+    errors = validate_execution_ledger(
+        manifest,
+        final_ledger,
+        launch_slot_id=str(slot["slot_id"]),
+        intent_state=intent_state,
+        claim_state=claim_state,
     )
-    errors.extend(validate_smoke_call_budget(manifest, ledger))
+    errors.extend(
+        validate_smoke_call_budget(manifest, final_ledger, next_slot=slot)
+    )
     if errors:
         raise ValueError(
             "attempt claim is not authorized for process launch:\n- "
@@ -3791,25 +4196,26 @@ def authorize_attempt_launch(
         )
     if not attempt_claim_journal_enabled(manifest):
         return None
-    claims, claim_errors = read_attempt_claims(manifest)
-    if claim_errors:
-        raise ValueError(
-            "attempt-claim journal changed before process launch:\n- "
-            + "\n- ".join(claim_errors)
-        )
     matches = [
         item
         for item in claims
         if item["record"].get("slot_id") == slot["slot_id"]
     ]
-    if len(matches) != 1 or matches[0]["line"] != len(ledger) + 1:
+    if len(matches) != 1 or matches[0]["line"] != len(final_ledger) + 1:
         raise ValueError(
             "the launch slot is not the sole next authoritative attempt claim"
         )
     return matches[0]
 
 
-def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, Any]]) -> list[str]:
+def validate_execution_ledger(
+    manifest: dict[str, Any],
+    ledger: list[dict[str, Any]],
+    *,
+    launch_slot_id: str | None = None,
+    intent_state: tuple[dict[str, dict[str, Any]], list[str]] | None = None,
+    claim_state: tuple[list[dict[str, Any]], list[str]] | None = None,
+) -> list[str]:
     errors: list[str] = []
     all_slots = {
         slot["slot_id"]: slot for slot in [*(manifest.get("schedule") or []), *(manifest.get("reserve_slots") or [])]
@@ -3954,7 +4360,15 @@ def validate_execution_ledger(manifest: dict[str, Any], ledger: list[dict[str, A
         if attempted_reserves != expected_reserves[: len(attempted_reserves)]:
             errors.append(f"reserve attempts for {condition_id} are not in frozen reserve-index order")
     errors.extend(validate_confirmatory_delivery_order(manifest, ledger))
-    errors.extend(validate_attempt_intents(manifest, ledger))
+    errors.extend(
+        validate_attempt_intents(
+            manifest,
+            ledger,
+            launch_slot_id=launch_slot_id,
+            intent_state=intent_state,
+            claim_state=claim_state,
+        )
+    )
     return errors
 
 
@@ -4422,48 +4836,25 @@ def append_ledger(path: Path, row: dict[str, Any]) -> None:
     """Append one row under an advisory lock, then sync the file and directory."""
     path.parent.mkdir(parents=True, exist_ok=True)
     _reject_symlink_components(path.parent, "execution-ledger parent")
-    parent_fd = os.open(path.parent, _directory_open_flags())
+    parent_fd = _open_trusted_repository_directory(
+        path.parent, "execution-ledger parent directory"
+    )
     flags = os.O_RDWR | os.O_APPEND | os.O_CREAT | os.O_CLOEXEC
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
     descriptor: int | None = None
     try:
         descriptor = os.open(path.name, flags, 0o600, dir_fd=parent_fd)
-        metadata = os.fstat(descriptor)
-        if not stat.S_ISREG(metadata.st_mode):
-            raise ValueError("execution ledger is not a regular file")
         fcntl.flock(descriptor, fcntl.LOCK_EX)
-        os.lseek(descriptor, 0, os.SEEK_SET)
-        chunks: list[bytes] = []
-        length = 0
-        while True:
-            chunk = os.read(descriptor, 65536)
-            if not chunk:
-                break
-            chunks.append(chunk)
-            length += len(chunk)
-            if length > 16 * 1024 * 1024:
-                raise ValueError("execution ledger exceeds the safety size limit")
-        existing: list[dict[str, Any]] = []
-        malformed: list[int] = []
-        try:
-            lines = b"".join(chunks).decode().splitlines()
-        except UnicodeDecodeError as exc:
-            raise ValueError("execution ledger is not UTF-8") from exc
-        for number, line in enumerate(lines, start=1):
-            if not line.strip():
-                continue
-            try:
-                value = json.loads(line)
-            except json.JSONDecodeError:
-                malformed.append(number)
-                continue
-            if isinstance(value, dict):
-                existing.append(value)
-            else:
-                malformed.append(number)
-        if malformed:
-            raise ValueError(f"execution ledger is malformed at lines {malformed}")
+        opened_before = _validate_opened_regular_file(
+            parent_fd, path.name, descriptor, "execution ledger"
+        )
+        existing_payload = _read_descriptor_bytes(
+            descriptor,
+            limit=16 * 1024 * 1024,
+            label="execution ledger",
+        )
+        existing = _parse_execution_ledger_payload(existing_payload)
         slot_id = row["slot_id"]
         if any(item.get("slot_id") == slot_id for item in existing):
             raise ValueError(f"execution ledger already contains {slot_id}")
@@ -4472,6 +4863,37 @@ def append_ledger(path: Path, row: dict[str, Any]) -> None:
         while offset < len(payload):
             offset += os.write(descriptor, payload[offset:])
         os.fsync(descriptor)
+        opened_after = _validate_opened_regular_file(
+            parent_fd, path.name, descriptor, "execution ledger"
+        )
+        if (
+            opened_before.st_dev,
+            opened_before.st_ino,
+        ) != (
+            opened_after.st_dev,
+            opened_after.st_ino,
+        ):
+            raise ValueError("execution ledger changed during append")
+        complete_payload = existing_payload + payload
+        observed_payload = _read_descriptor_bytes(
+            descriptor,
+            limit=16 * 1024 * 1024,
+            label="execution ledger",
+        )
+        if observed_payload != complete_payload:
+            raise ValueError("execution ledger bytes changed during append")
+        observed_rows = _parse_execution_ledger_payload(observed_payload)
+        if observed_rows != [*existing, row]:
+            raise ValueError(
+                "execution ledger append did not produce one complete expected row"
+            )
+        verified_after = _validate_opened_regular_file(
+            parent_fd, path.name, descriptor, "execution ledger"
+        )
+        if _stable_file_fingerprint(opened_after) != _stable_file_fingerprint(
+            verified_after
+        ):
+            raise ValueError("execution ledger changed during append verification")
         os.fsync(parent_fd)
     finally:
         if descriptor is not None:
@@ -5685,7 +6107,11 @@ def run_slots(
     test_only_crash_checkpoint: str | None = None,
 ) -> None:
     """Run under one bout-wide lock when crash-durable intents are frozen."""
-    manifest = load_json(manifest_path)
+    if not dry_run:
+        require_strict_creation_umask("live execution")
+    manifest, _manifest_snapshot = read_manifest_strict(
+        manifest_path, label="execution manifest"
+    )
     lock_fd: int | None = None
     if attempt_intent_enabled(manifest):
         lock_fd = acquire_execution_lock(manifest)
@@ -5724,7 +6150,9 @@ def _run_slots_locked(
             raise ValueError("unknown synthetic attempt-crash checkpoint")
         if os.environ.get("ARENA_SYNTHETIC_ONLY") != "1":
             raise PermissionError("attempt crash injection is restricted to offline synthetic tests")
-    manifest = load_json(manifest_path)
+    manifest, manifest_snapshot = read_manifest_strict(
+        manifest_path, label="execution manifest"
+    )
     errors = validate_manifest(manifest)
     if errors:
         raise ValueError("manifest invalid:\n- " + "\n- ".join(errors))
@@ -5734,9 +6162,7 @@ def _run_slots_locked(
         )
     schedule = manifest["schedule"]
     ledger_path = ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
-    ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
-    if malformed:
-        raise ValueError(f"execution ledger is malformed at lines {malformed}")
+    ledger, _ledger_snapshot = read_execution_ledger(ledger_path)
     ledger_errors = validate_execution_ledger(manifest, ledger)
     if ledger_errors:
         raise ValueError("execution ledger is invalid:\n- " + "\n- ".join(ledger_errors))
@@ -5834,9 +6260,9 @@ def _run_slots_locked(
         run_dir = output_dir_for(manifest, slot)
         if run_dir.exists():
             raise FileExistsError(f"refusing to overwrite {run_dir}")
-        existing_ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
-        if malformed:
-            raise ValueError(f"execution ledger is malformed at lines {malformed}")
+        existing_ledger, existing_ledger_snapshot = read_execution_ledger(
+            ledger_path
+        )
         existing_errors = validate_execution_ledger(manifest, existing_ledger)
         existing_errors.extend(validate_prior_attempt_provenance(manifest, existing_ledger))
         existing_errors.extend(
@@ -5937,8 +6363,21 @@ def _run_slots_locked(
                 synthetic_crash_checkpoint(
                     test_only_crash_checkpoint, "post_claim_pre_spawn"
                 )
+                fresh_manifest, fresh_manifest_snapshot = read_manifest_strict(
+                    manifest_path, label="execution manifest"
+                )
+                if (
+                    fresh_manifest != manifest
+                    or fresh_manifest_snapshot != manifest_snapshot
+                ):
+                    raise ValueError(
+                        "execution manifest changed before process launch"
+                    )
                 attempt_claim = authorize_attempt_launch(
-                    manifest, slot, existing_ledger
+                    manifest,
+                    slot,
+                    existing_ledger,
+                    existing_ledger_snapshot,
                 )
                 launch_authorized = True
             try:
@@ -6301,7 +6740,9 @@ def _run_slots_locked(
 
 
 def make_blind_packets(manifest_path: Path, output_dir: Path, key: str) -> dict[str, Any]:
-    manifest = load_json(manifest_path)
+    manifest, _manifest_snapshot = read_manifest_strict(
+        manifest_path, label="blinding manifest"
+    )
     if manifest.get("phase") != "confirmatory":
         raise ValueError("smoke outputs may not enter semantic-review packets")
     if len(key.encode()) < 32 or len(set(key)) < 8:
@@ -6310,9 +6751,7 @@ def make_blind_packets(manifest_path: Path, output_dir: Path, key: str) -> dict[
     if errors:
         raise ValueError("manifest invalid: " + "; ".join(errors))
     ledger_path = ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
-    ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
-    if malformed:
-        raise ValueError(f"execution ledger is malformed at lines {malformed}")
+    ledger, _ledger_snapshot = read_execution_ledger(ledger_path)
     effective, ledger_errors = select_effective_attempts(manifest, ledger)
     ledger_errors.extend(validate_prior_attempt_provenance(manifest, ledger))
     if ledger_errors:
@@ -6381,7 +6820,9 @@ def _find_slot(manifest: dict[str, Any], slot_id: str) -> dict[str, Any]:
 
 def technical_smoke_status(manifest_path: Path, *, historical: bool = False) -> dict[str, Any]:
     """Return a response-free technical view of one excluded-smoke ledger."""
-    manifest = load_json(manifest_path)
+    manifest, _manifest_snapshot = read_manifest_strict(
+        manifest_path, label="smoke-status manifest"
+    )
     if manifest.get("phase") != "smoke":
         raise ValueError("technical smoke status accepts only a smoke manifest")
     manifest_errors = validate_manifest(
@@ -6403,9 +6844,7 @@ def technical_smoke_status(manifest_path: Path, *, historical: bool = False) -> 
                 + "; ".join(historical_errors)
             )
     ledger_path = ROOT / str(manifest.get("bout_dir", "")) / "EXECUTION.jsonl"
-    ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
-    if malformed:
-        raise ValueError(f"smoke execution ledger is malformed at lines {malformed}")
+    ledger, _ledger_snapshot = read_execution_ledger(ledger_path)
     ledger_errors = validate_execution_ledger(manifest, ledger)
     ledger_errors.extend(validate_prior_attempt_provenance(manifest, ledger))
     if ledger_errors:
@@ -6507,7 +6946,7 @@ def technical_smoke_status(manifest_path: Path, *, historical: bool = False) -> 
 def command_manifest(args: argparse.Namespace) -> None:
     manifest = build_manifest(
         phase=args.phase,
-        output=Path(args.output).resolve(),
+        output=_lexical_absolute_path(Path(args.output)),
         design=Path(args.design).resolve(),
         analysis_script=Path(args.analysis_script).resolve(),
         report_template=Path(args.report_template).resolve(),
@@ -6518,7 +6957,7 @@ def command_manifest(args: argparse.Namespace) -> None:
         replace_draft=args.replace_draft,
         bout_dir_override=args.bout_dir,
         smoke_continuation_from=(
-            Path(args.smoke_continuation_from).resolve()
+            _lexical_absolute_path(Path(args.smoke_continuation_from))
             if args.smoke_continuation_from
             else None
         ),
@@ -6527,7 +6966,9 @@ def command_manifest(args: argparse.Namespace) -> None:
 
 
 def command_validate(args: argparse.Namespace) -> None:
-    manifest = load_json(Path(args.manifest))
+    manifest, _manifest_snapshot = read_manifest_strict(
+        Path(args.manifest), label="validation manifest"
+    )
     errors = validate_manifest(manifest, check_files=not args.no_file_check)
     if errors:
         print("\n".join(f"ERROR: {error}" for error in errors), file=sys.stderr)
@@ -6536,13 +6977,17 @@ def command_validate(args: argparse.Namespace) -> None:
 
 
 def command_preflight(args: argparse.Namespace) -> None:
-    manifest = load_json(Path(args.manifest))
+    manifest, _manifest_snapshot = read_manifest_strict(
+        Path(args.manifest), label="preflight manifest"
+    )
     snapshots = preflight_manifest(manifest, set(condition_map(manifest)), dict(os.environ))
     print(json.dumps({"manifest_freeze_id": manifest["freeze_id"], "conditions": snapshots}, indent=2))
 
 
 def command_observe(args: argparse.Namespace) -> None:
-    manifest = load_json(Path(args.manifest))
+    manifest, _manifest_snapshot = read_manifest_strict(
+        Path(args.manifest), label="observation manifest"
+    )
     slot = _find_slot(manifest, args.slot)
     record = observe_run(manifest, slot, output_dir_for(manifest, slot))
     print(json.dumps(record["validity"], indent=2))
@@ -6559,7 +7004,9 @@ def command_verify(args: argparse.Namespace) -> None:
     if manifest_path is None:
         errors.append("no enclosing frozen MANIFEST.json found")
     else:
-        manifest = load_json(manifest_path)
+        manifest, _manifest_snapshot = read_manifest_strict(
+            manifest_path, label="artifact-verification manifest"
+        )
         errors.extend(
             validate_manifest(
                 manifest,
@@ -6574,9 +7021,13 @@ def command_verify(args: argparse.Namespace) -> None:
             )
             errors.extend(historical_errors)
         ledger_path = manifest_path.parent / "EXECUTION.jsonl"
-        ledger, malformed = iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
-        if malformed:
-            errors.append(f"execution ledger malformed at lines {malformed}")
+        try:
+            ledger, _ledger_snapshot = read_execution_ledger(ledger_path)
+        except (OSError, ValueError) as exc:
+            ledger = []
+            errors.append(
+                f"execution ledger is unsafe or malformed: {type(exc).__name__}: {exc}"
+            )
         errors.extend(validate_execution_ledger(manifest, ledger))
         try:
             run_rel = relative(run_dir)

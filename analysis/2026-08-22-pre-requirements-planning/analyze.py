@@ -78,10 +78,14 @@ def bundle_record(role: str, path: Path) -> dict[str, Any]:
 
 def execution_provenance_bundle_records(manifest_path: Path, blind_map_path: Path) -> list[dict[str, Any]]:
     """Content-address the ledger and every effective run anchor consumed by analysis."""
-    manifest = load(manifest_path)
+    manifest, _manifest_snapshot = probe.read_manifest_strict(
+        manifest_path, label="analysis manifest"
+    )
     mapping = load(blind_map_path)
+    ledger_path = probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+    probe.read_execution_ledger(ledger_path)
     records = [
-        bundle_record("execution_ledger", probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl")
+        bundle_record("execution_ledger", ledger_path)
     ]
     rows = mapping.get("mapping") if isinstance(mapping, dict) else None
     if not isinstance(rows, list):
@@ -728,9 +732,13 @@ def validate_analysis_provenance(
     if set(packets) != set(mappings):
         errors.append("blind packet and mapping IDs differ")
     ledger_path = probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
-    ledger, malformed = probe.iter_jsonl(ledger_path) if ledger_path.is_file() else ([], [])
-    if malformed:
-        errors.append(f"execution ledger malformed at lines {malformed}")
+    try:
+        ledger, _ledger_snapshot = probe.read_execution_ledger(ledger_path)
+    except (OSError, ValueError) as exc:
+        ledger = []
+        errors.append(
+            f"execution ledger is unsafe or malformed: {type(exc).__name__}: {exc}"
+        )
     effective, effective_errors = probe.select_effective_attempts(manifest, ledger)
     errors.extend(effective_errors)
     errors.extend(probe.validate_prior_attempt_provenance(manifest, ledger))
@@ -829,7 +837,9 @@ def aggregate(
     adjudications_path: Path,
     instruction_exposure_path: Path,
 ) -> tuple[dict[str, Any], list[str]]:
-    manifest = load(manifest_path)
+    manifest, _manifest_snapshot = probe.read_manifest_strict(
+        manifest_path, label="analysis manifest"
+    )
     errors = probe.validate_manifest(manifest)
     if manifest.get("phase") != "confirmatory":
         errors.append("analysis accepts confirmatory manifests only")
