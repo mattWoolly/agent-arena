@@ -1671,6 +1671,25 @@ def acquire_execution_lock(manifest: dict[str, Any]) -> int:
         raise
 
 
+def acquire_execution_lock_for_bout(bout: Path) -> int:
+    """Serialize access to a related bout whose provenance is being consumed."""
+    bout = Path(os.path.abspath(bout))
+    try:
+        bout.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise ValueError("execution-lock bout directory escapes the repository") from exc
+    _reject_symlink_components(bout, "execution-lock bout directory")
+    bout.mkdir(parents=True, exist_ok=True)
+    _reject_symlink_components(bout, "execution-lock bout directory")
+    descriptor = _open_trusted_repository_directory(bout, "execution-lock bout directory")
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return descriptor
+    except BaseException:
+        os.close(descriptor)
+        raise
+
+
 def default_conditions() -> list[dict[str, Any]]:
     """The convenience sample frozen for this experiment."""
     return [
@@ -2312,6 +2331,14 @@ def build_manifest(
         predecessor, _ = read_manifest_strict(
             _lexical_absolute_path(smoke_replacement_from), label="replacement predecessor manifest"
         )
+        predecessor_path = _lexical_absolute_path(smoke_replacement_from)
+        predecessor_ledger_path = predecessor_path.parent / "EXECUTION.jsonl"
+        predecessor_ledger, _ = read_execution_ledger(predecessor_ledger_path)
+        if len(predecessor_ledger) != 1:
+            raise ValueError("replacement predecessor must have exactly one recorded attempt")
+        predecessor_row = predecessor_ledger[0]
+        intent_path = ROOT / str(predecessor_row.get("attempt_intent", ""))
+        claims_path = predecessor_path.parent / ATTEMPT_CLAIM_JOURNAL
         manifest["smoke_replacement"] = {
             "schema_version": 1,
             "predecessor_manifest": file_record(_lexical_absolute_path(smoke_replacement_from)),
@@ -2324,6 +2351,10 @@ def build_manifest(
             "cumulative_smoke_call_cap": 3,
             "retries_allowed": False,
             "identity_contract_change": "The Kimi wire provider label is frozen as kimi; endpoint, CLI, model alias, effort, and credential configuration are unchanged.",
+            "predecessor_ledger": file_record(predecessor_ledger_path),
+            "predecessor_claims": file_record(claims_path),
+            "predecessor_intent": file_record(intent_path),
+            "predecessor_failed_row_sha256": sha256_bytes(canonical_json(predecessor_row)),
         }
     if test_only_allow_noncanonical_paths:
         manifest["test_only_noncanonical_paths"] = True
@@ -2406,12 +2437,25 @@ def validate_smoke_replacement_metadata(
         errors.append("Amendment-5 predecessor must contain exactly one recorded Kimi attempt")
     else:
         row = ledger[0]
+        predecessor_row_hash = sha256_bytes(canonical_json(row))
+        if replacement.get("predecessor_failed_row_sha256") != predecessor_row_hash:
+            errors.append("Amendment-5 predecessor failed-row hash does not match")
         if row.get("condition_id") != "kimi-code--kimi-k3":
             errors.append("Amendment-5 predecessor row is not the Kimi attempt")
         if row.get("analysis_eligible") is not False or row.get("smoke_excluded") is not True:
             errors.append("Amendment-5 predecessor Kimi attempt is not excluded and ineligible")
         if "wrong_model_or_frozen_configuration" not in set(row.get("eligible_exclusion_reasons") or []):
             errors.append("Amendment-5 predecessor lacks the frozen-configuration exclusion reason")
+        if row.get("attempt_intent"):
+            intent_path = ROOT / str(row["attempt_intent"])
+            claims_path = ledger_path.parent / ATTEMPT_CLAIM_JOURNAL
+            for key, path in (("predecessor_ledger", ledger_path), ("predecessor_claims", claims_path), ("predecessor_intent", intent_path)):
+                if replacement.get(key) != file_record(path):
+                    errors.append(f"Amendment-5 {key} binding does not match current predecessor")
+        predecessor_ledger_errors = validate_execution_ledger(predecessor, ledger)
+        errors.extend(f"Amendment-4 predecessor ledger: {error}" for error in predecessor_ledger_errors)
+        provenance_errors = validate_prior_attempt_provenance(predecessor, ledger)
+        errors.extend(f"Amendment-4 predecessor provenance: {error}" for error in provenance_errors)
     if replacement.get("predecessor_freeze_id") != predecessor.get("freeze_id"):
         errors.append("Amendment-5 predecessor freeze binding is inconsistent")
     if replacement.get("replaced_slot_id") != "primary-01--kimi-code--kimi-k3":
@@ -6369,8 +6413,18 @@ def run_slots(
         manifest_path, label="execution manifest"
     )
     lock_fd: int | None = None
+    predecessor_lock_fd: int | None = None
     if attempt_intent_enabled(manifest):
         lock_fd = acquire_execution_lock(manifest)
+        if manifest_uses_amendment_5(manifest):
+            try:
+                predecessor_lock_fd = acquire_execution_lock_for_bout(
+                    ROOT / SMOKE_CONTINUATION_BOUT_REL
+                )
+            except BaseException:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                os.close(lock_fd)
+                raise
     try:
         _run_slots_locked(
             manifest_path,
@@ -6388,6 +6442,11 @@ def run_slots(
                 fcntl.flock(lock_fd, fcntl.LOCK_UN)
             finally:
                 os.close(lock_fd)
+        if predecessor_lock_fd is not None:
+            try:
+                fcntl.flock(predecessor_lock_fd, fcntl.LOCK_UN)
+            finally:
+                os.close(predecessor_lock_fd)
 
 
 def _run_slots_locked(
@@ -6412,9 +6471,9 @@ def _run_slots_locked(
     errors = validate_manifest(manifest)
     if errors:
         raise ValueError("manifest invalid:\n- " + "\n- ".join(errors))
-    if manifest["phase"] == "confirmatory" and not dry_run and approval != manifest["freeze_id"]:
+    if (manifest["phase"] == "confirmatory" or manifest_uses_amendment_5(manifest)) and not dry_run and approval != manifest["freeze_id"]:
         raise PermissionError(
-            "confirmatory execution is embargoed; after explicit user approval, pass --approval " + manifest["freeze_id"]
+            "execution is embargoed; after explicit user approval, pass --approval " + manifest["freeze_id"]
         )
     schedule = manifest["schedule"]
     ledger_path = ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
@@ -6629,6 +6688,15 @@ def _run_slots_locked(
                     raise ValueError(
                         "execution manifest changed before process launch"
                     )
+                if manifest_uses_amendment_5(manifest):
+                    replacement_errors = validate_smoke_replacement_metadata(
+                        manifest, check_files=True
+                    )
+                    if replacement_errors:
+                        raise ValueError(
+                            "Amendment-5 predecessor changed before process launch:\n- "
+                            + "\n- ".join(replacement_errors)
+                        )
                 attempt_claim = authorize_attempt_launch(
                     manifest,
                     slot,

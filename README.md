@@ -359,6 +359,9 @@ also verifies the predecessor manifest and failed Kimi ledger row through
 response-free provenance checks before accepting the replacement.
 The optional builder argument is backward-compatible with existing manifest
 command callers and is ignored unless an Amendment-5 replacement is requested.
+Amendment-5 replacement execution applies the same explicit approval gate,
+cryptographically binds the predecessor ledger, claim, intent, and failed row,
+and holds the predecessor bout lock while authorizing the replacement call.
 Legacy callers that provide no replacement path continue to construct the
 Amendment-4 manifest contract unchanged.
 
