@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "record_kind": "target-attempt-intent",
+  "experiment_id": "2026-08-22-pre-requirements-planning",
+  "manifest_freeze_id": "405c7f21dc3ba2d5a03a354881e634960b821b75290300fa20fb047ae114de3e",
+  "phase": "smoke",
+  "slot_id": "primary-01--kimi-code--kimi-k3",
+  "condition_id": "kimi-code--kimi-k3",
+  "kind": "primary",
+  "run_dir": "bouts/2026-08-22-pre-requirements-planning-smoke-amendment-4/16-pre-requirements-plan/kimi-k3-kimicode/run-1",
+  "replacement_for": null,
+  "exclusion_reason": null,
+  "created_at": "2026-08-24T01:04:02Z",
+  "preflight_sha256": "740d5f94c3bc4971a299e88e9579ce77ef8d505ac2ba4a28c813b34969c80ea0",
+  "harness_commit": "c610015f84e18b0e368cff4b9d5d505a9c8a8365",
+  "command_sha256": "8035263910c8fb687425bf9cda228c42963cd8d2c8fe3e4494ef9131736bbd83"
+}

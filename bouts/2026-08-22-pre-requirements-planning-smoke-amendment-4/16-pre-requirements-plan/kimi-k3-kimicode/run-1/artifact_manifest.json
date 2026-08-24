@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "slot_id": "primary-01--kimi-code--kimi-k3",
+  "condition_id": "kimi-code--kimi-k3",
+  "driver": "kimi",
+  "manifest_freeze_id": "405c7f21dc3ba2d5a03a354881e634960b821b75290300fa20fb047ae114de3e",
+  "record_kind": "normalized_run",
+  "artifacts": [
+    {
+      "path": "agent_exit",
+      "type": "regular_file",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": "credential_scan.json",
+      "type": "regular_file",
+      "sha256": "c6188df555ac22cf898807b4aaa0b4b1c0a6c5f6a13914311a0a87391dee426e",
+      "bytes": 552
+    },
+    {
+      "path": "credential_scan.raw.json",
+      "type": "regular_file",
+      "sha256": "6648f6ead0520ba667d41c4793bca28576396a048f0cd6072b12d03d928c7885",
+      "bytes": 552
+    },
+    {
+      "path": "credential_scan.runtime.json",
+      "type": "regular_file",
+      "sha256": "87e998a8181d62b2f0b87be33a6e163cd6334a117d2b5a448b36f694a97e8a40",
+      "bytes": 524
+    },
+    {
+      "path": "embargo.json",
+      "type": "regular_file",
+      "sha256": "098e4d7d2d5bf875a3cbc5ec583c972cf87fbd8a2fc1f7053f7f23d1df98f65f",
+      "bytes": 734
+    },
+    {
+      "path": "final_output.txt",
+      "type": "regular_file",
+      "sha256": "71a610122268112b8aaee1f6e788c5a780137188220245d98c3ea7c3725dbebe",
+      "bytes": 4719
+    },
+    {
+      "path": "instruction_context.json",
+      "type": "regular_file",
+      "sha256": "4f3c561f15d69399bb0344dbbf2eeaccc6925018ab5ec25dc1d2f86eb5dd8570",
+      "bytes": 102393
+    },
+    {
+      "path": "metrics.json",
+      "type": "regular_file",
+      "sha256": "06bc64db8dedb1e7bd865113d65e7b38d2c6de1b02c4829883ef9b09bc1aeddc",
+      "bytes": 5442
+    },
+    {
+      "path": "peek_check",
+      "type": "regular_file",
+      "sha256": "2e22da2ab13713309ac75219e525b8e06ed02f3f1963b8feef203fa25827f93d",
+      "bytes": 6
+    },
+    {
+      "path": "prompt.txt",
+      "type": "regular_file",
+      "sha256": "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0",
+      "bytes": 471
+    },
+    {
+      "path": "run_env.json",
+      "type": "regular_file",
+      "sha256": "29ab707ebcb046e262edaf7072ce5acdb0df92525422b6e5ff80b1732496f8d3",
+      "bytes": 786
+    },
+    {
+      "path": "run_record.json",
+      "type": "regular_file",
+      "sha256": "b502ea39ca0e142d0d6a819beed7c730c0f57b2fe35c7a0bd9c42764589f5613",
+      "bytes": 116231
+    },
+    {
+      "path": "stderr.log",
+      "type": "regular_file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "target_returned",
+      "type": "regular_file",
+      "sha256": "0a41c94305a66ca491f9be42ce5ea44f01425b3cfa2f0cc4b72c3d3d72eb8d09",
+      "bytes": 21
+    },
+    {
+      "path": "target_started",
+      "type": "regular_file",
+      "sha256": "f5677e848b8605f1609a36a5f6966518b0c83bb4b897085f49ebd45d8109840f",
+      "bytes": 21
+    },
+    {
+      "path": "transcript.jsonl",
+      "type": "regular_file",
+      "sha256": "df863ae49d65b91959b40230ae0aa8c9650e2c3418dde6ffdd745a729bef2c51",
+      "bytes": 5084
+    },
+    {
+      "path": "wall_seconds",
+      "type": "regular_file",
+      "sha256": "be0f348fa445575ba670519422759028d3466c22199a6f4cd3ac137b2a0d38cf",
+      "bytes": 14
+    },
+    {
+      "path": "wire.jsonl",
+      "type": "regular_file",
+      "sha256": "5a0da3c55ab76cdc097a40eca8bba03689de44c48d86c1a490c14b598034b84f",
+      "bytes": 99115
+    },
+    {
+      "path": "workspace",
+      "type": "directory"
+    },
+    {
+      "path": "workspace/.gitkeep",
+      "type": "regular_file",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    {
+      "path": "workspace.diff",
+      "type": "regular_file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "workspace.diffstat",
+      "type": "regular_file",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ]
+}

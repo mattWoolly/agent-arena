@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "slot_id": "primary-01--kimi-code--kimi-k3",
+  "pass": false,
+  "trace_integrity_pass": false,
+  "trace_integrity_failure": true,
+  "workspace_changed": false,
+  "tool_call_count": 0,
+  "tool_calls": [],
+  "trace_unknowns": [
+    "transcript.jsonl:2:unknown message role 'meta'",
+    "wire.jsonl:1:unknown top-level event 'metadata'",
+    "wire.jsonl:5:unknown top-level event 'permission.set_mode'",
+    "wire.jsonl:6:unknown top-level event 'turn.prompt'"
+  ],
+  "target_originated_tool_or_function_call": false,
+  "spawned_agent": false,
+  "repository_or_file_inspection": false,
+  "research_or_network_action": false,
+  "implementation_or_mutation_attempt": false,
+  "unclassified_tool_action": false
+}

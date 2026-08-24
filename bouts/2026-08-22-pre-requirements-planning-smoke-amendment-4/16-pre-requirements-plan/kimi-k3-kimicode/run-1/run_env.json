@@ -1,0 +1,16 @@
+{
+  "cli_version": "kimi-code 0.27.0",
+  "driver": "kimi -p --output-format stream-json (prompt mode auto-approves)",
+  "harness_commit": "c610015f84e18b0e368cff4b9d5d505a9c8a8365",
+  "harness_tracked_dirty": false,
+  "prompt_sha256": "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0",
+  "price_sheet_sha256": "17be3bc18f7e681cb2e0a1c0dd25f51ef18210215f1d97d3851d13e59b85a2ef",
+  "base_url": "https://api.moonshot.ai/v1 (platform, metered)",
+  "proxy_upstream": "none",
+  "model_env": "none (fresh config-only HOME; isolated PYTHONUSERBASE)",
+  "model_alias": "arena/k3",
+  "effort": "native-default (observed in wire journal)",
+  "setting_sources": "arena config.toml plus explicit empty skills directory",
+  "timeout_s": 600,
+  "started_at": "2026-08-24T01:04:03Z"
+}
