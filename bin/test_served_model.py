@@ -129,6 +129,9 @@ def test_missing_file():
 @case
 def test_real_archived_transcript():
     # Cross-check against a real archived run if the corpus is present.
+    if os.environ.get("ARENA_SYNTHETIC_ONLY") == "1":
+        print("  (skip test_real_archived_transcript: ARENA_SYNTHETIC_ONLY=1)")
+        return
     import glob
     hits = glob.glob(os.path.join(ROOT, "bouts", "*glm*", "*", "*",
                                   "transcript.jsonl"))

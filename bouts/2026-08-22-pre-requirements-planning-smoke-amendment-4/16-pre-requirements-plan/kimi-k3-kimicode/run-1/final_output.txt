@@ -1,0 +1,71 @@
+# Execution Plan Outline — `<PROJECT_NAME>`
+
+## 0. Kickoff Intake (once details arrive)
+- Record the withheld inputs as they are disclosed:
+  - Product summary: `<one-paragraph description>`
+  - Problem statement and target users: `<who / what pain point>`
+  - Core features and explicit non-goals: `<feature list>` / `<out of scope>`
+  - Constraints: `<platforms, tech stack, integrations, budget, deadline, team size>`
+  - Compliance/security requirements: `<regulations, data sensitivity, auth model>`
+- Restate the goal in one sentence and confirm the definition of "done."
+- Open a decision log; every significant choice below gets an entry with date and rationale.
+
+## 1. Discovery & Requirements
+- Survey existing assets: `<repo, prior code, docs, related systems>` — read before writing anything.
+- Identify stakeholders and their acceptance criteria per feature.
+- Decompose `<feature list>` into user stories / work items with explicit acceptance tests.
+- Flag ambiguities, contradictions, and missing decisions; resolve or escalate each one before dependent work starts.
+- Produce a requirements baseline: `<doc location>`; changes after this point go through an explicit change step.
+
+## 2. Architecture & Technical Design
+- Choose architecture shape: `<monolith / services / library>` justified by the constraints, not fashion.
+- Define module boundaries, data model, and public interfaces: `<component diagram / API contracts>`.
+- Select technologies only after confirming what's already available in the environment; no unconfirmed dependencies.
+- Address cross-cutting concerns up front: `<error handling, logging, config, auth, data storage, concurrency>`.
+- Identify the riskiest technical unknowns and schedule spikes/prototypes for those first.
+- Write the design down at `<design doc location>`; keep it updated when reality diverges.
+
+## 3. Work Breakdown & Sequencing
+- Break stories into tasks small enough to verify individually (roughly `<sizing rule, e.g. ≤ 1 day>` each).
+- Order by: unblock-others first, highest risk early, infrastructure before features that need it.
+- Define milestones with checkable exit criteria: `<M1: skeleton runs>` → `<M2: core flow works>` → `<M3: feature complete>` → `<M4: hardened>`.
+- Estimate at the milestone level; track actuals to recalibrate.
+
+## 4. Environment & Scaffolding
+- Set up repo structure, build system, lint/format/type-check config per project conventions.
+- Establish the test harness before feature code: unit + integration + `<e2e where applicable>`.
+- Set up CI: build + test + lint on every change; fail fast.
+- Create a reproducible dev environment: `<container / lockfiles / setup script>` and a README quick-start.
+
+## 5. Implementation Loop
+For each task:
+- Confirm the acceptance criteria before writing code.
+- Implement the minimal change that satisfies them; match surrounding code conventions.
+- Add/extend tests alongside code; keep the suite green at all times.
+- Self-review the diff: no unrelated refactors, no dead code, no placeholder stubs.
+- Update docs/comments that the change invalidates, including `AGENTS.md`-style guidance files.
+- Merge/integrate frequently; avoid long-lived divergence.
+
+## 6. Verification & Quality Gates
+- Per-feature: acceptance criteria demonstrated, tests pass, edge cases covered.
+- Per-milestone: full suite green, manual smoke of `<critical user flows>`, performance sanity check against `<budgets>`.
+- Pre-release: security review of `<auth, data handling, dependency audit>`, load check if `<scale requirement>` exists, rollback plan tested.
+
+## 7. Documentation & Handoff
+- User-facing: `<README, usage docs, examples>` kept in sync with behavior.
+- Developer-facing: architecture overview, setup guide, contribution/test commands.
+- Operational: `<deployment runbook, config reference, monitoring/alert descriptions>`.
+- Close the decision log with a summary of final state vs. original plan.
+
+## 8. Risk & Change Management (continuous)
+- Maintain a live risk list: `<risk>` → likelihood/impact → mitigation → owner → status.
+- Re-validate assumptions at each milestone; kill or pivot features that fail validation.
+- Scope changes go through: restate requirement → assess impact on plan → update baseline → notify stakeholders.
+- Keep a parking lot for good-but-out-of-scope ideas; do not absorb them silently.
+
+## 9. Definition of Done (project level)
+- All milestone exit criteria met and evidenced.
+- Full automated suite green on a clean checkout/build.
+- No known critical/high defects open; accepted risks documented.
+- Docs, runbooks, and decision log complete and current.
+- `<release/deploy step>` executed or handed off with verified rollback.

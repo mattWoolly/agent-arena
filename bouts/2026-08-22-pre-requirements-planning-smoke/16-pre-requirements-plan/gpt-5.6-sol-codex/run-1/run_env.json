@@ -1,0 +1,16 @@
+{
+  "cli_version": "codex-cli 0.149.0",
+  "driver": "codex exec --json -s workspace-write --dangerously-bypass-approvals-and-sandbox",
+  "harness_commit": "c4c4c84a4d328637bd508b009b322a8d9d4bd2b5",
+  "harness_tracked_dirty": false,
+  "prompt_sha256": "5d8df8bce37fba5832273d20f99d4ef05abd87c3590be62ceed349e90f3da2b0",
+  "price_sheet_sha256": "17be3bc18f7e681cb2e0a1c0dd25f51ef18210215f1d97d3851d13e59b85a2ef",
+  "base_url": "https://api.openai.com (native)",
+  "proxy_upstream": "none",
+  "model_env": "none",
+  "effort": "codex-default",
+  "setting_sources": "none (--ignore-user-config, --ignore-rules, fresh auth-only HOME/CODEX_HOME)",
+  "max_turns": 60,
+  "timeout_s": 600,
+  "started_at": "2026-08-23T21:30:13Z"
+}

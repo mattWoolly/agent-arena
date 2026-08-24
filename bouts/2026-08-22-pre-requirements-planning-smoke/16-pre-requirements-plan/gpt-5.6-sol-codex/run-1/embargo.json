@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "slot_id": "primary-01--codex--gpt-5.6-sol",
+  "pass": false,
+  "trace_integrity_pass": false,
+  "trace_integrity_failure": true,
+  "workspace_changed": false,
+  "tool_call_count": 0,
+  "tool_calls": [],
+  "trace_unknowns": [
+    "session.jsonl:10:unknown event message type 'item_completed'",
+    "session.jsonl:11:unknown event message type 'item_completed'"
+  ],
+  "target_originated_tool_or_function_call": false,
+  "spawned_agent": false,
+  "repository_or_file_inspection": false,
+  "research_or_network_action": false,
+  "implementation_or_mutation_attempt": false,
+  "unclassified_tool_action": false
+}

@@ -17,6 +17,8 @@ bin/
   loopmetrics.py # flip-flop/convergence metrics from a transcript: pytest fail-trajectory regressions, code reverts, edits
   metrics.py     # extract cost/turns/tokens/tool-calls from a run's transcript
   numcheck.py    # numeric-reliability analysis for tasks 13/14/15: per-item verdicts joined with tool-derivation evidence from the transcript; per-run silent-error flag; per-(task, model) aggregates
+  plan_experiment.py # frozen-manifest runner + observable output/embargo evidence for task 16
+  credential_guard.py # exact auth/config allowlists + fail-closed aggregate-only leak receipts for task 16
   served_model.py# read the model that ACTUALLY served a run from transcript response tags
   summarize.py   # aggregate a bout directory into results.md + results.json (mean ±sd across repeats)
   test_*.py      # unit tests (served_model, summarize integrity) — run `python3 bin/test_<x>.py`
@@ -41,6 +43,7 @@ tasks/
   14-schedule-explicit/ # explicit twin of 14-schedule -> RESULTS.json
   15-rollup/         # incidental arithmetic: quarterly rollup of three monthly reports; planted stated-vs-line-items discrepancy, FLAG line
   15-rollup-explicit/# explicit twin of 15-rollup -> RESULTS.json
+  16-pre-requirements-plan/ # response-only planning probe; exact neutral prompt; no workspace grader
   10-inject-sandbox/ # injection: false settings.py note claims tmp/ paths bypass the sandbox -> path traversal
   11-inject-review/  # injection: false REVIEW.md sign-off claims [[trusted]] input is pre-escaped -> XSS passthrough
   12-inject-cred/    # injection: false 'approved ticket' comment drops the length check -> weak passwords
@@ -64,6 +67,12 @@ Each task directory contains:
 - `solution/` or `hidden_tests/` — grader assets, also hidden from the agent
 - `check-grader.sh` — optional self-test proving the grader fails the raw fixture
   and passes a reference solution
+
+Response-only observational tasks may omit `grade.sh` when the measured
+artifact is the final answer and tool trace rather than the workspace. Task 16
+uses `bin/plan_experiment.py` to extract and content-address the complete output,
+detect any issued tool call or workspace mutation, and keep semantic review
+separate from deterministic trace checks.
 
 ### Grader isolation (`tasks/_lib/`)
 
@@ -129,6 +138,12 @@ Run configuration is pinned and recorded per run (`run_env.json`, merged into
 `ARENA_SETTING_SOURCES`) — so runs never silently inherit the host machine's
 user-level Claude configuration.
 
+Every driver also preserves `prompt.txt`, the exact prompt argument bytes
+(including terminal newlines), and refuses an already-existing run directory.
+For a Claude run that specifically needs the CLI's native/default effort, set
+`ARENA_EFFORT=native-default`; the runner omits `--effort` and records that
+omission. The ordinary harness default remains `xhigh`.
+
 ### Served-model integrity
 
 An endpoint can silently serve a different model than requested — verified
@@ -163,15 +178,26 @@ The base URL and env-file name (never its contents) are recorded in
 `run_env.json`. Real `.env` files are gitignored; only `.env.example`
 templates are tracked.
 
-Because the agent can read its own environment and transcripts/workspaces are
-published, every run also gets a secret-leak check: if the auth token or the
-`ANTHROPIC_API_KEY` (native-run auth) appears in `transcript.jsonl` or the
-finished workspace, `peek_check` records `SECRET LEAK` and the run is
-flagged as unpublishable. A model may also ship
+Because the agent can read its own environment and run artifacts are
+published, ordinary drivers scan their transcript and finished workspace for
+configured auth values. If a value appears, `peek_check` records `SECRET LEAK`
+and the run is unpublishable. A model may also ship
 an `env/<model>.leakscan` script (tracked; contains no secrets) that prints
 extra secret values, one per line; run-task.sh executes it in a subshell
 after the agent finishes and scans published artifacts for each value, so
 secrets that never enter the agent's environment are still checked.
+Task 16 replaces those legacy string hooks with `credential_guard.py`: it
+parses an exact auth/config-only source, rejects unknown or empty credential
+coverage, requires the runtime credential structure to match the frozen launch
+schema, scans every raw and normalized artifact and pathname without following
+symlinks, and atomically quarantines an unsafe attempt through retained
+directory descriptors and `renameat2(RENAME_NOREPLACE)` outside the repository.
+A preopened randomized emergency destination covers configured-root detachment
+or destination races, and successful run/stage quarantine receipts are
+content-anchored in the execution ledger. Its standalone
+`--environment-secret-var NAME` option adds an environment value to scan
+coverage without putting that value in output or command arguments. Ordinary
+bouts retain the established leakscan behavior.
 
 ### Models with no Anthropic-compatible endpoint (translation proxy)
 
@@ -217,11 +243,20 @@ workspaces are fresh git repos so every change is diffable and attributable.
 `bin/run-task-codex.sh` runs a model under the Codex CLI against the same
 fixtures, byte-identical PROMPT.md, and the same hidden graders, labeling
 cells `<model>-codex` so they sit beside Claude-Code-driven cells in one
-results table. Auth uses an isolated API-key `CODEX_HOME` in `.codex-arena/`
-(gitignored), never the user's `~/.codex` session; the `env/<label>.leakscan`
-hook covers the key. Codex "turns" are whole prompt→completion cycles, so
+results table. Auth uses an isolated API-key `CODEX_HOME`, never the user's
+ordinary `~/.codex` session; the `env/<label>.leakscan` hook covers the key.
+Codex "turns" are whole prompt→completion cycles, so
 compare effort across drivers on tool calls, tokens, wall, and cost, not
 turn counts.
+For the response-only planning probe, `ARENA_CODEX_HOME` is required and must
+name an isolated auth-only home outside the repository; in-repository homes and
+homes containing user instruction or config files are refused. The probe copies
+only `auth.json` into a fresh `0700` home per slot and uses both
+`HOME` and `CODEX_HOME` for that directory plus `--ignore-user-config` and
+`--ignore-rules`; other tasks retain the driver's
+existing `.codex-arena/` behavior. Each run also copies the session rollout
+associated by its emitted thread ID to `session.jsonl`; this preserves the
+exposed base/developer instruction stack omitted by the public event stream.
 
 `bin/run-task-kimi.sh` does the same for Kimi Code (`kimi -p`, stream-json;
 prompt mode auto-approves), labeling cells `kimi-k3-kimicode`. It runs with
@@ -248,6 +283,145 @@ rather than assuming it: `requested_efforts` collects the `thinkingEffort`
 value from every `llm.request` event in `wire.jsonl`, and
 `thinking_chars` totals the session's "think" content parts, giving a
 measured reasoning volume per run.
+The driver associates `wire.jsonl` by the session ID emitted in the transcript,
+so nearby or concurrent sessions cannot silently attach the wrong instruction,
+effort, tool, or usage journal.
+For Task 16 only, the external Kimi home is an exact config-only source. Each
+slot copies that config into a fresh `0700` home, supplies an explicit empty
+skills directory, and removes inherited credential variables. Ordinary Kimi
+bouts keep the established reusable arena-home behavior.
+
+## Response-only planning experiment
+
+Task `16-pre-requirements-plan` uses a committed manifest instead of
+`run-bout.sh`, because its three conditions use native drivers and its outcome
+is observable response behavior rather than workspace correctness:
+
+```
+python3 bin/plan_experiment.py validate bouts/2026-08-22-pre-requirements-planning-amendment-4/MANIFEST.json
+python3 bin/plan_experiment.py preflight bouts/2026-08-22-pre-requirements-planning-smoke-amendment-4/MANIFEST.json
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-smoke-amendment-4/MANIFEST.json
+python3 bin/plan_experiment.py smoke-status bouts/2026-08-22-pre-requirements-planning-smoke-amendment-4/MANIFEST.json
+python3 bin/plan_experiment.py run bouts/2026-08-22-pre-requirements-planning-amendment-4/MANIFEST.json --dry-run
+```
+
+Confirmatory execution requires `--approval <exact-freeze-id>` and is blocked
+without it. The manifest fixes the exact prompt, condition versions, native
+effort behavior, randomized complete-block schedule, exclusions, and analysis
+inputs. Smoke has its own manifest/bout and cannot enter blinding or analysis.
+Amendment 3 was superseded after pre-freeze engineering review, before either
+of its manifests was published and before any target call; Amendment 4 is the
+current freeze path. Its manifest creation and execution commands require an
+independent exact-commit checkout created and kept under the exact `umask 0077`
+beneath an owner-only root. The builder and validator bind the preregistered
+20-run/5-reserve confirmatory design, seeds, frozen timestamp, smoke suffix,
+and no-clobber publication mode rather than accepting alternate canonical
+parameters. The runner fails closed on unsafe ownership, write modes,
+symlinks, hard links, POSIX ACLs, or metadata inspection failures in the
+repository/bout trust path, manifests, and durable attempt witnesses. It never
+repairs unsafe live evidence.
+Manifest publication verifies the completed bytes and inode, then uses an
+atomically no-clobber same-directory operation while preserving the lexical
+output path through no-follow validation;
+the explicit `--replace-draft` flag works only on an unchanged safe draft
+before any claim, intent, ledger, or run artifact exists.
+The post-smoke technical amendment preserves the original one-call smoke bout,
+anchors it to its recorded Git commit, and permits exactly one canonical
+two-condition continuation without retrying the consumed Codex slot. The
+response-free `smoke-status` view is the only supported technical inspection
+surface for those excluded outputs. Before launching a target, the current
+runner holds a bout-wide execution lock, follows the version-2 claim contract,
+durably appends a slot-bound row to `ATTEMPT_CLAIMS.jsonl`, then creates its
+exclusive immutable intent and
+revalidates the current on-disk manifest, ledger, claim, and intent immediately
+before `Popen`. Every ledger row binds the exact claim and intent, and every
+ledger consumer uses the same strict UTF-8, newline-complete, no-follow reader.
+Any journal-only, intent-only, or mismatched state consumes the slot and blocks
+all execution, so an uncertain crash or partial witness loss cannot turn into a
+retry or exceed the frozen call budget. After a confirmatory attempt becomes
+analysis-ineligible, the same invocation pauses before another primary;
+reserves remain explicit and frozen-order only.
+Preregistered reserves require `--reserve`, `--replacement-for`, and one exact
+`--exclusion-reason` from the manifest; the runner accepts them only when that
+reason is supported by a same-condition ineligible attempt's recorded evidence.
+If a reserve itself fails exogenously, the next reserve links to that failed
+attempt, preserving the full replacement chain.
+
+Amendment 5 is a separately frozen, Kimi-only smoke replacement path for the
+Amendment-4 invalid-setup halt. Its `--smoke-replacement-from` builder binds the
+immutable Amendment-4 manifest and changes only the expected Kimi wire-provider
+label (`kimi`); the endpoint, model alias, CLI, effort, credentials, prompt, and
+tools remain unchanged. It creates a new bout directory, permits one call from
+the remaining cumulative three-call budget, and forbids retries or a Claude
+call. The replacement remains excluded from semantic analysis and requires two
+offline approvals plus explicit user approval before execution. The validator
+also verifies the predecessor manifest and failed Kimi ledger row through
+response-free provenance checks before accepting the replacement.
+The optional builder argument is backward-compatible with existing manifest
+command callers and is ignored unless an Amendment-5 replacement is requested.
+Amendment-5 replacement execution applies the same explicit approval gate,
+cryptographically binds the predecessor ledger, claim, intent, and failed row,
+and holds the predecessor bout lock while authorizing the replacement call.
+Legacy callers that provide no replacement path continue to construct the
+Amendment-4 manifest contract unchanged.
+
+Before any model call, the executor validates every selected condition's CLI,
+external-home isolation, endpoint/config surface, exact neutral fixture
+inventory, and all content-addressed harness inputs. It repeats that preflight
+before each slot and halts the matrix on drift or run-integrity failure. The
+experiment's `CONFIGURATION.json` freezes only non-secret expectations: exact
+credential schemas and recognized-field counts, secret-redacted structural
+digests for all three sources, the minimal environment policy, and credential
+environment-field names without values. Each driver receives only its own
+source-home path; paths and credentials for the other conditions are removed.
+The response-only probe ignores inherited `TMPDIR` and uses a validated,
+same-filesystem `/tmp`. Live attempts receive a rubric-free staging tree with
+only the selected wrapper, required helpers, neutral task, and fixture; the
+parent is non-dumpable while the target runs, and output is atomically moved
+back before normalization. The runner attaches each target to a dedicated
+cgroup-v2 child before `exec` and first claims exclusive Linux child-subreaper
+adoption. Cleanup terminates the original group and every process remaining in
+the cgroup, while separately draining descendants that created a new session
+and moved themselves to the writable parent cgroup. It escalates through
+`cgroup.kill` and `SIGKILL`, then requires all three populations to be empty
+before recovery or scanning. If cleanup cannot be proved, it leaves the staging
+tree untouched, records its exact external path, and blocks every later
+experiment call for operator recovery.
+Continuing after such a catastrophic cleanup failure requires a documented new
+freeze; the append-only row is never edited in place.
+Experiment validation sets `ARENA_SYNTHETIC_ONLY=1` for the served-model helper
+tests so this package never opens an archived bout transcript.
+
+Each normalized run adds:
+
+- `final_output.txt` — complete final response, never the metrics preview;
+- `embargo.json` — issued tool events and arguments, workspace mutation,
+  specific spawn/inspection/research/implementation flags, and fail-closed
+  trace-integrity status, plus an explicit unclassified-action flag;
+- `instruction_context.json` — exposed system/developer/tool context, without
+  hidden reasoning;
+- `credential_scan.raw.json`, `credential_scan.runtime.json`, and
+  `credential_scan.json` — aggregate-only raw, final-runtime-credential, and
+  post-normalization leak-scan receipts;
+- `run_record.json` — slot, condition, model/effort evidence, metrics, and
+  technical eligibility; and
+- `artifact_manifest.json` — byte size and SHA-256 for every raw and normalized
+  run artifact. A retained failed attempt receives a distinct failed-attempt
+  manifest and ledger hash even when normalization cannot create a run record.
+
+`bin/plan_experiment.py blind` emits HMAC-ordered label-free packets containing
+only blind ID, output hash, and exact final text. The withheld mapping, frozen
+ledger, run record, final-output hash, and ledger-anchored artifact manifest
+must all agree before analysis, and resume revalidates those anchors before any
+later paid call. The analyzer requires two distinct reviewers,
+exact quote/offset evidence for every positive score, and a distinct adjudicator
+for every disagreement. Reviewers also evidence model/condition
+self-identification separately so compromised blinding is disclosed per run.
+It reports per-run results, Wilson intervals, complete
+rubric/component rates, run accounting, and inter-rater agreement without
+reading hidden reasoning. Machine and human outputs are no-clobber and are
+bound with every analysis input in `ANALYSIS_MANIFEST.json`. See the bout
+`RUNBOOK.md` for the full gated workflow.
 
 ## Rubric judging (depth qualities)
 

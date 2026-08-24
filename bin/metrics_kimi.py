@@ -22,7 +22,12 @@ from pathlib import Path
 
 def main(out_dir: str, label: str, price_key: str = "kimi-k3") -> None:
     out = Path(out_dir)
-    metrics = {"model": label}
+    metrics = {
+        "model": label,
+        "input_tokens": None,
+        "output_tokens": None,
+        "total_cost_usd": None,
+    }
 
     for key, fname, conv in (("wall_seconds", "wall_seconds", float), ("agent_exit", "agent_exit", int)):
         try:
@@ -77,9 +82,10 @@ def main(out_dir: str, label: str, price_key: str = "kimi-k3") -> None:
     cached = sum(u.get("inputCacheRead") or 0 for u in usage_records)
     cwrite = sum(u.get("inputCacheCreation") or 0 for u in usage_records)
     outp = sum(u.get("output") or 0 for u in usage_records)
-    metrics["input_tokens"] = uncached + cached + cwrite
-    metrics["cache_read_tokens"] = cached
-    metrics["output_tokens"] = outp
+    if usage_records:
+        metrics["input_tokens"] = uncached + cached + cwrite
+        metrics["cache_read_tokens"] = cached
+        metrics["output_tokens"] = outp
 
     ppath = Path(__file__).resolve().parent.parent / "env" / "prices.json"
     if ppath.exists() and usage_records:
@@ -90,7 +96,7 @@ def main(out_dir: str, label: str, price_key: str = "kimi-k3") -> None:
                 + cached * prices.get("cache_read", prices["input"])
                 + outp * prices["output"]
             ) / 1e6
-            metrics["total_cost_usd"] = round(total, 5)
+            metrics["total_cost_usd"] = total
             metrics["cost_source"] = f"computed:env/prices.json (wire.jsonl usage, {len(usage_records)} turn records)"
 
     epath = out / "run_env.json"

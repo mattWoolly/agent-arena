@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "reviewer_id": "[reviewer-b-id]",
+  "independent_of": ["[reviewer-a-id]"],
+  "reviews": []
+}

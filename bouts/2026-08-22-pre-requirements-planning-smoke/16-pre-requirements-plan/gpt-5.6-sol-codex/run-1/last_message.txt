@@ -1,0 +1,95 @@
+# Execution Plan: [Project Name]
+
+## 1. Project Definition
+
+- Confirm [business objective], [target users], and [success criteria].
+- Document scope, assumptions, constraints, dependencies, and exclusions.
+- Resolve open questions and establish requirement owners.
+- Define terminology and domain boundaries.
+
+## 2. Requirements and Acceptance
+
+- Convert requirements into prioritized capabilities and user workflows.
+- Define functional and non-functional requirements.
+- Specify acceptance criteria, edge cases, error behavior, and accessibility needs.
+- Establish traceability from requirements to implementation and validation.
+
+## 3. Existing-System Discovery
+
+- Review [repositories], [documentation], [architecture], and [delivery processes].
+- Map components, interfaces, data flows, ownership, and external dependencies.
+- Identify reusable assets, technical debt, operational constraints, and migration concerns.
+- Record findings and unresolved risks.
+
+## 4. Solution Design
+
+- Define the proposed architecture and component responsibilities.
+- Specify APIs, contracts, schemas, state transitions, and integration boundaries.
+- Address security, privacy, compliance, reliability, scalability, and observability.
+- Compare material alternatives and record decisions in [decision log].
+
+## 5. Delivery Strategy
+
+- Decompose work into independently testable increments.
+- Sequence increments by dependency, risk, and user value.
+- Assign [owners], [milestones], and [target dates].
+- Define the minimum viable release and subsequent phases.
+- Identify feature flags, compatibility requirements, and rollback points.
+
+## 6. Environment and Tooling
+
+- Establish local, test, staging, and production environments.
+- Define configuration, secrets, fixtures, and test-data handling.
+- Set coding, review, branching, dependency, and documentation conventions.
+- Configure reproducible builds and automated quality checks.
+
+## 7. Implementation Workstreams
+
+For each [workstream/component]:
+
+- Confirm inputs, outputs, dependencies, and acceptance criteria.
+- Implement the smallest coherent increment.
+- Add tests, telemetry, documentation, and migration support alongside code.
+- Review integration impacts and update the decision/risk logs.
+- Demonstrate completion against acceptance criteria.
+
+## 8. Verification
+
+- Define unit, integration, contract, end-to-end, performance, security, and accessibility coverage.
+- Map critical requirements and failure modes to tests.
+- Validate migrations, backward compatibility, recovery, and rollback.
+- Establish release gates and evidence required for approval.
+- Conduct stakeholder acceptance using [representative scenarios].
+
+## 9. Operational Readiness
+
+- Define service indicators, objectives, dashboards, logs, traces, and alerts.
+- Prepare deployment, rollback, backup, recovery, and incident procedures.
+- Document ownership, escalation paths, support expectations, and maintenance tasks.
+- Perform [load/security/resilience/recovery] readiness exercises where applicable.
+
+## 10. Release and Adoption
+
+- Choose [pilot/phased/general] rollout strategy.
+- Define release approvals, communications, training, and user documentation.
+- Monitor technical health and user outcomes during rollout.
+- Specify pause, rollback, and escalation thresholds.
+
+## 11. Post-Release
+
+- Verify success criteria over [evaluation period].
+- Triage defects, feedback, operational issues, and deferred work.
+- Conduct a retrospective and capture reusable lessons.
+- Transition ownership and close temporary project processes.
+
+## 12. Ongoing Control
+
+Maintain throughout execution:
+
+- [Requirements and acceptance matrix]
+- [Milestone and dependency tracker]
+- [Risk, assumption, issue, and decision log]
+- [Change-control record]
+- [Test and release evidence]
+- [Operational-readiness checklist]
+- [Status report: progress, next steps, blockers, decisions needed]
