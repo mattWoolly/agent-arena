@@ -7201,6 +7201,8 @@ def technical_smoke_status(manifest_path: Path, *, historical: bool = False) -> 
 
 def command_manifest(args: argparse.Namespace) -> None:
     smoke_replacement_from = getattr(args, "smoke_replacement_from", None)
+    if not isinstance(smoke_replacement_from, (str, os.PathLike)):
+        smoke_replacement_from = None
     manifest = build_manifest(
         phase=args.phase,
         output=_lexical_absolute_path(Path(args.output)),
