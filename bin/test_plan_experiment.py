@@ -608,6 +608,66 @@ class PromptAndManifestTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "at least 10"):
                 make_manifest(temp / "bad", repeats=9)
 
+    def test_current_production_manifest_parameters_are_exactly_frozen(self):
+        with tempfile.TemporaryDirectory(dir=probe.ROOT / "bouts") as raw:
+            temp = Path(raw)
+            bout_rel = str(temp.relative_to(probe.ROOT))
+            base = {
+                "phase": "confirmatory",
+                "output": temp / "MANIFEST.json",
+                "design": DESIGN,
+                "analysis_script": ANALYZE_PATH,
+                "report_template": REPORT_TEMPLATE,
+                "repeats": probe.CONFIRMATORY_RUNS_PER_CONDITION,
+                "seed": probe.CONFIRMATORY_RANDOM_SEED,
+                "frozen_at": probe.AMENDMENT_4_FROZEN_AT,
+                "reserve_per_condition": probe.CONFIRMATORY_RESERVES_PER_CONDITION,
+                "bout_dir_override": bout_rel,
+            }
+            cases = (
+                ({"repeats": 10}, "runs=20"),
+                ({"reserve_per_condition": 0}, "reserves=5"),
+                ({"seed": 1}, "seed=2808222026"),
+                ({"frozen_at": "2099-01-01T00:00:00Z"}, "frozen timestamp"),
+                ({"replace_draft": True}, "immutable no-clobber"),
+            )
+            with mock.patch.object(
+                probe, "AMENDED_CONFIRMATORY_BOUT_REL", bout_rel
+            ):
+                for changes, message in cases:
+                    with self.subTest(changes=changes), self.assertRaisesRegex(
+                        ValueError, message
+                    ):
+                        probe.build_manifest(**{**base, **changes})
+            self.assertFalse((temp / "MANIFEST.json").exists())
+
+        with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
+            temp = Path(raw)
+            probe.build_manifest(
+                phase="confirmatory",
+                output=temp / "wrong.json",
+                design=DESIGN,
+                analysis_script=ANALYZE_PATH,
+                report_template=REPORT_TEMPLATE,
+                repeats=10,
+                seed=1,
+                frozen_at="2099-01-01T00:00:00Z",
+                reserve_per_condition=0,
+                test_only_allow_noncanonical_paths=True,
+            )
+            wrong = json.loads((temp / "wrong.json").read_text())
+            wrong.pop("test_only_noncanonical_paths")
+            wrong["bout_dir"] = probe.AMENDED_CONFIRMATORY_BOUT_REL
+            wrong["attempt_intent_contract"] = copy.deepcopy(
+                probe.ATTEMPT_INTENT_CONTRACT
+            )
+            wrong["freeze_id"] = probe.compute_freeze_id(wrong)
+            errors = probe.validate_manifest(wrong)
+            self.assertTrue(any("frozen timestamp" in error for error in errors))
+            self.assertTrue(any("exactly 20 runs" in error for error in errors))
+            self.assertTrue(any("exactly 5 reserves" in error for error in errors))
+            self.assertTrue(any("randomization seed" in error for error in errors))
+
     def test_manifest_detects_prompt_and_freeze_tampering(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             _, manifest = make_manifest(Path(raw))
@@ -763,9 +823,10 @@ class PromptAndManifestTests(unittest.TestCase):
                         design=DESIGN,
                         analysis_script=ANALYZE_PATH,
                         report_template=REPORT_TEMPLATE,
-                        repeats=10,
-                        seed=1,
-                        frozen_at="2026-08-22T00:00:00Z",
+                        repeats=probe.CONFIRMATORY_RUNS_PER_CONDITION,
+                        seed=probe.CONFIRMATORY_RANDOM_SEED,
+                        frozen_at=probe.AMENDMENT_4_FROZEN_AT,
+                        reserve_per_condition=probe.CONFIRMATORY_RESERVES_PER_CONDITION,
                         bout_dir_override=bout_rel,
                     )
             self.assertEqual(referent.read_bytes(), b"do not overwrite\n")
@@ -776,8 +837,11 @@ class PromptAndManifestTests(unittest.TestCase):
             original = os.umask(0o077)
             try:
                 path, manifest = make_manifest(temp / "strict", phase="smoke")
+                os.umask(0o022)
+                with self.assertRaisesRegex(PermissionError, "frozen 0077"):
+                    make_manifest(temp / "ordinary", phase="smoke")
                 os.umask(0o002)
-                with self.assertRaisesRegex(PermissionError, "0022-or-stricter"):
+                with self.assertRaisesRegex(PermissionError, "frozen 0077"):
                     make_manifest(temp / "permissive", phase="smoke")
                 self.assertEqual(probe._current_process_umask(), 0o002)
                 with mock.patch.object(
@@ -787,7 +851,7 @@ class PromptAndManifestTests(unittest.TestCase):
                 self.assertEqual(probe._current_process_umask(), 0o002)
                 with mock.patch.object(probe.subprocess, "Popen") as popen:
                     with self.assertRaisesRegex(
-                        PermissionError, "0022-or-stricter"
+                        PermissionError, "frozen 0077"
                     ):
                         probe.run_slots(
                             path,
@@ -919,6 +983,26 @@ class PromptAndManifestTests(unittest.TestCase):
                 probe.validate_manifest(reordered),
             )
 
+            manifest["bout_dir"] = str((temp / "bout").relative_to(probe.ROOT))
+            enable_attempt_intents(path, manifest)
+            kimi, claude = manifest["schedule"]
+            with synthetic_live_flow(manifest, [False, False]) as popen:
+                probe.run_slots(
+                    path,
+                    approval=None,
+                    requested_slots={kimi["slot_id"], claude["slot_id"]},
+                    dry_run=False,
+                )
+            ledger, _snapshot = probe.read_execution_ledger(
+                probe.ROOT / manifest["bout_dir"] / "EXECUTION.jsonl"
+            )
+            self.assertEqual(popen.call_count, 2)
+            self.assertEqual(
+                [row["slot_id"] for row in ledger],
+                [kimi["slot_id"], claude["slot_id"]],
+            )
+            self.assertEqual(probe.validate_smoke_call_budget(manifest, ledger), [])
+
     def test_production_manifest_paths_prevent_duplicate_smoke_continuations(self):
         with tempfile.TemporaryDirectory(dir=probe.ROOT) as raw:
             temp = Path(raw)
@@ -931,7 +1015,7 @@ class PromptAndManifestTests(unittest.TestCase):
                     report_template=REPORT_TEMPLATE,
                     repeats=1,
                     seed=2808222027,
-                    frozen_at="2026-08-23T18:00:00Z",
+                    frozen_at=probe.AMENDMENT_4_FROZEN_AT,
                     reserve_per_condition=0,
                     bout_dir_override=str((temp / "second-bout").relative_to(probe.ROOT)),
                     smoke_continuation_from=probe.ROOT / probe.INITIAL_SMOKE_MANIFEST_REL,

@@ -81,6 +81,13 @@ AMENDMENT_4_ID = "smoke-technical-004"
 AMENDMENT_4_REL = f"bouts/{EXPERIMENT_ID}-amendment-4/AMENDMENT.md"
 AMENDED_RUNBOOK_4_REL = f"bouts/{EXPERIMENT_ID}-amendment-4/RUNBOOK.md"
 AMENDED_CONFIRMATORY_BOUT_REL = f"bouts/{EXPERIMENT_ID}-amendment-4"
+AMENDMENT_4_FROZEN_AT = "2026-08-23T23:40:00Z"
+CONFIRMATORY_RUNS_PER_CONDITION = 20
+CONFIRMATORY_RESERVES_PER_CONDITION = 5
+CONFIRMATORY_RANDOM_SEED = 2808222026
+SMOKE_RUNS_PER_CONDITION = 1
+SMOKE_RESERVES_PER_CONDITION = 0
+SMOKE_RANDOM_SEED = 2808222027
 INITIAL_SMOKE_MANIFEST_REL = f"bouts/{EXPERIMENT_ID}-smoke/MANIFEST.json"
 INITIAL_SMOKE_FREEZE_ID = "5b65987b40e70dcce883381baa40c93440510a82b95e048ea2caff4447d1762e"
 SMOKE_CONTINUATION_BOUT_REL = f"bouts/{EXPERIMENT_ID}-smoke-amendment-4"
@@ -411,9 +418,9 @@ def _current_process_umask() -> int:
 
 def require_strict_creation_umask(label: str) -> None:
     current = _current_process_umask()
-    if current & 0o022 != 0o022:
+    if current != 0o077:
         raise PermissionError(
-            f"{label} requires a 0022-or-stricter process umask; current umask is {current:04o}"
+            f"{label} requires the frozen 0077 process umask; current umask is {current:04o}"
         )
 
 
@@ -2009,9 +2016,28 @@ def build_manifest(
         raise ValueError("confirmatory manifests require at least 10 runs per condition")
     requested_bout_dir = bout_dir_override or f"bouts/{EXPERIMENT_ID}{'-smoke' if phase == 'smoke' else ''}"
     if not test_only_allow_noncanonical_paths:
+        if replace_draft:
+            raise ValueError(
+                "the amendment-4 production manifests are immutable no-clobber publications"
+            )
+        if frozen_at != AMENDMENT_4_FROZEN_AT:
+            raise ValueError(
+                f"the amendment-4 frozen timestamp must be {AMENDMENT_4_FROZEN_AT}"
+            )
         if phase == "confirmatory":
             if smoke_continuation_from is not None:
                 raise ValueError("confirmatory manifests cannot continue smoke")
+            if (
+                repeats != CONFIRMATORY_RUNS_PER_CONDITION
+                or reserve_per_condition != CONFIRMATORY_RESERVES_PER_CONDITION
+                or seed != CONFIRMATORY_RANDOM_SEED
+            ):
+                raise ValueError(
+                    "the amendment-4 confirmatory manifest requires exactly "
+                    f"runs={CONFIRMATORY_RUNS_PER_CONDITION}, "
+                    f"reserves={CONFIRMATORY_RESERVES_PER_CONDITION}, and "
+                    f"seed={CONFIRMATORY_RANDOM_SEED}"
+                )
             expected_output = ROOT / AMENDED_CONFIRMATORY_BOUT_REL / "MANIFEST.json"
             if (
                 _lexical_absolute_path(output)
@@ -2022,6 +2048,17 @@ def build_manifest(
         elif smoke_continuation_from is None:
             raise ValueError("the initial smoke freeze is immutable; only its canonical continuation may be built")
         else:
+            if (
+                repeats != SMOKE_RUNS_PER_CONDITION
+                or reserve_per_condition != SMOKE_RESERVES_PER_CONDITION
+                or seed != SMOKE_RANDOM_SEED
+            ):
+                raise ValueError(
+                    "the amendment-4 smoke continuation requires exactly "
+                    f"runs={SMOKE_RUNS_PER_CONDITION}, "
+                    f"reserves={SMOKE_RESERVES_PER_CONDITION}, and "
+                    f"seed={SMOKE_RANDOM_SEED}"
+                )
             expected_output = ROOT / SMOKE_CONTINUATION_BOUT_REL / "MANIFEST.json"
             if (
                 _lexical_absolute_path(output)
@@ -2255,11 +2292,44 @@ def validate_manifest(
         errors.append("test-only noncanonical manifest is disabled outside synthetic tests")
     if not allow_historical and not test_only_noncanonical:
         bout_dir = manifest.get("bout_dir")
+        sampling = manifest.get("sampling") or {}
+        randomization = manifest.get("randomization") or {}
+        if manifest.get("frozen_at") != AMENDMENT_4_FROZEN_AT:
+            errors.append("current manifest does not use the amendment-4 frozen timestamp")
         if phase == "confirmatory" and bout_dir != AMENDED_CONFIRMATORY_BOUT_REL:
             errors.append("confirmatory manifest is outside its canonical amended bout directory")
+        if phase == "confirmatory":
+            if (
+                sampling.get("valid_runs_per_condition")
+                != CONFIRMATORY_RUNS_PER_CONDITION
+            ):
+                errors.append(
+                    "current confirmatory manifest does not freeze exactly 20 runs per condition"
+                )
+            if (
+                sampling.get("reserve_slots_per_condition")
+                != CONFIRMATORY_RESERVES_PER_CONDITION
+            ):
+                errors.append(
+                    "current confirmatory manifest does not freeze exactly 5 reserves per condition"
+                )
+            if randomization.get("seed") != CONFIRMATORY_RANDOM_SEED:
+                errors.append(
+                    "current confirmatory manifest does not use the frozen randomization seed"
+                )
         if phase == "smoke" and manifest.get("smoke_continuation") is not None:
             if bout_dir != SMOKE_CONTINUATION_BOUT_REL:
                 errors.append("smoke continuation is outside its canonical bout directory")
+            if sampling.get("valid_runs_per_condition") != SMOKE_RUNS_PER_CONDITION:
+                errors.append(
+                    "current smoke continuation does not freeze exactly one run per condition"
+                )
+            if sampling.get("reserve_slots_per_condition") != SMOKE_RESERVES_PER_CONDITION:
+                errors.append("current smoke continuation must freeze zero reserves")
+            if randomization.get("seed") != SMOKE_RANDOM_SEED:
+                errors.append(
+                    "current smoke continuation does not use the frozen randomization seed"
+                )
         if phase == "smoke" and manifest.get("smoke_continuation") is None:
             errors.append("current smoke manifests must be canonical continuations of the immutable initial smoke")
     if not allow_historical:
@@ -2515,7 +2585,7 @@ def validate_historical_smoke_sources(
             continuation_errors = validate_manifest(
                 continuation_manifest,
                 check_files=False,
-                allow_historical=True,
+                allow_historical=False,
             )
             errors.extend(
                 f"canonical continuation: {error}" for error in continuation_errors
@@ -4187,7 +4257,10 @@ def authorize_attempt_launch(
         claim_state=claim_state,
     )
     errors.extend(
-        validate_smoke_call_budget(manifest, final_ledger, next_slot=slot)
+        # The current slot is already represented by its durable claim. The
+        # pre-claim gate uses next_slot; the authorization gate validates the
+        # complete claimed union without counting that same slot a second time.
+        validate_smoke_call_budget(manifest, final_ledger)
     )
     if errors:
         raise ValueError(

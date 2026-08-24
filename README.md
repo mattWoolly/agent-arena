@@ -312,8 +312,11 @@ inputs. Smoke has its own manifest/bout and cannot enter blinding or analysis.
 Amendment 3 was superseded after pre-freeze engineering review, before either
 of its manifests was published and before any target call; Amendment 4 is the
 current freeze path. Its manifest creation and execution commands require an
-independent exact-commit checkout created and kept under `umask 0077` beneath
-an owner-only root. The runner fails closed on unsafe ownership, write modes,
+independent exact-commit checkout created and kept under the exact `umask 0077`
+beneath an owner-only root. The builder and validator bind the preregistered
+20-run/5-reserve confirmatory design, seeds, frozen timestamp, smoke suffix,
+and no-clobber publication mode rather than accepting alternate canonical
+parameters. The runner fails closed on unsafe ownership, write modes,
 symlinks, hard links, POSIX ACLs, or metadata inspection failures in the
 repository/bout trust path, manifests, and durable attempt witnesses. It never
 repairs unsafe live evidence.
