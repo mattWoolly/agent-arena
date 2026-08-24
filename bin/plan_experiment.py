@@ -2447,7 +2447,7 @@ def validate_manifest(
         randomization = manifest.get("randomization") or {}
         expected_frozen_at = AMENDMENT_5_FROZEN_AT if uses_amendment_5 else AMENDMENT_4_FROZEN_AT
         if manifest.get("frozen_at") != expected_frozen_at:
-            errors.append("current manifest does not use its frozen amendment timestamp")
+            errors.append("current manifest does not use its frozen timestamp for the active amendment")
         if phase == "confirmatory" and bout_dir != AMENDED_CONFIRMATORY_BOUT_REL:
             errors.append("confirmatory manifest is outside its canonical amended bout directory")
         if phase == "confirmatory":
@@ -7200,6 +7200,7 @@ def technical_smoke_status(manifest_path: Path, *, historical: bool = False) -> 
 
 
 def command_manifest(args: argparse.Namespace) -> None:
+    smoke_replacement_from = getattr(args, "smoke_replacement_from", None)
     manifest = build_manifest(
         phase=args.phase,
         output=_lexical_absolute_path(Path(args.output)),
@@ -7218,8 +7219,8 @@ def command_manifest(args: argparse.Namespace) -> None:
             else None
         ),
         smoke_replacement_from=(
-            _lexical_absolute_path(Path(args.smoke_replacement_from))
-            if args.smoke_replacement_from
+            _lexical_absolute_path(Path(smoke_replacement_from))
+            if smoke_replacement_from
             else None
         ),
     )

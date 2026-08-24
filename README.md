@@ -357,6 +357,8 @@ call. The replacement remains excluded from semantic analysis and requires two
 offline approvals plus explicit user approval before execution. The validator
 also verifies the predecessor manifest and failed Kimi ledger row through
 response-free provenance checks before accepting the replacement.
+The optional builder argument is backward-compatible with existing manifest
+command callers and is ignored unless an Amendment-5 replacement is requested.
 
 Before any model call, the executor validates every selected condition's CLI,
 external-home isolation, endpoint/config surface, exact neutral fixture
