@@ -369,8 +369,8 @@
     },
     {
       "path": "bouts/2026-08-22-pre-requirements-planning-amendment-5/RUNBOOK.md",
-      "sha256": "0c5c0ebaf85731f9a1434a2fe72c1af99599aaf00d14d16a4e0f5706281a8bab",
-      "bytes": 2874
+      "sha256": "386fb7dd0b394381c88ee44d7156c1243b0e8ec8ca76538383728dcc3d8a971d",
+      "bytes": 2839
     },
     {
       "path": "tasks/16-pre-requirements-plan/fixture/.gitkeep",
@@ -421,5 +421,5 @@
     },
     "predecessor_failed_row_sha256": "474df16a7522ec64719c110c5557666df3fe7e362e3cff00b763f91019972165"
   },
-  "freeze_id": "749cd59d58140dd7875e58f5b329ca354e73add1cd466c3164099ba3881a8778"
+  "freeze_id": "ee1cd524497e4c172825b75f0a5d9cffcb555bafc2a5ddf5ddf6a8dfa1201e99"
 }
